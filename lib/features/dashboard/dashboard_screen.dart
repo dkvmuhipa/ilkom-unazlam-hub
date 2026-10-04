@@ -416,11 +416,11 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'title': 'Teman Sekelas',
-        'sub': 'Direktori Kontak',
+        'sub': '23 Mahasiswa',
         'icon': Icons.people_alt_rounded,
         'gradient': [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
         'tab': 7,
-        'badge': 'WhatsApp',
+        'badge': '23 Kontak',
       },
     ];
 
