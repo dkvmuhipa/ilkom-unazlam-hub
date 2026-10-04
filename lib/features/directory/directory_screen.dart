@@ -13,14 +13,6 @@ class DirectoryScreen extends StatefulWidget {
 
 class _DirectoryScreenState extends State<DirectoryScreen> {
   String _searchQuery = '';
-  String _selectedPeminatan = 'Semua';
-  final List<String> _peminatanList = [
-    'Semua',
-    'Broadcasting',
-    'Public Relations',
-    'Jurnalistik',
-    'Advertising',
-  ];
 
   Future<void> _openWhatsApp(String phone, String name) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
@@ -36,11 +28,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = DummyData.students.where((s) {
-      final matchesQuery = s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          s.nim.contains(_searchQuery) ||
-          s.peminatan.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesPeminatan = _selectedPeminatan == 'Semua' || s.peminatan == _selectedPeminatan;
-      return matchesQuery && matchesPeminatan;
+      return s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          s.nim.contains(_searchQuery);
     }).toList();
 
     return Scaffold(
@@ -52,23 +41,24 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         children: [
           // Search Input (Clean Minimalist)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Container(
-              height: 44,
+              height: 46,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.border),
+                boxShadow: AppColors.softShadow,
               ),
               child: TextField(
                 decoration: const InputDecoration(
-                  hintText: 'Cari nama, NIM, atau peminatan...',
+                  hintText: 'Cari nama atau NIM mahasiswa...',
                   hintStyle: TextStyle(fontSize: 12, color: AppColors.textLight),
                   prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSub),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                 ),
                 style: const TextStyle(fontSize: 13),
                 onChanged: (val) {
@@ -78,43 +68,36 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             ),
           ),
 
-          // Filter Peminatan (Pill Chips)
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _peminatanList.length,
-              itemBuilder: (context, index) {
-                final pem = _peminatanList[index];
-                final isSelected = pem == _selectedPeminatan;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedPeminatan = pem),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
-                        ),
-                      ),
-                      child: Text(
-                        pem,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSub,
-                        ),
-                      ),
+          // Total Count Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Daftar Mahasiswa Aktif',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMain,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${filtered.length} Mahasiswa',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
                     ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
 
@@ -126,7 +109,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   )
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final student = filtered[index];
@@ -149,6 +132,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.softShadow,
       ),
       child: Row(
         children: [
@@ -201,7 +185,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${student.nim} • ${student.peminatan}',
+                  'NIM: ${student.nim} • S1 Ilmu Komunikasi',
                   style: const TextStyle(fontSize: 11, color: AppColors.textLight),
                 ),
               ],

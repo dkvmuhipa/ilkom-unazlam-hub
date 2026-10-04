@@ -93,8 +93,35 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           // List File
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
-                    child: Text('Belum ada materi di kategori ini.', style: TextStyle(color: AppColors.textSub)),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primarySoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.menu_book_outlined, size: 32, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Belum Ada Berkas Materi',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Slide PPT, diktat e-book, atau jurnal perkuliahan dari dosen akan dihimpun di sini.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),

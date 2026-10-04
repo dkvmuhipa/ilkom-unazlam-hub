@@ -21,15 +21,50 @@ class GroupsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Kelompok Praktikum'),
       ),
-      body: ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        itemCount: DummyData.projectGroups.length,
-        itemBuilder: (context, index) {
-          final group = DummyData.projectGroups[index];
-          return _buildMinimalGroupCard(group);
-        },
-      ),
+      body: DummyData.projectGroups.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primarySoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.groups_outlined, size: 36, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Belum Ada Kelompok Praktikum',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pembagian tim tugas kelompok atau praktikum akan tampil di sini saat perkuliahan berlangsung.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+              itemCount: DummyData.projectGroups.length,
+              itemBuilder: (context, index) {
+                final group = DummyData.projectGroups[index];
+                return _buildMinimalGroupCard(group);
+              },
+            ),
     );
   }
 
@@ -41,6 +76,7 @@ class GroupsScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +180,7 @@ class GroupsScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMain),
                 ),
                 Text(
-                  '${member.nim} • ${member.peminatan}',
+                  'NIM: ${member.nim}',
                   style: const TextStyle(fontSize: 10, color: AppColors.textLight),
                 ),
               ],

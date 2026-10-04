@@ -113,8 +113,35 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           // List Tugas
           Expanded(
             child: filteredList.isEmpty
-                ? const Center(
-                    child: Text('Tidak ada tugas di kategori ini.', style: TextStyle(color: AppColors.textSub)),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primarySoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.assignment_turned_in_outlined, size: 32, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Belum Ada Tugas Aktif',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Dosen belum memberikan tugas atau semua tugas telah diselesaikan dengan baik.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),

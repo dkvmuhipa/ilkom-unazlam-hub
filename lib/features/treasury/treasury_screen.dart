@@ -292,7 +292,42 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
             const SizedBox(height: 14),
 
             // List Transaksi
-            ...transactions.map((t) => _buildTransactionCard(t)),
+            if (transactions.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: AppColors.softShadow,
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF3F2F5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.textLight),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Belum Ada Catatan Transaksi',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textMain),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Semua pemasukan kas kelas dan pengeluaran operasional akan dicatat secara transparan di sini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: AppColors.textSub, height: 1.4),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...transactions.map((t) => _buildTransactionCard(t)),
           ],
         ),
       ),

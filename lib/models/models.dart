@@ -106,7 +106,7 @@ class GroupMember {
     required this.nama,
     required this.nim,
     required this.peran,
-    required this.peminatan,
+    this.peminatan = '',
   });
 }
 
@@ -195,7 +195,7 @@ class StudentProfile {
     required this.nama,
     required this.email,
     required this.noWa,
-    required this.peminatan,
+    this.peminatan = '',
     this.role = 'mahasiswa',
     this.instagram,
     this.linkedin,

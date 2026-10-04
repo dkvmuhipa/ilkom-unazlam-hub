@@ -12,10 +12,12 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final todayCourses = DummyData.courses.where((c) => c.hari == 'Senin').toList();
     final urgentAssignments = DummyData.assignments.where((a) => a.status != 'selesai').take(2).toList();
-    final pinnedAnnouncement = DummyData.announcements.firstWhere(
-      (ann) => ann.isPinned,
-      orElse: () => DummyData.announcements.first,
-    );
+    final pinnedAnnouncement = DummyData.announcements.isNotEmpty
+        ? DummyData.announcements.firstWhere(
+            (ann) => ann.isPinned,
+            orElse: () => DummyData.announcements.first,
+          )
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -248,11 +250,11 @@ class DashboardScreen extends StatelessWidget {
                               // Glassmorphism Stat Capsules
                               Row(
                                 children: [
-                                  _buildStatCapsule('8 MK', 'Jadwal Aktif', Icons.menu_book_rounded),
+                                  _buildStatCapsule('${DummyData.courses.length} MK', 'Jadwal Aktif', Icons.menu_book_rounded),
                                   const SizedBox(width: 8),
-                                  _buildStatCapsule('2 Tugas', 'Deadline Dekat', Icons.pending_actions_rounded),
+                                  _buildStatCapsule('${urgentAssignments.length} Tugas', urgentAssignments.isEmpty ? 'Semua Selesai' : 'Deadline Dekat', Icons.pending_actions_rounded),
                                   const SizedBox(width: 8),
-                                  _buildStatCapsule('94%', 'Presensi Aman', Icons.shield_rounded),
+                                  _buildStatCapsule('100%', 'Presensi Awal', Icons.shield_rounded),
                                 ],
                               ),
                             ],
@@ -307,7 +309,10 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     _buildSectionHeader('Info Resmi Kelas', 'Semua', () => onNavigateTab(3)),
                     const SizedBox(height: 10),
-                    _buildProfessionalPinnedCard(pinnedAnnouncement),
+                    if (pinnedAnnouncement != null)
+                      _buildProfessionalPinnedCard(pinnedAnnouncement)
+                    else
+                      _buildEmptyState('Belum ada pengumuman resmi.'),
                   ],
                 ),
               ),
@@ -322,7 +327,10 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     _buildSectionHeader('Tugas & Praktikum Berjalan', 'Semua', () => onNavigateTab(2)),
                     const SizedBox(height: 10),
-                    ...urgentAssignments.map((a) => _buildModernAssignmentCard(a)),
+                    if (urgentAssignments.isEmpty)
+                      _buildEmptyState('Belum ada tugas atau deadline praktikum aktif.')
+                    else
+                      ...urgentAssignments.map((a) => _buildModernAssignmentCard(a)),
                   ],
                 ),
               ),
@@ -376,7 +384,7 @@ class DashboardScreen extends StatelessWidget {
     final items = [
       {
         'title': 'Presensi 75%',
-        'sub': 'Aman (94%)',
+        'sub': '100% (Aman)',
         'icon': Icons.how_to_reg_rounded,
         'gradient': [const Color(0xFF6366F1), const Color(0xFF4338CA)],
         'tab': 4,
@@ -384,7 +392,7 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'title': 'Kas Kelas',
-        'sub': 'Rp 1.450.000',
+        'sub': DummyData.totalKasSaldo == 0 ? 'Rp 0' : 'Rp ${DummyData.totalKasSaldo}',
         'icon': Icons.account_balance_wallet_rounded,
         'gradient': [const Color(0xFF10B981), const Color(0xFF047857)],
         'tab': 8,
@@ -392,7 +400,7 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'title': 'Gudang Materi',
-        'sub': 'Slide & E-Book',
+        'sub': DummyData.resources.isEmpty ? 'Belum Ada Materi' : '${DummyData.resources.length} Berkas',
         'icon': Icons.menu_book_rounded,
         'gradient': [const Color(0xFFF59E0B), const Color(0xFFD97706)],
         'tab': 6,
@@ -400,7 +408,7 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'title': 'Tim Praktikum',
-        'sub': '4 Kelompok Aktif',
+        'sub': DummyData.projectGroups.isEmpty ? 'Belum Ada Tim' : '${DummyData.projectGroups.length} Kelompok',
         'icon': Icons.groups_rounded,
         'gradient': [const Color(0xFF06B6D4), const Color(0xFF0E7490)],
         'tab': 5,
@@ -416,11 +424,11 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'title': 'Teman Sekelas',
-        'sub': '23 Mahasiswa',
+        'sub': '${DummyData.students.length} Mahasiswa',
         'icon': Icons.people_alt_rounded,
         'gradient': [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
         'tab': 7,
-        'badge': '23 Kontak',
+        'badge': '${DummyData.students.length} Kontak',
       },
     ];
 
