@@ -113,8 +113,8 @@ class DummyData {
   static final List<Announcement> announcements = [
     Announcement(
       id: 'ann1',
-      authorName: 'Irfan (Komti)',
-      authorRole: 'Komandan Tingkat',
+      authorName: 'Nur Farida (Ketua Kelas)',
+      authorRole: 'Ketua Kelas',
       judul: 'PENTING: Jadwal Kuliah Semester Ganjil T.A 2026/2027 Resmi Dimulai',
       isi: 'Halo rekan-rekan S1 Ilmu Komunikasi UNAZLAM! Perkuliahan semester ganjil telah resmi dimulai sesuai jadwal FISIP terbaru. Perhatikan jam sesi sore (15.30) dan malam (18.30) serta ruangan A1, A2, dan B1.',
       isPinned: true,
@@ -254,7 +254,7 @@ class DummyData {
       nama: 'ARIEF PRAYUDHA RAMADHANSYAH',
       email: '260250009@student.unazlam.ac.id',
       noWa: '081241000106',
-      role: 'komti', // Ketua Tingkat / Komti
+      role: 'mahasiswa',
       instagram: '@arief.prayudha',
     ),
     StudentProfile(
@@ -317,7 +317,7 @@ class DummyData {
       nama: "ALYA NABILAH NA'ILAH",
       email: '260250020@student.unazlam.ac.id',
       noWa: '081241000113',
-      role: 'mahasiswa',
+      role: 'bendahara', // Bendahara Kelas
       instagram: '@alyanabilah',
     ),
     StudentProfile(
@@ -335,7 +335,7 @@ class DummyData {
       nama: 'NUR FARIDA',
       email: '260250023@student.unazlam.ac.id',
       noWa: '081241000115',
-      role: 'mahasiswa',
+      role: 'ketua_kelas', // Ketua Kelas / Komti
       instagram: '@nur.farida',
     ),
     StudentProfile(

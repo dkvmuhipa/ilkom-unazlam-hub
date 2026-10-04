@@ -123,7 +123,18 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   }
 
   Widget _buildMinimalStudentCard(StudentProfile student) {
-    final isKomti = student.role == 'komti';
+    final isKetua = student.role == 'ketua_kelas' || student.role == 'komti';
+    final isBendahara = student.role == 'bendahara';
+
+    Color avatarBg = AppColors.primarySoft;
+    Color avatarText = AppColors.primary;
+    if (isKetua) {
+      avatarBg = AppColors.secondarySoft;
+      avatarText = const Color(0xFFB45309);
+    } else if (isBendahara) {
+      avatarBg = const Color(0xFFDCFCE7);
+      avatarText = const Color(0xFF15803D);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -131,20 +142,26 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isKetua
+              ? AppColors.secondary.withValues(alpha: 0.3)
+              : isBendahara
+                  ? const Color(0xFF86EFAC)
+                  : AppColors.border,
+        ),
         boxShadow: AppColors.softShadow,
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: isKomti ? AppColors.secondarySoft : AppColors.primarySoft,
+            backgroundColor: avatarBg,
             child: Text(
               student.nama.isNotEmpty ? student.nama[0] : '?',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: isKomti ? const Color(0xFFB45309) : AppColors.primary,
+                color: avatarText,
               ),
             ),
           ),
@@ -167,17 +184,32 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                         ),
                       ),
                     ),
-                    if (isKomti) ...[
+                    if (isKetua) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.secondarySoft,
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
                         ),
                         child: const Text(
-                          'KOMTI',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                          'KETUA KELAS',
+                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                        ),
+                      ),
+                    ] else if (isBendahara) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Text(
+                          'BENDAHARA',
+                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
                         ),
                       ),
                     ],

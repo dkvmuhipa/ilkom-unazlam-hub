@@ -111,7 +111,7 @@ class SupabaseRepository {
     required String isi,
     required String kategori,
     bool isPinned = false,
-    String authorName = 'Irfan (Komti)',
+    String authorName = 'Nur Farida (Ketua Kelas)',
   }) async {
     final client = SupabaseService.client;
     if (client == null) return false;
@@ -123,7 +123,7 @@ class SupabaseRepository {
         'kategori': kategori,
         'is_pinned': isPinned,
         'author_name': authorName,
-        'author_role': 'Komandan Tingkat',
+        'author_role': 'Ketua Kelas',
       });
       return true;
     } catch (e) {

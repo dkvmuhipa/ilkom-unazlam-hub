@@ -139,7 +139,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         isPemasukan: isPemasukan,
                         kategori: kategori,
                         tanggal: DateTime.now(),
-                        pencatat: 'Siti Nurhaliza (Bendahara)',
+                        pencatat: 'Alya Nabilah (Bendahara)',
                       ),
                     );
                   });
@@ -248,7 +248,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Dikelola oleh Bendahara Kelas untuk keperluan akademik & praktikum.',
+                            'Dikelola oleh Bendahara Kelas (Alya Nabilah) untuk keperluan akademik & praktikum.',
                             style: TextStyle(color: Colors.white, fontSize: 11),
                           ),
                         ),
