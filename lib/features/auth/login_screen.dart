@@ -16,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isAdminLogin = false;
+  bool _rememberMe = true;
 
   @override
   void dispose() {
@@ -25,15 +27,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() {
-    final nim = _nimController.text.trim();
+    final input = _nimController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (nim.isEmpty) {
+    if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan masukkan NIM Anda.'),
-          backgroundColor: Color(0xFFEF4444),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(_isAdminLogin ? 'Silakan masukkan username atau email admin.' : 'Silakan masukkan NIM Anda.'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -52,17 +54,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Cari data mahasiswa berdasarkan NIM
-    final student = DummyData.students.cast<dynamic>().firstWhere(
-      (s) => s.nim == nim,
-      orElse: () => null,
-    );
+    // Check if logging in as Admin
+    final isInputAdmin = input.toLowerCase() == 'admin' || input.toLowerCase().contains('admin@') || _isAdminLogin;
+
+    // Cari data mahasiswa berdasarkan NIM jika bukan admin
+    final student = isInputAdmin
+        ? null
+        : DummyData.students.cast<dynamic>().firstWhere(
+            (s) => s.nim == input,
+            orElse: () => null,
+          );
 
     Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (student != null || nim.length >= 5) {
+      if (isInputAdmin) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Selamat datang, System Administrator! 🛡️'),
+            backgroundColor: Color(0xFF5B3DE8),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        if (widget.onLoginSuccess != null) {
+          widget.onLoginSuccess!('admin', 'System Administrator');
+        }
+      } else if (student != null || input.length >= 5) {
         final studentName = student?.nama ?? 'Mahasiswa';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -73,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (widget.onLoginSuccess != null) {
-          widget.onLoginSuccess!(nim, studentName);
+          widget.onLoginSuccess!(input, studentName);
         } else {
           Navigator.pushReplacement(
             context,
@@ -205,29 +224,120 @@ class _LoginScreenState extends State<LoginScreen> {
                       letterSpacing: 2.5,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
+
+                  // Mode Switcher Tabs
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isAdminLogin = false;
+                                _nimController.clear();
+                                _passwordController.clear();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: !_isAdminLogin ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: !_isAdminLogin
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'Mahasiswa',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: !_isAdminLogin ? FontWeight.w800 : FontWeight.w600,
+                                  color: !_isAdminLogin ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isAdminLogin = true;
+                                _nimController.text = 'admin';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _isAdminLogin ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: _isAdminLogin
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'Admin',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: _isAdminLogin ? FontWeight.w800 : FontWeight.w600,
+                                  color: _isAdminLogin ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // Heading matching Screen 2
-                  const Text(
-                    'Masuk ke akun Anda',
-                    style: TextStyle(
+                  Text(
+                    _isAdminLogin ? 'Masuk sebagai Admin' : 'Masuk sebagai Mahasiswa',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF111827),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Ilmu Komunikasi • UNAZLAM',
-                    style: TextStyle(
+                  Text(
+                    _isAdminLogin
+                        ? 'Kelola kelas, mahasiswa dan data akademik dengan mudah.'
+                        : 'Satu Kelas, Banyak Cerita Lebih Banyak Karya.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
-                  // Form Input NIM (Screen 2)
+                  // Form Input Username/Email/NIM (Screen 2)
                   Container(
                     height: 52,
                     decoration: BoxDecoration(
@@ -237,13 +347,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: TextField(
                       controller: _nimController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'NIM',
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                        prefixIcon: Icon(Icons.person_outline_rounded, color: Color(0xFF6B7280), size: 20),
+                      keyboardType: _isAdminLogin ? TextInputType.text : TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: _isAdminLogin ? 'Username / Email' : 'NIM',
+                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                        prefixIcon: Icon(
+                          _isAdminLogin ? Icons.mail_outline_rounded : Icons.person_outline_rounded,
+                          color: const Color(0xFF6B7280),
+                          size: 20,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
                   ),
@@ -281,7 +395,46 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+
+                  // Checkbox "Ingat saya" & "Lupa password?" (Screen 2)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _rememberMe,
+                              activeColor: const Color(0xFF5B3DE8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              onChanged: (val) => setState(() => _rememberMe = val ?? true),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Ingat saya',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4B5563)),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                        child: const Text(
+                          'Lupa password?',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF5B3DE8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
                   // Button "Masuk" (Screen 2)
                   SizedBox(
@@ -310,20 +463,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Text Button "Lupa password?" (Screen 2)
-                  TextButton(
-                    onPressed: _showForgotPasswordDialog,
-                    child: const Text(
-                      'Lupa password?',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF5B3DE8),
-                      ),
                     ),
                   ),
                 ],
