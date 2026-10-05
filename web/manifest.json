@@ -1,11 +1,11 @@
 {
-    "name": "class_manager",
-    "short_name": "class_manager",
+    "name": "ILKOM UNAZLAM Hub",
+    "short_name": "ILKOM UNAZLAM",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#5b3de8",
+    "theme_color": "#5b3de8",
+    "description": "Portal Resmi Mahasiswa Ilmu Komunikasi UNAZLAM",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
