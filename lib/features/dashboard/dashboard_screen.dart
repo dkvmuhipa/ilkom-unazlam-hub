@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
   final VoidCallback? onOpenDrawer;
   final String? userName;
@@ -13,6 +13,26 @@ class DashboardScreen extends StatelessWidget {
     this.onOpenDrawer,
     this.userName,
   });
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late PageController _heroController;
+  int _currentHeroPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _heroController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _heroController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +72,8 @@ class DashboardScreen extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            userName != null && userName!.isNotEmpty
-                                ? userName!.split(' ').first
+                            widget.userName != null && widget.userName!.isNotEmpty
+                                ? widget.userName!.split(' ').first
                                 : 'Farida',
                             style: const TextStyle(
                               fontSize: 20,
@@ -81,7 +101,7 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       // Notification Bell with unread dot
                       InkWell(
-                        onTap: () => onNavigateTab(7), // Open Pengumuman
+                        onTap: () => widget.onNavigateTab(7), // Open Pengumuman
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
                           padding: const EdgeInsets.all(10),
@@ -117,10 +137,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (onOpenDrawer != null) ...[
+                      if (widget.onOpenDrawer != null) ...[
                         const SizedBox(width: 8),
                         InkWell(
-                          onTap: onOpenDrawer,
+                          onTap: widget.onOpenDrawer,
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             padding: const EdgeInsets.all(10),
@@ -146,144 +166,105 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Hero Card: Kuliah Hari Ini (Gradient Purple matching mockup Screen 3)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF5B3DE8).withValues(alpha: 0.35),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Swipable Hero Carousel (PageView matching Screen 3)
+              SizedBox(
+                height: 172,
+                child: PageView(
+                  controller: _heroController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentHeroPage = index;
+                    });
+                  },
                   children: [
-                    // Badge: Kuliah Hari Ini
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.school_outlined, size: 14, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Kuliah Hari Ini',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
+                    // Slide 0: Kuliah Hari Ini
+                    _buildHeroCard(
+                      gradientColors: const [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                      shadowColor: const Color(0xFF5B3DE8),
+                      badgeIcon: Icons.school_outlined,
+                      badgeText: 'Kuliah Hari Ini',
+                      title: firstCourse?.nama ?? 'Pendidikan Pancasila',
+                      line1Icon: Icons.access_time_rounded,
+                      line1Text: firstCourse != null
+                          ? '${firstCourse.jamMulai} - ${firstCourse.jamSelesai}'
+                          : '15.30 - 17.45 WITA',
+                      line2Icon: Icons.location_on_outlined,
+                      line2Text: firstCourse?.ruangan.isNotEmpty == true ? firstCourse!.ruangan : 'Ruang A2',
+                      onTapArrow: () => widget.onNavigateTab(1),
                     ),
-                    const SizedBox(height: 14),
 
-                    // Course Title
-                    Text(
-                      firstCourse?.nama ?? 'Pendidikan Pancasila',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
+                    // Slide 1: Tugas Kelas Terdekat
+                    _buildHeroCard(
+                      gradientColors: const [Color(0xFF4338CA), Color(0xFF6366F1)],
+                      shadowColor: const Color(0xFF4338CA),
+                      badgeIcon: Icons.assignment_outlined,
+                      badgeText: 'Tugas Terdekat',
+                      title: 'Mencari ahli-ahli Ilmu Komunikasi',
+                      line1Icon: Icons.calendar_today_outlined,
+                      line1Text: 'Deadline: 8 Oktober 2026',
+                      line2Icon: Icons.book_outlined,
+                      line2Text: 'Pendidikan Kewarganegaraan',
+                      onTapArrow: () => widget.onNavigateTab(2),
                     ),
-                    const SizedBox(height: 12),
 
-                    // Details Row with Time, Room & Arrow Action Button
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.access_time_rounded, size: 14, color: Colors.white70),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    firstCourse != null
-                                        ? '${firstCourse.jamMulai} - ${firstCourse.jamSelesai}'
-                                        : '15.30 - 17.45',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on_outlined, size: 14, color: Colors.white70),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    firstCourse?.ruangan ?? 'Ruang A2',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Circular white arrow action button
-                        InkWell(
-                          onTap: () => onNavigateTab(1), // Go to Jadwal Tab
-                          borderRadius: BorderRadius.circular(25),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.arrow_forward_rounded,
-                                color: Color(0xFF5B3DE8),
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Slide 2: Absensi Saya
+                    _buildHeroCard(
+                      gradientColors: const [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                      shadowColor: const Color(0xFF0F766E),
+                      badgeIcon: Icons.fact_check_outlined,
+                      badgeText: 'Status Presensi',
+                      title: '90% Kehadiran Perkuliahan',
+                      line1Icon: Icons.check_circle_outline,
+                      line1Text: '9 Hadir • 1 Izin • 0 Alpa',
+                      line2Icon: Icons.info_outline_rounded,
+                      line2Text: 'Total 10 Sesi Berjalan (Aman)',
+                      onTapArrow: () => widget.onNavigateTab(5),
+                    ),
+
+                    // Slide 3: Kas Kelas
+                    _buildHeroCard(
+                      gradientColors: const [Color(0xFF6D28D9), Color(0xFF9333EA)],
+                      shadowColor: const Color(0xFF6D28D9),
+                      badgeIcon: Icons.account_balance_wallet_outlined,
+                      badgeText: 'Kas Kelas ILKOM',
+                      title: 'Transparan & Terbuka',
+                      line1Icon: Icons.shield_outlined,
+                      line1Text: 'Dikelola oleh Bendahara (Alya)',
+                      line2Icon: Icons.payments_outlined,
+                      line2Text: 'Lihat Pembukuan & Iuran Kas',
+                      onTapArrow: () => widget.onNavigateTab(8),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Carousel indicator dots (4 dots, first active)
+              // Dynamic Carousel Indicator Dots (4 dots with smooth animation)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 18,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF5B3DE8),
-                      borderRadius: BorderRadius.circular(4),
+                children: List.generate(4, (index) {
+                  final isSelected = index == _currentHeroPage;
+                  return InkWell(
+                    onTap: () {
+                      _heroController.animateToPage(
+                        index,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: isSelected ? 20 : 6,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFD1D5DB),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  _buildDotIndicator(),
-                  const SizedBox(width: 4),
-                  _buildDotIndicator(),
-                  const SizedBox(width: 4),
-                  _buildDotIndicator(),
-                ],
+                  );
+                }),
               ),
               const SizedBox(height: 24),
 
@@ -308,28 +289,28 @@ class DashboardScreen extends StatelessWidget {
                     label: 'Jadwal',
                     color: const Color(0xFF5B3DE8),
                     bgColor: const Color(0xFFF3F0FF),
-                    onTap: () => onNavigateTab(1),
+                    onTap: () => widget.onNavigateTab(1),
                   ),
                   _buildQuickMenuItem(
                     icon: Icons.assignment_outlined,
                     label: 'Tugas',
                     color: const Color(0xFFF59E0B),
                     bgColor: const Color(0xFFFEF3C7),
-                    onTap: () => onNavigateTab(2),
+                    onTap: () => widget.onNavigateTab(2),
                   ),
                   _buildQuickMenuItem(
                     icon: Icons.fact_check_outlined,
                     label: 'Absensi',
                     color: const Color(0xFF0284C7),
                     bgColor: const Color(0xFFE0F2FE),
-                    onTap: () => onNavigateTab(5), // Absensi Saya
+                    onTap: () => widget.onNavigateTab(5), // Absensi Saya
                   ),
                   _buildQuickMenuItem(
                     icon: Icons.people_alt_outlined,
                     label: 'Anggota',
                     color: const Color(0xFF7C3AED),
                     bgColor: const Color(0xFFEDE9FE),
-                    onTap: () => onNavigateTab(3), // Anggota Tab
+                    onTap: () => widget.onNavigateTab(3), // Anggota Tab
                   ),
                 ],
               ),
@@ -349,7 +330,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   InkWell(
-                    onTap: () => onNavigateTab(7), // Open Pengumuman
+                    onTap: () => widget.onNavigateTab(7), // Open Pengumuman
                     borderRadius: BorderRadius.circular(12),
                     child: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -369,7 +350,7 @@ class DashboardScreen extends StatelessWidget {
 
               // Announcement Card matching Screen 3
               InkWell(
-                onTap: () => onNavigateTab(7),
+                onTap: () => widget.onNavigateTab(7),
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   width: double.infinity,
@@ -449,13 +430,142 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDotIndicator() {
+  Widget _buildHeroCard({
+    required List<Color> gradientColors,
+    required Color shadowColor,
+    required IconData badgeIcon,
+    required String badgeText,
+    required String title,
+    required IconData line1Icon,
+    required String line1Text,
+    required IconData line2Icon,
+    required String line2Text,
+    required VoidCallback onTapArrow,
+  }) {
     return Container(
-      width: 5,
-      height: 5,
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFD1D5DB),
-        borderRadius: BorderRadius.circular(4),
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor.withValues(alpha: 0.30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(badgeIcon, size: 13, color: Colors.white),
+                const SizedBox(width: 5),
+                Text(
+                  badgeText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Course / Feature Title
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Details Row with Time, Room & Arrow Action Button
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(line1Icon, size: 14, color: Colors.white70),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            line1Text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(line2Icon, size: 14, color: Colors.white70),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            line2Text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Circular white arrow action button
+              InkWell(
+                onTap: onTapArrow,
+                borderRadius: BorderRadius.circular(25),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: gradientColors.first,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
