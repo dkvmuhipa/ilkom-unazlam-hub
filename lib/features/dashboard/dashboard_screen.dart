@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../announcements/announcements_screen.dart';
+import '../assignments/assignments_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -44,6 +46,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final firstCourse = todayCourses.isNotEmpty ? todayCourses.first : null;
 
     final latestAnnouncement = DummyData.announcements.isNotEmpty ? DummyData.announcements.first : null;
+    final activeAssignments = DummyData.assignments.where((a) => a.status != 'selesai').toList();
+    final nearestAssignment = activeAssignments.isNotEmpty
+        ? activeAssignments.first
+        : (DummyData.assignments.isNotEmpty ? DummyData.assignments.first : null);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -138,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       if (widget.onOpenDrawer != null) ...[
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         InkWell(
                           onTap: widget.onOpenDrawer,
                           borderRadius: BorderRadius.circular(16),
@@ -186,10 +192,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       title: firstCourse?.nama ?? 'Pendidikan Pancasila',
                       line1Icon: Icons.access_time_rounded,
                       line1Text: firstCourse != null
-                          ? '${firstCourse.jamMulai} - ${firstCourse.jamSelesai}'
+                          ? '${firstCourse.jamMulai} - ${firstCourse.jamSelesai} WITA'
                           : '15.30 - 17.45 WITA',
                       line2Icon: Icons.location_on_outlined,
-                      line2Text: firstCourse?.ruangan.isNotEmpty == true ? firstCourse!.ruangan : 'Ruang A2',
+                      line2Text: firstCourse?.ruangan.isNotEmpty == true ? '${firstCourse!.ruangan} • FISIP' : 'Ruang A2 • FISIP',
                       onTapArrow: () => widget.onNavigateTab(1),
                     ),
 
@@ -199,12 +205,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       shadowColor: const Color(0xFF4338CA),
                       badgeIcon: Icons.assignment_outlined,
                       badgeText: 'Tugas Terdekat',
-                      title: 'Mencari ahli-ahli Ilmu Komunikasi',
+                      title: nearestAssignment?.judul ?? 'Makalah Analisis Nilai Pancasila',
                       line1Icon: Icons.calendar_today_outlined,
-                      line1Text: 'Deadline: 8 Oktober 2026',
+                      line1Text: nearestAssignment != null
+                          ? 'Batas: ${nearestAssignment.deadline.day} ${_monthName(nearestAssignment.deadline.month)}'
+                          : 'Deadline: 8 Oktober 2026',
                       line2Icon: Icons.book_outlined,
-                      line2Text: 'Pendidikan Kewarganegaraan',
-                      onTapArrow: () => widget.onNavigateTab(2),
+                      line2Text: nearestAssignment?.courseName ?? 'Pendidikan Pancasila',
+                      onTapCard: () {
+                        if (nearestAssignment != null) {
+                          AssignmentsScreen.showAssignmentDetail(
+                            context,
+                            nearestAssignment,
+                            onStatusChanged: () => setState(() {}),
+                          );
+                        } else {
+                          widget.onNavigateTab(2);
+                        }
+                      },
+                      onTapArrow: () {
+                        if (nearestAssignment != null) {
+                          AssignmentsScreen.showAssignmentDetail(
+                            context,
+                            nearestAssignment,
+                            onStatusChanged: () => setState(() {}),
+                          );
+                        } else {
+                          widget.onNavigateTab(2);
+                        }
+                      },
                     ),
 
                     // Slide 2: Absensi Saya
@@ -350,7 +379,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Announcement Card matching Screen 3
               InkWell(
-                onTap: () => widget.onNavigateTab(7),
+                onTap: () {
+                  if (latestAnnouncement != null) {
+                    AnnouncementsScreen.showAnnouncementDetail(context, latestAnnouncement);
+                  } else {
+                    widget.onNavigateTab(7);
+                  }
+                },
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   width: double.infinity,
@@ -408,7 +443,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '5 Okt 2026',
+                              latestAnnouncement != null
+                                  ? '${latestAnnouncement.createdAt.day} ${_monthName(latestAnnouncement.createdAt.month)} ${latestAnnouncement.createdAt.year}'
+                                  : '5 Okt 2026',
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF9CA3AF),
@@ -441,26 +478,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required IconData line2Icon,
     required String line2Text,
     required VoidCallback onTapArrow,
+    VoidCallback? onTapCard,
   }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 1),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor.withValues(alpha: 0.30),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+    return InkWell(
+      onTap: onTapCard ?? onTapArrow,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor.withValues(alpha: 0.30),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -567,6 +608,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -608,5 +650,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  String _monthName(int month) {
+    const m = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return m[month];
   }
 }

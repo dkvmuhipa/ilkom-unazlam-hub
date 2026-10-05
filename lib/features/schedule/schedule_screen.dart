@@ -245,108 +245,456 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
           // Right Course Card
           Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          c.nama,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF9CA3AF)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Room Location
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 4),
-                      Text(
-                        c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F0FF),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${c.sks} SKS',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Lecturer
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          c.dosen,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
-                        ),
-                      ),
-                      if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
-                        InkWell(
-                          onTap: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFDCFCE7),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.chat_bubble_outline_rounded, size: 11, color: Color(0xFF16A34A)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'WA Dosen',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF16A34A)),
-                                ),
-                              ],
+            child: InkWell(
+              onTap: () => _showCourseDetailModal(c),
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            c.nama,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF9CA3AF)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Room Location
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF6B7280)),
+                        const SizedBox(width: 4),
+                        Text(
+                          c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F0FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${c.sks} SKS',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Lecturer
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF6B7280)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            c.dosen,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                          ),
+                        ),
+                        if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
+                          InkWell(
+                            onTap: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.chat_bubble_outline_rounded, size: 11, color: Color(0xFF16A34A)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'WA Dosen',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF16A34A)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCourseDetailModal(Course c) {
+    // Find materials associated with this course
+    final cleanCourseName = c.nama.replaceAll('*', '').trim().toLowerCase();
+    final relatedResources = DummyData.resources.where((r) {
+      final rName = r.courseName.replaceAll('*', '').trim().toLowerCase();
+      return rName == cleanCourseName || cleanCourseName.contains(rName) || rName.contains(cleanCourseName);
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F0FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          c.kode.isNotEmpty ? c.kode : 'MK ILKOM',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF5B3DE8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${c.sks} SKS • Semester ${c.semester}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4B5563),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            // Body
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Course Title
+                    Text(
+                      c.nama,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Schedule Info Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEDE9FE),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.access_time_rounded, color: Color(0xFF5B3DE8), size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Waktu Perkuliahan', style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${c.hari}, ${c.jamMulai} - ${c.jamSelesai} WITA',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.meeting_room_outlined, color: Color(0xFFD97706), size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Ruang Kuliah', style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"} • Gedung FISIP UNAZLAM',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Lecturer Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: const Color(0xFFDCFCE7),
+                            child: const Icon(Icons.person_rounded, color: Color(0xFF16A34A), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Dosen Pengampu', style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+                                const SizedBox(height: 2),
+                                Text(
+                                  c.dosen,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
+                              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+                              label: const Text('WA Dosen', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF16A34A),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 0,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Materi & Dokumen Perkuliahan Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFF5B3DE8)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Materi & Dokumen Kuliah',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F0FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${relatedResources.length} Berkas',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (relatedResources.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: const Column(
+                          children: [
+                            Icon(Icons.library_books_outlined, color: Color(0xFF9CA3AF), size: 28),
+                            SizedBox(height: 8),
+                            Text(
+                              'Belum ada modul khusus yang diunggah untuk mata kuliah ini.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ...relatedResources.map((res) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEDE9FE),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.description_rounded, color: Color(0xFF5B3DE8), size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      res.judul,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${res.jenis} • Pertemuan Ke-${res.pertemuanKe ?? 1}',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final uri = Uri.parse(res.linkUrl);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF5B3DE8),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Buka', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

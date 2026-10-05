@@ -108,7 +108,68 @@ class DummyData {
     ),
   ];
 
-  static final List<Assignment> assignments = [];
+  static final List<Assignment> assignments = [
+    Assignment(
+      id: 'asg1',
+      courseId: 'c1',
+      courseName: 'Pendidikan Pancasila',
+      judul: 'Makalah Analisis Nilai Pancasila dalam Media Sosial',
+      deskripsi:
+          'Buatlah makalah ilmiah minimal 6 halaman mengenai implementasi sila ke-2 dan sila ke-3 dalam menjaga etika berkomunikasi di media sosial (Instagram/TikTok/X). Format tulisan: Times New Roman 12, spasi 1.5, cover resmi FISIP UNAZLAM, dan daftar pustaka minimal 5 referensi jurnal.',
+      kategori: 'Individu',
+      deadline: DateTime.now().add(const Duration(days: 3, hours: 4)),
+      linkPengumpulan: 'https://classroom.google.com/c/ilkom-unazlam-pancasila',
+      status: 'sedang_dikerjakan',
+    ),
+    Assignment(
+      id: 'asg2',
+      courseId: 'c2',
+      courseName: 'Pendidikan Kewarganegaraan',
+      judul: 'Resume Bab 2: Hak dan Kewajiban Warga Negara di Era Otonomi Daerah',
+      deskripsi:
+          'Tuliskan resume kritis dari buku ajar Bab 2 mengenai harmoni hak dan kewajiban warga negara dan negara. Tambahkan contoh studi kasus penanganan fasilitas publik di Kota Palu pasca bencana. Ketik dalam format PDF 2-3 halaman.',
+      kategori: 'Individu',
+      deadline: DateTime.now().add(const Duration(days: 6, hours: 10)),
+      linkPengumpulan: 'https://drive.google.com/drive/folders/ilkom-kewarganegaraan-unazlam',
+      status: 'belum',
+    ),
+    Assignment(
+      id: 'asg3',
+      courseId: 'c5',
+      courseName: 'Ilmu Kealaman Dasar *',
+      judul: 'Proyek Video Liputan Dokumenter Isu Lingkungan Pesisir Teluk Palu',
+      deskripsi:
+          'Tugas Kelompok (4-5 orang): Lakukan wawancara dan pengambilan video lapangan terkait kebersihan pesisir, pengelolaan sampah pantai, atau ekosistem mangrove di Teluk Palu. Durasi video 3-5 menit, resolusi minimal 1080p, unggah ke Google Drive kelompok dan sertakan link pada formulir ini.',
+      kategori: 'Kelompok',
+      deadline: DateTime.now().add(const Duration(days: 12, hours: 8)),
+      linkPengumpulan: 'https://drive.google.com/drive/folders/ilkom-ikd-telukpalu-project',
+      status: 'belum',
+    ),
+    Assignment(
+      id: 'asg4',
+      courseId: 'c6',
+      courseName: 'Bahasa Indonesia *',
+      judul: 'Esai Argumentatif: Etika Komunikasi Digital Mahasiswa Kampus',
+      deskripsi:
+          'Tuliskan esai argumentatif dengan tata bahasa baku bahasa Indonesia (EYD V) tentang fenomena komunikasi daring antara mahasiswa dan dosen. Struktur esai: Pendahuluan, Tesis, Argumen Pendukung, Sanggahan, dan Kesimpulan (1000 - 1500 kata).',
+      kategori: 'Individu',
+      deadline: DateTime.now().add(const Duration(days: 15)),
+      linkPengumpulan: 'https://classroom.google.com/c/ilkom-bahasa-indonesia',
+      status: 'selesai',
+    ),
+    Assignment(
+      id: 'asg5',
+      courseId: 'c7',
+      courseName: 'Bahasa Inggris *',
+      judul: 'Critical Review: Interpersonal Communication in Modern Workplace',
+      deskripsi:
+          'Read the assigned journal article "Cross-Cultural Communication in Virtual Teams", write an analytical critique summarizing key arguments, methodology, and your personal reflection as communication science students in English.',
+      kategori: 'Individu',
+      deadline: DateTime.now().add(const Duration(days: 18, hours: 12)),
+      linkPengumpulan: 'https://drive.google.com/drive/folders/ilkom-english-communication',
+      status: 'belum',
+    ),
+  ];
 
   static final List<Announcement> announcements = [
     Announcement(
@@ -116,10 +177,44 @@ class DummyData {
       authorName: 'Nur Farida (Ketua Kelas)',
       authorRole: 'Ketua Kelas',
       judul: 'PENTING: Jadwal Kuliah Semester Ganjil T.A 2026/2027 Resmi Dimulai',
-      isi: 'Halo rekan-rekan S1 Ilmu Komunikasi UNAZLAM! Perkuliahan semester ganjil telah resmi dimulai sesuai jadwal FISIP terbaru. Perhatikan jam sesi sore (15.30) dan malam (18.30) serta ruangan A1, A2, dan B1.',
+      isi:
+          'Halo rekan-rekan S1 Ilmu Komunikasi UNAZLAM! Perkuliahan semester ganjil telah resmi dimulai sesuai jadwal FISIP terbaru. Perhatikan jam sesi sore (15.30) dan malam (18.30) serta ruangan A1, A2, dan B1. Harap hadir 10 menit sebelum perkuliahan dimulai.',
       isPinned: true,
       kategori: 'Penting',
       createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+    Announcement(
+      id: 'ann2',
+      authorName: 'Akademik FISIP',
+      authorRole: 'Akademik',
+      judul: 'Pengambilan Kartu Rencana Studi (KRS) & Validasi SIAKAD',
+      isi:
+          'Diberitahukan kepada seluruh mahasiswa baru S1 Ilmu Komunikasi angkatan 2026 agar segera mencetak KRS dari portal SIAKAD UNAZLAM dan meminta tanda tangan Dosen Pembimbing Akademik (DPA) paling lambat Jumat ini.',
+      isPinned: true,
+      kategori: 'Akademik',
+      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+    ),
+    Announcement(
+      id: 'ann3',
+      authorName: 'Farid Wajdi, S.Pd., M.A',
+      authorRole: 'Dosen Pengampu',
+      judul: 'Materi & Handout Perkuliahan Bahasa Inggris Pertemuan 1-3 Sudah Tersedia',
+      isi:
+          'Untuk seluruh mahasiswa kelas Bahasa Inggris Komunikasi, handout materi grammar & public speaking serta kisi-kisi latihan percakapan sudah diunggah di Gudang Materi. Silakan diunduh dan dipelajari sebelum sesi kuliah hari Kamis.',
+      isPinned: false,
+      kategori: 'Dosen',
+      createdAt: DateTime.now().subtract(const Duration(days: 2, hours: 5)),
+    ),
+    Announcement(
+      id: 'ann4',
+      authorName: 'Bendahara Kelas',
+      authorRole: 'Pengurus Kelas',
+      judul: 'Iuran Kas Kelas Bulan Pertama: Fotokopi Modul & Operasional Kelas',
+      isi:
+          'Kas kelas bulan ini disepakati sebesar Rp 20.000/mahasiswa untuk keperluan penyediaan spidol papan tulis, fotokopi lembar materi darurat, dan kas cadangan kegiatan kelas. Pembayaran dapat ditransfer via QRIS atau tunai ke bendahara.',
+      isPinned: false,
+      kategori: 'Kelas',
+      createdAt: DateTime.now().subtract(const Duration(days: 3, hours: 1)),
     ),
   ];
 
@@ -200,7 +295,56 @@ class DummyData {
     ),
   ];
 
-  static final List<ResourceItem> resources = [];
+  static final List<ResourceItem> resources = [
+    ResourceItem(
+      id: 'res1',
+      courseName: 'Pendidikan Pancasila',
+      pertemuanKe: 1,
+      judul: 'RPS & Slide Pertemuan 1 - Urgensi Nilai Pancasila di Era Digital',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://docs.google.com/presentation/d/1unazlam-pancasila-ppt1/edit',
+    ),
+    ResourceItem(
+      id: 'res2',
+      courseName: 'Pendidikan Kewarganegaraan',
+      pertemuanKe: 2,
+      judul: 'Modul Buku Ajar: Hak & Kewajiban Warga Negara Indonesia',
+      jenis: 'E-Book',
+      linkUrl: 'https://drive.google.com/file/d/1unazlam-kewarganegaraan-modul/view',
+    ),
+    ResourceItem(
+      id: 'res3',
+      courseName: 'Bahasa Indonesia *',
+      pertemuanKe: 1,
+      judul: 'Pedoman Umum Ejaan Bahasa Indonesia (EYD V) & Sitasi Ilmiah',
+      jenis: 'E-Book',
+      linkUrl: 'https://drive.google.com/file/d/1unazlam-eyd-pedoman/view',
+    ),
+    ResourceItem(
+      id: 'res4',
+      courseName: 'Ilmu Kealaman Dasar *',
+      pertemuanKe: 3,
+      judul: 'Jurnal Penelitian: Ekosistem Teluk Palu dan Konservasi Pesisir',
+      jenis: 'Jurnal Ilmiah',
+      linkUrl: 'https://journal.unazlam.ac.id/ikd-teluk-palu-paper.pdf',
+    ),
+    ResourceItem(
+      id: 'res5',
+      courseName: 'Bahasa Inggris *',
+      pertemuanKe: 2,
+      judul: 'Handout: Essential Business & Communication English Phrases',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://docs.google.com/presentation/d/1unazlam-english-handout/edit',
+    ),
+    ResourceItem(
+      id: 'res6',
+      courseName: 'Pengantar Ilmu Politik *',
+      pertemuanKe: 1,
+      judul: 'Bank Soal Latihan & Kasus Kajian Komunikasi Politik Kontemporer',
+      jenis: 'Bank Soal',
+      linkUrl: 'https://drive.google.com/file/d/1unazlam-bank-soal-politik/view',
+    ),
+  ];
 
   static final List<StudentProfile> students = [
     StudentProfile(
