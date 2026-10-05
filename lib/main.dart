@@ -19,6 +19,7 @@ import 'features/auth/login_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
 import 'core/services/dummy_data.dart';
+import 'models/models.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,12 +127,38 @@ class MainResponsiveShell extends StatefulWidget {
 class _MainResponsiveShellState extends State<MainResponsiveShell> {
   int _currentIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late String _activeNim;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeNim = widget.userNim ?? '260250023';
+  }
+
+  void _switchSimulationUser(String nim) {
+    setState(() {
+      _activeNim = nim;
+    });
+    final st = DummyData.students.firstWhere((s) => s.nim == nim, orElse: () => DummyData.students.first);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Beralih ke tampilan: ${st.nama} (${st.jabatan})'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: const Color(0xFF5B3DE8),
+      ),
+    );
+  }
 
   void _navigateToIndex(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
+
+  StudentProfile get _currentUser => DummyData.students.firstWhere(
+    (s) => widget.isAdminUser ? s.role == 'ADMIN' : s.nim == _activeNim,
+    orElse: () => DummyData.students.first,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -147,23 +174,22 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     // 8: Kas Kelas
     // 9: Kelompok
     // 10: Materi
-    final currentUser = DummyData.students.firstWhere(
-      (s) => widget.isAdminUser ? s.role == 'ADMIN' : s.nim == widget.userNim,
-      orElse: () => DummyData.students.first,
-    );
+    final currentUser = _currentUser;
 
     final List<Widget> screens = [
       DashboardScreen(
-        userName: widget.userName,
+        userName: currentUser.nama,
+        userNim: currentUser.nim,
         onNavigateTab: _navigateToIndex,
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        onSwitchSimulation: _switchSimulationUser,
       ), // 0: Beranda
       const ScheduleScreen(), // 1: Jadwal
       const AssignmentsScreen(), // 2: Tugas
       const DirectoryScreen(), // 3: Kelas (Anggota)
       ProfileScreen(
         onNavigateTab: _navigateToIndex,
-        userNim: widget.userNim,
+        userNim: currentUser.nim,
       ), // 4: Profil Saya
       AttendanceScreen(
         canManageClassAttendance: currentUser.canManageAttendance,
@@ -367,9 +393,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                     radius: 18,
                     backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.12),
                     child: Text(
-                      (widget.userName != null && widget.userName!.isNotEmpty)
-                          ? widget.userName![0].toUpperCase()
-                          : 'U',
+                      _currentUser.nama.isNotEmpty ? _currentUser.nama[0].toUpperCase() : 'U',
                       style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
                     ),
                   ),
@@ -379,7 +403,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.userName != null && widget.userName!.isNotEmpty ? widget.userName! : 'Mahasiswa',
+                          _currentUser.nama,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
@@ -388,7 +412,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                         Text(
                           widget.isAdminUser
                               ? '🛡️ System Administrator'
-                              : '${(DummyData.students.firstWhere((s) => s.nim.toLowerCase() == (widget.userNim ?? '').toLowerCase(), orElse: () => DummyData.students.first)).jabatan} • ILKOM',
+                              : '${_currentUser.jabatan} • ILKOM 2026',
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
