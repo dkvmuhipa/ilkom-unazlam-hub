@@ -279,7 +279,6 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                                           ),
                                           const SizedBox(height: 10),
                                           Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
                                                 '${ann.createdAt.day} ${_monthName(ann.createdAt.month)} ${ann.createdAt.year}',
@@ -289,12 +288,18 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
-                                              Text(
-                                                'Oleh ${ann.authorName}',
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF6B7280),
-                                                  fontWeight: FontWeight.w600,
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  'Oleh ${ann.authorName}',
+                                                  textAlign: TextAlign.end,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    color: Color(0xFF6B7280),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                                 ),
                                               ),
                                             ],
