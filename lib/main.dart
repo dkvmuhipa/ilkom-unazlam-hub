@@ -131,6 +131,7 @@ class MainResponsiveShell extends StatefulWidget {
 
 class _MainResponsiveShellState extends State<MainResponsiveShell> {
   int _currentIndex = 0;
+  final List<int> _navigationHistory = [0];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late String _activeNim;
 
@@ -144,9 +145,27 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   }
 
   void _navigateToIndex(int index) {
+    if (_currentIndex == index) return;
     setState(() {
+      _navigationHistory.remove(index);
+      _navigationHistory.add(index);
       _currentIndex = index;
     });
+  }
+
+  void _goBack() {
+    if (_navigationHistory.length > 1) {
+      setState(() {
+        _navigationHistory.removeLast();
+        _currentIndex = _navigationHistory.last;
+      });
+    } else if (_currentIndex != 0) {
+      setState(() {
+        _navigationHistory.clear();
+        _navigationHistory.add(0);
+        _currentIndex = 0;
+      });
+    }
   }
 
   StudentProfile get _currentUser => DummyData.students.firstWhere(
@@ -168,6 +187,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     // 8: Kas Kelas
     // 9: Kelompok
     // 10: Materi
+    // 11: Pusat Notifikasi
+    // 12: Voting & Polling
+    // 13: Surat Izin & Dispensasi
+    // 14: Audit Log Aktivitas
     final currentUser = _currentUser;
 
     final List<Widget> screens = [
@@ -198,39 +221,58 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
         canManageClassAttendance: currentUser.canManageAttendance,
+        onBack: _goBack,
       ), // 5: Absensi Saya
       AgendaScreen(
         key: ValueKey('agenda_${currentUser.nim}'),
         canManage: currentUser.canManageAgenda,
+        onBack: _goBack,
       ), // 6: Agenda Kelas
       AnnouncementsScreen(
         key: ValueKey('announcements_${currentUser.nim}'),
         canPost: currentUser.canPostAnnouncement,
+        onBack: _goBack,
       ), // 7: Pengumuman
       TreasuryScreen(
         key: ValueKey('treasury_${currentUser.nim}'),
         canManage: currentUser.canManageTreasury,
+        onBack: _goBack,
       ), // 8: Kas Kelas
-      const GroupsScreen(), // 9: Kelompok Praktikum
-      const ResourcesScreen(), // 10: Gudang Materi
+      GroupsScreen(
+        onBack: _goBack,
+      ), // 9: Kelompok Praktikum
+      ResourcesScreen(
+        onBack: _goBack,
+      ), // 10: Gudang Materi
       NotificationScreen(
         onNavigateTab: _navigateToIndex,
+        onBack: _goBack,
       ), // 11: Pusat Notifikasi
       VotingScreen(
         canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+        onBack: _goBack,
       ), // 12: Voting & Polling
       LettersScreen(
         studentName: currentUser.nama,
         studentNim: currentUser.nim,
+        onBack: _goBack,
       ), // 13: Surat Izin & Dispensasi
-      const AuditLogScreen(), // 14: Audit Log Aktivitas
+      AuditLogScreen(
+        onBack: _goBack,
+      ), // 14: Audit Log Aktivitas
     ];
 
     final isTopLevel = _currentIndex <= 4;
     final navBarIndex = isTopLevel ? _currentIndex : -1;
 
-    return Scaffold(
-      key: _scaffoldKey,
+    return PopScope(
+      canPop: _currentIndex == 0 && _navigationHistory.length <= 1,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _goBack();
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
       backgroundColor: const Color(0xFFF3F1F8),
       // Sidebar Drawer matching Screen 12 in the design mockup
       drawer: _buildDrawer(),
@@ -286,25 +328,13 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                   ),
                 ),
               ),
-              floatingActionButton: _currentIndex > 4
-                  ? FloatingActionButton.extended(
-                      onPressed: () => _navigateToIndex(0),
-                      backgroundColor: const Color(0xFF5B3DE8),
-                      foregroundColor: Colors.white,
-                      elevation: 3,
-                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                      label: const Text(
-                        'Kembali ke Beranda',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                    )
-                  : null,
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNavItem(int index, IconData selectedIcon, IconData unselectedIcon, String label, int currentNavIndex) {
     final isSelected = currentNavIndex == index;

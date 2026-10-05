@@ -22,7 +22,8 @@ class ClassAgendaItem {
 
 class AgendaScreen extends StatefulWidget {
   final bool canManage;
-  const AgendaScreen({super.key, this.canManage = true});
+  final VoidCallback? onBack;
+  const AgendaScreen({super.key, this.canManage = true, this.onBack});
 
   @override
   State<AgendaScreen> createState() => _AgendaScreenState();
@@ -386,6 +387,13 @@ class _AgendaScreenState extends State<AgendaScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Agenda Kelas',
           style: TextStyle(

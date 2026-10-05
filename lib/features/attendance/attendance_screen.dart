@@ -19,10 +19,12 @@ class AttendanceHistoryItem {
 
 class AttendanceScreen extends StatefulWidget {
   final bool canManageClassAttendance;
+  final VoidCallback? onBack;
 
   const AttendanceScreen({
     super.key,
     this.canManageClassAttendance = false,
+    this.onBack,
   });
 
   @override
@@ -474,6 +476,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Absensi Saya',
           style: TextStyle(

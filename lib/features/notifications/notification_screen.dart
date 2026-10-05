@@ -21,8 +21,9 @@ class ClassNotificationItem {
 
 class NotificationScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
+  final VoidCallback? onBack;
 
-  const NotificationScreen({super.key, this.onNavigateTab});
+  const NotificationScreen({super.key, this.onNavigateTab, this.onBack});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -125,6 +126,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null || widget.onNavigateTab != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack ?? () => widget.onNavigateTab?.call(0),
+              )
+            : null,
         title: Row(
           children: [
             const Text(

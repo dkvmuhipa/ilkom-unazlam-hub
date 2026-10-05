@@ -43,8 +43,9 @@ class EnhancedGroupItem {
 
 class GroupsScreen extends StatefulWidget {
   final bool canManage;
+  final VoidCallback? onBack;
 
-  const GroupsScreen({super.key, this.canManage = true});
+  const GroupsScreen({super.key, this.canManage = true, this.onBack});
 
   @override
   State<GroupsScreen> createState() => _GroupsScreenState();
@@ -226,6 +227,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Tugas Kelompok & Tim',
           style: TextStyle(

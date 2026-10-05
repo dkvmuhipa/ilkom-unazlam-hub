@@ -7,11 +7,13 @@ import '../../core/services/dummy_data.dart';
 class LettersScreen extends StatefulWidget {
   final String studentName;
   final String studentNim;
+  final VoidCallback? onBack;
 
   const LettersScreen({
     super.key,
     this.studentName = 'Nur Farida',
     this.studentNim = '260250023',
+    this.onBack,
   });
 
   @override
@@ -90,6 +92,13 @@ ${widget.studentName}
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Formulir & Surat Izin',
           style: TextStyle(

@@ -7,10 +7,12 @@ import '../../models/models.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   final bool canPost;
+  final VoidCallback? onBack;
 
   const AnnouncementsScreen({
     super.key,
     this.canPost = true,
+    this.onBack,
   });
 
   static void showAnnouncementDetail(
@@ -152,6 +154,13 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Pengumuman',
           style: TextStyle(

@@ -22,7 +22,8 @@ class AuditLogItem {
 }
 
 class AuditLogScreen extends StatefulWidget {
-  const AuditLogScreen({super.key});
+  final VoidCallback? onBack;
+  const AuditLogScreen({super.key, this.onBack});
 
   @override
   State<AuditLogScreen> createState() => _AuditLogScreenState();
@@ -125,6 +126,13 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Audit Log Aktivitas Kelas',
           style: TextStyle(

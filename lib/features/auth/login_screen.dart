@@ -69,27 +69,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (isInputAdmin) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selamat datang, System Administrator! 🛡️'),
-            backgroundColor: Color(0xFF5B3DE8),
-            duration: Duration(seconds: 2),
-          ),
-        );
-
         if (widget.onLoginSuccess != null) {
           widget.onLoginSuccess!('admin', 'System Administrator');
         }
       } else if (student != null || input.length >= 5) {
         final studentName = student?.nama ?? 'Mahasiswa';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Selamat datang, $studentName! 👋'),
-            backgroundColor: const Color(0xFF10B981),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
         if (widget.onLoginSuccess != null) {
           widget.onLoginSuccess!(input, studentName);
         } else {
@@ -100,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(opacity: animation, child: child);
               },
-              transitionDuration: const Duration(milliseconds: 400),
+              transitionDuration: const Duration(milliseconds: 300),
             ),
           );
         }
@@ -257,6 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextField(
                       controller: _nimController,
                       keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         hintText: 'NIM',
                         hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
@@ -283,6 +268,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                       decoration: InputDecoration(
                         hintText: 'Password',
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),

@@ -9,10 +9,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 class TreasuryScreen extends StatefulWidget {
   final bool canManage;
+  final VoidCallback? onBack;
 
   const TreasuryScreen({
     super.key,
     this.canManage = true,
+    this.onBack,
   });
 
   @override
@@ -743,6 +745,13 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text('Kas & Keuangan Kelas'),
         actions: [
           IconButton(

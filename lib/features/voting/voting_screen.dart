@@ -44,11 +44,13 @@ class ClassPoll {
 class VotingScreen extends StatefulWidget {
   final bool canManage;
   final String currentNim;
+  final VoidCallback? onBack;
 
   const VotingScreen({
     super.key,
     this.canManage = false,
     this.currentNim = '260250023',
+    this.onBack,
   });
 
   @override
@@ -266,6 +268,13 @@ class _VotingScreenState extends State<VotingScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Voting & Polling Kelas',
           style: TextStyle(
