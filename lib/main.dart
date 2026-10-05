@@ -138,7 +138,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       const ScheduleScreen(), // 1: Jadwal
       const AssignmentsScreen(), // 2: Tugas
       const DirectoryScreen(), // 3: Kelas (Anggota)
-      ProfileScreen(onNavigateTab: _navigateToIndex), // 4: Profil Saya
+      ProfileScreen(
+        onNavigateTab: _navigateToIndex,
+        userNim: widget.userNim,
+      ), // 4: Profil Saya
       const AttendanceScreen(), // 5: Absensi Saya
       const AgendaScreen(), // 6: Agenda Kelas
       const AnnouncementsScreen(), // 7: Pengumuman

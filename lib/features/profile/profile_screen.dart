@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/dummy_data.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
+  final String? userNim;
 
-  const ProfileScreen({super.key, this.onNavigateTab});
+  const ProfileScreen({super.key, this.onNavigateTab, this.userNim});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -22,6 +24,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileScreen() {
+    final student = DummyData.students.firstWhere(
+      (s) => s.nim == widget.userNim,
+      orElse: () => DummyData.students.firstWhere(
+        (s) => s.role == 'ketua_kelas',
+        orElse: () => DummyData.students.first,
+      ),
+    );
+
+    final parts = student.nama.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : student.nama.substring(0, 2).toUpperCase();
+
+    final roleBadgeText = student.role == 'ketua_kelas'
+        ? '👑 Ketua Kelas ILKOM 2026'
+        : (student.role == 'bendahara'
+            ? '💰 Bendahara Kelas ILKOM 2026'
+            : '🎓 Mahasiswa ILKOM 2026');
+
+    final roleBadgeBg = student.role == 'ketua_kelas'
+        ? const Color(0xFFFEF3C7)
+        : (student.role == 'bendahara' ? const Color(0xFFDCFCE7) : const Color(0xFFF3F0FF));
+
+    final roleBadgeColor = student.role == 'ketua_kelas'
+        ? const Color(0xFFB45309)
+        : (student.role == 'bendahara' ? const Color(0xFF16A34A) : AppColors.primary);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -76,10 +105,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: AppColors.primary,
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'NF',
-                              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800),
+                              initials,
+                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800),
                             ),
                           ),
                         ),
@@ -107,15 +136,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Nur Farida',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
+                Flexible(
+                  child: Text(
+                    student.nama,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 InkWell(
                   onTap: () {},
                   borderRadius: BorderRadius.circular(12),
@@ -130,12 +162,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: roleBadgeBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                '👑 Ketua Kelas ILKOM 2026',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+              child: Text(
+                roleBadgeText,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: roleBadgeColor),
               ),
             ),
             const SizedBox(height: 24),
@@ -157,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  _buildDetailRow('NIM', '260250023'),
+                  _buildDetailRow('NIM', student.nim),
                   const Divider(height: 22, color: Color(0xFFF3F4F6)),
                   _buildDetailRow('Program Studi', 'Ilmu Komunikasi'),
                   const Divider(height: 22, color: Color(0xFFF3F4F6)),
