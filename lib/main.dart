@@ -133,12 +133,16 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                 ),
               ),
               floatingActionButton: _currentIndex > 3
-                  ? FloatingActionButton.small(
+                  ? FloatingActionButton.extended(
                       onPressed: () => _navigateToIndex(0),
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      elevation: 2,
-                      child: const Icon(Icons.arrow_back_rounded, size: 20),
+                      elevation: 3,
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: const Text(
+                        'Kembali ke Beranda',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
                     )
                   : null,
             ),
