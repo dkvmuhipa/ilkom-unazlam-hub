@@ -178,6 +178,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
 
     final List<Widget> screens = [
       DashboardScreen(
+        key: ValueKey('dash_${currentUser.nim}'),
         userName: currentUser.nama,
         userNim: currentUser.nim,
         onNavigateTab: _navigateToIndex,
@@ -188,17 +189,21 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       const AssignmentsScreen(), // 2: Tugas
       const DirectoryScreen(), // 3: Kelas (Anggota)
       ProfileScreen(
+        key: ValueKey('profile_${currentUser.nim}'),
         onNavigateTab: _navigateToIndex,
         userNim: currentUser.nim,
       ), // 4: Profil Saya
       AttendanceScreen(
+        key: ValueKey('attendance_${currentUser.nim}'),
         canManageClassAttendance: currentUser.canManageAttendance,
       ), // 5: Absensi Saya
       const AgendaScreen(), // 6: Agenda Kelas
       AnnouncementsScreen(
+        key: ValueKey('announcements_${currentUser.nim}'),
         canPost: currentUser.canPostAnnouncement,
       ), // 7: Pengumuman
       TreasuryScreen(
+        key: ValueKey('treasury_${currentUser.nim}'),
         canManage: currentUser.canManageTreasury,
       ), // 8: Kas Kelas
       const GroupsScreen(), // 9: Kelompok Praktikum
