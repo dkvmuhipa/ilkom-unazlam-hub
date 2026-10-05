@@ -424,6 +424,7 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                 announcement.isi = isi;
                 announcement.kategori = category;
                 announcement.isPinned = isPinned;
+                SupabaseRepository.updateAnnouncement(announcement);
 
                 Navigator.pop(ctx);
                 Navigator.pop(context);

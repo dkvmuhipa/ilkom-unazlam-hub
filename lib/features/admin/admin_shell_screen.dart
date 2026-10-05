@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class AdminShellScreen extends StatefulWidget {
@@ -1230,6 +1231,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         setState(() => s.isAktif = !s.isAktif);
+                        SupabaseRepository.toggleStudentStatus(s.nim, s.isAktif);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Status mahasiswa ${s.nama} diubah!')),
                         );
@@ -1889,6 +1891,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           activeThumbColor: const Color(0xFF10B981),
                           onChanged: (val) {
                             setState(() => s.isAktif = val);
+                            SupabaseRepository.toggleStudentStatus(s.nim, val);
                           },
                         ),
                       ],
@@ -2159,6 +2162,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         onChanged: (val) {
                           if (val != null) {
                             setState(() => s.jabatan = val);
+                            SupabaseRepository.updateStudentJabatan(s.nim, val);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Jabatan ${s.nama} diubah menjadi $val')),
                             );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/supabase_repository.dart';
 
 class ClassAgendaItem {
   final String id;
@@ -177,18 +178,27 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 final title = titleController.text.trim();
                 if (title.isEmpty) return;
 
+                final newId = 'ag_${DateTime.now().millisecondsSinceEpoch}';
+                final courseText = courseController.text.trim().isNotEmpty ? courseController.text.trim() : 'Kegiatan Kelas';
+                final newItem = ClassAgendaItem(
+                  id: newId,
+                  day: pickedDate.day,
+                  month: _monthName(pickedDate.month),
+                  title: title,
+                  course: courseText,
+                  color: selectedColor,
+                );
                 setState(() {
-                  _agendaList.add(
-                    ClassAgendaItem(
-                      id: 'ag_${DateTime.now().millisecondsSinceEpoch}',
-                      day: pickedDate.day,
-                      month: _monthName(pickedDate.month),
-                      title: title,
-                      course: courseController.text.trim().isNotEmpty ? courseController.text.trim() : 'Kegiatan Kelas',
-                      color: selectedColor,
-                    ),
-                  );
+                  _agendaList.add(newItem);
                 });
+                SupabaseRepository.createAgendaItem(
+                  id: newId,
+                  day: pickedDate.day,
+                  month: _monthName(pickedDate.month),
+                  title: title,
+                  course: courseText,
+                  colorValue: selectedColor.toARGB32(),
+                );
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -333,6 +343,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
               setState(() {
                 _agendaList.removeWhere((x) => x.id == agenda.id);
               });
+              SupabaseRepository.deleteAgendaItem(agenda.id);
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

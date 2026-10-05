@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 import 'package:intl/intl.dart';
 
@@ -134,20 +135,19 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   final amount = int.tryParse(amountController.text.replaceAll(RegExp(r'\D'), '')) ?? 0;
                   if (titleController.text.trim().isEmpty || amount <= 0) return;
 
+                  final newTx = TreasuryTransaction(
+                    id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+                    judul: titleController.text.trim(),
+                    nominal: amount,
+                    isPemasukan: isPemasukan,
+                    kategori: kategori,
+                    tanggal: DateTime.now(),
+                    pencatat: 'Alya Nabilah (Bendahara)',
+                  );
                   setState(() {
-                    DummyData.treasuryTransactions.insert(
-                      0,
-                      TreasuryTransaction(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        judul: titleController.text.trim(),
-                        nominal: amount,
-                        isPemasukan: isPemasukan,
-                        kategori: kategori,
-                        tanggal: DateTime.now(),
-                        pencatat: 'Alya Nabilah (Bendahara)',
-                      ),
-                    );
+                    DummyData.treasuryTransactions.insert(0, newTx);
                   });
+                  SupabaseRepository.createTreasuryTransaction(newTx);
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -291,20 +291,22 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   final amount = int.tryParse(amountController.text.trim()) ?? 0;
                   if (titleController.text.trim().isEmpty || amount <= 0) return;
 
+                  final updatedTx = TreasuryTransaction(
+                    id: t.id,
+                    judul: titleController.text.trim(),
+                    nominal: amount,
+                    isPemasukan: isPemasukan,
+                    kategori: kategori,
+                    tanggal: t.tanggal,
+                    pencatat: t.pencatat,
+                  );
                   final idx = DummyData.treasuryTransactions.indexWhere((x) => x.id == t.id);
                   if (idx != -1) {
                     setState(() {
-                      DummyData.treasuryTransactions[idx] = TreasuryTransaction(
-                        id: t.id,
-                        judul: titleController.text.trim(),
-                        nominal: amount,
-                        isPemasukan: isPemasukan,
-                        kategori: kategori,
-                        tanggal: t.tanggal,
-                        pencatat: t.pencatat,
-                      );
+                      DummyData.treasuryTransactions[idx] = updatedTx;
                     });
                   }
+                  SupabaseRepository.updateTreasuryTransaction(updatedTx);
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -344,6 +346,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
               setState(() {
                 DummyData.treasuryTransactions.removeWhere((x) => x.id == t.id);
               });
+              SupabaseRepository.deleteTreasuryTransaction(t.id);
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

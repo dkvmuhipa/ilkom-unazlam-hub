@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
 
@@ -174,6 +175,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   _courses = List.from(DummyData.courses);
                   _selectedDay = selectedDay;
                 });
+                SupabaseRepository.createCourse(newCourse);
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -356,6 +358,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   }
                   _selectedDay = selectedDay;
                 });
+                SupabaseRepository.updateCourse(updatedCourse);
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -396,6 +399,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 DummyData.courses.removeWhere((x) => x.id == c.id);
                 _courses.removeWhere((x) => x.id == c.id);
               });
+              SupabaseRepository.deleteCourse(c.id);
               Navigator.pop(ctx);
               onSuccess?.call();
               ScaffoldMessenger.of(context).showSnackBar(

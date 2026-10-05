@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class AssignmentsScreen extends StatefulWidget {
@@ -46,6 +47,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         assignment.status = 'belum';
       }
     });
+    SupabaseRepository.updateAssignmentStatus(assignment.id, assignment.status);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -231,22 +233,30 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   orElse: () => DummyData.courses.first,
                 );
 
+                final newAssignment = Assignment(
+                  id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
+                  courseId: course.id,
+                  courseName: course.nama,
+                  judul: judul,
+                  deskripsi: descController.text.trim(),
+                  kategori: kategori,
+                  deadline: selectedDeadline,
+                  linkPengumpulan: linkController.text.trim().isNotEmpty ? linkController.text.trim() : null,
+                  status: 'belum',
+                );
+
                 setState(() {
-                  DummyData.assignments.insert(
-                    0,
-                    Assignment(
-                      id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
-                      courseId: course.id,
-                      courseName: course.nama,
-                      judul: judul,
-                      deskripsi: descController.text.trim(),
-                      kategori: kategori,
-                      deadline: selectedDeadline,
-                      linkPengumpulan: linkController.text.trim().isNotEmpty ? linkController.text.trim() : null,
-                      status: 'belum',
-                    ),
-                  );
+                  DummyData.assignments.insert(0, newAssignment);
                 });
+                SupabaseRepository.createAssignment(
+                  courseId: course.id,
+                  courseName: course.nama,
+                  judul: judul,
+                  deskripsi: descController.text.trim(),
+                  kategori: kategori,
+                  deadline: selectedDeadline,
+                  linkPengumpulan: newAssignment.linkPengumpulan,
+                );
 
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -545,6 +555,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
       _currentStatus = status;
       widget.assignment.status = status;
     });
+    SupabaseRepository.updateAssignmentStatus(widget.assignment.id, status);
     widget.onStatusChanged?.call();
   }
 
@@ -699,6 +710,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                   a.deskripsi = descController.text.trim();
                   a.linkPengumpulan = linkController.text.trim().isNotEmpty ? linkController.text.trim() : null;
                 });
+                SupabaseRepository.updateAssignment(a);
 
                 Navigator.pop(ctx);
                 widget.onStatusChanged?.call();
@@ -738,6 +750,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
           ElevatedButton(
             onPressed: () {
               DummyData.assignments.removeWhere((x) => x.id == widget.assignment.id);
+              SupabaseRepository.deleteAssignment(widget.assignment.id);
               Navigator.pop(ctx); // pop confirm dialog
               Navigator.pop(context); // pop detail sheet
               widget.onStatusChanged?.call();

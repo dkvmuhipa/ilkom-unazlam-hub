@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
+import 'core/services/supabase_repository.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/schedule/schedule_screen.dart';
 import 'features/assignments/assignments_screen.dart';
@@ -133,6 +134,9 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   void initState() {
     super.initState();
     _activeNim = widget.userNim ?? '260250023';
+    SupabaseRepository.syncAllFromCloud().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   void _switchSimulationUser(String nim) {
