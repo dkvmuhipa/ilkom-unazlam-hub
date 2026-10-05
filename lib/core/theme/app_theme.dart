@@ -1,14 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
+  static const String fontFamily = 'Poppins';
+
   static ThemeData get lightTheme {
-    final textTheme = GoogleFonts.poppinsTextTheme();
+    const textTheme = TextTheme(
+      displayLarge: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w800),
+      displayMedium: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w800),
+      displaySmall: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w700),
+      headlineLarge: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w800),
+      headlineMedium: TextStyle(
+        fontFamily: fontFamily,
+        color: AppColors.textMain,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.3,
+      ),
+      headlineSmall: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w700),
+      titleLarge: TextStyle(
+        fontFamily: fontFamily,
+        color: AppColors.textMain,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: fontFamily,
+        color: AppColors.textMain,
+        fontWeight: FontWeight.w600,
+      ),
+      titleSmall: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w600),
+      bodyLarge: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontSize: 14),
+      bodyMedium: TextStyle(
+        fontFamily: fontFamily,
+        color: AppColors.textMain,
+        fontSize: 13,
+        height: 1.5,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: fontFamily,
+        color: AppColors.textSub,
+        fontSize: 11,
+      ),
+      labelLarge: TextStyle(fontFamily: fontFamily, color: AppColors.textMain, fontWeight: FontWeight.w700),
+      labelMedium: TextStyle(fontFamily: fontFamily, color: AppColors.textSub, fontWeight: FontWeight.w600),
+      labelSmall: TextStyle(fontFamily: fontFamily, color: AppColors.textSub, fontWeight: FontWeight.w500),
+    );
 
     return ThemeData(
       useMaterial3: true,
-      fontFamily: GoogleFonts.poppins().fontFamily,
+      fontFamily: fontFamily,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
@@ -20,48 +60,16 @@ class AppTheme {
         surface: AppColors.surface,
         onSurface: AppColors.textMain,
       ),
-      textTheme: textTheme.copyWith(
-        displayLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
-        displayMedium: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
-        displaySmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
-        headlineLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
-        headlineMedium: GoogleFonts.poppins(
-          color: AppColors.textMain,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
-        ),
-        headlineSmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
-        titleLarge: GoogleFonts.poppins(
-          color: AppColors.textMain,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
-        ),
-        titleMedium: GoogleFonts.poppins(
-          color: AppColors.textMain,
-          fontWeight: FontWeight.w600,
-        ),
-        titleSmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w600),
-        bodyLarge: GoogleFonts.poppins(color: AppColors.textMain, fontSize: 14),
-        bodyMedium: GoogleFonts.poppins(
-          color: AppColors.textMain,
-          fontSize: 13,
-          height: 1.5,
-        ),
-        bodySmall: GoogleFonts.poppins(
-          color: AppColors.textSub,
-          fontSize: 11,
-        ),
-        labelLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
-        labelMedium: GoogleFonts.poppins(color: AppColors.textSub, fontWeight: FontWeight.w600),
-        labelSmall: GoogleFonts.poppins(color: AppColors.textSub, fontWeight: FontWeight.w500),
-      ),
-      appBarTheme: AppBarTheme(
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textMain,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
           fontSize: 17,
           fontWeight: FontWeight.w800,
           color: AppColors.textMain,
@@ -86,7 +94,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w700,
             fontSize: 13,
           ),
@@ -100,7 +109,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
@@ -113,13 +123,15 @@ class AppTheme {
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return GoogleFonts.poppins(
+            return const TextStyle(
+              fontFamily: fontFamily,
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
             );
           }
-          return GoogleFonts.poppins(
+          return const TextStyle(
+            fontFamily: fontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: AppColors.textLight,
