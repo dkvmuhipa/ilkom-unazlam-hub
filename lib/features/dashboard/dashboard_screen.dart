@@ -50,6 +50,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Selamat Malam';
   }
 
+  String _formatIndonesianDate(DateTime dt) {
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    final dayName = days[dt.weekday - 1];
+    final monthName = months[dt.month - 1];
+    return '$dayName, ${dt.day} $monthName ${dt.year}';
+  }
+
   Future<void> _openWhatsApp(String phone, String name) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final internationalPhone = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
@@ -174,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       orElse: () => DummyData.students.first,
     );
 
-    final nowFormatted = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now());
+    final nowFormatted = _formatIndonesianDate(DateTime.now());
 
     return Scaffold(
       backgroundColor: AppColors.background,

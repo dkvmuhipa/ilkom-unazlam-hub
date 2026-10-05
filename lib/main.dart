@@ -13,6 +13,7 @@ import 'features/directory/directory_screen.dart';
 import 'features/treasury/treasury_screen.dart';
 import 'features/gpa/gpa_simulator_screen.dart';
 import 'core/services/supabase_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,11 @@ void main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
+  try {
+    await initializeDateFormatting('id_ID', null);
+  } catch (e) {
+    debugPrint('Failed to initialize date formatting: $e');
+  }
   await SupabaseService.initialize();
   runApp(const UnazlamClassApp());
 }
