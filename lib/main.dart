@@ -185,8 +185,14 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
         onSwitchSimulation: _switchSimulationUser,
       ), // 0: Beranda
-      const ScheduleScreen(), // 1: Jadwal
-      const AssignmentsScreen(), // 2: Tugas
+      ScheduleScreen(
+        key: ValueKey('schedule_${currentUser.nim}'),
+        canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+      ), // 1: Jadwal
+      AssignmentsScreen(
+        key: ValueKey('assignments_${currentUser.nim}'),
+        canManage: currentUser.canManageAssignments,
+      ), // 2: Tugas
       const DirectoryScreen(), // 3: Kelas (Anggota)
       ProfileScreen(
         key: ValueKey('profile_${currentUser.nim}'),
@@ -197,7 +203,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         key: ValueKey('attendance_${currentUser.nim}'),
         canManageClassAttendance: currentUser.canManageAttendance,
       ), // 5: Absensi Saya
-      const AgendaScreen(), // 6: Agenda Kelas
+      AgendaScreen(
+        key: ValueKey('agenda_${currentUser.nim}'),
+        canManage: currentUser.canManageAgenda,
+      ), // 6: Agenda Kelas
       AnnouncementsScreen(
         key: ValueKey('announcements_${currentUser.nim}'),
         canPost: currentUser.canPostAnnouncement,

@@ -6,7 +6,8 @@ import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
 
 class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+  final bool canManage;
+  const ScheduleScreen({super.key, this.canManage = true});
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -17,6 +18,404 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   final List<String> _days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Semua'];
   List<Course> _courses = DummyData.courses;
   bool _isLoading = false;
+
+  void _showAddCourseDialog() {
+    final nameCtrl = TextEditingController();
+    final codeCtrl = TextEditingController();
+    final sksCtrl = TextEditingController(text: '2');
+    final dosenCtrl = TextEditingController();
+    final dosenWaCtrl = TextEditingController();
+    final roomCtrl = TextEditingController(text: 'Ruang A2');
+    final startCtrl = TextEditingController(text: '08:00');
+    final endCtrl = TextEditingController(text: '09:40');
+    String selectedDay = _selectedDay == 'Semua' ? 'Senin' : _selectedDay;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Tambah Mata Kuliah', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Mata Kuliah *',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: codeCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Kode MK',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: sksCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'SKS',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedDay,
+                    decoration: InputDecoration(
+                      labelText: 'Hari Perkuliahan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedDay = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: startCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Mulai',
+                            hintText: '08:00',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: endCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Selesai',
+                            hintText: '09:40',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: roomCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Ruangan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Dosen Pengampu',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenWaCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'WhatsApp Dosen (Opsional)',
+                      hintText: '08xxxxxxxxxx',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final newCourse = Course(
+                  id: 'course_${DateTime.now().millisecondsSinceEpoch}',
+                  kode: codeCtrl.text.trim().isEmpty ? 'MK ILKOM' : codeCtrl.text.trim(),
+                  nama: name,
+                  sks: int.tryParse(sksCtrl.text.trim()) ?? 2,
+                  semester: 1,
+                  dosen: dosenCtrl.text.trim().isEmpty ? 'Dosen Pengampu' : dosenCtrl.text.trim(),
+                  dosenWa: dosenWaCtrl.text.trim().isEmpty ? null : dosenWaCtrl.text.trim(),
+                  hari: selectedDay,
+                  jamMulai: startCtrl.text.trim().isEmpty ? '08:00' : startCtrl.text.trim(),
+                  jamSelesai: endCtrl.text.trim().isEmpty ? '09:40' : endCtrl.text.trim(),
+                  ruangan: roomCtrl.text.trim().isEmpty ? 'Ruang A2' : roomCtrl.text.trim(),
+                );
+                setState(() {
+                  DummyData.courses.add(newCourse);
+                  _courses = List.from(DummyData.courses);
+                  _selectedDay = selectedDay;
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Mata kuliah berhasil ditambahkan ke jadwal!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCourseDialog(Course c) {
+    final nameCtrl = TextEditingController(text: c.nama);
+    final codeCtrl = TextEditingController(text: c.kode);
+    final sksCtrl = TextEditingController(text: c.sks.toString());
+    final dosenCtrl = TextEditingController(text: c.dosen);
+    final dosenWaCtrl = TextEditingController(text: c.dosenWa ?? '');
+    final roomCtrl = TextEditingController(text: c.ruangan);
+    final startCtrl = TextEditingController(text: c.jamMulai);
+    final endCtrl = TextEditingController(text: c.jamSelesai);
+    String selectedDay = c.hari;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Edit Mata Kuliah', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Mata Kuliah *',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: codeCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Kode MK',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: sksCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'SKS',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedDay,
+                    decoration: InputDecoration(
+                      labelText: 'Hari Perkuliahan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedDay = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: startCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Mulai',
+                            hintText: '08:00',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: endCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Selesai',
+                            hintText: '09:40',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: roomCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Ruangan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Dosen Pengampu',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenWaCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'WhatsApp Dosen (Opsional)',
+                      hintText: '08xxxxxxxxxx',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final updatedCourse = Course(
+                  id: c.id,
+                  kode: codeCtrl.text.trim().isEmpty ? c.kode : codeCtrl.text.trim(),
+                  nama: name,
+                  sks: int.tryParse(sksCtrl.text.trim()) ?? c.sks,
+                  semester: c.semester,
+                  dosen: dosenCtrl.text.trim().isEmpty ? c.dosen : dosenCtrl.text.trim(),
+                  dosenWa: dosenWaCtrl.text.trim().isEmpty ? null : dosenWaCtrl.text.trim(),
+                  hari: selectedDay,
+                  jamMulai: startCtrl.text.trim().isEmpty ? c.jamMulai : startCtrl.text.trim(),
+                  jamSelesai: endCtrl.text.trim().isEmpty ? c.jamSelesai : endCtrl.text.trim(),
+                  ruangan: roomCtrl.text.trim().isEmpty ? c.ruangan : roomCtrl.text.trim(),
+                );
+                setState(() {
+                  final idxDummy = DummyData.courses.indexWhere((x) => x.id == c.id);
+                  if (idxDummy != -1) {
+                    DummyData.courses[idxDummy] = updatedCourse;
+                  }
+                  final idxCurrent = _courses.indexWhere((x) => x.id == c.id);
+                  if (idxCurrent != -1) {
+                    _courses[idxCurrent] = updatedCourse;
+                  }
+                  _selectedDay = selectedDay;
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Jadwal mata kuliah berhasil diperbarui!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteCourse(Course c, {VoidCallback? onSuccess}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Mata Kuliah?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Apakah Anda yakin ingin menghapus "${c.nama}" dari jadwal perkuliahan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                DummyData.courses.removeWhere((x) => x.id == c.id);
+                _courses.removeWhere((x) => x.id == c.id);
+              });
+              Navigator.pop(ctx);
+              onSuccess?.call();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Mata kuliah berhasil dihapus dari jadwal.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -86,6 +485,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: widget.canManage
+          ? FloatingActionButton.extended(
+              onPressed: _showAddCourseDialog,
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Tambah Jadwal', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -432,9 +840,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
-                    onPressed: () => Navigator.pop(ctx),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.canManage) ...[
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: Color(0xFF5B3DE8), size: 20),
+                          tooltip: 'Edit Mata Kuliah',
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _showEditCourseDialog(c);
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                          tooltip: 'Hapus Mata Kuliah',
+                          onPressed: () {
+                            _confirmDeleteCourse(c, onSuccess: () => Navigator.pop(ctx));
+                          },
+                        ),
+                      ],
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
                   ),
                 ],
               ),

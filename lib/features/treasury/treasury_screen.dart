@@ -150,7 +150,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   });
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transaksi kas berhasil dicatat!')),
+                    const SnackBar(
+                      content: Text('Transaksi kas berhasil dicatat!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -162,6 +165,201 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showEditTransactionModal(TreasuryTransaction t) {
+    final titleController = TextEditingController(text: t.judul);
+    final amountController = TextEditingController(text: t.nominal.toString());
+    bool isPemasukan = t.isPemasukan;
+    String kategori = t.kategori;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Edit Transaksi Kas Kelas',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textMain),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setModalState(() => isPemasukan = true),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isPemasukan ? AppColors.successSoft : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: isPemasukan ? AppColors.success : AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.arrow_downward_rounded, size: 16, color: isPemasukan ? AppColors.success : AppColors.textSub),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Pemasukan',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isPemasukan ? FontWeight.w700 : FontWeight.w500,
+                                color: isPemasukan ? AppColors.success : AppColors.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setModalState(() => isPemasukan = false),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: !isPemasukan ? AppColors.errorSoft : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: !isPemasukan ? AppColors.error : AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.arrow_upward_rounded, size: 16, color: !isPemasukan ? AppColors.error : AppColors.textSub),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Pengeluaran',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: !isPemasukan ? FontWeight.w700 : FontWeight.w500,
+                                color: !isPemasukan ? AppColors.error : AppColors.textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Keterangan Transaksi',
+                  hintText: 'Misal: Iuran Kas, Fotocopy Materi',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Nominal (Rp)',
+                  prefixText: 'Rp ',
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: ['Iuran Kelas', 'Operasional', 'Perlengkapan', 'Iuran Praktikum', 'Sosial', 'Lainnya'].contains(kategori) ? kategori : 'Iuran Kelas',
+                decoration: const InputDecoration(labelText: 'Kategori'),
+                items: ['Iuran Kelas', 'Operasional', 'Perlengkapan', 'Iuran Praktikum', 'Sosial', 'Lainnya']
+                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => kategori = val);
+                },
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: () {
+                  final amount = int.tryParse(amountController.text.trim()) ?? 0;
+                  if (titleController.text.trim().isEmpty || amount <= 0) return;
+
+                  final idx = DummyData.treasuryTransactions.indexWhere((x) => x.id == t.id);
+                  if (idx != -1) {
+                    setState(() {
+                      DummyData.treasuryTransactions[idx] = TreasuryTransaction(
+                        id: t.id,
+                        judul: titleController.text.trim(),
+                        nominal: amount,
+                        isPemasukan: isPemasukan,
+                        kategori: kategori,
+                        tanggal: t.tanggal,
+                        pencatat: t.pencatat,
+                      );
+                    });
+                  }
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaksi kas berhasil diperbarui!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  backgroundColor: AppColors.primary,
+                ),
+                child: const Text('Simpan Perubahan'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteTransaction(TreasuryTransaction t) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Transaksi?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Hapus catatan "${t.judul}" senilai ${_formatRupiah(t.nominal)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                DummyData.treasuryTransactions.removeWhere((x) => x.id == t.id);
+              });
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Transaksi berhasil dihapus.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
       ),
     );
   }
@@ -391,6 +589,43 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
               color: t.isPemasukan ? AppColors.success : AppColors.error,
             ),
           ),
+          if (widget.canManage) ...[
+            const SizedBox(width: 4),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textLight),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onSelected: (val) {
+                if (val == 'edit') {
+                  _showEditTransactionModal(t);
+                } else if (val == 'delete') {
+                  _confirmDeleteTransaction(t);
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 16, color: Color(0xFF5B3DE8)),
+                      SizedBox(width: 8),
+                      Text('Edit Transaksi', style: TextStyle(fontSize: 12.5)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                      SizedBox(width: 8),
+                      Text('Hapus', style: TextStyle(fontSize: 12.5, color: Color(0xFFEF4444))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

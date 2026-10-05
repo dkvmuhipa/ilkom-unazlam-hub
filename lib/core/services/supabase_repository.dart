@@ -105,7 +105,7 @@ class SupabaseRepository {
     }
   }
 
-  // 4. Tambah Pengumuman Baru ke Supabase
+  // 4. Tambah Pengumuman Baru (Simpan ke memory & sync ke Supabase jika online)
   static Future<bool> createAnnouncement({
     required String judul,
     required String isi,
@@ -113,8 +113,20 @@ class SupabaseRepository {
     bool isPinned = false,
     String authorName = 'Nur Farida (Ketua Kelas)',
   }) async {
+    final newAnn = Announcement(
+      id: 'ann_${DateTime.now().millisecondsSinceEpoch}',
+      authorName: authorName,
+      authorRole: 'Ketua Kelas',
+      judul: judul,
+      isi: isi,
+      isPinned: isPinned,
+      kategori: kategori,
+      createdAt: DateTime.now(),
+    );
+    DummyData.announcements.insert(0, newAnn);
+
     final client = SupabaseService.client;
-    if (client == null) return false;
+    if (client == null) return true;
 
     try {
       await client.from('announcements').insert({
@@ -127,12 +139,80 @@ class SupabaseRepository {
       });
       return true;
     } catch (e) {
-      debugPrint('Error post announcement ke Supabase: $e');
-      return false;
+      debugPrint('Sync announcement ke Supabase offline/error: $e');
+      return true; // Still true because in-memory succeeded
     }
   }
 
-  // 5. Tambah Catatan Presensi ke Supabase
+  // Hapus Pengumuman
+  static Future<bool> deleteAnnouncement(String id) async {
+    DummyData.announcements.removeWhere((a) => a.id == id);
+    final client = SupabaseService.client;
+    if (client == null) return true;
+    try {
+      await client.from('announcements').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Sync delete announcement error: $e');
+      return true;
+    }
+  }
+
+  // 5. Tambah Tugas Baru
+  static Future<bool> createAssignment({
+    required String courseId,
+    required String courseName,
+    required String judul,
+    required String deskripsi,
+    required String kategori,
+    required DateTime deadline,
+    String? linkPengumpulan,
+  }) async {
+    final newAssignment = Assignment(
+      id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
+      courseId: courseId,
+      courseName: courseName,
+      judul: judul,
+      deskripsi: deskripsi,
+      kategori: kategori,
+      deadline: deadline,
+      linkPengumpulan: linkPengumpulan,
+      status: 'belum',
+    );
+    DummyData.assignments.insert(0, newAssignment);
+
+    final client = SupabaseService.client;
+    if (client == null) return true;
+    try {
+      await client.from('assignments').insert({
+        'course_id': courseId,
+        'judul': judul,
+        'deskripsi': deskripsi,
+        'kategori': kategori,
+        'deadline': deadline.toIso8601String(),
+        'link_pengumpulan': linkPengumpulan,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Sync assignment ke Supabase error: $e');
+      return true;
+    }
+  }
+
+  // Hapus Tugas
+  static Future<bool> deleteAssignment(String id) async {
+    DummyData.assignments.removeWhere((a) => a.id == id);
+    final client = SupabaseService.client;
+    if (client == null) return true;
+    try {
+      await client.from('assignments').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  // 6. Tambah Catatan Presensi ke Supabase
   static Future<bool> logAttendance({
     required String courseId,
     required String studentNim,

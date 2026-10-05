@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class ClassAgendaItem {
-  final int day;
-  final String month;
-  final String title;
-  final String course;
-  final Color color;
+  final String id;
+  int day;
+  String month;
+  String title;
+  String course;
+  Color color;
 
-  const ClassAgendaItem({
+  ClassAgendaItem({
+    required this.id,
     required this.day,
     required this.month,
     required this.title,
@@ -18,7 +20,8 @@ class ClassAgendaItem {
 }
 
 class AgendaScreen extends StatefulWidget {
-  const AgendaScreen({super.key});
+  final bool canManage;
+  const AgendaScreen({super.key, this.canManage = true});
 
   @override
   State<AgendaScreen> createState() => _AgendaScreenState();
@@ -27,41 +30,347 @@ class AgendaScreen extends StatefulWidget {
 class _AgendaScreenState extends State<AgendaScreen> {
   int _selectedDay = 5;
 
-  final List<ClassAgendaItem> _agendaList = const [
+  final List<ClassAgendaItem> _agendaList = [
     ClassAgendaItem(
+      id: 'ag_1',
       day: 5,
       month: 'Okt',
       title: 'Presentasi Kelompok 1',
       course: 'Pendidikan Kewarganegaraan',
-      color: Color(0xFF5B3DE8),
+      color: const Color(0xFF5B3DE8),
     ),
     ClassAgendaItem(
+      id: 'ag_2',
       day: 8,
       month: 'Okt',
       title: 'Pengumpulan Makalah',
       course: 'Pendidikan Pancasila',
-      color: Color(0xFFF59E0B),
+      color: const Color(0xFFF59E0B),
     ),
     ClassAgendaItem(
+      id: 'ag_3',
       day: 12,
       month: 'Okt',
       title: 'Presentasi Kelompok 2',
       course: 'Dasar-Dasar Ilmu Komunikasi',
-      color: Color(0xFF5B3DE8),
+      color: const Color(0xFF5B3DE8),
     ),
     ClassAgendaItem(
+      id: 'ag_4',
       day: 22,
       month: 'Okt',
       title: 'Ujian Tengah Semester (UTS)',
       course: 'Semester 1 - FISIP UNAZLAM',
-      color: Color(0xFF2E094B),
+      color: const Color(0xFF2E094B),
     ),
   ];
+
+  void _showAddAgendaDialog() {
+    final titleController = TextEditingController();
+    final courseController = TextEditingController();
+    DateTime pickedDate = DateTime(2026, 10, _selectedDay);
+    Color selectedColor = const Color(0xFF5B3DE8);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Row(
+            children: [
+              Icon(Icons.event_available_rounded, color: Color(0xFF5B3DE8), size: 22),
+              SizedBox(width: 8),
+              Text('Tambah Agenda Baru', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Agenda',
+                      hintText: 'Misal: Diskusi Kelompok, Seminar',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: courseController,
+                    decoration: InputDecoration(
+                      labelText: 'Keterangan / Mata Kuliah',
+                      hintText: 'Misal: Ruang Lab TV / Dosen Pengampu',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: pickedDate,
+                        firstDate: DateTime(2026, 1, 1),
+                        lastDate: DateTime(2027, 12, 31),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => pickedDate = picked);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Tanggal Agenda',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(
+                        '${pickedDate.day} ${_monthName(pickedDate.month)} ${pickedDate.year}',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Pilih Warna Tema:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Color(0xFF5B3DE8),
+                      const Color(0xFFF59E0B),
+                      const Color(0xFF10B981),
+                      const Color(0xFFEF4444),
+                      const Color(0xFF0284C7),
+                    ].map((col) {
+                      final isSelected = selectedColor == col;
+                      return GestureDetector(
+                        onTap: () => setDialogState(() => selectedColor = col),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 10),
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: col,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? Colors.black87 : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                          child: isSelected ? const Icon(Icons.check, size: 18, color: Colors.white) : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final title = titleController.text.trim();
+                if (title.isEmpty) return;
+
+                setState(() {
+                  _agendaList.add(
+                    ClassAgendaItem(
+                      id: 'ag_${DateTime.now().millisecondsSinceEpoch}',
+                      day: pickedDate.day,
+                      month: _monthName(pickedDate.month),
+                      title: title,
+                      course: courseController.text.trim().isNotEmpty ? courseController.text.trim() : 'Kegiatan Kelas',
+                      color: selectedColor,
+                    ),
+                  );
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Agenda berhasil ditambahkan!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Agenda'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditAgendaDialog(ClassAgendaItem agenda) {
+    final titleController = TextEditingController(text: agenda.title);
+    final courseController = TextEditingController(text: agenda.course);
+    Color selectedColor = agenda.color;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Edit Agenda', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Agenda',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: courseController,
+                    decoration: InputDecoration(
+                      labelText: 'Keterangan / Mata Kuliah',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Pilih Warna Tema:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Color(0xFF5B3DE8),
+                      const Color(0xFFF59E0B),
+                      const Color(0xFF10B981),
+                      const Color(0xFFEF4444),
+                      const Color(0xFF0284C7),
+                    ].map((col) {
+                      final isSelected = selectedColor == col;
+                      return GestureDetector(
+                        onTap: () => setDialogState(() => selectedColor = col),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 10),
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: col,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? Colors.black87 : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                          child: isSelected ? const Icon(Icons.check, size: 18, color: Colors.white) : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final title = titleController.text.trim();
+                if (title.isEmpty) return;
+
+                setState(() {
+                  agenda.title = title;
+                  agenda.course = courseController.text.trim();
+                  agenda.color = selectedColor;
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Agenda berhasil diperbarui!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAgenda(ClassAgendaItem agenda) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Agenda?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Hapus agenda "${agenda.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _agendaList.removeWhere((x) => x.id == agenda.id);
+              });
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Agenda berhasil dihapus.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _monthName(int month) {
+    const m = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return m[month];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: widget.canManage
+          ? FloatingActionButton.extended(
+              onPressed: _showAddAgendaDialog,
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Tambah Agenda', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -306,6 +615,40 @@ class _AgendaScreenState extends State<AgendaScreen> {
               ],
             ),
           ),
+          if (widget.canManage)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, size: 20, color: Color(0xFF9CA3AF)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onSelected: (val) {
+                if (val == 'edit') {
+                  _showEditAgendaDialog(agenda);
+                } else if (val == 'delete') {
+                  _confirmDeleteAgenda(agenda);
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18, color: Color(0xFF5B3DE8)),
+                      SizedBox(width: 8),
+                      Text('Edit Agenda', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                      SizedBox(width: 8),
+                      Text('Hapus', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

@@ -582,7 +582,53 @@ class DummyData {
     ),
   ];
 
-  static final List<TreasuryTransaction> treasuryTransactions = [];
+  static final List<TreasuryTransaction> treasuryTransactions = [
+    TreasuryTransaction(
+      id: 'tx_1',
+      judul: 'Iuran Kas Bulan Oktober',
+      nominal: 250000,
+      isPemasukan: true,
+      kategori: 'Iuran Kelas',
+      tanggal: DateTime(2026, 10, 5),
+      pencatat: 'Alya Nabilah (Bendahara)',
+    ),
+    TreasuryTransaction(
+      id: 'tx_2',
+      judul: 'Cetak Dokumen & Spanduk Kelas',
+      nominal: 50000,
+      isPemasukan: false,
+      kategori: 'Perlengkapan',
+      tanggal: DateTime(2026, 10, 3),
+      pencatat: 'Alya Nabilah (Bendahara)',
+    ),
+    TreasuryTransaction(
+      id: 'tx_3',
+      judul: 'Saldo Awal Kas Semester 1',
+      nominal: 500000,
+      isPemasukan: true,
+      kategori: 'Iuran Kelas',
+      tanggal: DateTime(2026, 9, 28),
+      pencatat: 'Alya Nabilah (Bendahara)',
+    ),
+    TreasuryTransaction(
+      id: 'tx_4',
+      judul: 'Pembelian Alat Kebersihan & ATK Kelas',
+      nominal: 450000,
+      isPemasukan: false,
+      kategori: 'Operasional',
+      tanggal: DateTime(2026, 9, 20),
+      pencatat: 'Alya Nabilah (Bendahara)',
+    ),
+    TreasuryTransaction(
+      id: 'tx_5',
+      judul: 'Iuran Praktikum Broadcasting',
+      nominal: 500000,
+      isPemasukan: true,
+      kategori: 'Iuran Praktikum',
+      tanggal: DateTime(2026, 9, 15),
+      pencatat: 'Alya Nabilah (Bendahara)',
+    ),
+  ];
 
   static int get totalKasSaldo {
     return treasuryTransactions.fold(0, (acc, item) {

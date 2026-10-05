@@ -13,12 +13,21 @@ class AnnouncementsScreen extends StatefulWidget {
     this.canPost = true,
   });
 
-  static void showAnnouncementDetail(BuildContext context, Announcement announcement) {
+  static void showAnnouncementDetail(
+    BuildContext context,
+    Announcement announcement, {
+    VoidCallback? onChanged,
+    bool canManage = false,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AnnouncementDetailSheet(announcement: announcement),
+      builder: (ctx) => _AnnouncementDetailSheet(
+        announcement: announcement,
+        onChanged: onChanged,
+        canManage: canManage,
+      ),
     );
   }
 
@@ -219,7 +228,12 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                             final isYellow = index % 2 == 0;
 
                             return InkWell(
-                              onTap: () => AnnouncementsScreen.showAnnouncementDetail(context, ann),
+                              onTap: () => AnnouncementsScreen.showAnnouncementDetail(
+                                context,
+                                ann,
+                                onChanged: _loadAnnouncements,
+                                canManage: widget.canPost,
+                              ),
                               borderRadius: BorderRadius.circular(18),
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 14),
@@ -337,8 +351,142 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
 
 class _AnnouncementDetailSheet extends StatelessWidget {
   final Announcement announcement;
+  final VoidCallback? onChanged;
+  final bool canManage;
 
-  const _AnnouncementDetailSheet({required this.announcement});
+  const _AnnouncementDetailSheet({
+    required this.announcement,
+    this.onChanged,
+    this.canManage = false,
+  });
+
+  void _showEditDialog(BuildContext context) {
+    final titleController = TextEditingController(text: announcement.judul);
+    final contentController = TextEditingController(text: announcement.isi);
+    String category = announcement.kategori;
+    bool isPinned = announcement.isPinned;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Edit Pengumuman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Judul Pengumuman'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: ['Akademik', 'Dosen', 'Kelas'].contains(category) ? category : 'Kelas',
+                  decoration: const InputDecoration(labelText: 'Kategori'),
+                  items: ['Akademik', 'Dosen', 'Kelas']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => category = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  title: const Text('Sematkan di atas (Penting)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  value: isPinned,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) => setDialogState(() => isPinned = val ?? false),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contentController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Isi Pengumuman'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final judul = titleController.text.trim();
+                final isi = contentController.text.trim();
+                if (judul.isEmpty) return;
+
+                announcement.judul = judul;
+                announcement.isi = isi;
+                announcement.kategori = category;
+                announcement.isPinned = isPinned;
+
+                Navigator.pop(ctx);
+                Navigator.pop(context);
+                onChanged?.call();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pengumuman berhasil diperbarui!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Pengumuman?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Hapus pengumuman "${announcement.judul}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(context);
+              Navigator.pop(ctx);
+              nav.pop();
+              await SupabaseRepository.deleteAnnouncement(announcement.id);
+              onChanged?.call();
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Pengumuman berhasil dihapus.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _shareToWhatsApp(BuildContext context) async {
     final text = '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n*${announcement.judul}*\n\n${announcement.isi}\n\n_Diposting oleh: ${announcement.authorName} (${announcement.authorRole})_';
@@ -444,9 +592,25 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                     ],
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
-                  onPressed: () => Navigator.pop(context),
+                Row(
+                  children: [
+                    if (canManage) ...[
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF5B3DE8), size: 20),
+                        tooltip: 'Edit Pengumuman',
+                        onPressed: () => _showEditDialog(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                        tooltip: 'Hapus Pengumuman',
+                        onPressed: () => _confirmDelete(context),
+                      ),
+                    ],
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ],
             ),

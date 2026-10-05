@@ -52,13 +52,13 @@ class Course {
 
 class Assignment {
   final String id;
-  final String courseId;
-  final String courseName;
-  final String judul;
-  final String deskripsi;
-  final String kategori; // 'Individu', 'Proyek Praktikum', 'UTS', 'UAS'
-  final DateTime deadline;
-  final String? linkPengumpulan;
+  String courseId;
+  String courseName;
+  String judul;
+  String deskripsi;
+  String kategori; // 'Individu', 'Proyek Praktikum', 'UTS', 'UAS'
+  DateTime deadline;
+  String? linkPengumpulan;
   String status; // 'belum', 'sedang_dikerjakan', 'selesai'
 
   Assignment({
@@ -76,12 +76,12 @@ class Assignment {
 
 class Announcement {
   final String id;
-  final String authorName;
-  final String authorRole; // 'Komti', 'Dosen', 'Sekretaris'
-  final String judul;
-  final String isi;
-  final bool isPinned;
-  final String kategori; // 'Jadwal Kuliah', 'Tugas', 'Info Fakultas', 'Penting'
+  String authorName;
+  String authorRole; // 'Komti', 'Dosen', 'Sekretaris'
+  String judul;
+  String isi;
+  bool isPinned;
+  String kategori; // 'Jadwal Kuliah', 'Tugas', 'Info Fakultas', 'Penting'
   final DateTime createdAt;
 
   Announcement({

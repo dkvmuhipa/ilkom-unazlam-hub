@@ -6,7 +6,8 @@ import '../../core/services/dummy_data.dart';
 import '../../models/models.dart';
 
 class AssignmentsScreen extends StatefulWidget {
-  const AssignmentsScreen({super.key});
+  final bool canManage;
+  const AssignmentsScreen({super.key, this.canManage = true});
 
   static void showAssignmentDetail(BuildContext context, Assignment assignment, {VoidCallback? onStatusChanged}) {
     showModalBottomSheet(
@@ -93,6 +94,181 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     }
   }
 
+  void _showAddAssignmentDialog() {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+    final linkController = TextEditingController();
+    String selectedCourse = DummyData.courses.first.nama;
+    String kategori = 'Individu';
+    DateTime selectedDeadline = DateTime.now().add(const Duration(days: 7));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Row(
+            children: [
+              Icon(Icons.add_task_rounded, color: Color(0xFF5B3DE8), size: 22),
+              SizedBox(width: 8),
+              Text('Tambah Tugas Baru', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCourse,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Mata Kuliah',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: DummyData.courses.map((c) => DropdownMenuItem(
+                      value: c.nama,
+                      child: Text(c.nama, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                    )).toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedCourse = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Tugas',
+                      hintText: 'Misal: Makalah Komunikasi Massa',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: kategori,
+                          decoration: InputDecoration(
+                            labelText: 'Kategori',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          items: ['Individu', 'Kelompok', 'Praktikum', 'Ujian']
+                              .map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 12))))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => kategori = val);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDeadline,
+                              firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (picked != null) {
+                              setDialogState(() => selectedDeadline = picked);
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Deadline',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            ),
+                            child: Text(
+                              '${selectedDeadline.day}/${selectedDeadline.month}/${selectedDeadline.year}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Deskripsi / Instruksi',
+                      hintText: 'Tuliskan detail tugas atau format pengumpulan...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: linkController,
+                    decoration: InputDecoration(
+                      labelText: 'Tautan Google Drive / Form (Opsional)',
+                      hintText: 'https://...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final judul = titleController.text.trim();
+                if (judul.isEmpty) return;
+
+                final course = DummyData.courses.firstWhere(
+                  (c) => c.nama == selectedCourse,
+                  orElse: () => DummyData.courses.first,
+                );
+
+                setState(() {
+                  DummyData.assignments.insert(
+                    0,
+                    Assignment(
+                      id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
+                      courseId: course.id,
+                      courseName: course.nama,
+                      judul: judul,
+                      deskripsi: descController.text.trim(),
+                      kategori: kategori,
+                      deadline: selectedDeadline,
+                      linkPengumpulan: linkController.text.trim().isNotEmpty ? linkController.text.trim() : null,
+                      status: 'belum',
+                    ),
+                  );
+                });
+
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Tugas "$judul" berhasil ditambahkan!'),
+                    backgroundColor: const Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Tugas'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Assignment> filteredList = DummyData.assignments;
@@ -104,6 +280,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: widget.canManage
+          ? FloatingActionButton.extended(
+              onPressed: _showAddAssignmentDialog,
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_task_rounded, size: 20),
+              label: const Text('Tambah Tugas', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -118,8 +303,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded, color: Color(0xFF111827), size: 22),
-            onPressed: () {},
+            icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF5B3DE8), size: 24),
+            tooltip: 'Tambah Tugas',
+            onPressed: _showAddAssignmentDialog,
           ),
           const SizedBox(width: 8),
         ],
@@ -369,6 +555,211 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
     }
   }
 
+  void _showEditDialog() {
+    final a = widget.assignment;
+    final titleController = TextEditingController(text: a.judul);
+    final descController = TextEditingController(text: a.deskripsi);
+    final linkController = TextEditingController(text: a.linkPengumpulan ?? '');
+    String selectedCourse = a.courseName;
+    String kategori = a.kategori;
+    DateTime selectedDeadline = a.deadline;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Row(
+            children: [
+              Icon(Icons.edit_note_rounded, color: Color(0xFF5B3DE8), size: 22),
+              SizedBox(width: 8),
+              Text('Edit Tugas', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCourse,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Mata Kuliah',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: DummyData.courses.map((c) => DropdownMenuItem(
+                      value: c.nama,
+                      child: Text(c.nama, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                    )).toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedCourse = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Tugas',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: kategori,
+                          decoration: InputDecoration(
+                            labelText: 'Kategori',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          items: ['Individu', 'Kelompok', 'Praktikum', 'Ujian']
+                              .map((k) => DropdownMenuItem(value: k, child: Text(k, style: const TextStyle(fontSize: 12))))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => kategori = val);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDeadline,
+                              firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (picked != null) {
+                              setDialogState(() => selectedDeadline = picked);
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Deadline',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            ),
+                            child: Text(
+                              '${selectedDeadline.day}/${selectedDeadline.month}/${selectedDeadline.year}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Deskripsi / Instruksi',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: linkController,
+                    decoration: InputDecoration(
+                      labelText: 'Tautan Google Drive / Form',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final judul = titleController.text.trim();
+                if (judul.isEmpty) return;
+
+                final course = DummyData.courses.firstWhere(
+                  (c) => c.nama == selectedCourse,
+                  orElse: () => DummyData.courses.first,
+                );
+
+                setState(() {
+                  a.judul = judul;
+                  a.courseName = course.nama;
+                  a.courseId = course.id;
+                  a.kategori = kategori;
+                  a.deadline = selectedDeadline;
+                  a.deskripsi = descController.text.trim();
+                  a.linkPengumpulan = linkController.text.trim().isNotEmpty ? linkController.text.trim() : null;
+                });
+
+                Navigator.pop(ctx);
+                widget.onStatusChanged?.call();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tugas berhasil diperbarui!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Perubahan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Tugas?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Apakah Anda yakin ingin menghapus tugas "${widget.assignment.judul}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              DummyData.assignments.removeWhere((x) => x.id == widget.assignment.id);
+              Navigator.pop(ctx); // pop confirm dialog
+              Navigator.pop(context); // pop detail sheet
+              widget.onStatusChanged?.call();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tugas berhasil dihapus.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = widget.assignment;
@@ -465,9 +856,23 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
-                  onPressed: () => Navigator.pop(context),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF5B3DE8), size: 20),
+                      tooltip: 'Edit Tugas',
+                      onPressed: _showEditDialog,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                      tooltip: 'Hapus Tugas',
+                      onPressed: _confirmDelete,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ],
             ),
