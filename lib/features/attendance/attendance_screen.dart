@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 
 class AttendanceHistoryItem {
   final String date;
@@ -59,18 +60,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Presensi Pertemuan Kelas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                        Text('Kelola absensi mahasiswa untuk mata kuliah ini', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                      ],
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Presensi Pertemuan Kelas',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Kelola absensi mahasiswa untuk mata kuliah ini',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
                       onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),
@@ -93,7 +103,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Daftar Mahasiswa (${students.length})', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+                    Expanded(
+                      child: Text(
+                        'Daftar Mahasiswa (${students.length})',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     TextButton.icon(
                       onPressed: () {
                         setModalState(() {
@@ -104,6 +120,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                       icon: const Icon(Icons.done_all, size: 16, color: Color(0xFF16A34A)),
                       label: const Text('Set Semua Hadir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                   ],
                 ),
@@ -171,6 +191,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: () {
+                    for (var s in students) {
+                      final st = statusMap[s.id] ?? 'Hadir';
+                      SupabaseRepository.logAttendance(
+                        courseId: selectedCourse,
+                        studentNim: s.nim,
+                        pertemuanKe: 1,
+                        status: st,
+                      );
+                    }
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
