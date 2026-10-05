@@ -14,6 +14,8 @@ import 'features/directory/directory_screen.dart';
 import 'features/treasury/treasury_screen.dart';
 import 'features/agenda/agenda_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/auth/splash_screen.dart';
+import 'features/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +42,7 @@ class ClassManagerApp extends StatelessWidget {
       title: 'ILKOM UNAZLAM Hub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const MainResponsiveShell(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -315,8 +317,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                       title: const Text('Keluar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
                       onTap: () {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Keluar dari akun')),
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          (route) => false,
                         );
                       },
                     ),
