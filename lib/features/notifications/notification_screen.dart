@@ -35,7 +35,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final List<ClassNotificationItem> _notifications = [
     ClassNotificationItem(
       id: 'notif_1',
-      title: '⏰ Pengingat Deadline Tugas!',
+      title: 'Pengingat Deadline Tugas',
       message: 'Tugas Proposal Kampanye PR mata kuliah Public Relations deadline dalam 24 jam ke depan.',
       time: '15 menit yang lalu',
       category: 'deadline',
@@ -43,7 +43,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     ),
     ClassNotificationItem(
       id: 'notif_2',
-      title: '🗳️ Voting Baru Dibuka',
+      title: 'Voting Baru Dibuka',
       message: 'Ketua Kelas membuka voting untuk menentukan Jadwal Pengganti Kuliah Pengantar Ilmu Jurnalistik.',
       time: '1 jam yang lalu',
       category: 'voting',
@@ -51,7 +51,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     ),
     ClassNotificationItem(
       id: 'notif_3',
-      title: '📢 Pengumuman Penting',
+      title: 'Pengumuman Penting',
       message: 'Kuliah Teori Komunikasi besok dimulai pukul 08:30 WITA di Ruang Lab Multimedia.',
       time: '3 jam yang lalu',
       category: 'announcement',
@@ -59,7 +59,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     ),
     ClassNotificationItem(
       id: 'notif_4',
-      title: '💰 Iuran Kas Bulan Oktober',
+      title: 'Iuran Kas Bulan Oktober',
       message: 'Bendahara telah membuka rekap pembayaran uang kas kelas untuk bulan Oktober (Rp 20.000).',
       time: 'Kemarin',
       category: 'treasury',
@@ -67,7 +67,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     ),
     ClassNotificationItem(
       id: 'notif_5',
-      title: '📋 Presensi Kelas Terverifikasi',
+      title: 'Presensi Kelas Terverifikasi',
       message: 'Kehadiran Anda pada mata kuliah Pendidikan Pancasila Sesi 5 berhasil tercatat Hadir.',
       time: '2 hari lalu',
       category: 'attendance',

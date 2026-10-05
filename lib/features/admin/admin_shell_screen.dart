@@ -242,7 +242,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     const Row(
                       children: [
                         Text(
-                          'Admin 👋',
+                          'Admin',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,

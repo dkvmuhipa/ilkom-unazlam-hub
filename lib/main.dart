@@ -462,7 +462,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                         const SizedBox(height: 2),
                         Text(
                           widget.isAdminUser
-                              ? '🛡️ System Administrator'
+                              ? 'Administrator Sistem'
                               : '${_currentUser.jabatan} • ILKOM 2026',
                           style: TextStyle(
                             fontSize: 10.5,

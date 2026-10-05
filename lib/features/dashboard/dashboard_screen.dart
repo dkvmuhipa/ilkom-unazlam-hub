@@ -339,23 +339,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Halo, $firstName',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF111827),
-                                  letterSpacing: -0.4,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Text('👋', style: TextStyle(fontSize: 18)),
-                          ],
+                        Text(
+                          'Halo, $firstName',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                            letterSpacing: -0.4,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -376,7 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // Role badge
+                  // Role badge (Flat Icon + Text)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                     decoration: BoxDecoration(
@@ -384,13 +376,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFE9D5FF)),
                     ),
-                    child: Text(
-                      student.isKetuaKelas
-                          ? '👑 Ketua'
-                          : (student.isBendahara
-                              ? '💰 Bendahara'
-                              : (student.isSekretaris ? '📝 Sekretaris' : '🎓 Mahasiswa')),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          student.isKetuaKelas
+                              ? Icons.workspace_premium_outlined
+                              : (student.isBendahara
+                                  ? Icons.account_balance_wallet_outlined
+                                  : (student.isSekretaris ? Icons.description_outlined : Icons.school_outlined)),
+                          size: 13,
+                          color: const Color(0xFF5B3DE8),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          student.isKetuaKelas
+                              ? 'Ketua'
+                              : (student.isBendahara
+                                  ? 'Bendahara'
+                                  : (student.isSekretaris ? 'Sekretaris' : 'Mahasiswa')),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -533,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           const Row(
                             children: [
-                              Text('👑', style: TextStyle(fontSize: 14)),
+                              Icon(Icons.admin_panel_settings_outlined, size: 16, color: Color(0xFF5B3DE8)),
                               SizedBox(width: 6),
                               Text(
                                 'Aksi Cepat Ketua',
@@ -1639,7 +1646,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('⏰', style: TextStyle(fontSize: 12)),
+                    Icon(Icons.alarm_outlined, size: 13, color: Color(0xFFFCA5A5)),
                     SizedBox(width: 5),
                     Text(
                       'PENGINGAT DEADLINE TERDEKAT',
@@ -1657,7 +1664,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('🔔 Pengingat aktif! Notifikasi push dikirim 2 jam sebelum batas pengumpulan.'),
+                      content: Text('Pengingat aktif! Notifikasi push dikirim 2 jam sebelum batas pengumpulan.'),
                       backgroundColor: Color(0xFF4338CA),
                     ),
                   );

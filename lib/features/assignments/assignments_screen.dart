@@ -787,19 +787,19 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
     Color countdownBg;
 
     if (_currentStatus == 'selesai') {
-      countdownText = '✓ Tugas Selesai';
+      countdownText = 'Tugas Selesai';
       countdownColor = const Color(0xFF16A34A);
       countdownBg = const Color(0xFFDCFCE7);
     } else if (difference.isNegative) {
-      countdownText = '⚠️ Lewat Deadline';
+      countdownText = 'Lewat Deadline';
       countdownColor = const Color(0xFFDC2626);
       countdownBg = const Color(0xFFFEE2E2);
     } else if (daysRemaining == 0) {
-      countdownText = '⏰ Berakhir Hari Ini!';
+      countdownText = 'Berakhir Hari Ini';
       countdownColor = const Color(0xFFD97706);
       countdownBg = const Color(0xFFFEF3C7);
     } else {
-      countdownText = '⏳ Sisa $daysRemaining Hari Lagi';
+      countdownText = 'Sisa $daysRemaining Hari Lagi';
       countdownColor = const Color(0xFF5B3DE8);
       countdownBg = const Color(0xFFEDE9FE);
     }

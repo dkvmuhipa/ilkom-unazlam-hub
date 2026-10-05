@@ -38,14 +38,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : student.nama.substring(0, 2).toUpperCase();
 
     final roleBadgeText = student.isAdmin
-        ? '🛡️ System Administrator'
+        ? 'System Administrator'
         : (student.isKetuaKelas
-            ? '👑 Ketua Kelas ILKOM 2026'
+            ? 'Ketua Kelas ILKOM 2026'
             : (student.isBendahara
-                ? '💰 Bendahara Kelas ILKOM 2026'
+                ? 'Bendahara Kelas ILKOM 2026'
                 : (student.isSekretaris
-                    ? '📝 Sekretaris Kelas ILKOM 2026'
-                    : '🎓 Mahasiswa ILKOM 2026')));
+                    ? 'Sekretaris Kelas ILKOM 2026'
+                    : 'Mahasiswa ILKOM 2026')));
 
     final roleBadgeBg = student.isAdmin
         ? const Color(0xFFFEE2E2)
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Text('👑', style: TextStyle(fontSize: 22)),
+                        child: const Icon(Icons.workspace_premium_outlined, color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 14),
                       const Expanded(
@@ -300,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Text('💰', style: TextStyle(fontSize: 22)),
+                        child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 14),
                       const Expanded(
@@ -334,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Text('🎓', style: TextStyle(fontSize: 22)),
+                    Icon(Icons.school_outlined, color: Color(0xFF5B3DE8), size: 24),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -430,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: const Row(
           children: [
-            Text('👑', style: TextStyle(fontSize: 18)),
+            Icon(Icons.workspace_premium_outlined, color: Color(0xFFD97706), size: 20),
             SizedBox(width: 8),
             Text(
               'Ketua Kelas',
