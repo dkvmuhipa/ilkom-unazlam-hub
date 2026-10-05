@@ -4,10 +4,11 @@ import '../constants/app_colors.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final textTheme = GoogleFonts.plusJakartaSansTextTheme();
+    final textTheme = GoogleFonts.poppinsTextTheme();
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: GoogleFonts.poppins().fontFamily,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
@@ -20,29 +21,39 @@ class AppTheme {
         onSurface: AppColors.textMain,
       ),
       textTheme: textTheme.copyWith(
-        headlineMedium: textTheme.headlineMedium?.copyWith(
+        displayLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
+        displayMedium: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
+        displaySmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
+        headlineLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w800),
+        headlineMedium: GoogleFonts.poppins(
           color: AppColors.textMain,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-        ),
-        titleLarge: textTheme.titleLarge?.copyWith(
-          color: AppColors.textMain,
-          fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
         ),
-        titleMedium: textTheme.titleMedium?.copyWith(
+        headlineSmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
+        titleLarge: GoogleFonts.poppins(
+          color: AppColors.textMain,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
+        titleMedium: GoogleFonts.poppins(
           color: AppColors.textMain,
           fontWeight: FontWeight.w600,
         ),
-        bodyMedium: textTheme.bodyMedium?.copyWith(
+        titleSmall: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w600),
+        bodyLarge: GoogleFonts.poppins(color: AppColors.textMain, fontSize: 14),
+        bodyMedium: GoogleFonts.poppins(
           color: AppColors.textMain,
           fontSize: 13,
           height: 1.5,
         ),
-        bodySmall: textTheme.bodySmall?.copyWith(
+        bodySmall: GoogleFonts.poppins(
           color: AppColors.textSub,
           fontSize: 11,
         ),
+        labelLarge: GoogleFonts.poppins(color: AppColors.textMain, fontWeight: FontWeight.w700),
+        labelMedium: GoogleFonts.poppins(color: AppColors.textSub, fontWeight: FontWeight.w600),
+        labelSmall: GoogleFonts.poppins(color: AppColors.textSub, fontWeight: FontWeight.w500),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -50,7 +61,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 17,
           fontWeight: FontWeight.w800,
           color: AppColors.textMain,
@@ -75,7 +86,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
             fontSize: 13,
           ),
@@ -89,7 +100,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
@@ -102,13 +113,13 @@ class AppTheme {
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return GoogleFonts.plusJakartaSans(
+            return GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
             );
           }
-          return GoogleFonts.plusJakartaSans(
+          return GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: AppColors.textLight,
