@@ -375,6 +375,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     : (student.isSekretaris ? const Color(0xFF6D28D9) : const Color(0xFF5B3DE8))),
                           ),
                         ),
+                        const SizedBox(height: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.calendar_today_rounded, size: 10, color: Color(0xFF6B7280)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Semester Ganjil • Minggu Efektif Ke-5',
+                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF4B5563)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -481,113 +501,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
 
-              if (student.isBendahara) ...[
-                // BENDAHARA QUICK MENUS (Image 3)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildQuickMenuItem(
-                      icon: Icons.account_balance_wallet_outlined,
-                      label: 'Kas Kelas',
-                      color: const Color(0xFFD97706),
-                      bgColor: const Color(0xFFFEF3C7),
-                      onTap: () => widget.onNavigateTab(8),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.add_circle_outline_rounded,
-                      label: 'Tambah\nPemasukan',
-                      color: const Color(0xFF10B981),
-                      bgColor: const Color(0xFFECFDF5),
-                      onTap: () => _showCatatKasDialog(context, isPemasukan: true),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.remove_circle_outline_rounded,
-                      label: 'Tambah\nPengeluaran',
-                      color: const Color(0xFFEF4444),
-                      bgColor: const Color(0xFFFEF2F2),
-                      onTap: () => _showCatatKasDialog(context, isPemasukan: false),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.bar_chart_rounded,
-                      label: 'Rekap',
-                      color: const Color(0xFF5B3DE8),
-                      bgColor: const Color(0xFFF3F0FF),
-                      onTap: () => widget.onNavigateTab(8),
-                    ),
-                  ],
-                ),
-              ] else if (student.isSekretaris) ...[
-                // SEKRETARIS QUICK MENUS (Image 1)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildQuickMenuItem(
-                      icon: Icons.event_note_rounded,
-                      label: 'Agenda',
-                      color: const Color(0xFF0284C7),
-                      bgColor: const Color(0xFFE0F2FE),
-                      onTap: () => widget.onNavigateTab(6),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.campaign_outlined,
-                      label: 'Pengumuman',
-                      color: const Color(0xFFF59E0B),
-                      bgColor: const Color(0xFFFEF3C7),
-                      onTap: () => widget.onNavigateTab(7),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.folder_outlined,
-                      label: 'Dokumen',
-                      color: const Color(0xFF10B981),
-                      bgColor: const Color(0xFFECFDF5),
-                      onTap: () => widget.onNavigateTab(10),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.people_alt_outlined,
-                      label: 'Kelas',
-                      color: const Color(0xFF5B3DE8),
-                      bgColor: const Color(0xFFF3F0FF),
-                      onTap: () => widget.onNavigateTab(3),
-                    ),
-                  ],
-                ),
-              ] else ...[
-                // MAHASISWA & KETUA KELAS QUICK SERVICES (Non-redundant with bottom navigation)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildQuickMenuItem(
-                      icon: Icons.fact_check_rounded,
-                      label: 'Absensi',
-                      color: const Color(0xFF0284C7),
-                      bgColor: const Color(0xFFE0F2FE),
-                      onTap: () => widget.onNavigateTab(5),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.menu_book_rounded,
-                      label: 'Materi',
-                      color: const Color(0xFF5B3DE8),
-                      bgColor: const Color(0xFFF3F0FF),
-                      onTap: () => widget.onNavigateTab(10),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.groups_rounded,
-                      label: 'Kelompok',
-                      color: const Color(0xFF10B981),
-                      bgColor: const Color(0xFFECFDF5),
-                      onTap: () => widget.onNavigateTab(9),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.event_note_rounded,
-                      label: 'Agenda',
-                      color: const Color(0xFFF59E0B),
-                      bgColor: const Color(0xFFFEF3C7),
-                      onTap: () => widget.onNavigateTab(6),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildQuickMenuItem(
+                    icon: Icons.qr_code_scanner_rounded,
+                    label: 'Presensi QR',
+                    color: const Color(0xFF5B3DE8),
+                    bgColor: const Color(0xFFF3F0FF),
+                    onTap: () => widget.onNavigateTab(5),
+                  ),
+                  _buildQuickMenuItem(
+                    icon: Icons.description_outlined,
+                    label: 'Surat Izin',
+                    color: const Color(0xFF0284C7),
+                    bgColor: const Color(0xFFE0F2FE),
+                    onTap: () => widget.onNavigateTab(13),
+                  ),
+                  _buildQuickMenuItem(
+                    icon: Icons.how_to_vote_outlined,
+                    label: 'Voting Kelas',
+                    color: const Color(0xFFF59E0B),
+                    bgColor: const Color(0xFFFEF3C7),
+                    onTap: () => widget.onNavigateTab(12),
+                  ),
+                  _buildQuickMenuItem(
+                    icon: Icons.folder_open_rounded,
+                    label: 'Gudang Materi',
+                    color: const Color(0xFF10B981),
+                    bgColor: const Color(0xFFECFDF5),
+                    onTap: () => widget.onNavigateTab(10),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // ==========================================
+              // 4. HITUNG MUNDUR DEADLINE (REMINDER CARD)
+              // ==========================================
+              _buildReminderCard(context),
+              const SizedBox(height: 10),
+
+              // ==========================================
+              // 5. JADWAL KULIAH HARI INI (TODAY'S SCHEDULE)
+              // ==========================================
+              _buildTodayScheduleSection(context),
+              const SizedBox(height: 20),
 
               // ==========================================
               // SPECIAL SECTION: PANEL KETUA KELAS (Executive Command Hub)
@@ -837,12 +796,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
 
               // ==========================================
-              // REMINDER & COUNTDOWN DEADLINE SECTION
-              // ==========================================
-              _buildReminderCard(context),
-              const SizedBox(height: 10),
-
-              // ==========================================
               // PENGUMUMAN TERBARU SECTION
               // ==========================================
               Row(
@@ -956,6 +909,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // ==========================================
+              // 8. INSPIRATIONAL QUOTE & CAMPUS FOOTER
+              // ==========================================
+              _buildCampusFooter(context),
             ],
           ),
         ),
@@ -1060,6 +1019,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showCatatKasDialog(context, isPemasukan: true),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Catat Masuk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF10B981),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showCatatKasDialog(context, isPemasukan: false),
+                  icon: const Icon(Icons.remove_rounded, size: 16),
+                  label: const Text('Catat Keluar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
@@ -1537,6 +1530,291 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTodayScheduleSection(BuildContext context) {
+    final todayCourses = [
+      {
+        'course': 'Pendidikan Kewarganegaraan',
+        'time': '08.00 - 09.40 WITA',
+        'room': 'Ruang B2 Lantai 2',
+        'lecturer': 'Drs. H. Ahmad Fauzi, M.Si.',
+        'sks': '2 SKS',
+        'status': 'Hadir',
+        'statusColor': const Color(0xFF10B981),
+        'statusBg': const Color(0xFFECFDF5),
+        'accentColor': const Color(0xFF5B3DE8),
+      },
+      {
+        'course': 'Pendidikan Pancasila',
+        'time': '10.00 - 11.40 WITA',
+        'room': 'Ruang Teori FISIP 1',
+        'lecturer': 'Dr. Siti Nurhaliza',
+        'sks': '2 SKS',
+        'status': 'Terjadwal',
+        'statusColor': const Color(0xFF0284C7),
+        'statusBg': const Color(0xFFE0F2FE),
+        'accentColor': const Color(0xFF0284C7),
+      },
+      {
+        'course': 'Teori Komunikasi Kontemporer',
+        'time': '13.00 - 14.40 WITA',
+        'room': 'Lab Multimedia FISIP',
+        'lecturer': 'Prof. Dr. Andi Mallarangeng',
+        'sks': '3 SKS',
+        'status': 'Terjadwal',
+        'statusColor': const Color(0xFFD97706),
+        'statusBg': const Color(0xFFFEF3C7),
+        'accentColor': const Color(0xFFF59E0B),
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Jadwal Kuliah Hari Ini',
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+                letterSpacing: -0.2,
+              ),
+            ),
+            InkWell(
+              onTap: () => widget.onNavigateTab(1),
+              borderRadius: BorderRadius.circular(12),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Text(
+                  'Lihat Semua',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF5B3DE8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...todayCourses.map((item) {
+          final isHadir = item['status'] == 'Hadir';
+          final accentColor = item['accentColor'] as Color;
+          final statusColor = item['statusColor'] as Color;
+          final statusBg = item['statusBg'] as Color;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.access_time_rounded, size: 16, color: accentColor),
+                      const SizedBox(height: 4),
+                      Text(
+                        (item['time'] as String).split(' ').first,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: accentColor,
+                        ),
+                      ),
+                      Text(
+                        'WITA',
+                        style: TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w700,
+                          color: accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusBg,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isHadir ? Icons.check_circle_rounded : Icons.hourglass_top_rounded,
+                                  size: 11,
+                                  color: statusColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  item['status'] as String,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            item['sks'] as String,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item['course'] as String,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.room_outlined, size: 13, color: Color(0xFF6B7280)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${item['room']} • ${item['lecturer']}',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF4B5563)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCampusFooter(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF3F0FF), Color(0xFFFAF5FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE9D5FF)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.format_quote_rounded, color: Color(0xFF5B3DE8), size: 20),
+                  SizedBox(width: 6),
+                  Text(
+                    'KUTIPAN HARI INI',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF5B3DE8),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '"Komunikasi adalah kunci memahami peradaban. Sampaikan gagasan dengan etika, data, dan integritas tinggi."',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '— Program Studi S1 Ilmu Komunikasi • FISIP UNAZLAM',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Column(
+            children: [
+              Text(
+                'ILKOM UNAZLAM HUB • Angkatan 2026',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade500,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Fakultas Ilmu Sosial & Ilmu Politik • UNAZLAM',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
