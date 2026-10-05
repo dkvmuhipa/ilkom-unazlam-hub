@@ -330,35 +330,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ==========================================
-              // TOP HEADER WITH GREETING & ROLE PILL
+              // 1. TOP HEADER (CLEAN & RESPONSIVE - NO OVERFLOW)
               // ==========================================
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Halo,',
-                          style: TextStyle(fontSize: 13, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 2),
                         Row(
                           children: [
                             Flexible(
                               child: Text(
-                                firstName,
+                                'Halo, $firstName',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF111827),
-                                  letterSpacing: -0.3,
+                                  letterSpacing: -0.4,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 4),
                             const Text('👋', style: TextStyle(fontSize: 18)),
                           ],
                         ),
@@ -367,128 +362,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           subtitleText,
                           style: TextStyle(
                             fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: student.isKetuaKelas
                                 ? const Color(0xFFD97706)
                                 : (student.isBendahara
                                     ? const Color(0xFF16A34A)
-                                    : (student.isSekretaris ? const Color(0xFF6D28D9) : const Color(0xFF5B3DE8))),
+                                    : (student.isSekretaris ? const Color(0xFF6D28D9) : const Color(0xFF6B7280))),
                           ),
-                        ),
-                        const SizedBox(height: 5),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.calendar_today_rounded, size: 10, color: Color(0xFF6B7280)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Semester Ganjil • Minggu Efektif Ke-5',
-                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF4B5563)),
-                              ),
-                            ],
-                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  Row(
-                    children: [
-                      // Role badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F0FF),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE9D5FF)),
-                        ),
-                        child: Text(
-                          student.isKetuaKelas
-                              ? '👑 Ketua'
-                              : (student.isBendahara
-                                  ? '💰 Bendahara'
-                                  : (student.isSekretaris ? '📝 Sekretaris' : '🎓 Mahasiswa')),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
-                      // Notification Bell
-                      InkWell(
-                        onTap: () => widget.onNavigateTab(11),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(9),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              const Icon(Icons.notifications_none_rounded, size: 20, color: Color(0xFF111827)),
-                              Positioned(
-                                top: -1,
-                                right: -1,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (widget.onOpenDrawer != null) ...[
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: widget.onOpenDrawer,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE5E7EB)),
-                            ),
-                            child: const Icon(Icons.menu_rounded, size: 20, color: Color(0xFF111827)),
-                          ),
-                        ),
-                      ],
-                    ],
+                  // Role badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F0FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE9D5FF)),
+                    ),
+                    child: Text(
+                      student.isKetuaKelas
+                          ? '👑 Ketua'
+                          : (student.isBendahara
+                              ? '💰 Bendahara'
+                              : (student.isSekretaris ? '📝 Sekretaris' : '🎓 Mahasiswa')),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                    ),
                   ),
+                  const SizedBox(width: 8),
+
+                  // Notification Bell
+                  InkWell(
+                    onTap: () => widget.onNavigateTab(11),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.notifications_none_rounded, size: 20, color: Color(0xFF111827)),
+                          Positioned(
+                            top: -1,
+                            right: -1,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (widget.onOpenDrawer != null) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: widget.onOpenDrawer,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: const Icon(Icons.menu_rounded, size: 20, color: Color(0xFF111827)),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 18),
 
               // ==========================================
-              // HERO CARDS DYNAMIC BASED ON JABATAN
+              // 2. HERO CARD (STREAMLINED & DYNAMIC)
               // ==========================================
               if (student.isBendahara) ...[
-                // BENDAHARA HERO CARD: KAS KELAS (Image 3)
                 _buildBendaharaHeroKasCard(context),
               ] else if (student.isSekretaris) ...[
-                // SEKRETARIS HERO CARD: AGENDA HARI INI (Image 1)
                 _buildSekretarisHeroAgendaCard(context),
               ] else ...[
-                // KETUA KELAS & MAHASISWA HERO CAROUSEL (Image 2)
                 _buildStandardHeroCarousel(context, nearestAssignment),
               ],
               const SizedBox(height: 22),
 
               // ==========================================
-              // MENU CEPAT DYNAMIC BASED ON JABATAN
+              // 3. MENU CEPAT (4 PRIMARY PILLARS)
               // ==========================================
               const Text(
                 'Menu Cepat',
@@ -512,209 +483,131 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onTap: () => widget.onNavigateTab(5),
                   ),
                   _buildQuickMenuItem(
-                    icon: Icons.description_outlined,
-                    label: 'Surat Izin',
+                    icon: Icons.calendar_month_rounded,
+                    label: 'Jadwal Kuliah',
                     color: const Color(0xFF0284C7),
                     bgColor: const Color(0xFFE0F2FE),
-                    onTap: () => widget.onNavigateTab(13),
+                    onTap: () => widget.onNavigateTab(1),
                   ),
                   _buildQuickMenuItem(
-                    icon: Icons.how_to_vote_outlined,
-                    label: 'Voting Kelas',
+                    icon: Icons.assignment_outlined,
+                    label: 'Tugas Kuliah',
                     color: const Color(0xFFF59E0B),
                     bgColor: const Color(0xFFFEF3C7),
-                    onTap: () => widget.onNavigateTab(12),
+                    onTap: () => widget.onNavigateTab(2),
                   ),
                   _buildQuickMenuItem(
-                    icon: Icons.folder_open_rounded,
-                    label: 'Gudang Materi',
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Kas Kelas',
                     color: const Color(0xFF10B981),
                     bgColor: const Color(0xFFECFDF5),
-                    onTap: () => widget.onNavigateTab(10),
+                    onTap: () => widget.onNavigateTab(8),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
               // ==========================================
-              // 4. HITUNG MUNDUR DEADLINE (REMINDER CARD)
-              // ==========================================
-              _buildReminderCard(context),
-              const SizedBox(height: 10),
-
-              // ==========================================
-              // 5. JADWAL KULIAH HARI INI (TODAY'S SCHEDULE)
-              // ==========================================
-              _buildTodayScheduleSection(context),
-              const SizedBox(height: 20),
-
-              // ==========================================
-              // SPECIAL SECTION: PANEL KETUA KELAS (Executive Command Hub)
+              // 4. KETUA KELAS QUICK COMMAND BAR (SLEEK & COMPACT)
               // ==========================================
               if (student.isKetuaKelas) ...[
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: const Color(0xFFEDE9FE), width: 1.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFEDE9FE)),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.05),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
+                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Row
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F0FF),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.admin_panel_settings_rounded,
-                              size: 20,
-                              color: Color(0xFF5B3DE8),
-                            ),
+                          const Row(
+                            children: [
+                              Text('👑', style: TextStyle(fontSize: 14)),
+                              SizedBox(width: 6),
+                              Text(
+                                'Aksi Cepat Ketua',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1F2937),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Panel Ketua Kelas',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF111827),
-                                    letterSpacing: -0.2,
+                          InkWell(
+                            onTap: () => _showRekapKelasModal(context),
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.donut_large_rounded, size: 13, color: Color(0xFF5B3DE8)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Rekap Presensi',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF5B3DE8),
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  'Kelola & koordinasi angkatan',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF6B7280),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F0FF),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: const Color(0xFFDDD6FE)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.verified_rounded, size: 12, color: Color(0xFF5B3DE8)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Ketua',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF5B3DE8),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-
-                      // 2x2 Grid Action Cards
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(
-                            child: _buildKetuaActionCard(
+                            child: _buildKetuaChip(
                               icon: Icons.campaign_rounded,
-                              iconColor: const Color(0xFF5B3DE8),
-                              iconBg: const Color(0xFFF3F0FF),
-                              title: 'Pengumuman',
-                              subtitle: 'Broadcast info',
+                              label: 'Pengumuman',
+                              color: const Color(0xFF5B3DE8),
+                              bgColor: const Color(0xFFF3F0FF),
                               onTap: () => widget.onNavigateTab(7),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Expanded(
-                            child: _buildKetuaActionCard(
-                              icon: Icons.calendar_today_rounded,
-                              iconColor: const Color(0xFFF59E0B),
-                              iconBg: const Color(0xFFFEF3C7),
-                              title: 'Agenda Kelas',
-                              subtitle: 'Jadwalkan rapat',
+                            child: _buildKetuaChip(
+                              icon: Icons.event_note_rounded,
+                              label: 'Agenda',
+                              color: const Color(0xFF0284C7),
+                              bgColor: const Color(0xFFE0F2FE),
                               onTap: () => widget.onNavigateTab(6),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
+                          const SizedBox(width: 8),
                           Expanded(
-                            child: _buildKetuaActionCard(
-                              icon: Icons.donut_large_rounded,
-                              iconColor: const Color(0xFF0284C7),
-                              iconBg: const Color(0xFFE0F2FE),
-                              title: 'Rekap Presensi',
-                              subtitle: 'Statistik kehadiran',
-                              onTap: () => _showRekapKelasModal(context),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _buildKetuaActionCard(
-                              icon: Icons.account_balance_wallet_rounded,
-                              iconColor: const Color(0xFF10B981),
-                              iconBg: const Color(0xFFECFDF5),
-                              title: 'Kas Kelas',
-                              subtitle: 'Pantau keuangan',
-                              onTap: () => widget.onNavigateTab(8),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildKetuaActionCard(
+                            child: _buildKetuaChip(
                               icon: Icons.how_to_vote_rounded,
-                              iconColor: const Color(0xFF8B5CF6),
-                              iconBg: const Color(0xFFF5F3FF),
-                              title: 'Voting Kelas',
-                              subtitle: 'Polling keputusan',
+                              label: 'Voting',
+                              color: const Color(0xFFF59E0B),
+                              bgColor: const Color(0xFFFEF3C7),
                               onTap: () => widget.onNavigateTab(12),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Expanded(
-                            child: _buildKetuaActionCard(
-                              icon: Icons.history_toggle_off_rounded,
-                              iconColor: const Color(0xFF0D9488),
-                              iconBg: const Color(0xFFCCFBF1),
-                              title: 'Audit Log',
-                              subtitle: 'Riwayat aktivitas',
-                              onTap: () => widget.onNavigateTab(14),
+                            child: _buildKetuaChip(
+                              icon: Icons.groups_rounded,
+                              label: 'Anggota',
+                              color: const Color(0xFF10B981),
+                              bgColor: const Color(0xFFECFDF5),
+                              onTap: () => widget.onNavigateTab(3),
                             ),
                           ),
                         ],
@@ -722,81 +615,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
               ],
 
               // ==========================================
-              // SPECIAL SECTION: TRANSAKSI TERBARU (Bendahara - Image 3)
+              // 5. PENGINGAT DEADLINE TERDEKAT (COMPACT)
               // ==========================================
-              if (student.isBendahara) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Transaksi Terbaru',
-                      style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
-                    ),
-                    InkWell(
-                      onTap: () => widget.onNavigateTab(8),
-                      child: const Text(
-                        'Lihat Semua',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...DummyData.treasuryTransactions.take(3).map((tx) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: tx.isPemasukan ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            tx.isPemasukan ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                            color: tx.isPemasukan ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(tx.judul, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF111827))),
-                              const SizedBox(height: 2),
-                              Text('${tx.tanggal.day} ${_monthName(tx.tanggal.month)} 2026 • ${tx.kategori}', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '${tx.isPemasukan ? "+" : "-"} Rp ${tx.nominal}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: tx.isPemasukan ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 18),
-              ],
+              _buildReminderCard(context),
+              const SizedBox(height: 20),
 
               // ==========================================
-              // PENGUMUMAN TERBARU SECTION
+              // 6. PENGUMUMAN TERBARU
               // ==========================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -829,7 +658,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Announcement Card
               InkWell(
                 onTap: () {
                   if (latestAnnouncement != null) {
@@ -894,9 +722,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              '5 Oktober 2026',
-                              style: TextStyle(
+                            Text(
+                              latestAnnouncement != null
+                                  ? '${latestAnnouncement.createdAt.day} ${_monthName(latestAnnouncement.createdAt.month)} ${latestAnnouncement.createdAt.year}'
+                                  : '5 Oktober 2026',
+                              style: const TextStyle(
                                 fontSize: 10.5,
                                 color: Color(0xFF9CA3AF),
                                 fontWeight: FontWeight.w600,
@@ -909,12 +739,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // ==========================================
-              // 8. INSPIRATIONAL QUOTE & CAMPUS FOOTER
-              // ==========================================
-              _buildCampusFooter(context),
+              const SizedBox(height: 28),
             ],
           ),
         ),
@@ -1281,70 +1106,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildKetuaActionCard({
+  Widget _buildKetuaChip({
     required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required String title,
-    required String subtitle,
+    required String label,
+    required Color color,
+    required Color bgColor,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: iconColor, size: 19),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F2937),
-                        height: 1.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF6B7280),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -1470,18 +1263,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: TextStyle(fontSize: 11.5, color: Color(0xFFC7D2FE)),
           ),
           const SizedBox(height: 14),
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 10,
             children: [
-              _buildCountdownBlock('01', 'HARI'),
-              const SizedBox(width: 6),
-              const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 16)),
-              const SizedBox(width: 6),
-              _buildCountdownBlock('14', 'JAM'),
-              const SizedBox(width: 6),
-              const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 16)),
-              const SizedBox(width: 6),
-              _buildCountdownBlock('35', 'MENIT'),
-              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildCountdownBlock('01', 'HARI'),
+                  const SizedBox(width: 4),
+                  const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 15)),
+                  const SizedBox(width: 4),
+                  _buildCountdownBlock('14', 'JAM'),
+                  const SizedBox(width: 4),
+                  const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 15)),
+                  const SizedBox(width: 4),
+                  _buildCountdownBlock('35', 'MENIT'),
+                ],
+              ),
               ElevatedButton.icon(
                 onPressed: () => widget.onNavigateTab(2),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 13),
@@ -1490,7 +1291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   backgroundColor: const Color(0xFF6366F1),
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -1530,291 +1331,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTodayScheduleSection(BuildContext context) {
-    final todayCourses = [
-      {
-        'course': 'Pendidikan Kewarganegaraan',
-        'time': '08.00 - 09.40 WITA',
-        'room': 'Ruang B2 Lantai 2',
-        'lecturer': 'Drs. H. Ahmad Fauzi, M.Si.',
-        'sks': '2 SKS',
-        'status': 'Hadir',
-        'statusColor': const Color(0xFF10B981),
-        'statusBg': const Color(0xFFECFDF5),
-        'accentColor': const Color(0xFF5B3DE8),
-      },
-      {
-        'course': 'Pendidikan Pancasila',
-        'time': '10.00 - 11.40 WITA',
-        'room': 'Ruang Teori FISIP 1',
-        'lecturer': 'Dr. Siti Nurhaliza',
-        'sks': '2 SKS',
-        'status': 'Terjadwal',
-        'statusColor': const Color(0xFF0284C7),
-        'statusBg': const Color(0xFFE0F2FE),
-        'accentColor': const Color(0xFF0284C7),
-      },
-      {
-        'course': 'Teori Komunikasi Kontemporer',
-        'time': '13.00 - 14.40 WITA',
-        'room': 'Lab Multimedia FISIP',
-        'lecturer': 'Prof. Dr. Andi Mallarangeng',
-        'sks': '3 SKS',
-        'status': 'Terjadwal',
-        'statusColor': const Color(0xFFD97706),
-        'statusBg': const Color(0xFFFEF3C7),
-        'accentColor': const Color(0xFFF59E0B),
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Jadwal Kuliah Hari Ini',
-              style: TextStyle(
-                fontSize: 15.5,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
-                letterSpacing: -0.2,
-              ),
-            ),
-            InkWell(
-              onTap: () => widget.onNavigateTab(1),
-              borderRadius: BorderRadius.circular(12),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF5B3DE8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...todayCourses.map((item) {
-          final isHadir = item['status'] == 'Hadir';
-          final accentColor = item['accentColor'] as Color;
-          final statusColor = item['statusColor'] as Color;
-          final statusBg = item['statusBg'] as Color;
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.access_time_rounded, size: 16, color: accentColor),
-                      const SizedBox(height: 4),
-                      Text(
-                        (item['time'] as String).split(' ').first,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: accentColor,
-                        ),
-                      ),
-                      Text(
-                        'WITA',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: statusBg,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isHadir ? Icons.check_circle_rounded : Icons.hourglass_top_rounded,
-                                  size: 11,
-                                  color: statusColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  item['status'] as String,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            item['sks'] as String,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item['course'] as String,
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          const Icon(Icons.room_outlined, size: 13, color: Color(0xFF6B7280)),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${item['room']} • ${item['lecturer']}',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF4B5563)),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildCampusFooter(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF3F0FF), Color(0xFFFAF5FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE9D5FF)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.format_quote_rounded, color: Color(0xFF5B3DE8), size: 20),
-                  SizedBox(width: 6),
-                  Text(
-                    'KUTIPAN HARI INI',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF5B3DE8),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '"Komunikasi adalah kunci memahami peradaban. Sampaikan gagasan dengan etika, data, dan integritas tinggi."',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                '— Program Studi S1 Ilmu Komunikasi • FISIP UNAZLAM',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Column(
-            children: [
-              Text(
-                'ILKOM UNAZLAM HUB • Angkatan 2026',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade500,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Fakultas Ilmu Sosial & Ilmu Politik • UNAZLAM',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
     );
   }
 
