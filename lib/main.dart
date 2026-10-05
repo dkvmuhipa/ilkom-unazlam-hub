@@ -17,6 +17,10 @@ import 'features/agenda/agenda_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/auth/login_screen.dart';
+import 'features/notifications/notification_screen.dart';
+import 'features/voting/voting_screen.dart';
+import 'features/letters/letters_screen.dart';
+import 'features/audit/audit_log_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
 import 'core/services/dummy_data.dart';
@@ -209,6 +213,17 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       ), // 8: Kas Kelas
       const GroupsScreen(), // 9: Kelompok Praktikum
       const ResourcesScreen(), // 10: Gudang Materi
+      NotificationScreen(
+        onNavigateTab: _navigateToIndex,
+      ), // 11: Pusat Notifikasi
+      VotingScreen(
+        canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+      ), // 12: Voting & Polling
+      LettersScreen(
+        studentName: currentUser.nama,
+        studentNim: currentUser.nim,
+      ), // 13: Surat Izin & Dispensasi
+      const AuditLogScreen(), // 14: Audit Log Aktivitas
     ];
 
     final isTopLevel = _currentIndex <= 4;
@@ -473,6 +488,11 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                   _buildDrawerTile(Icons.account_balance_wallet_outlined, 'Kas Kelas', 8),
                   _buildDrawerTile(Icons.group_work_outlined, 'Kelompok Praktikum', 9),
                   _buildDrawerTile(Icons.folder_open_rounded, 'Gudang Materi', 10),
+                  const Divider(height: 24, color: Color(0xFFF3F4F6)),
+                  _buildDrawerTile(Icons.notifications_outlined, 'Pusat Notifikasi', 11),
+                  _buildDrawerTile(Icons.how_to_vote_outlined, 'Voting & Polling', 12),
+                  _buildDrawerTile(Icons.description_outlined, 'Surat & Dispensasi', 13),
+                  _buildDrawerTile(Icons.history_toggle_off_rounded, 'Audit Log Kelas', 14),
                 ],
               ),
             ),

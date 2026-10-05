@@ -401,7 +401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       // Notification Bell
                       InkWell(
-                        onTap: () => widget.onNavigateTab(7),
+                        onTap: () => widget.onNavigateTab(11),
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
                           padding: const EdgeInsets.all(9),
@@ -734,6 +734,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.how_to_vote_rounded,
+                              iconColor: const Color(0xFF8B5CF6),
+                              iconBg: const Color(0xFFF5F3FF),
+                              title: 'Voting Kelas',
+                              subtitle: 'Polling keputusan',
+                              onTap: () => widget.onNavigateTab(12),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.history_toggle_off_rounded,
+                              iconColor: const Color(0xFF0D9488),
+                              iconBg: const Color(0xFFCCFBF1),
+                              title: 'Audit Log',
+                              subtitle: 'Riwayat aktivitas',
+                              onTap: () => widget.onNavigateTab(14),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -809,6 +835,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }),
                 const SizedBox(height: 18),
               ],
+
+              // ==========================================
+              // REMINDER & COUNTDOWN DEADLINE SECTION
+              // ==========================================
+              _buildReminderCard(context),
+              const SizedBox(height: 10),
 
               // ==========================================
               // PENGUMUMAN TERBARU SECTION
@@ -1355,6 +1387,155 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReminderCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E1B4B).withValues(alpha: 0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('⏰', style: TextStyle(fontSize: 12)),
+                    SizedBox(width: 5),
+                    Text(
+                      'PENGINGAT DEADLINE TERDEKAT',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFFCA5A5),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('🔔 Pengingat aktif! Notifikasi push dikirim 2 jam sebelum batas pengumpulan.'),
+                      backgroundColor: Color(0xFF4338CA),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.notifications_active_rounded, color: Colors.amber, size: 16),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Proposal Kampanye PR',
+            style: TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'Mata Kuliah: Public Relations • Dosen: Dr. Siti Nurhaliza',
+            style: TextStyle(fontSize: 11.5, color: Color(0xFFC7D2FE)),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _buildCountdownBlock('01', 'HARI'),
+              const SizedBox(width: 6),
+              const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 16)),
+              const SizedBox(width: 6),
+              _buildCountdownBlock('14', 'JAM'),
+              const SizedBox(width: 6),
+              const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 16)),
+              const SizedBox(width: 6),
+              _buildCountdownBlock('35', 'MENIT'),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => widget.onNavigateTab(2),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 13),
+                label: const Text('Detail Tugas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountdownBlock(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 8.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFA5B4FC),
+            ),
+          ),
+        ],
       ),
     );
   }

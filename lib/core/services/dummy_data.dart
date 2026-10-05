@@ -630,6 +630,14 @@ class DummyData {
     ),
   ];
 
+  static int get totalKasPemasukan {
+    return treasuryTransactions.where((item) => item.isPemasukan).fold(0, (acc, item) => acc + item.nominal);
+  }
+
+  static int get totalKasPengeluaran {
+    return treasuryTransactions.where((item) => !item.isPemasukan).fold(0, (acc, item) => acc + item.nominal);
+  }
+
   static int get totalKasSaldo {
     return treasuryTransactions.fold(0, (acc, item) {
       return item.isPemasukan ? acc + item.nominal : acc - item.nominal;
