@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DirectoryScreen extends StatefulWidget {
-  const DirectoryScreen({super.key});
+  final bool canManage;
+  const DirectoryScreen({super.key, this.canManage = false});
 
   @override
   State<DirectoryScreen> createState() => _DirectoryScreenState();
@@ -253,10 +255,113 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                     ),
                   ),
                 ),
+              if (widget.canManage) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showManageMemberDialog(s);
+                    },
+                    icon: const Icon(Icons.manage_accounts_rounded, size: 18),
+                    label: const Text('Kelola Jabatan & Info Anggota', style: TextStyle(fontWeight: FontWeight.w700)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF5B3DE8),
+                      side: const BorderSide(color: Color(0xFF5B3DE8)),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+
+  void _showManageMemberDialog(StudentProfile s) {
+    String selectedJabatan = s.jabatan;
+    final phoneController = TextEditingController(text: s.noWa);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Kelola Anggota: ${s.nama.split(' ').first}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('NIM: ${s.nim}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: selectedJabatan,
+                decoration: InputDecoration(
+                  labelText: 'Jabatan Pengurus',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'Ketua Kelas', child: Text('Ketua Kelas')),
+                  DropdownMenuItem(value: 'Wakil Ketua', child: Text('Wakil Ketua')),
+                  DropdownMenuItem(value: 'Bendahara', child: Text('Bendahara')),
+                  DropdownMenuItem(value: 'Sekretaris', child: Text('Sekretaris')),
+                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
+                ],
+                onChanged: (val) {
+                  if (val != null) setDialogState(() => selectedJabatan = val);
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Nomor WhatsApp',
+                  hintText: '0812xxxxxxxx',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                setState(() {
+                  s.jabatan = selectedJabatan;
+                });
+                await SupabaseRepository.updateStudentJabatan(s.nim, selectedJabatan);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Jabatan ${s.nama} berhasil diperbarui menjadi $selectedJabatan!'),
+                      backgroundColor: const Color(0xFF10B981),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -182,7 +182,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         key: ValueKey('assignments_${currentUser.nim}'),
         canManage: currentUser.canManageAssignments,
       ), // 2: Tugas
-      const DirectoryScreen(), // 3: Kelas (Anggota)
+      DirectoryScreen(
+        key: ValueKey('directory_${currentUser.nim}'),
+        canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+      ), // 3: Kelas (Anggota)
       ProfileScreen(
         key: ValueKey('profile_${currentUser.nim}'),
         onNavigateTab: _navigateToIndex,
