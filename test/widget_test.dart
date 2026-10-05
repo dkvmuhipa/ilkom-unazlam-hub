@@ -12,7 +12,7 @@ import 'package:class_manager/main.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const UnazlamClassApp());
-    expect(find.byType(UnazlamClassApp), findsOneWidget);
+    await tester.pumpWidget(const ClassManagerApp());
+    expect(find.byType(ClassManagerApp), findsOneWidget);
   });
 }

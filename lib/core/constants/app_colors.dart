@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand Colors - Royal Purple & Gold (Profesional, Modern & Berkarakter)
-  static const Color primary = Color(0xFF4C1078); // Deep Royal Purple
-  static const Color primaryDark = Color(0xFF2E094B); // Midnight Purple (Hero Header)
-  static const Color primaryContainer = Color(0xFFF1E9F9); // Soft Violet Container
-  static const Color primarySoft = Color(0xFFF1E9F9); // Alias for soft violet container
+  // Brand Colors - Vibrant Royal Purple (Matches UI Mockup)
+  static const Color primary = Color(0xFF5B3DE8); // Vibrant Royal Purple
+  static const Color primaryDark = Color(0xFF4527A0); // Deep Violet
+  static const Color primaryLight = Color(0xFF755BF7); // Lighter Purple for Gradients
+  static const Color primaryContainer = Color(0xFFF3F0FF); // Soft Violet Container
+  static const Color primarySoft = Color(0xFFF3F0FF); // Alias for soft violet container
 
   static const Color secondary = Color(0xFFFFA000); // Warm Amber Gold
   static const Color secondaryDark = Color(0xFFD97706);
   static const Color secondarySoft = Color(0xFFFEF3C7); // Soft Amber Container
 
   // Modern Neutral Surfaces (Warm, Premium & Airy)
-  static const Color background = Color(0xFFF7F5FA); // Lembut & Mewah
+  static const Color background = Color(0xFFF8F9FD); // Clean Off-White
   static const Color surface = Colors.white;
   static const Color card = Colors.white;
 

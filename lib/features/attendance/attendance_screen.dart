@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
-import '../../models/models.dart';
+
+class AttendanceHistoryItem {
+  final String date;
+  final String courseName;
+  final String status; // 'Hadir', 'Izin', 'Sakit', 'Alpa'
+
+  const AttendanceHistoryItem({
+    required this.date,
+    required this.courseName,
+    required this.status,
+  });
+}
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -11,265 +21,277 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  void _showLogModal(CourseAttendance item) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Catat Absensi Pertemuan',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                item.courseName,
-                style: const TextStyle(fontSize: 11, color: AppColors.textSub),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStatusButton('Hadir', AppColors.success, Icons.check_circle_outline),
-                  _buildStatusButton('Izin', AppColors.warning, Icons.info_outline),
-                  _buildStatusButton('Sakit', AppColors.info, Icons.medical_services_outlined),
-                  _buildStatusButton('Alpa', AppColors.error, Icons.cancel_outlined),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusButton(String label, Color color, IconData icon) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Presensi dicatat: $label'), duration: const Duration(seconds: 1)),
-        );
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-          ],
-        ),
-      ),
-    );
-  }
+  final List<AttendanceHistoryItem> _history = const [
+    AttendanceHistoryItem(date: '5 Okt 2026', courseName: 'Pendidikan Pancasila', status: 'Hadir'),
+    AttendanceHistoryItem(date: '1 Okt 2026', courseName: 'Ilmu Kealaman Dasar', status: 'Hadir'),
+    AttendanceHistoryItem(date: '28 Sep 2026', courseName: 'Pendidikan Agama Islam', status: 'Izin'),
+    AttendanceHistoryItem(date: '22 Sep 2026', courseName: 'Dasar-Dasar Ilmu Komunikasi', status: 'Hadir'),
+    AttendanceHistoryItem(date: '18 Sep 2026', courseName: 'Pendidikan Kewarganegaraan', status: 'Hadir'),
+    AttendanceHistoryItem(date: '15 Sep 2026', courseName: 'Pengantar Ilmu Politik', status: 'Hadir'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Pelacak Kehadiran (75%)'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text(
+          'Absensi Saya',
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Minimalist Info Banner
+            // Donut Chart Card matching Screen 6
             Container(
-              padding: const EdgeInsets.all(16),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 20),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Circular Progress Donut Ring (90% Hadir)
+                  SizedBox(
+                    width: 125,
+                    height: 125,
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text(
-                          'Ketentuan 75% Perkuliahan',
-                          style: TextStyle(
-                            color: AppColors.textMain,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                        SizedBox(
+                          width: 125,
+                          height: 125,
+                          child: CircularProgressIndicator(
+                            value: 0.90,
+                            strokeWidth: 10,
+                            backgroundColor: const Color(0xFFF3F0FF),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
+                            strokeCap: StrokeCap.round,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Maksimal 4 kali ketidakhadiran dari total 16 pertemuan per semester.',
-                          style: TextStyle(color: AppColors.textSub, fontSize: 11),
+                        const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '90%',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            Text(
+                              'Hadir',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 4 Stat Counters in a Row (Hadir, Izin, Sakit, Alpa)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatBox('9', 'Hadir', const Color(0xFF10B981)),
+                      _buildStatBox('1', 'Izin', const Color(0xFFF59E0B)),
+                      _buildStatBox('0', 'Sakit', const Color(0xFF3B82F6)),
+                      _buildStatBox('0', 'Alpa', const Color(0xFFEF4444)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Total Pertemuan Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total Pertemuan',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  Text(
+                    '10',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
 
-            const Text(
-              'Mata Kuliah Semester Ini',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textMain,
-              ),
+            // Riwayat Absensi Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Riwayat Absensi',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Text(
+                        'Semua',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Color(0xFF6B7280)),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            ...DummyData.attendanceRecords.map((item) => _buildMinimalAttendanceCard(item)),
+            // Riwayat Absensi List matching Screen 6
+            ..._history.map((h) => _buildHistoryTile(h)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMinimalAttendanceCard(CourseAttendance item) {
-    final persentase = item.persentase;
-    final isDanger = item.isDangerZone;
+  Widget _buildStatBox(String count, String label, Color color) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
 
-    Color badgeColor = AppColors.success;
-    Color badgeBg = AppColors.successSoft;
-    if (isDanger) {
-      badgeColor = AppColors.error;
-      badgeBg = AppColors.errorSoft;
-    } else if (item.alpa > 0) {
-      badgeColor = AppColors.warning;
-      badgeBg = AppColors.warningSoft;
-    }
+  Widget _buildHistoryTile(AttendanceHistoryItem item) {
+    final isHadir = item.status == 'Hadir';
+    final isIzin = item.status == 'Izin';
+    final statusColor = isHadir ? const Color(0xFF10B981) : (isIzin ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
+    final statusBg = isHadir ? const Color(0xFFECFDF5) : (isIzin ? const Color(0xFFFFFBEB) : const Color(0xFFFEF2F2));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item.courseName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '${persentase.toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: badgeColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Clean Minimalist Progress Line
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: item.sesiBerjalan / item.totalSesi,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFF3F2F6),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isDanger ? AppColors.error : AppColors.primary,
-              ),
+          // Dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Pertemuan ${item.sesiBerjalan}/${item.totalSesi}',
-                style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-              ),
-              Text(
-                'Hadir ${item.hadir} • Izin ${item.izin} • Alpa ${item.alpa}',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSub),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(
-                isDanger ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-                size: 14,
-                color: isDanger ? AppColors.error : AppColors.textSub,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  isDanger
-                      ? 'Sisa jatah alpa tinggal ${item.sisaAlpaAman}x lagi!'
-                      : 'Toleransi alpa: sisa ${item.sisaAlpaAman}x sesi',
-                  style: TextStyle(
-                    fontSize: 11,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.date,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: Color(0xFF9CA3AF),
                     fontWeight: FontWeight.w600,
-                    color: isDanger ? AppColors.error : AppColors.textSub,
                   ),
                 ),
-              ),
-              InkWell(
-                onTap: () => _showLogModal(item),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Catat',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+                const SizedBox(height: 2),
+                Text(
+                  item.courseName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
                   ),
                 ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              item.status,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: statusColor,
               ),
-            ],
+            ),
           ),
         ],
       ),

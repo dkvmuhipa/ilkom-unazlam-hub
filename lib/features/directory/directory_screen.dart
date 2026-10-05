@@ -25,6 +25,48 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     }
   }
 
+  Color _getAvatarBg(int index, String role) {
+    if (role == 'ketua_kelas') return const Color(0xFFFEF3C7);
+    if (role == 'bendahara') return const Color(0xFFDCFCE7);
+    final colors = [
+      const Color(0xFFF3F0FF),
+      const Color(0xFFE0F2FE),
+      const Color(0xFFFEE2E2),
+      const Color(0xFFECFDF5),
+      const Color(0xFFFFFBEB),
+      const Color(0xFFFCE7F3),
+    ];
+    return colors[index % colors.length];
+  }
+
+  Color _getAvatarTextColor(int index, String role) {
+    if (role == 'ketua_kelas') return const Color(0xFFB45309);
+    if (role == 'bendahara') return const Color(0xFF16A34A);
+    final colors = [
+      const Color(0xFF5B3DE8),
+      const Color(0xFF0284C7),
+      const Color(0xFFDC2626),
+      const Color(0xFF059669),
+      const Color(0xFFD97706),
+      const Color(0xFFDB2777),
+    ];
+    return colors[index % colors.length];
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+  }
+
+  String _formatRole(String role) {
+    if (role == 'ketua_kelas') return 'Ketua Kelas';
+    if (role == 'bendahara') return 'Bendahara';
+    return 'Mahasiswa';
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = DummyData.students.where((s) {
@@ -35,208 +77,184 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Teman Sekelas'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text(
+          'Anggota Kelas',
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: Column(
         children: [
-          // Search Input (Clean Minimalist)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          // Search Bar matching Screen 7
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             child: Container(
-              height: 46,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppColors.softShadow,
               ),
               child: TextField(
+                onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: const InputDecoration(
-                  hintText: 'Cari nama atau NIM mahasiswa...',
-                  hintStyle: TextStyle(fontSize: 12, color: AppColors.textLight),
-                  prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSub),
+                  hintText: 'Cari nama atau NIM...',
+                  hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                  prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF9CA3AF)),
                   border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
                 ),
-                style: const TextStyle(fontSize: 13),
-                onChanged: (val) {
-                  setState(() => _searchQuery = val);
-                },
               ),
             ),
           ),
 
-          // Total Count Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Daftar Mahasiswa Aktif',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          // Student List matching Screen 7
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final s = filtered[index];
+                final initials = _getInitials(s.nama);
+                final avatarBg = _getAvatarBg(index, s.role);
+                final avatarTextColor = _getAvatarTextColor(index, s.role);
+                final roleLabel = _formatRole(s.role);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    '${filtered.length} Mahasiswa',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: avatarBg,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            initials,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: avatarTextColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        s.nama,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      subtitle: Text(
+                        roleLabel,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: s.role != 'mahasiswa' ? FontWeight.w700 : FontWeight.w500,
+                          color: s.role != 'mahasiswa' ? avatarTextColor : const Color(0xFF6B7280),
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                      onTap: () {
+                        _showStudentDetailModal(s, initials, avatarBg, avatarTextColor, roleLabel);
+                      },
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
-
-          // List Teman
-          Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Text('Tidak ada mahasiswa ditemukan.', style: TextStyle(color: AppColors.textSub)),
-                  )
-                : ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final student = filtered[index];
-                      return _buildMinimalStudentCard(student);
-                    },
-                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMinimalStudentCard(StudentProfile student) {
-    final isKetua = student.role == 'ketua_kelas' || student.role == 'komti';
-    final isBendahara = student.role == 'bendahara';
-
-    Color avatarBg = AppColors.primarySoft;
-    Color avatarText = AppColors.primary;
-    if (isKetua) {
-      avatarBg = AppColors.secondarySoft;
-      avatarText = const Color(0xFFB45309);
-    } else if (isBendahara) {
-      avatarBg = const Color(0xFFDCFCE7);
-      avatarText = const Color(0xFF15803D);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isKetua
-              ? AppColors.secondary.withValues(alpha: 0.3)
-              : isBendahara
-                  ? const Color(0xFF86EFAC)
-                  : AppColors.border,
-        ),
-        boxShadow: AppColors.softShadow,
+  void _showStudentDetailModal(StudentProfile s, String initials, Color avatarBg, Color avatarTextColor, String roleLabel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: avatarBg,
-            child: Text(
-              student.nama.isNotEmpty ? student.nama[0] : '?',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: avatarText,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: avatarBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: avatarTextColor),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        student.nama,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMain,
-                        ),
-                      ),
+              const SizedBox(height: 12),
+              Text(
+                s.nama,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'NIM: ${s.nim} • $roleLabel',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 20),
+              if (s.noWa.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _openWhatsApp(s.noWa, s.nama),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                    label: const Text('Hubungi via WhatsApp', style: TextStyle(fontWeight: FontWeight.w700)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    if (isKetua) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondarySoft,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
-                        ),
-                        child: const Text(
-                          'KETUA KELAS',
-                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
-                        ),
-                      ),
-                    ] else if (isBendahara) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFF86EFAC)),
-                        ),
-                        child: const Text(
-                          'BENDAHARA',
-                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'NIM: ${student.nim} • S1 Ilmu Komunikasi',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-                ),
-              ],
-            ),
+            ],
           ),
-          InkWell(
-            onTap: () => _openWhatsApp(student.noWa, student.nama),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Color(0xFF2E7D32)),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

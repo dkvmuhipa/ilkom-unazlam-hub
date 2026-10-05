@@ -1,44 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/supabase_service.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/schedule/schedule_screen.dart';
 import 'features/assignments/assignments_screen.dart';
-import 'features/announcements/announcements_screen.dart';
 import 'features/attendance/attendance_screen.dart';
+import 'features/announcements/announcements_screen.dart';
 import 'features/groups/groups_screen.dart';
 import 'features/resources/resources_screen.dart';
 import 'features/directory/directory_screen.dart';
 import 'features/treasury/treasury_screen.dart';
-import 'features/gpa/gpa_simulator_screen.dart';
-import 'core/services/supabase_service.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'features/agenda/agenda_screen.dart';
+import 'features/profile/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
+  
+  // Inisialisasi format tanggal lokal Indonesia
   try {
     await initializeDateFormatting('id_ID', null);
   } catch (e) {
-    debugPrint('Failed to initialize date formatting: $e');
+    debugPrint('Gagal inisialisasi locale id_ID: $e');
   }
+
+  // Inisialisasi Supabase
   await SupabaseService.initialize();
-  runApp(const UnazlamClassApp());
+
+  runApp(const ClassManagerApp());
 }
 
-class UnazlamClassApp extends StatelessWidget {
-  const UnazlamClassApp({super.key});
+class ClassManagerApp extends StatelessWidget {
+  const ClassManagerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ILKOM UNAZLAM',
+      title: 'ILKOM UNAZLAM Hub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const MainResponsiveShell(),
@@ -55,6 +54,7 @@ class MainResponsiveShell extends StatefulWidget {
 
 class _MainResponsiveShellState extends State<MainResponsiveShell> {
   int _currentIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _navigateToIndex(int index) {
     setState(() {
@@ -64,24 +64,43 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Screen mappings:
+    // 0: Beranda
+    // 1: Jadwal
+    // 2: Tugas
+    // 3: Kelas (Anggota)
+    // 4: Profil (Profil Saya & Ketua Kelas)
+    // 5: Absensi Saya
+    // 6: Agenda Kelas
+    // 7: Pengumuman
+    // 8: Kas Kelas
+    // 9: Kelompok
+    // 10: Materi
     final List<Widget> screens = [
-      DashboardScreen(onNavigateTab: _navigateToIndex), // 0: Beranda
+      DashboardScreen(
+        onNavigateTab: _navigateToIndex,
+        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+      ), // 0: Beranda
       const ScheduleScreen(), // 1: Jadwal
       const AssignmentsScreen(), // 2: Tugas
-      const AnnouncementsScreen(), // 3: Pengumuman
-      const AttendanceScreen(), // 4: Presensi 75%
-      const GroupsScreen(), // 5: Kelompok
-      const ResourcesScreen(), // 6: Materi
-      const DirectoryScreen(), // 7: Teman
+      const DirectoryScreen(), // 3: Kelas (Anggota)
+      ProfileScreen(onNavigateTab: _navigateToIndex), // 4: Profil Saya
+      const AttendanceScreen(), // 5: Absensi Saya
+      const AgendaScreen(), // 6: Agenda Kelas
+      const AnnouncementsScreen(), // 7: Pengumuman
       const TreasuryScreen(), // 8: Kas Kelas
-      const GpaSimulatorScreen(), // 9: Simulasi IPK
+      const GroupsScreen(), // 9: Kelompok Praktikum
+      const ResourcesScreen(), // 10: Gudang Materi
     ];
 
-    final isTopLevel = _currentIndex <= 3;
-    final navBarIndex = isTopLevel ? _currentIndex : 0;
+    final isTopLevel = _currentIndex <= 4;
+    final navBarIndex = isTopLevel ? _currentIndex : -1;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF3F1F8),
+      // Sidebar Drawer matching Screen 12 in the design mockup
+      drawer: _buildDrawer(),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 580),
@@ -102,16 +121,17 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                 index: _currentIndex,
                 children: screens,
               ),
+              // 5-Tab Bottom Navigation Bar matching Screen 3-7 in mockup
               bottomNavigationBar: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   border: const Border(
-                    top: BorderSide(color: AppColors.border, width: 1),
+                    top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2E094B).withValues(alpha: 0.06),
-                      blurRadius: 20,
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 16,
                       offset: const Offset(0, -4),
                     ),
                   ],
@@ -119,23 +139,24 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                 child: SafeArea(
                   top: false,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Beranda', navBarIndex),
-                        _buildNavItem(1, Icons.calendar_month_rounded, Icons.calendar_today_outlined, 'Jadwal', navBarIndex),
-                        _buildNavItem(2, Icons.task_alt_rounded, Icons.task_alt_outlined, 'Tugas', navBarIndex),
-                        _buildNavItem(3, Icons.notifications_rounded, Icons.notifications_none_rounded, 'Pengumuman', navBarIndex),
+                        _buildNavItem(1, Icons.calendar_month_rounded, Icons.calendar_month_outlined, 'Jadwal', navBarIndex),
+                        _buildNavItem(2, Icons.assignment_rounded, Icons.assignment_outlined, 'Tugas', navBarIndex),
+                        _buildNavItem(3, Icons.people_alt_rounded, Icons.people_alt_outlined, 'Kelas', navBarIndex),
+                        _buildNavItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Profil', navBarIndex),
                       ],
                     ),
                   ),
                 ),
               ),
-              floatingActionButton: _currentIndex > 3
+              floatingActionButton: _currentIndex > 4
                   ? FloatingActionButton.extended(
                       onPressed: () => _navigateToIndex(0),
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: const Color(0xFF5B3DE8),
                       foregroundColor: Colors.white,
                       elevation: 3,
                       icon: const Icon(Icons.arrow_back_rounded, size: 18),
@@ -159,36 +180,184 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       onTap: () => _navigateToIndex(index),
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryContainer : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isSelected ? selectedIcon : unselectedIcon,
-                size: 22,
-                color: isSelected ? AppColors.primary : AppColors.textSub,
-              ),
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              size: 24,
+              color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? AppColors.primary : AppColors.textSub,
-                letterSpacing: -0.1,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Screen 12: Sidebar Menu Drawer
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Drawer Header with Logo and Close X
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/logo.jpg',
+                          height: 38,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.school_rounded,
+                            color: Color(0xFF5B3DE8),
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ILMU KOMUNIKASI',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF5B3DE8),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          Text(
+                            'UNAZLAM',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFF59E0B),
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF6B7280)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+
+            // Drawer Nav Items matching Screen 12
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                children: [
+                  _buildDrawerTile(Icons.home_outlined, 'Beranda', 0),
+                  _buildDrawerTile(Icons.calendar_month_outlined, 'Jadwal', 1),
+                  _buildDrawerTile(Icons.assignment_outlined, 'Tugas', 2),
+                  _buildDrawerTile(Icons.people_alt_outlined, 'Kelas', 3),
+                  _buildDrawerTile(Icons.campaign_outlined, 'Pengumuman', 7),
+                  _buildDrawerTile(Icons.event_note_outlined, 'Agenda', 6),
+                  _buildDrawerTile(Icons.person_outline_rounded, 'Profil', 4),
+                  const Divider(height: 24, color: Color(0xFFF3F4F6)),
+                  _buildDrawerTile(Icons.fact_check_outlined, 'Absensi Saya', 5),
+                  _buildDrawerTile(Icons.account_balance_wallet_outlined, 'Kas Kelas', 8),
+                  _buildDrawerTile(Icons.group_work_outlined, 'Kelompok Praktikum', 9),
+                  _buildDrawerTile(Icons.folder_open_rounded, 'Gudang Materi', 10),
+                ],
+              ),
+            ),
+
+            // Bottom Actions (Pengaturan, Keluar)
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Column(
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                      leading: const Icon(Icons.settings_outlined, color: Color(0xFF6B7280), size: 20),
+                      title: const Text('Pengaturan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Menu Pengaturan')),
+                        );
+                      },
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                      leading: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 20),
+                      title: const Text('Keluar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Keluar dari akun')),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerTile(IconData icon, String title, int targetIndex) {
+    final isSelected = _currentIndex == targetIndex;
+
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+        dense: true,
+        leading: Icon(
+          icon,
+          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+          size: 21,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF374151),
+          ),
+        ),
+        selected: isSelected,
+        selectedTileColor: const Color(0xFFF3F0FF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onTap: () {
+          Navigator.pop(context);
+          _navigateToIndex(targetIndex);
+        },
       ),
     );
   }

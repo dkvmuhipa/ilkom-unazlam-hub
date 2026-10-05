@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../models/models.dart';
-import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AssignmentsScreen extends StatefulWidget {
   const AssignmentsScreen({super.key});
@@ -13,14 +11,18 @@ class AssignmentsScreen extends StatefulWidget {
 }
 
 class _AssignmentsScreenState extends State<AssignmentsScreen> {
-  String _selectedTab = 'Semua';
+  String _selectedTab = 'Aktif';
 
-  Future<void> _launchSubmit(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  final Map<String, Color> _courseColors = {
+    'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
+    'Pendidikan Pancasila': const Color(0xFF5B3DE8),
+    'Ilmu Kealaman Dasar': const Color(0xFF0284C7),
+    'Dasar-Dasar Ilmu Komunikasi': const Color(0xFFEF4444),
+    'Pendidikan Agama Islam': const Color(0xFF10B981),
+    'Pengantar Ilmu Politik': const Color(0xFF8B5CF6),
+    'Bahasa Indonesia': const Color(0xFFD97706),
+    'Bahasa Inggris Komunikasi': const Color(0xFF059669),
+  };
 
   void _cycleStatus(Assignment assignment) {
     setState(() {
@@ -35,7 +37,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Status diubah: ${_statusLabel(assignment.status)}'),
+        content: Text('Status tugas diubah: ${_statusLabel(assignment.status)}'),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -44,20 +46,46 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String _statusLabel(String status) {
     switch (status) {
       case 'belum':
-        return 'Belum Mulai';
+        return 'Belum Selesai';
       case 'sedang_dikerjakan':
-        return 'Sedang Dikerjakan';
+        return 'Dikerjakan';
       case 'selesai':
         return 'Selesai';
       default:
-        return status;
+        return 'Belum Mulai';
+    }
+  }
+
+  Color _statusTextColor(String status) {
+    switch (status) {
+      case 'belum':
+        return const Color(0xFFEF4444);
+      case 'sedang_dikerjakan':
+        return const Color(0xFFD97706);
+      case 'selesai':
+        return const Color(0xFF059669);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
+  Color _statusBgColor(String status) {
+    switch (status) {
+      case 'belum':
+        return const Color(0xFFFEF2F2);
+      case 'sedang_dikerjakan':
+        return const Color(0xFFFEF3C7);
+      case 'selesai':
+        return const Color(0xFFDCFCE7);
+      default:
+        return const Color(0xFFF3F4F6);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     List<Assignment> filteredList = DummyData.assignments;
-    if (_selectedTab == 'Belum Selesai') {
+    if (_selectedTab == 'Aktif') {
       filteredList = DummyData.assignments.where((a) => a.status != 'selesai').toList();
     } else if (_selectedTab == 'Selesai') {
       filteredList = DummyData.assignments.where((a) => a.status == 'selesai').toList();
@@ -66,90 +94,179 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Tugas & Praktikum'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text(
+          'Tugas Kelas',
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded, color: Color(0xFF111827), size: 22),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
-          // Filter Tabs (Clean Segmented Pills)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: ['Semua', 'Belum Selesai', 'Selesai'].map((tab) {
-                  final isSelected = tab == _selectedTab;
-                  return Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedTab = tab),
-                      borderRadius: BorderRadius.circular(9),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Text(
-                          tab,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.white : AppColors.textSub,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+          // Filter Chips matching Screen 5 (Aktif, Selesai, Semua)
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+            child: Row(
+              children: [
+                _buildFilterChip('Aktif'),
+                const SizedBox(width: 10),
+                _buildFilterChip('Selesai'),
+                const SizedBox(width: 10),
+                _buildFilterChip('Semua'),
+              ],
             ),
           ),
 
-          // List Tugas
+          // Assignment List
           Expanded(
             child: filteredList.isEmpty
                 ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primarySoft,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.assignment_turned_in_outlined, size: 32, color: AppColors.primary),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFDCFCE7),
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Belum Ada Tugas Aktif',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Dosen belum memberikan tugas atau semua tugas telah diselesaikan dengan baik.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.4),
-                          ),
-                        ],
-                      ),
+                          child: const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 32),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Tidak ada tugas di kategori ini',
+                          style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   )
                 : ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) {
                       final a = filteredList[index];
-                      return _buildMinimalAssignmentItem(a);
+                      final courseColor = _courseColors[a.courseName] ?? const Color(0xFF5B3DE8);
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Icon box in course color
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: courseColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(Icons.description_outlined, color: courseColor, size: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a.courseName,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: courseColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        a.judul,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF111827),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF9CA3AF)),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => _cycleStatus(a),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF9CA3AF)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF6B7280),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                InkWell(
+                                  onTap: () => _cycleStatus(a),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _statusBgColor(a.status),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      _statusLabel(a.status),
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: _statusTextColor(a.status),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
           ),
@@ -158,139 +275,31 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     );
   }
 
-  Widget _buildMinimalAssignmentItem(Assignment a) {
-    final diff = a.deadline.difference(DateTime.now());
-    final daysLeft = diff.inDays;
-    final isDone = a.status == 'selesai';
-    final isWorking = a.status == 'sedang_dikerjakan';
+  String _monthName(int month) {
+    const m = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return m[month];
+  }
 
-    Color statusColor = AppColors.textLight;
-    Color statusBg = const Color(0xFFF3F2F5);
-    if (isDone) {
-      statusColor = AppColors.success;
-      statusBg = AppColors.successSoft;
-    } else if (isWorking) {
-      statusColor = AppColors.warning;
-      statusBg = AppColors.warningSoft;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: a.kategori == 'Proyek Praktikum' ? AppColors.primarySoft : AppColors.secondarySoft,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  a.kategori,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: a.kategori == 'Proyek Praktikum' ? AppColors.primary : const Color(0xFFB45309),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  a.courseName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSub),
-                ),
-              ),
-              // Status Pill Toggle
-              InkWell(
-                onTap: () => _cycleStatus(a),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _statusLabel(a.status),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor),
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildFilterChip(String label) {
+    final isSelected = _selectedTab == label;
+    return InkWell(
+      onTap: () => setState(() => _selectedTab = label),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF4B5563),
           ),
-          const SizedBox(height: 10),
-          Text(
-            a.judul,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: isDone ? AppColors.textLight : AppColors.textMain,
-              decoration: isDone ? TextDecoration.lineThrough : null,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            a.deskripsi,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.event_outlined, size: 13, color: AppColors.textLight),
-              const SizedBox(width: 4),
-              Text(
-                DateFormat('dd MMM yyyy, HH:mm').format(a.deadline),
-                style: const TextStyle(fontSize: 11, color: AppColors.textSub),
-              ),
-              const Spacer(),
-              Text(
-                daysLeft <= 0 ? 'Hari ini' : '$daysLeft hari lagi',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: daysLeft <= 2 ? AppColors.error : AppColors.textSub,
-                ),
-              ),
-            ],
-          ),
-          if (a.linkPengumpulan != null) ...[
-            const SizedBox(height: 10),
-            InkWell(
-              onTap: () => _launchSubmit(a.linkPengumpulan!),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.cloud_upload_outlined, size: 15, color: AppColors.primary),
-                    SizedBox(width: 6),
-                    Text(
-                      'Buka Link Drive / Pengumpulan',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
