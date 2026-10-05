@@ -687,37 +687,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ] else ...[
-                // KETUA KELAS & MAHASISWA QUICK MENUS (Image 2)
+                // MAHASISWA & KETUA KELAS QUICK SERVICES (Non-redundant with bottom navigation)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildQuickMenuItem(
-                      icon: Icons.calendar_month_rounded,
-                      label: 'Jadwal',
-                      color: const Color(0xFF5B3DE8),
-                      bgColor: const Color(0xFFF3F0FF),
-                      onTap: () => widget.onNavigateTab(1),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.assignment_outlined,
-                      label: 'Tugas',
-                      color: const Color(0xFFF59E0B),
-                      bgColor: const Color(0xFFFEF3C7),
-                      onTap: () => widget.onNavigateTab(2),
-                    ),
-                    _buildQuickMenuItem(
-                      icon: Icons.fact_check_outlined,
+                      icon: Icons.fact_check_rounded,
                       label: 'Absensi',
                       color: const Color(0xFF0284C7),
                       bgColor: const Color(0xFFE0F2FE),
                       onTap: () => widget.onNavigateTab(5),
                     ),
                     _buildQuickMenuItem(
-                      icon: Icons.people_alt_outlined,
-                      label: 'Kelas',
-                      color: const Color(0xFF7C3AED),
-                      bgColor: const Color(0xFFEDE9FE),
-                      onTap: () => widget.onNavigateTab(3),
+                      icon: Icons.menu_book_rounded,
+                      label: 'Materi',
+                      color: const Color(0xFF5B3DE8),
+                      bgColor: const Color(0xFFF3F0FF),
+                      onTap: () => widget.onNavigateTab(10),
+                    ),
+                    _buildQuickMenuItem(
+                      icon: Icons.groups_rounded,
+                      label: 'Kelompok',
+                      color: const Color(0xFF10B981),
+                      bgColor: const Color(0xFFECFDF5),
+                      onTap: () => widget.onNavigateTab(9),
+                    ),
+                    _buildQuickMenuItem(
+                      icon: Icons.event_note_rounded,
+                      label: 'Agenda',
+                      color: const Color(0xFFF59E0B),
+                      bgColor: const Color(0xFFFEF3C7),
+                      onTap: () => widget.onNavigateTab(6),
                     ),
                   ],
                 ),
@@ -725,63 +725,145 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 24),
 
               // ==========================================
-              // SPECIAL SECTION: AKSES KETUA KELAS (Image 2)
+              // SPECIAL SECTION: PANEL KETUA KELAS (Executive Command Hub)
               // ==========================================
               if (student.isKetuaKelas) ...[
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: const Color(0xFFEDE9FE), width: 1.2),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      // Header Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.military_tech_rounded, size: 20, color: Color(0xFFD97706)),
-                          SizedBox(width: 8),
-                          Text(
-                            'Akses Ketua Kelas',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF92400E),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F0FF),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.admin_panel_settings_rounded,
+                                  size: 20,
+                                  color: Color(0xFF5B3DE8),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Panel Ketua Kelas',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF111827),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Akses kelola & koordinasi angkatan',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF6B7280),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F0FF),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFDDD6FE)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_rounded, size: 12, color: Color(0xFF5B3DE8)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Ketua',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF5B3DE8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
+
+                      // 2x2 Grid Action Cards
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildKetuaShortcut(
-                            icon: Icons.campaign_rounded,
-                            label: 'Pengumuman',
-                            onTap: () => widget.onNavigateTab(7),
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.campaign_rounded,
+                              iconColor: const Color(0xFF5B3DE8),
+                              iconBg: const Color(0xFFF3F0FF),
+                              title: 'Pengumuman',
+                              subtitle: 'Broadcast info',
+                              onTap: () => widget.onNavigateTab(7),
+                            ),
                           ),
-                          _buildKetuaShortcut(
-                            icon: Icons.calendar_today_rounded,
-                            label: 'Agenda',
-                            onTap: () => widget.onNavigateTab(6),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.calendar_today_rounded,
+                              iconColor: const Color(0xFFF59E0B),
+                              iconBg: const Color(0xFFFEF3C7),
+                              title: 'Agenda Kelas',
+                              subtitle: 'Jadwalkan rapat',
+                              onTap: () => widget.onNavigateTab(6),
+                            ),
                           ),
-                          _buildKetuaShortcut(
-                            icon: Icons.donut_large_rounded,
-                            label: 'Rekap Kelas',
-                            onTap: () => _showRekapKelasModal(context),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.donut_large_rounded,
+                              iconColor: const Color(0xFF0284C7),
+                              iconBg: const Color(0xFFE0F2FE),
+                              title: 'Rekap Presensi',
+                              subtitle: 'Statistik kehadiran',
+                              onTap: () => _showRekapKelasModal(context),
+                            ),
                           ),
-                          _buildKetuaShortcut(
-                            icon: Icons.account_balance_wallet_rounded,
-                            label: 'Kas Kelas',
-                            onTap: () => widget.onNavigateTab(8),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildKetuaActionCard(
+                              icon: Icons.account_balance_wallet_rounded,
+                              iconColor: const Color(0xFF10B981),
+                              iconBg: const Color(0xFFECFDF5),
+                              title: 'Kas Kelas',
+                              subtitle: 'Pantau keuangan',
+                              onTap: () => widget.onNavigateTab(8),
+                            ),
                           ),
                         ],
                       ),
@@ -1307,35 +1389,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildKetuaShortcut({
+  Widget _buildKetuaActionCard({
     required IconData icon,
-    required String label,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Expanded(
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-              child: Icon(icon, color: const Color(0xFFB45309), size: 20),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6B7280),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 11,
+                color: Color(0xFF9CA3AF),
+              ),
+            ],
+          ),
         ),
       ),
     );
