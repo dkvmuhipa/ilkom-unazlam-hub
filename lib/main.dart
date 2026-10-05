@@ -139,20 +139,6 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     });
   }
 
-  void _switchSimulationUser(String nim) {
-    setState(() {
-      _activeNim = nim;
-    });
-    final st = DummyData.students.firstWhere((s) => s.nim == nim, orElse: () => DummyData.students.first);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Beralih ke tampilan: ${st.nama} (${st.jabatan})'),
-        duration: const Duration(seconds: 1),
-        backgroundColor: const Color(0xFF5B3DE8),
-      ),
-    );
-  }
-
   void _navigateToIndex(int index) {
     setState(() {
       _currentIndex = index;
@@ -187,7 +173,6 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         userNim: currentUser.nim,
         onNavigateTab: _navigateToIndex,
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-        onSwitchSimulation: _switchSimulationUser,
       ), // 0: Beranda
       ScheduleScreen(
         key: ValueKey('schedule_${currentUser.nim}'),

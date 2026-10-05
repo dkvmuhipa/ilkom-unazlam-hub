@@ -9,7 +9,6 @@ class DashboardScreen extends StatefulWidget {
   final VoidCallback? onOpenDrawer;
   final String? userName;
   final String? userNim;
-  final Function(String nim)? onSwitchSimulation;
 
   const DashboardScreen({
     super.key,
@@ -17,7 +16,6 @@ class DashboardScreen extends StatefulWidget {
     this.onOpenDrawer,
     this.userName,
     this.userNim,
-    this.onSwitchSimulation,
   });
 
   @override
@@ -38,129 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _heroController.dispose();
     super.dispose();
-  }
-
-  void _showSimulationPicker(BuildContext context, StudentProfile currentStudent) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.swap_horiz_rounded, color: Color(0xFF5B3DE8), size: 22),
-                  SizedBox(width: 8),
-                  Text(
-                    'Simulasi Fitur Jabatan',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Pilih profil untuk menguji antarmuka & fitur khusus masing-masing jabatan:',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 16),
-              _buildSimulationTile(
-                icon: Icons.military_tech_rounded,
-                title: 'Nur Farida',
-                roleSubtitle: 'Ketua Kelas • Ilmu Komunikasi',
-                color: const Color(0xFFD97706),
-                bgColor: const Color(0xFFFEF3C7),
-                isSelected: currentStudent.isKetuaKelas,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  widget.onSwitchSimulation?.call('260250023');
-                },
-              ),
-              _buildSimulationTile(
-                icon: Icons.account_balance_wallet_rounded,
-                title: 'Alya Nabilah',
-                roleSubtitle: 'Bendahara Kelas • Semester 1',
-                color: const Color(0xFF16A34A),
-                bgColor: const Color(0xFFDCFCE7),
-                isSelected: currentStudent.isBendahara,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  widget.onSwitchSimulation?.call('260250005');
-                },
-              ),
-              _buildSimulationTile(
-                icon: Icons.description_rounded,
-                title: 'Stefani',
-                roleSubtitle: 'Sekretaris Kelas • Semester 1',
-                color: const Color(0xFF6D28D9),
-                bgColor: const Color(0xFFEDE9FE),
-                isSelected: currentStudent.isSekretaris,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  widget.onSwitchSimulation?.call('260250025');
-                },
-              ),
-              _buildSimulationTile(
-                icon: Icons.school_rounded,
-                title: 'Happy Helen',
-                roleSubtitle: 'Mahasiswa Biasa • Semester 1',
-                color: const Color(0xFF0284C7),
-                bgColor: const Color(0xFFE0F2FE),
-                isSelected: currentStudent.isMahasiswa && !currentStudent.isKetuaKelas && !currentStudent.isBendahara && !currentStudent.isSekretaris,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  widget.onSwitchSimulation?.call('260250001');
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSimulationTile({
-    required IconData icon,
-    required String title,
-    required String roleSubtitle,
-    required Color color,
-    required Color bgColor,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? bgColor.withValues(alpha: 0.5) : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isSelected ? color : const Color(0xFFE5E7EB),
-          width: isSelected ? 1.5 : 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          onTap: onTap,
-          dense: true,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
-          subtitle: Text(roleSubtitle, style: TextStyle(fontSize: 11, color: isSelected ? color : const Color(0xFF6B7280), fontWeight: FontWeight.w600)),
-          trailing: isSelected ? Icon(Icons.check_circle_rounded, color: color, size: 20) : null,
-        ),
-      ),
-    );
   }
 
   void _showRekapKelasModal(BuildContext context) {
@@ -505,31 +380,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-                      // Role simulation quick badge button
-                      InkWell(
-                        onTap: () => _showSimulationPicker(context, student),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F0FF),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE9D5FF)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                student.isKetuaKelas
-                                    ? '👑 Ketua'
-                                    : (student.isBendahara
-                                        ? '💰 Bendahara'
-                                        : (student.isSekretaris ? '📝 Sekretaris' : '🎓 Mahasiswa')),
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
-                              ),
-                              const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF5B3DE8)),
-                            ],
-                          ),
+                      // Role badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F0FF),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE9D5FF)),
+                        ),
+                        child: Text(
+                          student.isKetuaKelas
+                              ? '👑 Ketua'
+                              : (student.isBendahara
+                                  ? '💰 Bendahara'
+                                  : (student.isSekretaris ? '📝 Sekretaris' : '🎓 Mahasiswa')),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
                         ),
                       ),
                       const SizedBox(width: 8),
