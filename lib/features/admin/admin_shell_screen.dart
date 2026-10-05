@@ -1975,19 +1975,22 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: color == const Color(0xFFEF4444) ? color : const Color(0xFF5B3DE8), size: 22),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            color: color,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(icon, color: color == const Color(0xFFEF4444) ? color : const Color(0xFF5B3DE8), size: 22),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
+          trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

@@ -144,17 +144,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           width: isSelected ? 1.5 : 1,
         ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        dense: true,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: color, size: 20),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          dense: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+          subtitle: Text(roleSubtitle, style: TextStyle(fontSize: 11, color: isSelected ? color : const Color(0xFF6B7280), fontWeight: FontWeight.w600)),
+          trailing: isSelected ? Icon(Icons.check_circle_rounded, color: color, size: 20) : null,
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
-        subtitle: Text(roleSubtitle, style: TextStyle(fontSize: 11, color: isSelected ? color : const Color(0xFF6B7280), fontWeight: FontWeight.w600)),
-        trailing: isSelected ? Icon(Icons.check_circle_rounded, color: color, size: 20) : null,
       ),
     );
   }

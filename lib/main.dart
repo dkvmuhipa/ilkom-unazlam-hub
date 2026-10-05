@@ -439,15 +439,19 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFFECACA)),
                       ),
-                      child: ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFDC2626), size: 22),
-                        title: const Text('Panel Administrator', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFDC2626))),
-                        subtitle: const Text('Buka kendali sistem & master data', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onSwitchToAdminView?.call();
-                        },
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          dense: true,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFDC2626), size: 22),
+                          title: const Text('Panel Administrator', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFDC2626))),
+                          subtitle: const Text('Buka kendali sistem & master data', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.onSwitchToAdminView?.call();
+                          },
+                        ),
                       ),
                     ),
                   ],
