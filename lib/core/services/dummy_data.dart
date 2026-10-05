@@ -348,12 +348,26 @@ class DummyData {
 
   static final List<StudentProfile> students = [
     StudentProfile(
+      id: 'adm1',
+      nim: 'admin',
+      nama: 'ADMINISTRATOR SISTEM',
+      email: 'admin.ilkom@unazlam.ac.id',
+      noWa: '081234567890',
+      role: 'ADMIN',
+      jabatan: 'System Administrator',
+      prodi: 'Ilmu Komunikasi',
+      semester: 1,
+      kelas: 'Fakultas FISIP UNAZLAM',
+      instagram: '@ilkom.unazlam',
+    ),
+    StudentProfile(
       id: 's1',
       nim: '260250001',
       nama: 'HAPPY HELEN ANDINI',
       email: '260250001@student.unazlam.ac.id',
       noWa: '081241000101',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@happy.helen',
     ),
     StudentProfile(
@@ -362,7 +376,8 @@ class DummyData {
       nama: 'STELA GLORI. B',
       email: '260250003@student.unazlam.ac.id',
       noWa: '081241000102',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@stelaglori',
     ),
     StudentProfile(
@@ -371,7 +386,8 @@ class DummyData {
       nama: 'SINAR WAHYUNI',
       email: '260250004@student.unazlam.ac.id',
       noWa: '081241000103',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Wakil Ketua',
       instagram: '@sinar.wahyuni',
     ),
     StudentProfile(
@@ -380,7 +396,8 @@ class DummyData {
       nama: 'ANDI SUCI AMALIA RAMADHANI',
       email: '260250006@student.unazlam.ac.id',
       noWa: '081241000104',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@andisuciamalia',
     ),
     StudentProfile(
@@ -389,7 +406,8 @@ class DummyData {
       nama: 'STEFANI',
       email: '260250008@student.unazlam.ac.id',
       noWa: '081241000105',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Sekretaris',
       instagram: '@stefani_comm',
     ),
     StudentProfile(
@@ -461,7 +479,8 @@ class DummyData {
       nama: "ALYA NABILAH NA'ILAH",
       email: '260250020@student.unazlam.ac.id',
       noWa: '081241000113',
-      role: 'bendahara', // Bendahara Kelas
+      role: 'MAHASISWA',
+      jabatan: 'Bendahara',
       instagram: '@alyanabilah',
     ),
     StudentProfile(
@@ -470,7 +489,8 @@ class DummyData {
       nama: 'VALENTINO',
       email: '260250022@student.unazlam.ac.id',
       noWa: '081241000114',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@valentino_comm',
     ),
     StudentProfile(
@@ -479,7 +499,8 @@ class DummyData {
       nama: 'NUR FARIDA',
       email: '260250023@student.unazlam.ac.id',
       noWa: '081241000115',
-      role: 'ketua_kelas', // Ketua Kelas / Komti
+      role: 'MAHASISWA',
+      jabatan: 'Ketua Kelas',
       instagram: '@nur.farida',
     ),
     StudentProfile(
@@ -488,7 +509,8 @@ class DummyData {
       nama: 'WIRDAH RATU SABRINA',
       email: '260250026@student.unazlam.ac.id',
       noWa: '081241000116',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@wirdahratusabrina',
     ),
     StudentProfile(
@@ -524,7 +546,8 @@ class DummyData {
       nama: 'AULIA RAHMA',
       email: '260250034@student.unazlam.ac.id',
       noWa: '081241000120',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Bendahara 2',
       instagram: '@aulia.rahma',
     ),
     StudentProfile(
@@ -533,7 +556,8 @@ class DummyData {
       nama: 'SHOFA AZZAHRA',
       email: '260250035@student.unazlam.ac.id',
       noWa: '081241000121',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@shofa.azzahra',
     ),
     StudentProfile(
@@ -542,7 +566,8 @@ class DummyData {
       nama: 'GILANG RAMADHAN',
       email: '260250012@student.unazlam.ac.id',
       noWa: '081241000122',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Koordinator Perlengkapan',
       instagram: '@gilang.ramadhan',
     ),
     StudentProfile(
@@ -551,7 +576,8 @@ class DummyData {
       nama: 'ALIEF PUTRA RAMADHAN',
       email: '260250025@student.unazlam.ac.id',
       noWa: '081241000123',
-      role: 'mahasiswa',
+      role: 'MAHASISWA',
+      jabatan: 'Mahasiswa',
       instagram: '@alief.putra',
     ),
   ];

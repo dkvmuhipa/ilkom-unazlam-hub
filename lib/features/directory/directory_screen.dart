@@ -25,9 +25,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     }
   }
 
-  Color _getAvatarBg(int index, String role) {
-    if (role == 'ketua_kelas') return const Color(0xFFFEF3C7);
-    if (role == 'bendahara') return const Color(0xFFDCFCE7);
+  Color _getAvatarBg(int index, String jabatan) {
+    if (jabatan == 'Ketua Kelas') return const Color(0xFFFEF3C7);
+    if (jabatan.contains('Bendahara')) return const Color(0xFFDCFCE7);
+    if (jabatan == 'Sekretaris') return const Color(0xFFEDE9FE);
     final colors = [
       const Color(0xFFF3F0FF),
       const Color(0xFFE0F2FE),
@@ -39,9 +40,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     return colors[index % colors.length];
   }
 
-  Color _getAvatarTextColor(int index, String role) {
-    if (role == 'ketua_kelas') return const Color(0xFFB45309);
-    if (role == 'bendahara') return const Color(0xFF16A34A);
+  Color _getAvatarTextColor(int index, String jabatan) {
+    if (jabatan == 'Ketua Kelas') return const Color(0xFFB45309);
+    if (jabatan.contains('Bendahara')) return const Color(0xFF16A34A);
+    if (jabatan == 'Sekretaris') return const Color(0xFF6D28D9);
     final colors = [
       const Color(0xFF5B3DE8),
       const Color(0xFF0284C7),
@@ -61,15 +63,15 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
   }
 
-  String _formatRole(String role) {
-    if (role == 'ketua_kelas') return 'Ketua Kelas';
-    if (role == 'bendahara') return 'Bendahara';
-    return 'Mahasiswa';
+  String _formatRole(String jabatan) {
+    if (jabatan != 'Mahasiswa') return '$jabatan • Pengurus';
+    return 'Mahasiswa ILKOM 2026';
   }
 
   @override
   Widget build(BuildContext context) {
     final filtered = DummyData.students.where((s) {
+      if (s.role == 'ADMIN') return false;
       return s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           s.nim.contains(_searchQuery);
     }).toList();
@@ -122,9 +124,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               itemBuilder: (context, index) {
                 final s = filtered[index];
                 final initials = _getInitials(s.nama);
-                final avatarBg = _getAvatarBg(index, s.role);
-                final avatarTextColor = _getAvatarTextColor(index, s.role);
-                final roleLabel = _formatRole(s.role);
+                final avatarBg = _getAvatarBg(index, s.jabatan);
+                final avatarTextColor = _getAvatarTextColor(index, s.jabatan);
+                final roleLabel = _formatRole(s.jabatan);
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),

@@ -17,6 +17,9 @@ import 'features/profile/profile_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/auth/login_screen.dart';
 
+import 'features/admin/admin_shell_screen.dart';
+import 'core/services/dummy_data.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -45,6 +48,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   bool _isLoggedIn = false;
   String _userNim = '';
   String _userName = '';
+  bool _isAdminMode = false;
 
   void _onSplashFinish() {
     if (mounted) {
@@ -55,10 +59,12 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   }
 
   void _onLoginSuccess(String nim, String name) {
+    final isAdmin = nim.trim().toLowerCase() == 'admin';
     setState(() {
       _userNim = nim;
       _userName = name;
       _isLoggedIn = true;
+      _isAdminMode = isAdmin;
     });
   }
 
@@ -67,6 +73,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isLoggedIn = false;
       _userNim = '';
       _userName = '';
+      _isAdminMode = false;
     });
   }
 
@@ -80,11 +87,18 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
           ? SplashScreen(onFinish: _onSplashFinish)
           : (!_isLoggedIn
               ? LoginScreen(onLoginSuccess: _onLoginSuccess)
-              : MainResponsiveShell(
-                  userNim: _userNim,
-                  userName: _userName,
-                  onLogout: _onLogout,
-                )),
+              : (_isAdminMode
+                  ? AdminShellScreen(
+                      onLogout: _onLogout,
+                      onSwitchToStudentView: () => setState(() => _isAdminMode = false),
+                    )
+                  : MainResponsiveShell(
+                      userNim: _userNim,
+                      userName: _userName,
+                      isAdminUser: _userNim.trim().toLowerCase() == 'admin',
+                      onSwitchToAdminView: () => setState(() => _isAdminMode = true),
+                      onLogout: _onLogout,
+                    ))),
     );
   }
 }
@@ -92,12 +106,16 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
 class MainResponsiveShell extends StatefulWidget {
   final String? userNim;
   final String? userName;
+  final bool isAdminUser;
+  final VoidCallback? onSwitchToAdminView;
   final VoidCallback? onLogout;
 
   const MainResponsiveShell({
     super.key,
     this.userNim,
     this.userName,
+    this.isAdminUser = false,
+    this.onSwitchToAdminView,
     this.onLogout,
   });
 
@@ -129,6 +147,11 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     // 8: Kas Kelas
     // 9: Kelompok
     // 10: Materi
+    final currentUser = DummyData.students.firstWhere(
+      (s) => widget.isAdminUser ? s.role == 'ADMIN' : s.nim == widget.userNim,
+      orElse: () => DummyData.students.first,
+    );
+
     final List<Widget> screens = [
       DashboardScreen(
         userName: widget.userName,
@@ -142,10 +165,16 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         onNavigateTab: _navigateToIndex,
         userNim: widget.userNim,
       ), // 4: Profil Saya
-      const AttendanceScreen(), // 5: Absensi Saya
+      AttendanceScreen(
+        canManageClassAttendance: currentUser.canManageAttendance,
+      ), // 5: Absensi Saya
       const AgendaScreen(), // 6: Agenda Kelas
-      const AnnouncementsScreen(), // 7: Pengumuman
-      const TreasuryScreen(), // 8: Kas Kelas
+      AnnouncementsScreen(
+        canPost: currentUser.canPostAnnouncement,
+      ), // 7: Pengumuman
+      TreasuryScreen(
+        canManage: currentUser.canManageTreasury,
+      ), // 8: Kas Kelas
       const GroupsScreen(), // 9: Kelompok Praktikum
       const ResourcesScreen(), // 10: Gudang Materi
     ];
@@ -323,11 +352,81 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
             ),
             const Divider(height: 1, color: Color(0xFFF3F4F6)),
 
+            // Current User Info Card
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.12),
+                    child: Text(
+                      (widget.userName != null && widget.userName!.isNotEmpty)
+                          ? widget.userName![0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.userName != null && widget.userName!.isNotEmpty ? widget.userName! : 'Mahasiswa',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.isAdminUser
+                              ? '🛡️ System Administrator'
+                              : '${(DummyData.students.firstWhere((s) => s.nim.toLowerCase() == (widget.userNim ?? '').toLowerCase(), orElse: () => DummyData.students.first)).jabatan} • ILKOM',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: widget.isAdminUser ? const Color(0xFFDC2626) : const Color(0xFF5B3DE8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Drawer Nav Items matching Screen 12
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 children: [
+                  if (widget.isAdminUser) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFDC2626), size: 22),
+                        title: const Text('Panel Administrator', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFDC2626))),
+                        subtitle: const Text('Buka kendali sistem & master data', style: TextStyle(fontSize: 10.5, color: Color(0xFF991B1B))),
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.onSwitchToAdminView?.call();
+                        },
+                      ),
+                    ),
+                  ],
                   _buildDrawerTile(Icons.home_outlined, 'Beranda', 0),
                   _buildDrawerTile(Icons.calendar_month_outlined, 'Jadwal', 1),
                   _buildDrawerTile(Icons.assignment_outlined, 'Tugas', 2),

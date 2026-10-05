@@ -6,7 +6,12 @@ import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
-  const AnnouncementsScreen({super.key});
+  final bool canPost;
+
+  const AnnouncementsScreen({
+    super.key,
+    this.canPost = true,
+  });
 
   static void showAnnouncementDetail(BuildContext context, Announcement announcement) {
     showModalBottomSheet(
@@ -307,12 +312,15 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddAnnouncementDialog,
-        backgroundColor: const Color(0xFF5B3DE8),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: widget.canPost
+          ? FloatingActionButton(
+              onPressed: _showAddAnnouncementDialog,
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              tooltip: 'Buat Pengumuman',
+              child: const Icon(Icons.add_rounded),
+            )
+          : null,
     );
   }
 

@@ -5,7 +5,12 @@ import '../../models/models.dart';
 import 'package:intl/intl.dart';
 
 class TreasuryScreen extends StatefulWidget {
-  const TreasuryScreen({super.key});
+  final bool canManage;
+
+  const TreasuryScreen({
+    super.key,
+    this.canManage = true,
+  });
 
   @override
   State<TreasuryScreen> createState() => _TreasuryScreenState();
@@ -176,14 +181,16 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
       appBar: AppBar(
         title: const Text('Kas & Keuangan Kelas'),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddTransactionModal,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        icon: const Icon(Icons.add, size: 18),
-        label: const Text('Catat Kas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-      ),
+      floatingActionButton: widget.canManage
+          ? FloatingActionButton.extended(
+              onPressed: _showAddTransactionModal,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Catat Kas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            )
+          : null,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 80),

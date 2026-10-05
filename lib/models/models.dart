@@ -185,7 +185,12 @@ class StudentProfile {
   final String email;
   final String noWa;
   final String peminatan; // 'Public Relations', 'Jurnalistik', 'Advertising', 'Broadcasting'
-  final String role; // 'komti', 'mahasiswa'
+  final String prodi; // 'Ilmu Komunikasi'
+  final int semester; // 1
+  final String kelas; // 'Ilmu Komunikasi'
+  final String role; // 'ADMIN' atau 'MAHASISWA'
+  String jabatan; // 'Mahasiswa', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Wakil Ketua'
+  bool isAktif;
   final String? instagram;
   final String? linkedin;
 
@@ -196,10 +201,33 @@ class StudentProfile {
     required this.email,
     required this.noWa,
     this.peminatan = '',
-    this.role = 'mahasiswa',
+    this.prodi = 'Ilmu Komunikasi',
+    this.semester = 1,
+    this.kelas = 'Ilmu Komunikasi',
+    this.role = 'MAHASISWA',
+    this.jabatan = 'Mahasiswa',
+    this.isAktif = true,
     this.instagram,
     this.linkedin,
   });
+
+  // Role Checks
+  bool get isAdmin => role.toUpperCase() == 'ADMIN';
+  bool get isMahasiswa => role.toUpperCase() == 'MAHASISWA';
+
+  // Jabatan Checks
+  bool get isKetuaKelas => jabatan == 'Ketua Kelas';
+  bool get isBendahara => jabatan == 'Bendahara';
+  bool get isSekretaris => jabatan == 'Sekretaris';
+  bool get isWakilKetua => jabatan == 'Wakil Ketua';
+
+  // Permission Checks (Attribute-Based Access Control)
+  bool get canManageAttendance => isAdmin || isKetuaKelas;
+  bool get canPostAnnouncement => isAdmin || isKetuaKelas || isSekretaris;
+  bool get canManageAgenda => isAdmin || isKetuaKelas || isSekretaris;
+  bool get canManageTreasury => isAdmin || isBendahara;
+  bool get canManageAssignments => isAdmin || isKetuaKelas;
+  bool get canManageSystemData => isAdmin;
 }
 
 class TreasuryTransaction {

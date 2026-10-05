@@ -25,9 +25,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileScreen() {
     final student = DummyData.students.firstWhere(
-      (s) => s.nim == widget.userNim,
+      (s) => s.nim.toLowerCase() == (widget.userNim ?? '').toLowerCase(),
       orElse: () => DummyData.students.firstWhere(
-        (s) => s.role == 'ketua_kelas',
+        (s) => s.jabatan == 'Ketua Kelas',
         orElse: () => DummyData.students.first,
       ),
     );
@@ -37,19 +37,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
         : student.nama.substring(0, 2).toUpperCase();
 
-    final roleBadgeText = student.role == 'ketua_kelas'
-        ? '👑 Ketua Kelas ILKOM 2026'
-        : (student.role == 'bendahara'
-            ? '💰 Bendahara Kelas ILKOM 2026'
-            : '🎓 Mahasiswa ILKOM 2026');
+    final roleBadgeText = student.isAdmin
+        ? '🛡️ System Administrator'
+        : (student.isKetuaKelas
+            ? '👑 Ketua Kelas ILKOM 2026'
+            : (student.isBendahara
+                ? '💰 Bendahara Kelas ILKOM 2026'
+                : (student.isSekretaris
+                    ? '📝 Sekretaris Kelas ILKOM 2026'
+                    : '🎓 Mahasiswa ILKOM 2026')));
 
-    final roleBadgeBg = student.role == 'ketua_kelas'
-        ? const Color(0xFFFEF3C7)
-        : (student.role == 'bendahara' ? const Color(0xFFDCFCE7) : const Color(0xFFF3F0FF));
+    final roleBadgeBg = student.isAdmin
+        ? const Color(0xFFFEE2E2)
+        : (student.isKetuaKelas
+            ? const Color(0xFFFEF3C7)
+            : (student.isBendahara
+                ? const Color(0xFFDCFCE7)
+                : (student.isSekretaris ? const Color(0xFFEDE9FE) : const Color(0xFFF3F0FF))));
 
-    final roleBadgeColor = student.role == 'ketua_kelas'
-        ? const Color(0xFFB45309)
-        : (student.role == 'bendahara' ? const Color(0xFF16A34A) : AppColors.primary);
+    final roleBadgeColor = student.isAdmin
+        ? const Color(0xFFDC2626)
+        : (student.isKetuaKelas
+            ? const Color(0xFFB45309)
+            : (student.isBendahara
+                ? const Color(0xFF16A34A)
+                : (student.isSekretaris ? const Color(0xFF6D28D9) : AppColors.primary)));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -201,63 +213,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Special Class Leader Panel Entry Card
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _showLeaderPanel = true;
-                });
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+            // Conditional Role & Jabatan Action Card
+            if (student.isKetuaKelas || student.isAdmin)
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _showLeaderPanel = true;
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                      child: const Text('👑', style: TextStyle(fontSize: 22)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Text('👑', style: TextStyle(fontSize: 22)),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Panel Ketua Kelas',
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Kelola absensi harian kelas, tugas, agenda & pengumuman',
+                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    ],
+                  ),
+                ),
+              )
+            else if (student.isBendahara)
+              InkWell(
+                onTap: () => widget.onNavigateTab?.call(8), // Open Kas Kelas
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D9488), Color(0xFF10B981)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(width: 14),
-                    const Expanded(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Text('💰', style: TextStyle(fontSize: 22)),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Panel Bendahara Kelas',
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Kelola transaksi kas kelas & perbarui QRIS iuran',
+                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F0FF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE0E7FF)),
+                ),
+                child: const Row(
+                  children: [
+                    Text('🎓', style: TextStyle(fontSize: 22)),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Panel Pengurus Kelas',
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                            'Status: Mahasiswa Aktif',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Akses kelola absensi, tugas, pengumuman & kas',
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                            'Terdaftar resmi pada S1 Ilmu Komunikasi FISIP UNAZLAM angkatan 2026.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
                   ],
                 ),
               ),
-            ),
             const SizedBox(height: 20),
 
             // Menu Items List (Informasi Kelas, Rekap Absensi Saya, Pengaturan Akun)

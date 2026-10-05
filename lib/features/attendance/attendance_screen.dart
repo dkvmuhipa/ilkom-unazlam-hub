@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/dummy_data.dart';
 
 class AttendanceHistoryItem {
   final String date;
@@ -14,7 +15,12 @@ class AttendanceHistoryItem {
 }
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  final bool canManageClassAttendance;
+
+  const AttendanceScreen({
+    super.key,
+    this.canManageClassAttendance = false,
+  });
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -29,6 +35,166 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     AttendanceHistoryItem(date: '18 Sep 2026', courseName: 'Pendidikan Kewarganegaraan', status: 'Hadir'),
     AttendanceHistoryItem(date: '15 Sep 2026', courseName: 'Pengantar Ilmu Politik', status: 'Hadir'),
   ];
+
+  void _showClassAttendanceModal() {
+    final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    final Map<String, String> statusMap = {
+      for (var s in students) s.id: 'Hadir',
+    };
+    String selectedCourse = DummyData.courses.first.nama;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.85,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Presensi Pertemuan Kelas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                        Text('Kelola absensi mahasiswa untuk mata kuliah ini', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCourse,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mata Kuliah',
+                    labelStyle: const TextStyle(fontSize: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                  items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedCourse = val);
+                  },
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Daftar Mahasiswa (${students.length})', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+                    TextButton.icon(
+                      onPressed: () {
+                        setModalState(() {
+                          for (var s in students) {
+                            statusMap[s.id] = 'Hadir';
+                          }
+                        });
+                      },
+                      icon: const Icon(Icons.done_all, size: 16, color: Color(0xFF16A34A)),
+                      label: const Text('Set Semua Hadir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: students.length,
+                    itemBuilder: (ctx, i) {
+                      final s = students[i];
+                      final currentStatus = statusMap[s.id] ?? 'Hadir';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.1),
+                              child: Text(s.nama.isNotEmpty ? s.nama[0] : 'M', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(s.nama, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827)), overflow: TextOverflow.ellipsis),
+                                  Text('${s.nim} • ${s.jabatan}', style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280))),
+                                ],
+                              ),
+                            ),
+                            Wrap(
+                              spacing: 4,
+                              children: ['Hadir', 'Izin', 'Sakit', 'Alpa'].map((st) {
+                                final isSel = currentStatus == st;
+                                Color color = st == 'Hadir' ? const Color(0xFF16A34A) : (st == 'Izin' ? const Color(0xFFD97706) : (st == 'Sakit' ? const Color(0xFF2563EB) : const Color(0xFFDC2626)));
+                                return InkWell(
+                                  onTap: () => setModalState(() => statusMap[s.id] = st),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isSel ? color : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: isSel ? color : const Color(0xFFD1D5DB)),
+                                    ),
+                                    child: Text(
+                                      st[0],
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isSel ? Colors.white : const Color(0xFF4B5563)),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Presensi kelas untuk $selectedCourse berhasil disimpan!'),
+                        backgroundColor: const Color(0xFF16A34A),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  label: const Text('Simpan Rekap Presensi Kelas', style: TextStyle(fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B3DE8),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +212,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          if (widget.canManageClassAttendance)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: TextButton.icon(
+                onPressed: _showClassAttendanceModal,
+                icon: const Icon(Icons.playlist_add_check, size: 18, color: Color(0xFF5B3DE8)),
+                label: const Text('Presensi Kelas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.08),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+        ],
       ),
+      floatingActionButton: widget.canManageClassAttendance
+          ? FloatingActionButton.extended(
+              onPressed: _showClassAttendanceModal,
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.fact_check_outlined, size: 18),
+              label: const Text('Input Presensi Kelas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            )
+          : null,
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
