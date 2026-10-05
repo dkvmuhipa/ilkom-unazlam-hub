@@ -33,8 +33,42 @@ void main() async {
   runApp(const ClassManagerApp());
 }
 
-class ClassManagerApp extends StatelessWidget {
+class ClassManagerApp extends StatefulWidget {
   const ClassManagerApp({super.key});
+
+  @override
+  State<ClassManagerApp> createState() => _ClassManagerAppState();
+}
+
+class _ClassManagerAppState extends State<ClassManagerApp> {
+  bool _showSplash = true;
+  bool _isLoggedIn = false;
+  String _userNim = '';
+  String _userName = '';
+
+  void _onSplashFinish() {
+    if (mounted) {
+      setState(() {
+        _showSplash = false;
+      });
+    }
+  }
+
+  void _onLoginSuccess(String nim, String name) {
+    setState(() {
+      _userNim = nim;
+      _userName = name;
+      _isLoggedIn = true;
+    });
+  }
+
+  void _onLogout() {
+    setState(() {
+      _isLoggedIn = false;
+      _userNim = '';
+      _userName = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,13 +76,30 @@ class ClassManagerApp extends StatelessWidget {
       title: 'ILKOM UNAZLAM Hub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
+      home: _showSplash
+          ? SplashScreen(onFinish: _onSplashFinish)
+          : (!_isLoggedIn
+              ? LoginScreen(onLoginSuccess: _onLoginSuccess)
+              : MainResponsiveShell(
+                  userNim: _userNim,
+                  userName: _userName,
+                  onLogout: _onLogout,
+                )),
     );
   }
 }
 
 class MainResponsiveShell extends StatefulWidget {
-  const MainResponsiveShell({super.key});
+  final String? userNim;
+  final String? userName;
+  final VoidCallback? onLogout;
+
+  const MainResponsiveShell({
+    super.key,
+    this.userNim,
+    this.userName,
+    this.onLogout,
+  });
 
   @override
   State<MainResponsiveShell> createState() => _MainResponsiveShellState();
@@ -80,6 +131,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     // 10: Materi
     final List<Widget> screens = [
       DashboardScreen(
+        userName: widget.userName,
         onNavigateTab: _navigateToIndex,
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
       ), // 0: Beranda
@@ -317,11 +369,15 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                       title: const Text('Keluar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          (route) => false,
-                        );
+                        if (widget.onLogout != null) {
+                          widget.onLogout!();
+                        } else {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        }
                       },
                     ),
                   ),

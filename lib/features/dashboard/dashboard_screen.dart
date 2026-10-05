@@ -5,11 +5,13 @@ import '../../core/services/dummy_data.dart';
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateTab;
   final VoidCallback? onOpenDrawer;
+  final String? userName;
 
   const DashboardScreen({
     super.key,
     required this.onNavigateTab,
     this.onOpenDrawer,
+    this.userName,
   });
 
   @override
@@ -47,19 +49,21 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Row(
+                      Row(
                         children: [
                           Text(
-                            'Farida',
-                            style: TextStyle(
+                            userName != null && userName!.isNotEmpty
+                                ? userName!.split(' ').first
+                                : 'Farida',
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF111827),
                               letterSpacing: -0.3,
                             ),
                           ),
-                          SizedBox(width: 6),
-                          Text('👋', style: TextStyle(fontSize: 18)),
+                          const SizedBox(width: 6),
+                          const Text('👋', style: TextStyle(fontSize: 18)),
                         ],
                       ),
                       const SizedBox(height: 2),
