@@ -113,14 +113,14 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                 child: SafeArea(
                   top: false,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Beranda', navBarIndex),
                         _buildNavItem(1, Icons.calendar_month_rounded, Icons.calendar_today_outlined, 'Jadwal', navBarIndex),
                         _buildNavItem(2, Icons.task_alt_rounded, Icons.task_alt_outlined, 'Tugas', navBarIndex),
-                        _buildNavItem(3, Icons.notifications_rounded, Icons.notifications_none_rounded, 'Info', navBarIndex),
+                        _buildNavItem(3, Icons.notifications_rounded, Icons.notifications_none_rounded, 'Pengumuman', navBarIndex),
                       ],
                     ),
                   ),
@@ -148,34 +148,35 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     return InkWell(
       onTap: () => _navigateToIndex(index),
       borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? selectedIcon : unselectedIcon,
-              size: 20,
-              color: isSelected ? AppColors.primary : AppColors.textLight,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary,
-                  letterSpacing: -0.2,
-                ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
               ),
-            ],
+              child: Icon(
+                isSelected ? selectedIcon : unselectedIcon,
+                size: 22,
+                color: isSelected ? AppColors.primary : AppColors.textSub,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? AppColors.primary : AppColors.textSub,
+                letterSpacing: -0.1,
+              ),
+            ),
           ],
         ),
       ),
