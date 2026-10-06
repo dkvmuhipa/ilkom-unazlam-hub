@@ -4,6 +4,7 @@ import '../../core/services/dummy_data.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/qr_widget.dart';
+import '../../core/widgets/scale_button.dart';
 
 class AttendanceHistoryItem {
   final String date;
@@ -606,24 +607,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
+                  ScaleButton(
+                    onTap: () {
                       if (widget.canManageClassAttendance) {
                         _showGenerateQrModal(context);
                       } else {
                         _showScanQrModal(context);
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF5B3DE8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      widget.canManageClassAttendance ? 'Buka QR' : 'Scan QR',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                    scaleDown: 0.92,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        widget.canManageClassAttendance ? 'Buka QR' : 'Scan QR',
+                        style: const TextStyle(
+                          color: Color(0xFF5B3DE8),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ),
                 ],

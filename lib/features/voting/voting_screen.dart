@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/scale_button.dart';
 
 class PollOption {
   final String id;
@@ -412,10 +413,12 @@ class _VotingScreenState extends State<VotingScreen> {
                       final pct = total == 0 ? 0.0 : (opt.votes / total);
                       final isSelected = poll.userVotedId == opt.id;
 
-                      return InkWell(
+                      return ScaleButton(
                         onTap: poll.isOpen ? () => _castVote(poll, opt) : null,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
+                        scaleDown: 0.96,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -431,10 +434,15 @@ class _VotingScreenState extends State<VotingScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(
-                                    isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                    size: 18,
-                                    color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
+                                  AnimatedScale(
+                                    scale: isSelected ? 1.15 : 1.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: Curves.easeOutBack,
+                                    child: Icon(
+                                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                      size: 18,
+                                      color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -460,13 +468,20 @@ class _VotingScreenState extends State<VotingScreen> {
                               const SizedBox(height: 8),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: pct,
-                                  minHeight: 6,
-                                  backgroundColor: const Color(0xFFE5E7EB),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
-                                  ),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0, end: pct),
+                                  duration: const Duration(milliseconds: 400),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, animatedVal, _) {
+                                    return LinearProgressIndicator(
+                                      value: animatedVal,
+                                      minHeight: 6,
+                                      backgroundColor: const Color(0xFFE5E7EB),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],

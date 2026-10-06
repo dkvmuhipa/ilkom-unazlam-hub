@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/widgets/scale_button.dart';
 import '../../models/models.dart';
 import '../announcements/announcements_screen.dart';
 
@@ -1617,9 +1618,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color bgColor,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return ScaleButton(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      scaleDown: 0.94,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
@@ -1655,16 +1656,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: InkWell(
+      child: ScaleButton(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        scaleDown: 0.92,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 52,
               height: 52,
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(18)),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
               child: Center(child: Icon(icon, color: color, size: 24)),
             ),
             const SizedBox(height: 6),

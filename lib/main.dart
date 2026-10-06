@@ -314,9 +314,26 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
             ),
             child: Scaffold(
               backgroundColor: AppColors.background,
-              body: IndexedStack(
-                index: _currentIndex,
-                children: screens,
+              body: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 240),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.02),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: KeyedSubtree(
+                  key: ValueKey('tab_$_currentIndex'),
+                  child: screens[_currentIndex],
+                ),
               ),
               // 5-Tab Bottom Navigation Bar matching Screen 3-7 in mockup
               bottomNavigationBar: Container(
@@ -364,24 +381,36 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     return InkWell(
       onTap: () => _navigateToIndex(index),
       borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF5B3DE8).withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? selectedIcon : unselectedIcon,
-              size: 24,
-              color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
+            AnimatedScale(
+              scale: isSelected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                isSelected ? selectedIcon : unselectedIcon,
+                size: 24,
+                color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
+              ),
             ),
             const SizedBox(height: 3),
-            Text(
-              label,
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                 color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFF9CA3AF),
               ),
+              child: Text(label),
             ),
           ],
         ),
