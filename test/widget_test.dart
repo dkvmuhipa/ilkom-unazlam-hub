@@ -14,5 +14,6 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const ClassManagerApp());
     expect(find.byType(ClassManagerApp), findsOneWidget);
+    await tester.pumpAndSettle();
   });
 }

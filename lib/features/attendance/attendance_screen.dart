@@ -32,14 +32,13 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  final List<AttendanceHistoryItem> _history = const [
-    AttendanceHistoryItem(date: '5 Okt 2026', courseName: 'Pendidikan Pancasila', status: 'Hadir'),
-    AttendanceHistoryItem(date: '1 Okt 2026', courseName: 'Ilmu Kealaman Dasar', status: 'Hadir'),
-    AttendanceHistoryItem(date: '28 Sep 2026', courseName: 'Pendidikan Agama Islam', status: 'Izin'),
-    AttendanceHistoryItem(date: '22 Sep 2026', courseName: 'Dasar-Dasar Ilmu Komunikasi', status: 'Hadir'),
-    AttendanceHistoryItem(date: '18 Sep 2026', courseName: 'Pendidikan Kewarganegaraan', status: 'Hadir'),
-    AttendanceHistoryItem(date: '15 Sep 2026', courseName: 'Pengantar Ilmu Politik', status: 'Hadir'),
-  ];
+  late List<AttendanceHistoryItem> _history;
+
+  @override
+  void initState() {
+    super.initState();
+    _history = [];
+  }
 
   void _showClassAttendanceModal() {
     final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
@@ -445,6 +444,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   catatan: token.isNotEmpty ? 'Presensi QR: $token' : 'Presensi QR Kamera',
                 );
 
+                setState(() {
+                  _history.insert(
+                    0,
+                    AttendanceHistoryItem(
+                      date: 'Hari Ini, ${DateTime.now().day} Okt 2026',
+                      courseName: selectedCourse,
+                      status: 'Hadir',
+                    ),
+                  );
+                });
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Kehadiran untuk mata kuliah $selectedCourse berhasil diverifikasi Hadir! 🎉'),
@@ -470,6 +480,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalSessions = _history.length;
+    final hadirCount = _history.where((h) => h.status == 'Hadir').length;
+    final izinCount = _history.where((h) => h.status == 'Izin').length;
+    final sakitCount = _history.where((h) => h.status == 'Sakit').length;
+    final alpaCount = _history.where((h) => h.status == 'Alpa').length;
+    final double attendanceRatio = totalSessions > 0 ? (hadirCount / totalSessions) : 1.0;
+    final int attendancePercent = (attendanceRatio * 100).round();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -629,7 +647,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               child: Column(
                 children: [
-                  // Circular Progress Donut Ring (90% Hadir)
+                  // Circular Progress Donut Ring
                   SizedBox(
                     width: 125,
                     height: 125,
@@ -640,26 +658,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           width: 125,
                           height: 125,
                           child: CircularProgressIndicator(
-                            value: 0.90,
+                            value: totalSessions > 0 ? attendanceRatio : 1.0,
                             strokeWidth: 10,
                             backgroundColor: const Color(0xFFF3F0FF),
                             valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
                             strokeCap: StrokeCap.round,
                           ),
                         ),
-                        const Column(
+                        Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '90%',
-                              style: TextStyle(
+                              totalSessions > 0 ? '$attendancePercent%' : '100%',
+                              style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF111827),
                                 letterSpacing: -0.5,
                               ),
                             ),
-                            Text(
+                            const Text(
                               'Hadir',
                               style: TextStyle(
                                 fontSize: 11,
@@ -678,10 +696,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatBox('9', 'Hadir', const Color(0xFF10B981)),
-                      _buildStatBox('1', 'Izin', const Color(0xFFF59E0B)),
-                      _buildStatBox('0', 'Sakit', const Color(0xFF3B82F6)),
-                      _buildStatBox('0', 'Alpa', const Color(0xFFEF4444)),
+                      _buildStatBox('$hadirCount', 'Hadir', const Color(0xFF10B981)),
+                      _buildStatBox('$izinCount', 'Izin', const Color(0xFFF59E0B)),
+                      _buildStatBox('$sakitCount', 'Sakit', const Color(0xFF3B82F6)),
+                      _buildStatBox('$alpaCount', 'Alpa', const Color(0xFFEF4444)),
                     ],
                   ),
                 ],
@@ -698,10 +716,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'Total Pertemuan',
                     style: TextStyle(
                       fontSize: 13,
@@ -710,8 +728,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   Text(
-                    '10',
-                    style: TextStyle(
+                    '$totalSessions',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF111827),
@@ -756,8 +774,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Riwayat Absensi List matching Screen 6
-            ..._history.map((h) => _buildHistoryTile(h)),
+            // Riwayat Absensi List
+            if (_history.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF3F0FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.how_to_reg_rounded, size: 32, color: Color(0xFF5B3DE8)),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Belum Ada Riwayat Presensi',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Presensi kuliah Anda melalui pemindaian QR Code atau lembar absensi kelas akan tercatat di sini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), height: 1.4),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._history.map((h) => _buildHistoryTile(h)),
           ],
         ),
       ),

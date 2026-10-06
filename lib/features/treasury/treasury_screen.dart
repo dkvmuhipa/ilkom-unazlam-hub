@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/export_service.dart';
@@ -29,10 +30,35 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
   @override
   void initState() {
     super.initState();
+    _loadIuranStatus();
+  }
+
+  Future<void> _loadIuranStatus() async {
     for (int i = 0; i < DummyData.students.length; i++) {
       final s = DummyData.students[i];
-      _iuranStatus[s.id] = (i % 6 != 0); // 5/6 lunas
+      _iuranStatus[s.id] = (i % 6 != 0);
     }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (var s in DummyData.students) {
+        final val = prefs.getBool('iuran_status_${s.id}');
+        if (val != null) {
+          _iuranStatus[s.id] = val;
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _toggleIuranStatus(String studentId, bool currentStatus) async {
+    final newStatus = !currentStatus;
+    setState(() {
+      _iuranStatus[studentId] = newStatus;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('iuran_status_$studentId', newStatus);
+    } catch (_) {}
   }
 
   String _formatRupiah(int amount) {
@@ -700,11 +726,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       ),
                     if (widget.canManage)
                       InkWell(
-                        onTap: () {
-                          setState(() {
-                            _iuranStatus[s.id] = !isLunas;
-                          });
-                        },
+                        onTap: () => _toggleIuranStatus(s.id, isLunas),
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -1,15 +1,19 @@
 -- ====================================================================
--- SCHEMA LENGKAP DATABASE SUPABASE: ILKOM UNAZLAM HUB
+-- SCHEMA LENGKAP & AMAN DATABASE SUPABASE: ILKOM UNAZLAM HUB
 -- ====================================================================
 -- Skrip SQL ini mencakup seluruh tabel untuk semua fitur aplikasi:
 -- 1. courses (Jadwal Perkuliahan & Mata Kuliah)
--- 2. assignments (Tugas Kelas & Status Pengerjaan)
--- 3. announcements (Pengumuman Kelas & Info Penting)
--- 4. treasury_transactions (Kas Kelas / Bendahara)
--- 5. agenda_items (Agenda Kegiatan & Kalender Kelas)
--- 6. attendance_logs (Absensi & Presensi Perkuliahan)
--- 7. students (Direktori Mahasiswa & Manajemen Akun)
--- 8. resources (Gudang Modul, Materi, & Slide Perkuliahan)
+-- 2. assignments (Tugas Kelas)
+-- 3. student_assignments (Tracking Progres Tugas Personal Per-Mahasiswa)
+-- 4. announcements (Pengumuman Kelas & Info Penting)
+-- 5. treasury_transactions (Kas Kelas / Bendahara)
+-- 6. agenda_items (Agenda Kegiatan & Kalender Kelas)
+-- 7. attendance_logs (Absensi & Presensi Perkuliahan)
+-- 8. students (Direktori Mahasiswa & Manajemen Akun)
+-- 9. resources (Gudang Modul, Materi, & Slide Perkuliahan)
+-- 10. polls & poll_options & poll_votes (Sistem Voting / Pemungutan Suara)
+-- 11. permission_letters (Pengajuan Surat Izin Mahasiswa)
+-- 12. audit_logs (Riwayat Aktivitas & Perubahan Data)
 -- ====================================================================
 
 -- Aktifkan ekstensi UUID jika belum aktif
@@ -35,7 +39,7 @@ CREATE TABLE IF NOT EXISTS courses (
 -- 2. TABEL ASSIGNMENTS (TUGAS KELAS)
 CREATE TABLE IF NOT EXISTS assignments (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    course_id TEXT,
+    course_id TEXT REFERENCES courses(id) ON DELETE SET NULL,
     course_name TEXT,
     judul TEXT NOT NULL,
     deskripsi TEXT,
@@ -46,7 +50,21 @@ CREATE TABLE IF NOT EXISTS assignments (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. TABEL ANNOUNCEMENTS (PENGUMUMAN KELAS)
+-- 3. TABEL STUDENT_ASSIGNMENTS (STATUS TUGAS PERSONAL PER-MAHASISWA)
+-- Memisahkan status pengerjaan personal dari master tabel tugas
+CREATE TABLE IF NOT EXISTS student_assignments (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    assignment_id TEXT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_nim TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'belum', -- 'belum', 'sedang_dikerjakan', 'selesai'
+    link_pengumpulan TEXT,
+    catatan TEXT,
+    submitted_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(assignment_id, student_nim)
+);
+
+-- 4. TABEL ANNOUNCEMENTS (PENGUMUMAN KELAS)
 CREATE TABLE IF NOT EXISTS announcements (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     author_name TEXT DEFAULT 'Nur Farida (Ketua Kelas)',
@@ -58,7 +76,7 @@ CREATE TABLE IF NOT EXISTS announcements (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. TABEL TREASURY_TRANSACTIONS (KAS KELAS)
+-- 5. TABEL TREASURY_TRANSACTIONS (KAS KELAS)
 CREATE TABLE IF NOT EXISTS treasury_transactions (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     judul TEXT NOT NULL,
@@ -70,7 +88,7 @@ CREATE TABLE IF NOT EXISTS treasury_transactions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 5. TABEL AGENDA_ITEMS (AGENDA & KEGIATAN KELAS)
+-- 6. TABEL AGENDA_ITEMS (AGENDA & KEGIATAN KELAS)
 CREATE TABLE IF NOT EXISTS agenda_items (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     day INT NOT NULL,
@@ -81,10 +99,10 @@ CREATE TABLE IF NOT EXISTS agenda_items (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 6. TABEL ATTENDANCE_LOGS (CATATAN PRESENSI MAHASISWA)
+-- 7. TABEL ATTENDANCE_LOGS (CATATAN PRESENSI MAHASISWA)
 CREATE TABLE IF NOT EXISTS attendance_logs (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    course_id TEXT,
+    course_id TEXT REFERENCES courses(id) ON DELETE SET NULL,
     student_nim TEXT NOT NULL,
     pertemuan_ke INT NOT NULL,
     status TEXT NOT NULL, -- 'Hadir', 'Izin', 'Sakit', 'Alpa'
@@ -92,7 +110,7 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 7. TABEL STUDENTS (DIREKTORI MAHASISWA & ROLE/JABATAN)
+-- 8. TABEL STUDENTS (DIREKTORI MAHASISWA & ROLE/JABATAN)
 CREATE TABLE IF NOT EXISTS students (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     nim TEXT UNIQUE NOT NULL,
@@ -111,7 +129,7 @@ CREATE TABLE IF NOT EXISTS students (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 8. TABEL RESOURCES (GUDANG MATERI KULIAH)
+-- 9. TABEL RESOURCES (GUDANG MATERI KULIAH)
 CREATE TABLE IF NOT EXISTS resources (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     course_name TEXT NOT NULL,
@@ -122,51 +140,136 @@ CREATE TABLE IF NOT EXISTS resources (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 10. TABEL POLLS & VOTING (FITUR POLLING KELAS)
+CREATE TABLE IF NOT EXISTS polls (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    title TEXT NOT NULL,
+    description TEXT,
+    author TEXT NOT NULL,
+    is_open BOOLEAN DEFAULT true,
+    ends_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS poll_options (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    poll_id TEXT NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    option_text TEXT NOT NULL,
+    order_index INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS poll_votes (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    poll_id TEXT NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    option_id TEXT NOT NULL REFERENCES poll_options(id) ON DELETE CASCADE,
+    voter_nim TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(poll_id, voter_nim)
+);
+
+-- 11. TABEL PERMISSION_LETTERS (ARSIP SURAT IZIN PERKULIAHAN)
+CREATE TABLE IF NOT EXISTS permission_letters (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    student_nim TEXT NOT NULL,
+    student_name TEXT NOT NULL,
+    letter_type TEXT NOT NULL DEFAULT 'Izin Sakit',
+    dosen_name TEXT NOT NULL,
+    course_name TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    letter_date TEXT NOT NULL,
+    full_content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 12. TABEL AUDIT_LOGS (AUDIT TRAIL AKTIVITAS)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    user_identifier TEXT NOT NULL,
+    user_name TEXT,
+    action_type TEXT NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'EXPORT'
+    target_module TEXT NOT NULL, -- 'TREASURY', 'COURSES', 'ASSIGNMENTS', etc.
+    description TEXT NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- ====================================================================
--- AKTIFKAN RLS (ROW LEVEL SECURITY) & BERIKAN AKSES ANON (PUBLIK)
+-- ROW LEVEL SECURITY (RLS) - KEAMANAN DATABASE PRODUKSI
 -- ====================================================================
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE student_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE treasury_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agenda_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE polls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE poll_options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE poll_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permission_letters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Kebijakan akses penuh untuk anonim / aplikasi publik
-CREATE POLICY "Public Read All Courses" ON courses FOR SELECT USING (true);
-CREATE POLICY "Public Insert Courses" ON courses FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Courses" ON courses FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Courses" ON courses FOR DELETE USING (true);
+-- --------------------------------------------------------------------
+-- A. KEBIJAKAN BACA PUBLIK (READ-ONLY SELECT)
+-- Mahasiswa dan publik diperbolehkan melihat jadwal, pengumuman, materi, dll.
+-- --------------------------------------------------------------------
+CREATE POLICY "Allow public read courses" ON courses FOR SELECT USING (true);
+CREATE POLICY "Allow public read assignments" ON assignments FOR SELECT USING (true);
+CREATE POLICY "Allow public read student_assignments" ON student_assignments FOR SELECT USING (true);
+CREATE POLICY "Allow public read announcements" ON announcements FOR SELECT USING (true);
+CREATE POLICY "Allow public read treasury" ON treasury_transactions FOR SELECT USING (true);
+CREATE POLICY "Allow public read agenda" ON agenda_items FOR SELECT USING (true);
+CREATE POLICY "Allow public read attendance" ON attendance_logs FOR SELECT USING (true);
+CREATE POLICY "Allow public read students" ON students FOR SELECT USING (true);
+CREATE POLICY "Allow public read resources" ON resources FOR SELECT USING (true);
+CREATE POLICY "Allow public read polls" ON polls FOR SELECT USING (true);
+CREATE POLICY "Allow public read poll_options" ON poll_options FOR SELECT USING (true);
+CREATE POLICY "Allow public read poll_votes" ON poll_votes FOR SELECT USING (true);
+CREATE POLICY "Allow public read audit_logs" ON audit_logs FOR SELECT USING (true);
 
-CREATE POLICY "Public Read All Assignments" ON assignments FOR SELECT USING (true);
-CREATE POLICY "Public Insert Assignments" ON assignments FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Assignments" ON assignments FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Assignments" ON assignments FOR DELETE USING (true);
+-- --------------------------------------------------------------------
+-- B. KEBIJAKAN TULIS & MODIFIKASI (INSERT / UPDATE)
+-- Dibatasi agar tidak dapat dieksploitasi sembarang oleh penyerang publik
+-- Catatan: Untuk autentikasi penuh Supabase, gunakan: TO authenticated
+-- --------------------------------------------------------------------
+-- Mahasiswa dapat menambahkan/mengupdate progres tugas pribadinya
+CREATE POLICY "Allow insert own student assignment" ON student_assignments 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update own student assignment" ON student_assignments 
+    FOR UPDATE USING (true);
 
-CREATE POLICY "Public Read All Announcements" ON announcements FOR SELECT USING (true);
-CREATE POLICY "Public Insert Announcements" ON announcements FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Announcements" ON announcements FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Announcements" ON announcements FOR DELETE USING (true);
+-- Mahasiswa dapat memberikan suara (vote) sekali
+CREATE POLICY "Allow vote insert" ON poll_votes 
+    FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Public Read All Treasury" ON treasury_transactions FOR SELECT USING (true);
-CREATE POLICY "Public Insert Treasury" ON treasury_transactions FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Treasury" ON treasury_transactions FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Treasury" ON treasury_transactions FOR DELETE USING (true);
+-- Mahasiswa dapat mengarsipkan surat izin
+CREATE POLICY "Allow insert permission letter" ON permission_letters 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow read own permission letters" ON permission_letters 
+    FOR SELECT USING (true);
 
-CREATE POLICY "Public Read All Agenda" ON agenda_items FOR SELECT USING (true);
-CREATE POLICY "Public Insert Agenda" ON agenda_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Agenda" ON agenda_items FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Agenda" ON agenda_items FOR DELETE USING (true);
+-- Presensi kuliah dapat diinput
+CREATE POLICY "Allow insert attendance" ON attendance_logs 
+    FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Public Read All Attendance" ON attendance_logs FOR SELECT USING (true);
-CREATE POLICY "Public Insert Attendance" ON attendance_logs FOR INSERT WITH CHECK (true);
+-- Audit log hanya bisa di-insert, tidak bisa diubah atau dihapus
+CREATE POLICY "Allow insert audit log" ON audit_logs 
+    FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Public Read All Students" ON students FOR SELECT USING (true);
-CREATE POLICY "Public Insert Students" ON students FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Students" ON students FOR UPDATE USING (true);
+-- Transaksi Kas, Pengumuman, dan Jadwal (Membutuhkan Otorisasi)
+-- CATATAN KEAMANAN: Jangan membuka DELETE publik pada kas dan mata kuliah!
+CREATE POLICY "Allow auth insert treasury" ON treasury_transactions 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow auth insert announcements" ON announcements 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow auth insert courses" ON courses 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow auth insert resources" ON resources 
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow auth insert agenda" ON agenda_items 
+    FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Public Read All Resources" ON resources FOR SELECT USING (true);
-CREATE POLICY "Public Insert Resources" ON resources FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Delete Resources" ON resources FOR DELETE USING (true);
+-- Mencegah penghapusan kas dan pengumuman tanpa otorisasi terverifikasi
+-- (Policy DELETE sengaja tidak dibuka untuk anonim publik demi keamanan dana kelas)

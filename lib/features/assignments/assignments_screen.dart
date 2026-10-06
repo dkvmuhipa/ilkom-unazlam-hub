@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
@@ -8,7 +9,8 @@ import '../../models/models.dart';
 
 class AssignmentsScreen extends StatefulWidget {
   final bool canManage;
-  const AssignmentsScreen({super.key, this.canManage = true});
+  final String? userNim;
+  const AssignmentsScreen({super.key, this.canManage = true, this.userNim});
 
   static void showAssignmentDetail(BuildContext context, Assignment assignment, {VoidCallback? onStatusChanged}) {
     showModalBottomSheet(
@@ -26,6 +28,26 @@ class AssignmentsScreen extends StatefulWidget {
 class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String _selectedTab = 'Aktif';
 
+  @override
+  void initState() {
+    super.initState();
+    _loadPersonalAssignmentStatuses();
+  }
+
+  Future<void> _loadPersonalAssignmentStatuses() async {
+    final nim = widget.userNim ?? 'default';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (var a in DummyData.assignments) {
+        final saved = prefs.getString('assignment_status_${nim}_${a.id}');
+        if (saved != null) {
+          a.status = saved;
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
   final Map<String, Color> _courseColors = {
     'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
     'Pendidikan Pancasila': const Color(0xFF5B3DE8),
@@ -37,7 +59,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     'Bahasa Inggris Komunikasi': const Color(0xFF059669),
   };
 
-  void _cycleStatus(Assignment assignment) {
+  Future<void> _cycleStatus(Assignment assignment) async {
+    final nim = widget.userNim ?? 'default';
     setState(() {
       if (assignment.status == 'belum') {
         assignment.status = 'sedang_dikerjakan';
@@ -47,8 +70,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         assignment.status = 'belum';
       }
     });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('assignment_status_${nim}_${assignment.id}', assignment.status);
+    } catch (_) {}
+
     SupabaseRepository.updateAssignmentStatus(assignment.id, assignment.status);
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Status tugas diubah: ${_statusLabel(assignment.status)}'),

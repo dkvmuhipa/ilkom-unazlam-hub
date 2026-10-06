@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 
 class PollOption {
@@ -58,49 +59,27 @@ class VotingScreen extends StatefulWidget {
 }
 
 class _VotingScreenState extends State<VotingScreen> {
-  final List<ClassPoll> _polls = [
-    ClassPoll(
-      id: 'poll_1',
-      title: '👕 Pemilihan Warna PDH / Kaos Angkatan ILKOM 2026',
-      description: 'Silakan pilih warna dasar kemeja PDH angkatan kita untuk kegiatan resmi kampus.',
-      author: 'Nur Farida (Ketua Kelas)',
-      createdAt: DateTime(2026, 10, 1),
-      endsAt: DateTime(2026, 10, 10),
-      isOpen: true,
-      options: [
-        PollOption(id: 'opt_1', text: 'Navy Blue & Aksen Emas', votes: 14),
-        PollOption(id: 'opt_2', text: 'Olive Green & Putih', votes: 8),
-        PollOption(id: 'opt_3', text: 'Hitam Pekat & Abu-abu Silver', votes: 3),
-      ],
-      userVotedId: 'opt_1',
-    ),
-    ClassPoll(
-      id: 'poll_2',
-      title: '📅 Jadwal Pengganti Kuliah Pengantar Ilmu Komunikasi',
-      description: 'Dosen meminta pengganti sesi kuliah hari Kamis yang libur nasional.',
-      author: 'Nur Farida (Ketua Kelas)',
-      createdAt: DateTime(2026, 10, 3),
-      endsAt: DateTime(2026, 10, 7),
-      isOpen: true,
-      options: [
-        PollOption(id: 'opt_a', text: 'Sabtu, 09:00 - 11:30 WITA (Virtual Zoom)', votes: 18),
-        PollOption(id: 'opt_b', text: 'Senin Sore, 16:00 - 18:00 WITA (Tatap Muka Lab)', votes: 7),
-      ],
-    ),
-    ClassPoll(
-      id: 'poll_3',
-      title: '⛺ Lokasi Makrab & Keakraban Mahasiswa',
-      description: 'Voting lokasi kegiatan malam keakraban angkatan di akhir semester 1.',
-      author: 'Nur Farida (Ketua Kelas)',
-      createdAt: DateTime(2026, 9, 20),
-      endsAt: DateTime(2026, 9, 28),
-      isOpen: false,
-      options: [
-        PollOption(id: 'opt_x', text: 'Villa Puncak Baturaden (Terpilih)', votes: 21),
-        PollOption(id: 'opt_y', text: 'Pantai Menganti Kebumen', votes: 4),
-      ],
-    ),
-  ];
+  final List<ClassPoll> _polls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedVotes();
+  }
+
+  Future<void> _loadSavedVotes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (var poll in _polls) {
+        final savedVote = prefs.getString('poll_vote_${widget.currentNim}_${poll.id}');
+        if (savedVote != null && mounted) {
+          setState(() {
+            poll.userVotedId = savedVote;
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   void _showCreatePollDialog() {
     final titleController = TextEditingController();
@@ -238,19 +217,32 @@ class _VotingScreenState extends State<VotingScreen> {
     );
   }
 
-  void _castVote(ClassPoll poll, PollOption option) {
+  Future<void> _castVote(ClassPoll poll, PollOption option) async {
     if (!poll.isOpen) return;
 
     setState(() {
       if (poll.userVotedId != null) {
         // Remove previous vote
-        final prevOpt = poll.options.firstWhere((o) => o.id == poll.userVotedId);
-        prevOpt.votes = (prevOpt.votes - 1).clamp(0, 999);
+        final prevOpt = poll.options.firstWhere(
+          (o) => o.id == poll.userVotedId,
+          orElse: () => option,
+        );
+        if (prevOpt.id != option.id) {
+          prevOpt.votes = (prevOpt.votes - 1).clamp(0, 999);
+        }
       }
-      option.votes += 1;
-      poll.userVotedId = option.id;
+      if (poll.userVotedId != option.id) {
+        option.votes += 1;
+        poll.userVotedId = option.id;
+      }
     });
 
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('poll_vote_${widget.currentNim}_${poll.id}', option.id);
+    } catch (_) {}
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Suara Anda berhasil dicatat untuk: ${option.text}'),
@@ -308,12 +300,43 @@ class _VotingScreenState extends State<VotingScreen> {
               label: const Text('Buat Voting Baru', style: TextStyle(fontWeight: FontWeight.w700)),
             )
           : null,
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        itemCount: _polls.length,
-        itemBuilder: (context, i) {
-          final poll = _polls[i];
-          final total = poll.totalVotes;
+      body: _polls.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF3F0FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.how_to_vote_outlined, size: 32, color: Color(0xFF5B3DE8)),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belum Ada Voting Aktif',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pengurus kelas belum mengadakan pemungutan suara atau polling baru saat ini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              itemCount: _polls.length,
+              itemBuilder: (context, i) {
+                final poll = _polls[i];
+                final total = poll.totalVotes;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 16),

@@ -24,6 +24,7 @@ import 'features/audit/audit_log_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
 import 'core/services/dummy_data.dart';
+import 'core/services/session_service.dart';
 import 'models/models.dart';
 
 void main() async {
@@ -56,6 +57,24 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   String _userName = '';
   bool _isAdminMode = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _restoreSavedSession();
+  }
+
+  Future<void> _restoreSavedSession() async {
+    final session = await SessionService.getSession();
+    if (session != null && mounted) {
+      setState(() {
+        _isLoggedIn = true;
+        _userNim = session['userNim'] ?? '';
+        _userName = session['userName'] ?? '';
+        _isAdminMode = session['isAdmin'] ?? false;
+      });
+    }
+  }
+
   void _onSplashFinish() {
     if (mounted) {
       setState(() {
@@ -72,6 +91,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isLoggedIn = true;
       _isAdminMode = isAdmin;
     });
+    SessionService.saveSession(nim: nim, name: name, isAdmin: isAdmin);
   }
 
   void _onLogout() {
@@ -81,6 +101,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _userName = '';
       _isAdminMode = false;
     });
+    SessionService.clearSession();
   }
 
   @override
@@ -208,6 +229,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       AssignmentsScreen(
         key: ValueKey('assignments_${currentUser.nim}'),
         canManage: currentUser.canManageAssignments,
+        userNim: currentUser.nim,
       ), // 2: Tugas
       DirectoryScreen(
         key: ValueKey('directory_${currentUser.nim}'),

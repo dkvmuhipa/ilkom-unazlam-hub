@@ -29,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _heroController = PageController();
+    _heroController = PageController(viewportFraction: 0.92);
   }
 
   @override
@@ -47,6 +47,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        final totalAttendanceSessions = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.sesiBerjalan);
+        final totalHadir = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.hadir);
+        final totalIzin = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.izin);
+        final totalAlpa = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.alpa);
+
         return SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.88,
           child: Padding(
@@ -82,30 +87,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Donut Ring (90% Rata-rata Kehadiran)
+                      // Donut Ring
                       SizedBox(
                         width: 100,
                         height: 100,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            const SizedBox(
+                            SizedBox(
                               width: 100,
                               height: 100,
                               child: CircularProgressIndicator(
-                                value: 0.90,
+                                value: totalAttendanceSessions > 0 ? (totalHadir / totalAttendanceSessions) : 1.0,
                                 strokeWidth: 10,
-                                backgroundColor: Color(0xFFE5E7EB),
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
+                                backgroundColor: const Color(0xFFE5E7EB),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
                                 strokeCap: StrokeCap.round,
                               ),
                             ),
                             Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text(
-                                  '90%',
-                                  style: TextStyle(
+                                Text(
+                                  totalAttendanceSessions > 0 ? '${((totalHadir / totalAttendanceSessions) * 100).round()}%' : '100%',
+                                  style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w900,
                                     color: Color(0xFF111827),
@@ -132,10 +137,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatCounter('22', 'Hadir', const Color(0xFF10B981)),
-                          _buildStatCounter('2', 'Izin', const Color(0xFFF59E0B)),
-                          _buildStatCounter('1', 'Sakit', const Color(0xFF0284C7)),
-                          _buildStatCounter('0', 'Alpha', const Color(0xFFEF4444)),
+                          _buildStatCounter('$totalHadir', 'Hadir', const Color(0xFF10B981)),
+                          _buildStatCounter('$totalIzin', 'Izin', const Color(0xFFF59E0B)),
+                          _buildStatCounter('0', 'Sakit', const Color(0xFF0284C7)),
+                          _buildStatCounter('$totalAlpa', 'Alpha', const Color(0xFFEF4444)),
                         ],
                       ),
                     ],
@@ -151,8 +156,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     itemCount: DummyData.students.where((s) => s.role != 'ADMIN').length,
                     itemBuilder: (ctx, i) {
                       final s = DummyData.students.where((s) => s.role != 'ADMIN').toList()[i];
-                      final pct = (i % 5 == 0) ? '80%' : '100%';
-                      final color = pct == '100%' ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+                      const pct = '100%';
+                      const color = Color(0xFF10B981);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -169,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               backgroundColor: color.withValues(alpha: 0.12),
                               child: Text(
                                 s.nama.isNotEmpty ? s.nama[0] : 'M',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -178,11 +183,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5), overflow: TextOverflow.ellipsis),
-                                  Text('${s.nim} • ${pct == "100%" ? "5/5 Pertemuan" : "4/5 Pertemuan"}', style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280))),
+                                  Text('${s.nim} • Semester 1', style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280))),
                                 ],
                               ),
                             ),
-                            Text(
+                            const Text(
                               pct,
                               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: color),
                             ),
@@ -628,7 +633,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // ==========================================
               // 5. PENGINGAT DEADLINE TERDEKAT (COMPACT)
               // ==========================================
-              _buildReminderCard(context),
+              _buildReminderCard(context, nearestAssignment),
               const SizedBox(height: 20),
 
               // ==========================================
@@ -693,12 +698,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
+                          color: latestAnnouncement != null ? const Color(0xFFFEF3C7) : const Color(0xFFF3F0FF),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(
-                          Icons.campaign_rounded,
-                          color: Color(0xFFB45309),
+                        child: Icon(
+                          latestAnnouncement != null ? Icons.campaign_rounded : Icons.info_outline_rounded,
+                          color: latestAnnouncement != null ? const Color(0xFFB45309) : const Color(0xFF5B3DE8),
                           size: 24,
                         ),
                       ),
@@ -708,7 +713,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              latestAnnouncement?.judul ?? 'Perubahan Ruang Kuliah',
+                              latestAnnouncement?.judul ?? 'Belum Ada Pengumuman Baru',
                               style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
@@ -719,7 +724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              latestAnnouncement?.isi ?? 'Kuliah Pendidikan Kewarganegaraan besok dipindahkan ke Ruang B2.',
+                              latestAnnouncement?.isi ?? 'Informasi akademik dan pengumuman kelas akan disampaikan di sini.',
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 color: Color(0xFF4B5563),
@@ -732,7 +737,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               latestAnnouncement != null
                                   ? '${latestAnnouncement.createdAt.day} ${_monthName(latestAnnouncement.createdAt.month)} ${latestAnnouncement.createdAt.year}'
-                                  : '5 Oktober 2026',
+                                  : 'Update Terkini',
                               style: const TextStyle(
                                 fontSize: 10.5,
                                 color: Color(0xFF9CA3AF),
@@ -742,6 +747,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF9CA3AF), size: 14),
                     ],
                   ),
                 ),
@@ -887,17 +894,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Row(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(
+                      const Text(
                         'Rp ',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white70),
                       ),
                       Text(
-                        '750.000',
-                        style: TextStyle(
+                        _formatNumber(DummyData.totalKasSaldo),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -917,17 +924,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.arrow_downward_rounded, color: Color(0xFF34D399), size: 16),
-                              SizedBox(width: 6),
+                              const Icon(Icons.arrow_downward_rounded, color: Color(0xFF34D399), size: 16),
+                              const SizedBox(width: 6),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Pemasukan', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+                                  const Text('Pemasukan', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
                                   Text(
-                                    'Rp 1.250.000',
-                                    style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                                    'Rp ${_formatNumber(DummyData.totalKasPemasukan)}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -944,17 +951,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.arrow_upward_rounded, color: Color(0xFFF87171), size: 16),
-                              SizedBox(width: 6),
+                              const Icon(Icons.arrow_upward_rounded, color: Color(0xFFF87171), size: 16),
+                              const SizedBox(width: 6),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Pengeluaran', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+                                  const Text('Pengeluaran', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
                                   Text(
-                                    'Rp 500.000',
-                                    style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                                    'Rp ${_formatNumber(DummyData.totalKasPengeluaran)}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -1133,46 +1140,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Rapat Persiapan Presentasi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 12),
-                      ),
-                      const SizedBox(width: 7),
-                      const Text(
-                        '13.00 - 14.00 WITA',
-                        style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(width: 14),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 12),
-                      ),
-                      const SizedBox(width: 7),
-                      const Text(
-                        'Ruang B2 • FISIP',
-                        style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
-                      ),
-                    ],
+                  Builder(
+                    builder: (context) {
+                      final daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                      final todayName = daysOfWeek[DateTime.now().weekday - 1];
+                      final todayCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
+                      final c = todayCourses.isNotEmpty ? todayCourses.first : null;
+
+                      if (c == null) {
+                        return const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tidak Ada Perkuliahan Hari Ini',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Agenda kelas kosong. Waktu luang untuk belajar mandiri.',
+                              style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.nama,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.4,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 12),
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                '${c.jamMulai} - ${c.jamSelesai} WITA',
+                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(width: 14),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 12),
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                '${c.ruangan} • FISIP',
+                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1184,12 +1229,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStandardHeroCarousel(BuildContext context, Assignment? nearestAssignment) {
+    // Dynamic course for today
+    final daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    final todayDayName = daysOfWeek[DateTime.now().weekday - 1];
+    final todayCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == todayDayName.toLowerCase()).toList();
+    final todayCourse = todayCourses.isNotEmpty ? todayCourses.first : null;
+
+    final hasUpcoming = nearestAssignment != null;
+    final totalAttendanceSessions = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.sesiBerjalan);
+    final totalHadir = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.hadir);
+    final totalIzin = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.izin);
+    final totalAlpa = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.alpa);
+
     return Column(
       children: [
         SizedBox(
-          height: 184,
+          height: 192,
           child: PageView(
             controller: _heroController,
+            clipBehavior: Clip.none,
             onPageChanged: (index) => setState(() => _currentHeroPage = index),
             children: [
               // Slide 0: Kuliah Hari Ini (matching Screen 3)
@@ -1197,14 +1255,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 gradientColors: const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                 shadowColor: const Color(0xFF4F46E5),
                 watermarkIcon: Icons.school_rounded,
-                badgeDotColor: const Color(0xFF34D399),
+                badgeDotColor: todayCourse != null ? const Color(0xFF34D399) : const Color(0xFF9CA3AF),
                 badgeText: 'KULIAH HARI INI',
-                tagText: 'Semester 1',
-                title: 'Pendidikan Pancasila',
+                tagText: todayDayName,
+                title: todayCourse?.nama ?? 'Tidak Ada Kuliah Hari Ini',
                 line1Icon: Icons.access_time_filled_rounded,
-                line1Text: '15.30 - 17.45 WITA',
+                line1Text: todayCourse != null
+                    ? '${todayCourse.jamMulai} - ${todayCourse.jamSelesai} WITA'
+                    : 'Tidak ada sesi perkuliahan terjadwal',
                 line2Icon: Icons.location_on_rounded,
-                line2Text: 'Ruang A1 • Bapak Muh Fadly, S.Ag.',
+                line2Text: todayCourse != null
+                    ? '${todayCourse.ruangan} • ${todayCourse.dosen}'
+                    : 'Manfaatkan waktu untuk belajar mandiri',
                 actionLabel: 'Buka Jadwal',
                 onTapArrow: () => widget.onNavigateTab(1),
               ),
@@ -1214,15 +1276,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 gradientColors: const [Color(0xFF1E3A8A), Color(0xFF2563EB)],
                 shadowColor: const Color(0xFF1E3A8A),
                 watermarkIcon: Icons.assignment_turned_in_rounded,
-                badgeDotColor: const Color(0xFFFBBF24),
+                badgeDotColor: hasUpcoming ? const Color(0xFFFBBF24) : const Color(0xFF34D399),
                 badgeText: 'TUGAS TERDEKAT',
-                tagText: 'Batas: 8 Okt',
-                title: nearestAssignment?.judul ?? 'Makalah Analisis Nilai Pancasila',
+                tagText: hasUpcoming ? 'Batas: ${nearestAssignment.deadline.day} ${_monthName(nearestAssignment.deadline.month)}' : 'Selesai',
+                title: nearestAssignment?.judul ?? 'Tidak Ada Tugas Aktif',
                 line1Icon: Icons.event_available_rounded,
-                line1Text: 'Deadline: 8 Oktober 2026',
+                line1Text: hasUpcoming
+                    ? 'Deadline: ${nearestAssignment.deadline.day} ${_monthName(nearestAssignment.deadline.month)} ${nearestAssignment.deadline.year}'
+                    : 'Semua tugas kuliah telah selesai',
                 line2Icon: Icons.menu_book_rounded,
-                line2Text: nearestAssignment?.courseName ?? 'Pendidikan Pancasila',
-                actionLabel: 'Detail Tugas',
+                line2Text: hasUpcoming
+                    ? nearestAssignment.courseName
+                    : 'Belum ada tugas baru yang diberikan dosen',
+                actionLabel: hasUpcoming ? 'Detail Tugas' : 'Buka Tugas',
                 onTapArrow: () => widget.onNavigateTab(2),
               ),
 
@@ -1233,12 +1299,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 watermarkIcon: Icons.verified_user_rounded,
                 badgeDotColor: const Color(0xFF34D399),
                 badgeText: 'STATUS PRESENSI',
-                tagText: '90% Kehadiran',
+                tagText: totalAttendanceSessions > 0
+                    ? '${((totalHadir / totalAttendanceSessions) * 100).round()}% Kehadiran'
+                    : '100% Kehadiran',
                 title: 'Performa Kehadiran Aman',
                 line1Icon: Icons.check_circle_rounded,
-                line1Text: '9 Hadir • 1 Izin • 0 Alpa',
+                line1Text: '$totalHadir Hadir • $totalIzin Izin • $totalAlpa Alpa',
                 line2Icon: Icons.shield_rounded,
-                line2Text: '10 Sesi Berjalan (Memenuhi Syarat UTS)',
+                line2Text: totalAttendanceSessions > 0
+                    ? '$totalAttendanceSessions Sesi Berjalan (Memenuhi Syarat UTS)'
+                    : 'Presensi semester 1 berjalan tertib',
                 actionLabel: 'Cek Presensi',
                 onTapArrow: () => widget.onNavigateTab(5),
               ),
@@ -1283,6 +1353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required VoidCallback onTapArrow,
   }) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -1610,7 +1681,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildReminderCard(BuildContext context) {
+  Widget _buildReminderCard(BuildContext context, Assignment? nearestAssignment) {
+    if (nearestAssignment == null) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFDCFCE7),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.task_alt_rounded, color: Color(0xFF16A34A), size: 24),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tidak Ada Tugas Tertunda',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Semua tugas perkuliahan telah diselesaikan atau belum ada tugas baru.',
+                    style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () => widget.onNavigateTab(2),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text('Lihat Tugas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final diff = nearestAssignment.deadline.difference(DateTime.now());
+    final daysLeft = diff.isNegative ? 0 : diff.inDays;
+    final hoursLeft = diff.isNegative ? 0 : (diff.inHours % 24);
+    final minutesLeft = diff.isNegative ? 0 : (diff.inMinutes % 60);
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
@@ -1682,18 +1819,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Proposal Kampanye PR',
-            style: TextStyle(
+          Text(
+            nearestAssignment.judul,
+            style: const TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w800,
               color: Colors.white,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          const Text(
-            'Mata Kuliah: Public Relations • Dosen: Dr. Siti Nurhaliza',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFFC7D2FE)),
+          Text(
+            'Mata Kuliah: ${nearestAssignment.courseName}',
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFFC7D2FE)),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -1705,15 +1844,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildCountdownBlock('01', 'HARI'),
+                  _buildCountdownBlock(daysLeft.toString().padLeft(2, '0'), 'HARI'),
                   const SizedBox(width: 4),
                   const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 15)),
                   const SizedBox(width: 4),
-                  _buildCountdownBlock('14', 'JAM'),
+                  _buildCountdownBlock(hoursLeft.toString().padLeft(2, '0'), 'JAM'),
                   const SizedBox(width: 4),
                   const Text(':', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 15)),
                   const SizedBox(width: 4),
-                  _buildCountdownBlock('35', 'MENIT'),
+                  _buildCountdownBlock(minutesLeft.toString().padLeft(2, '0'), 'MENIT'),
                 ],
               ),
               ElevatedButton.icon(
@@ -1770,5 +1909,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _monthName(int month) {
     const m = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     return m[month];
+  }
+
+  String _formatNumber(int amount) {
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 }

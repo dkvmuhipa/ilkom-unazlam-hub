@@ -30,42 +30,9 @@ class AgendaScreen extends StatefulWidget {
 }
 
 class _AgendaScreenState extends State<AgendaScreen> {
-  int _selectedDay = 5;
+  int _selectedDay = DateTime.now().day;
 
-  final List<ClassAgendaItem> _agendaList = [
-    ClassAgendaItem(
-      id: 'ag_1',
-      day: 5,
-      month: 'Okt',
-      title: 'Presentasi Kelompok 1',
-      course: 'Pendidikan Kewarganegaraan',
-      color: const Color(0xFF5B3DE8),
-    ),
-    ClassAgendaItem(
-      id: 'ag_2',
-      day: 8,
-      month: 'Okt',
-      title: 'Pengumpulan Makalah',
-      course: 'Pendidikan Pancasila',
-      color: const Color(0xFFF59E0B),
-    ),
-    ClassAgendaItem(
-      id: 'ag_3',
-      day: 12,
-      month: 'Okt',
-      title: 'Presentasi Kelompok 2',
-      course: 'Dasar-Dasar Ilmu Komunikasi',
-      color: const Color(0xFF5B3DE8),
-    ),
-    ClassAgendaItem(
-      id: 'ag_4',
-      day: 22,
-      month: 'Okt',
-      title: 'Ujian Tengah Semester (UTS)',
-      course: 'Semester 1 - FISIP UNAZLAM',
-      color: const Color(0xFF2E094B),
-    ),
-  ];
+  final List<ClassAgendaItem> _agendaList = [];
 
   void _showAddAgendaDialog() {
     final titleController = TextEditingController();
@@ -489,7 +456,45 @@ class _AgendaScreenState extends State<AgendaScreen> {
             const SizedBox(height: 14),
 
             // Agenda List
-            ..._agendaList.map((agenda) => _buildAgendaTile(agenda)),
+            if (_agendaList.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF3F0FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.event_busy_rounded, size: 32, color: Color(0xFF5B3DE8)),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Belum Ada Agenda Kegiatan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Agenda ujian, presentasi, atau kegiatan kelas yang ditambahkan akan muncul di sini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), height: 1.4),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._agendaList.map((agenda) => _buildAgendaTile(agenda)),
           ],
         ),
       ),
@@ -499,7 +504,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
   Widget _buildCalendarGrid() {
     // October 2026: 1 Oct is Thursday (index 4 if Sunday=0: Sun, Mon, Tue, Wed, Thu, Fri, Sat)
     // 31 days
-    final eventDays = [5, 8, 12, 22];
+    final eventDays = _agendaList.map((a) => a.day).toSet();
 
     final cells = <Widget>[];
 

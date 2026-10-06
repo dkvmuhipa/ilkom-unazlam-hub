@@ -27,6 +27,15 @@ class _LettersScreenState extends State<LettersScreen> {
   final _alasanController = TextEditingController(text: 'Kondisi kesehatan sedang menurun (demam) dan memerlukan istirahat');
   final _tanggalController = TextEditingController(text: 'Senin, 5 Oktober 2026');
 
+  @override
+  void dispose() {
+    _dosenController.dispose();
+    _courseController.dispose();
+    _alasanController.dispose();
+    _tanggalController.dispose();
+    super.dispose();
+  }
+
   String _generateLetterContent() {
     return '''
 HAL: PERMOHONAN IZIN TIDAK MENGIKUTI PERKULIAHAN
@@ -67,7 +76,23 @@ ${widget.studentName}
 
   Future<void> _shareToWhatsApp() async {
     final text = _generateLetterContent();
-    final url = 'https://wa.me/?text=${Uri.encodeComponent(text)}';
+    String? dosenWa;
+    try {
+      final course = DummyData.courses.firstWhere(
+        (c) => c.nama.trim().toLowerCase() == _courseController.text.trim().toLowerCase(),
+      );
+      if (course.dosenWa != null && course.dosenWa!.trim().isNotEmpty) {
+        String clean = course.dosenWa!.replaceAll(RegExp(r'\D'), '');
+        if (clean.startsWith('0')) {
+          clean = '62${clean.substring(1)}';
+        }
+        dosenWa = clean;
+      }
+    } catch (_) {}
+
+    final url = (dosenWa != null && dosenWa.isNotEmpty)
+        ? 'https://wa.me/$dosenWa?text=${Uri.encodeComponent(text)}'
+        : 'https://wa.me/?text=${Uri.encodeComponent(text)}';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
