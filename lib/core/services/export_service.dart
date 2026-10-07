@@ -1,9 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dummy_data.dart';
 import 'package:intl/intl.dart';
+import 'download_stub.dart' if (dart.library.html) 'download_web.dart';
 
 class ExportService {
+  /// Trigger direct file download in browser or copy to clipboard on other platforms
+  static void downloadFile(String fileName, String content) {
+    if (kIsWeb) {
+      downloadFilePlatform(fileName, content);
+    } else {
+      Clipboard.setData(ClipboardData(text: content));
+    }
+  }
   /// Export Rekap Kas Kelas to CSV Format
   static String exportTreasuryCsv() {
     final buffer = StringBuffer();
@@ -167,11 +177,11 @@ class ExportService {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: content));
+                      downloadFile(fileName, content);
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('File "$fileName" siap diunduh! Data tersimpan di clipboard.'),
+                          content: Text('File "$fileName" berhasil diunduh ke perangkat Anda! 📁'),
                           backgroundColor: const Color(0xFF16A34A),
                         ),
                       );
