@@ -20,6 +20,8 @@ class SupabaseConfig {
 }
 
 class SupabaseService {
+  static bool _initialized = false;
+
   static Future<void> initialize() async {
     if (SupabaseConfig.isConfigured) {
       try {
@@ -27,6 +29,7 @@ class SupabaseService {
           url: SupabaseConfig.supabaseUrl,
           anonKey: SupabaseConfig.supabaseAnonKey,
         );
+        _initialized = true;
         debugPrint('Supabase berhasil diinisialisasi untuk ILKOM UNAZLAM!');
       } catch (e) {
         debugPrint('Gagal inisialisasi Supabase: $e');
@@ -37,7 +40,7 @@ class SupabaseService {
   }
 
   static SupabaseClient? get client {
-    if (SupabaseConfig.isConfigured) {
+    if (_initialized) {
       return Supabase.instance.client;
     }
     return null;

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/services/dummy_data.dart';
-import '../../main.dart';
+import '../../core/services/auth_service.dart';
+import '../../models/models.dart';
 
 class LoginScreen extends StatefulWidget {
-  final Function(String nim, String name)? onLoginSuccess;
+  final Function(StudentProfile profile) onLoginSuccess;
 
-  const LoginScreen({super.key, this.onLoginSuccess});
+  const LoginScreen({super.key, required this.onLoginSuccess});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -16,7 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _rememberMe = true;
 
   @override
   void dispose() {
@@ -25,14 +24,14 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    final input = _nimController.text.trim();
-    final password = _passwordController.text.trim();
+  Future<void> _handleLogin() async {
+    final email = _nimController.text.trim();
+    final password = _passwordController.text;
 
-    if (input.isEmpty) {
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Silakan masukkan NIM Anda.'),
+          content: Text('Silakan masukkan email akun Anda.'),
           backgroundColor: Color(0xFFEF4444),
           duration: Duration(seconds: 2),
         ),
@@ -52,52 +51,24 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-
-    // Check if logging in as Admin
-    final isInputAdmin = input.toLowerCase() == 'admin' || input.toLowerCase() == 'administrator';
-
-    // Cari data mahasiswa berdasarkan NIM jika bukan admin
-    final student = isInputAdmin
-        ? null
-        : DummyData.students.cast<dynamic>().firstWhere(
-            (s) => s.nim == input,
-            orElse: () => null,
-          );
-
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      final profile = await AuthService.signIn(email: email, password: password);
       if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (isInputAdmin) {
-        if (widget.onLoginSuccess != null) {
-          widget.onLoginSuccess!('admin', 'System Administrator');
-        }
-      } else if (student != null || input.length >= 5) {
-        final studentName = student?.nama ?? 'Mahasiswa';
-        if (widget.onLoginSuccess != null) {
-          widget.onLoginSuccess!(input, studentName);
-        } else {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const MainResponsiveShell(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 300),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('NIM tidak terdaftar di kelas ILKOM UNAZLAM 2026.'),
-            backgroundColor: Color(0xFFEF4444),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    });
+      widget.onLoginSuccess(profile);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error is AuthServiceException
+              ? error.message
+              : 'Email atau kata sandi salah, atau koneksi ke layanan login gagal.'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showForgotPasswordDialog() {
@@ -230,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Form Input NIM (Screen 2)
+                  // Form Input Email
                   Container(
                     height: 52,
                     decoration: BoxDecoration(
@@ -240,13 +211,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: TextField(
                       controller: _nimController,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        hintText: 'NIM',
+                        hintText: 'Email akun',
                         hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
                         prefixIcon: Icon(
-                          Icons.person_outline_rounded,
+                          Icons.alternate_email_rounded,
                           color: Color(0xFF6B7280),
                           size: 20,
                         ),
@@ -293,29 +264,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Checkbox "Ingat saya" & "Lupa password?" (Screen 2)
+                  // Password recovery
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: Checkbox(
-                              value: _rememberMe,
-                              activeColor: const Color(0xFF5B3DE8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              onChanged: (val) => setState(() => _rememberMe = val ?? true),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Ingat saya',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4B5563)),
-                          ),
-                        ],
-                      ),
+                      const SizedBox.shrink(),
                       TextButton(
                         onPressed: _showForgotPasswordDialog,
                         style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
@@ -363,26 +316,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                  const SizedBox(height: 16),
-
-                  // Quick Demo Roles Login (Ketua, Bendahara, Sekretaris, Mahasiswa, Admin)
                   const Text(
-                    'Uji Coba Cepat Berdasarkan Jabatan & Role:',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      _buildQuickRoleChip('Ketua Kelas', '260250023', 'Nur Farida', const Color(0xFFD97706), const Color(0xFFFEF3C7)),
-                      _buildQuickRoleChip('Bendahara', '260250020', "Alya Nabilah", const Color(0xFF16A34A), const Color(0xFFDCFCE7)),
-                      _buildQuickRoleChip('Sekretaris', '260250008', 'Stefani', const Color(0xFF6D28D9), const Color(0xFFEDE9FE)),
-                      _buildQuickRoleChip('Mahasiswa', '260250002', 'Larasati', const Color(0xFF0284C7), const Color(0xFFE0F2FE)),
-                      _buildQuickRoleChip('Admin', 'admin', 'Administrator', const Color(0xFFDC2626), const Color(0xFFFEE2E2)),
-                    ],
+                    'Gunakan email dan kata sandi akun mahasiswa yang telah diaktifkan.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
@@ -393,29 +330,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildQuickRoleChip(String roleLabel, String nim, String name, Color textColor, Color bgColor) {
-    return InkWell(
-      onTap: () {
-        _nimController.text = nim;
-        _passwordController.text = '123456';
-        _handleLogin();
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: textColor.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(roleLabel, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: textColor)),
-            Text(name, style: TextStyle(fontSize: 9.5, color: textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
 }

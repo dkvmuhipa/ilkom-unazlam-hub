@@ -70,7 +70,7 @@ class SupabaseRepository {
 
   static Future<bool> createCourse(Course course) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('courses').insert({
@@ -89,13 +89,13 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Error insert course ke Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> updateCourse(Course course) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('courses').update({
@@ -113,20 +113,20 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Error update course di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> deleteCourse(String id) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('courses').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Error delete course dari Supabase: $e');
-      return true;
+      return false;
     }
   }
 
@@ -217,7 +217,7 @@ class SupabaseRepository {
 
   static Future<bool> updateAnnouncement(Announcement announcement) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('announcements').update({
@@ -229,21 +229,21 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Error update announcement di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> deleteAnnouncement(String id) async {
     DummyData.announcements.removeWhere((a) => a.id == id);
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('announcements').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Sync delete announcement error: $e');
-      return true;
+      return false;
     }
   }
 
@@ -340,7 +340,7 @@ class SupabaseRepository {
 
   static Future<bool> updateAssignment(Assignment assignment) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('assignments').update({
@@ -356,33 +356,34 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Error update assignment di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> updateAssignmentStatus(String id, String status) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('assignments').update({'status': status}).eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Error update status assignment di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> deleteAssignment(String id) async {
     DummyData.assignments.removeWhere((a) => a.id == id);
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('assignments').delete().eq('id', id);
       return true;
     } catch (e) {
-      return true;
+      debugPrint('Error delete assignment dari Supabase: $e');
+      return false;
     }
   }
 
@@ -428,7 +429,7 @@ class SupabaseRepository {
 
   static Future<bool> createTreasuryTransaction(TreasuryTransaction item) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('treasury_transactions').insert({
@@ -443,13 +444,13 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Sync insert treasury ke Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> updateTreasuryTransaction(TreasuryTransaction item) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('treasury_transactions').update({
@@ -461,20 +462,20 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Error update treasury di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> deleteTreasuryTransaction(String id) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('treasury_transactions').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Error delete treasury dari Supabase: $e');
-      return true;
+      return false;
     }
   }
 
@@ -490,7 +491,7 @@ class SupabaseRepository {
     required int colorValue,
   }) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('agenda_items').insert({
@@ -504,20 +505,20 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Sync insert agenda ke Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> deleteAgendaItem(String id) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('agenda_items').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Error delete agenda dari Supabase: $e');
-      return true;
+      return false;
     }
   }
 
@@ -580,7 +581,7 @@ class SupabaseRepository {
 
   static Future<bool> clearAttendanceLogs({String? studentNim}) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       if (studentNim != null && studentNim.isNotEmpty) {
@@ -600,27 +601,27 @@ class SupabaseRepository {
   // ====================================================================
   static Future<bool> updateStudentJabatan(String nim, String jabatan) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('students').update({'jabatan': jabatan}).eq('nim', nim);
       return true;
     } catch (e) {
       debugPrint('Error update jabatan di Supabase: $e');
-      return true;
+      return false;
     }
   }
 
   static Future<bool> toggleStudentStatus(String nim, bool isAktif) async {
     final client = SupabaseService.client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       await client.from('students').update({'is_aktif': isAktif}).eq('nim', nim);
       return true;
     } catch (e) {
       debugPrint('Error toggle status di Supabase: $e');
-      return true;
+      return false;
     }
   }
 }

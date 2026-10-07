@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/admin_account_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
+import 'create_student_account_dialog.dart';
 
 class AdminShellScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -22,6 +26,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   String _currentView = 'dashboard';
   StudentProfile? _selectedStudent;
   int _navBarIndex = 0;
+  List<StudentProfile> _managedAccounts = [];
+  bool _isLoadingAccounts = false;
+  String? _accountLoadError;
 
   // Local state for dynamic data
   late List<ClassItem> _classes;
@@ -75,6 +82,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _navBarIndex = 4;
       }
     });
+    if (view == 'manajemen_akun') unawaited(_loadManagedAccounts());
+  }
+
+  Future<void> _loadManagedAccounts() async {
+    setState(() {
+      _isLoadingAccounts = true;
+      _accountLoadError = null;
+    });
+    try {
+      final accounts = await AdminAccountService.listStudentAccounts();
+      if (!mounted) return;
+      setState(() => _managedAccounts = accounts);
+    } on AdminAccountServiceException catch (error) {
+      if (!mounted) return;
+      setState(() => _accountLoadError = error.message);
+    } finally {
+      if (mounted) setState(() => _isLoadingAccounts = false);
+    }
   }
 
   void _handleBottomNav(int index) {
@@ -1720,13 +1745,27 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // ==========================================
   String _accountFilter = 'Admin';
 
+  Future<void> _showCreateStudentAccountDialog() async {
+    final profile = await showDialog<StudentProfile>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const CreateStudentAccountDialog(),
+    );
+    if (profile == null || !mounted) return;
+
+    setState(() => _accountFilter = 'Mahasiswa');
+    await _loadManagedAccounts();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Undangan akun dikirim ke ${profile.email}.'),
+        backgroundColor: const Color(0xFF059669),
+      ),
+    );
+  }
+
   Widget _buildManajemenAkun() {
-    // Admin list mock
-    final List<AdminAccountItem> adminAccounts = [
-      AdminAccountItem(initials: 'AD', nama: 'Admin Utama', email: 'admin@unazlam.ac.id', isAktif: true),
-      AdminAccountItem(initials: 'AS', nama: 'Admin Akademik', email: 'akademik@unazlam.ac.id', isAktif: true),
-      AdminAccountItem(initials: 'PU', nama: 'Admin Prodi', email: 'prodi.ilkom@unazlam.ac.id', isAktif: true),
-    ];
+    final admins = _managedAccounts.where((account) => account.isAdmin);
+    final students = _managedAccounts.where((account) => !account.isAdmin);
 
     return Column(
       children: [
@@ -1735,6 +1774,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _showCreateStudentAccountDialog,
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 19),
+                  label: const Text('Buat akun mahasiswa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B3DE8),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               // Filter Pills: Semua, Admin, Mahasiswa (Screen 11)
               Row(
                 children: ['Semua', 'Admin', 'Mahasiswa'].map((f) {
@@ -1765,139 +1822,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
               const SizedBox(height: 16),
 
-              if (_accountFilter == 'Admin' || _accountFilter == 'Semua') ...[
-                ...adminAccounts.map((adm) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+              if (_isLoadingAccounts)
+                const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_accountLoadError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    _accountLoadError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFFB91C1C)),
+                  ),
+                )
+              else ...[
+                if (_accountFilter == 'Admin' || _accountFilter == 'Semua')
+                  ...admins.map(_buildManagedAccountTile),
+                if (_accountFilter == 'Mahasiswa' || _accountFilter == 'Semua')
+                  ...students.map(_buildManagedAccountTile),
+                if (_managedAccounts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'Belum ada akun di Supabase.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600),
                     ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: const Color(0xFFF3F0FF),
-                          child: Text(
-                            adm.initials,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF5B3DE8),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                adm.nama,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                adm.email,
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFFA7F3D0)),
-                          ),
-                          child: const Text(
-                            'Aktif',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
-                          onSelected: (val) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Aksi $val untuk akun ${adm.nama}')),
-                            );
-                          },
-                          itemBuilder: (ctx) => [
-                            const PopupMenuItem(value: 'reset', child: Text('Reset Password')),
-                            const PopupMenuItem(value: 'edit', child: Text('Edit Akun')),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-
-              if (_accountFilter == 'Mahasiswa' || _accountFilter == 'Semua') ...[
-                ...DummyData.students.where((s) => s.role != 'ADMIN').take(10).map((s) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: const Color(0xFFE0F2FE),
-                          child: Text(
-                            _getInitials(s.nama),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0284C7),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                s.nama,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'NIM: ${s.nim} • ${s.jabatan}',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: s.isAktif,
-                          activeThumbColor: const Color(0xFF10B981),
-                          onChanged: (val) {
-                            setState(() => s.isAktif = val);
-                            SupabaseRepository.toggleStudentStatus(s.nim, val);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                  ),
               ],
             ],
           ),
@@ -1905,6 +1857,102 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       ],
     );
   }
+
+  Widget _buildManagedAccountTile(StudentProfile account) {
+    final isAdmin = account.isAdmin;
+    final accent = isAdmin ? const Color(0xFF5B3DE8) : const Color(0xFF0284C7);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: accent.withValues(alpha: 0.1),
+            child: Text(
+              _getInitials(account.nama),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: accent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.nama,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${account.email}\nNIM: ${account.nim} • ${account.jabatan}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1.4,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isAdmin)
+            _accountStatusBadge(account.isAktif)
+          else
+            Switch(
+              value: account.isAktif,
+              activeThumbColor: const Color(0xFF10B981),
+              onChanged: (value) async {
+                setState(() => account.isAktif = value);
+                final saved = await SupabaseRepository.toggleStudentStatus(
+                  account.nim,
+                  value,
+                );
+                if (!saved && mounted) {
+                  setState(() => account.isAktif = !value);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Status akun gagal diperbarui di Supabase.'),
+                    ),
+                  );
+                }
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _accountStatusBadge(bool isActive) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isActive ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
+          ),
+        ),
+        child: Text(
+          isActive ? 'Aktif' : 'Nonaktif',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: isActive ? const Color(0xFF059669) : const Color(0xFFB91C1C),
+          ),
+        ),
+      );
 
   // ==========================================
   // SCREEN 12: PENGATURAN SISTEM
@@ -2438,20 +2486,6 @@ class AcademicYearItem {
   });
 }
 
-class AdminAccountItem {
-  final String initials;
-  final String nama;
-  final String email;
-  final bool isAktif;
-
-  AdminAccountItem({
-    required this.initials,
-    required this.nama,
-    required this.email,
-    required this.isAktif,
-  });
-}
-
 class LecturerItem {
   final String id;
   final String nama;
@@ -2465,4 +2499,3 @@ class LecturerItem {
     required this.email,
   });
 }
-

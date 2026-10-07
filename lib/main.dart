@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_notifier.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/supabase_repository.dart';
+import 'core/services/auth_service.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/schedule/schedule_screen.dart';
 import 'features/assignments/assignments_screen.dart';
@@ -18,6 +19,7 @@ import 'features/agenda/agenda_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/invite_accept_screen.dart';
 import 'features/notifications/notification_screen.dart';
 import 'features/voting/voting_screen.dart';
 import 'features/letters/letters_screen.dart';
@@ -25,11 +27,14 @@ import 'features/audit/audit_log_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
 import 'core/services/dummy_data.dart';
-import 'core/services/session_service.dart';
 import 'models/models.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Supabase invitation links return to the site with the auth type in the URL
+  // fragment. Capture it before Supabase consumes the callback URL.
+  final initialAuthFlow = _getInitialAuthFlow();
   
   // Inisialisasi format tanggal lokal Indonesia
   try {
@@ -41,11 +46,23 @@ void main() async {
   // Inisialisasi Supabase
   await SupabaseService.initialize();
 
-  runApp(const ClassManagerApp());
+  runApp(ClassManagerApp(initialAuthFlow: initialAuthFlow));
+}
+
+String? _getInitialAuthFlow() {
+  try {
+    final fragment = Uri.splitQueryString(Uri.base.fragment);
+    final type = fragment['type'];
+    return type == 'invite' || type == 'recovery' ? type : null;
+  } catch (_) {
+    return null;
+  }
 }
 
 class ClassManagerApp extends StatefulWidget {
-  const ClassManagerApp({super.key});
+  final String? initialAuthFlow;
+
+  const ClassManagerApp({super.key, this.initialAuthFlow});
 
   @override
   State<ClassManagerApp> createState() => _ClassManagerAppState();
@@ -57,21 +74,39 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   String _userNim = '';
   String _userName = '';
   bool _isAdminMode = false;
+  late bool _isAuthSetupFlow;
 
   @override
   void initState() {
     super.initState();
-    _restoreSavedSession();
+    _isAuthSetupFlow = widget.initialAuthFlow != null;
+    if (!_isAuthSetupFlow) _restoreAuthSession();
   }
 
-  Future<void> _restoreSavedSession() async {
-    final session = await SessionService.getSession();
-    if (session != null && mounted) {
+  void _onAuthSetupComplete(StudentProfile profile) {
+    DummyData.students.removeWhere((student) => student.nim == profile.nim);
+    DummyData.students.add(profile);
+    setState(() {
+      _isAuthSetupFlow = false;
+      _showSplash = false;
+      _isLoggedIn = true;
+      _userNim = profile.nim;
+      _userName = profile.nama;
+      _isAdminMode = profile.isAdmin;
+    });
+  }
+
+  Future<void> _restoreAuthSession() async {
+    if (SupabaseService.client == null) return;
+    final profile = await AuthService.restoreSession();
+    if (profile != null && mounted) {
+      DummyData.students.removeWhere((student) => student.nim == profile.nim);
+      DummyData.students.add(profile);
       setState(() {
         _isLoggedIn = true;
-        _userNim = session['userNim'] ?? '';
-        _userName = session['userName'] ?? '';
-        _isAdminMode = session['isAdmin'] ?? false;
+        _userNim = profile.nim;
+        _userName = profile.nama;
+        _isAdminMode = profile.isAdmin;
       });
     }
   }
@@ -84,25 +119,31 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
     }
   }
 
-  void _onLoginSuccess(String nim, String name) {
-    final isAdmin = nim.trim().toLowerCase() == 'admin';
+  void _onLoginSuccess(StudentProfile profile) {
+    DummyData.students.removeWhere((student) => student.nim == profile.nim);
+    DummyData.students.add(profile);
     setState(() {
-      _userNim = nim;
-      _userName = name;
+      _userNim = profile.nim;
+      _userName = profile.nama;
       _isLoggedIn = true;
-      _isAdminMode = isAdmin;
+      _isAdminMode = profile.isAdmin;
     });
-    SessionService.saveSession(nim: nim, name: name, isAdmin: isAdmin);
   }
 
-  void _onLogout() {
+  Future<void> _onLogout() async {
     setState(() {
       _isLoggedIn = false;
       _userNim = '';
       _userName = '';
       _isAdminMode = false;
     });
-    SessionService.clearSession();
+    if (SupabaseService.client != null) {
+      try {
+        await AuthService.signOut();
+      } catch (error) {
+        debugPrint('Logout Supabase gagal: $error');
+      }
+    }
   }
 
   @override
@@ -116,7 +157,12 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeScope.notifier.themeMode,
-          home: _showSplash
+          home: _isAuthSetupFlow
+              ? InviteAcceptScreen(
+                  flowType: widget.initialAuthFlow!,
+                  onSuccess: _onAuthSetupComplete,
+                )
+              : _showSplash
               ? SplashScreen(onFinish: _onSplashFinish)
               : (!_isLoggedIn
                   ? LoginScreen(onLoginSuccess: _onLoginSuccess)
@@ -128,7 +174,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
                       : MainResponsiveShell(
                           userNim: _userNim,
                           userName: _userName,
-                          isAdminUser: _userNim.trim().toLowerCase() == 'admin',
+                          isAdminUser: DummyData.students.any((student) => student.nim == _userNim && student.isAdmin),
                           onSwitchToAdminView: () => setState(() => _isAdminMode = true),
                           onLogout: _onLogout,
                         ))),
@@ -198,7 +244,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   }
 
   StudentProfile get _currentUser => DummyData.students.firstWhere(
-    (s) => widget.isAdminUser ? s.role == 'ADMIN' : s.nim == _activeNim,
+    (student) => student.nim == _activeNim,
     orElse: () => DummyData.students.first,
   );
 
@@ -615,15 +661,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                       title: const Text('Keluar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
                       onTap: () {
                         Navigator.pop(context);
-                        if (widget.onLogout != null) {
-                          widget.onLogout!();
-                        } else {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                            (route) => false,
-                          );
-                        }
+                        widget.onLogout?.call();
                       },
                     ),
                   ),

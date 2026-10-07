@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  final VoidCallback? onFinish;
+  final VoidCallback onFinish;
 
-  const SplashScreen({super.key, this.onFinish});
+  const SplashScreen({super.key, required this.onFinish});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -19,20 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     _timer = Timer(const Duration(milliseconds: 2200), () {
       if (mounted) {
-        if (widget.onFinish != null) {
-          widget.onFinish!();
-        } else {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-        }
+        widget.onFinish();
       }
     });
   }

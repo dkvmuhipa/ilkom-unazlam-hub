@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show Random;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -607,6 +608,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   void _showGenerateQrModal(BuildContext context) {
     String selectedCourse = DummyData.courses.first.nama;
     int pertemuan = 5;
+    String token = _generateAttendanceToken();
 
     showModalBottomSheet(
       context: context,
@@ -617,10 +619,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final courseCode = selectedCourse.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
-          final shortCode = courseCode.length > 6 ? courseCode.substring(0, 6) : courseCode;
-          final token = 'ILKOM-$shortCode-P$pertemuan';
-
           return Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
             child: Column(
@@ -657,7 +655,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
                   onChanged: (val) {
-                    if (val != null) setModalState(() => selectedCourse = val);
+                    if (val != null) {
+                      setModalState(() {
+                        selectedCourse = val;
+                        token = _generateAttendanceToken();
+                      });
+                    }
                   },
                 ),
                 const SizedBox(height: 20),
@@ -723,7 +726,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     // Broadcast class announcement so every classmate sees it in Notifications & Announcements
                     SupabaseRepository.createAnnouncement(
                       judul: 'Presensi Dibuka: $selectedCourse Pertemuan $pertemuan',
-                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas. Berlaku selama 15 menit dengan Token: $token. Segera lakukan scan QR atau input token sebelum waktu berakhir.',
+                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas dan berlaku selama 15 menit. Silakan scan QR di kelas atau minta token langsung kepada pengurus.',
                       kategori: 'Kelas',
                       isPinned: true,
                       authorName: 'Pengurus Kelas (Ketua)',
@@ -765,6 +768,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         },
       ),
     );
+  }
+
+  String _generateAttendanceToken() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random.secure();
+    return List.generate(8, (_) => alphabet[random.nextInt(alphabet.length)]).join();
   }
 
   void _showScanQrModal(BuildContext context) {
@@ -821,13 +830,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             // 2. Validasi Token jika diberikan (trim & case-insensitive)
             final cleanTokenInput = tokenToVerify.trim().toUpperCase();
             final cleanSessionToken = targetSession.token.trim().toUpperCase();
-            if (cleanTokenInput.isNotEmpty && cleanTokenInput != cleanSessionToken) {
+            if (cleanTokenInput.isEmpty || cleanTokenInput != cleanSessionToken) {
               setModalState(() {
-                scanStatusMessage = 'Token tidak cocok dengan sesi aktif ("${targetSession.token}")';
+                scanStatusMessage = 'Token tidak cocok dengan sesi aktif.';
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Kode Token salah! Token sesi saat ini adalah "${targetSession.token}".'),
+                const SnackBar(
+                  content: Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
                   backgroundColor: const Color(0xFFEF4444),
                 ),
               );
@@ -1016,33 +1025,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         )
                       else ...[
                         // Web / Desktop Fallback Interactive Viewfinder
-                        InkWell(
-                          onTap: () {
-                            if (isScanning) return;
-                            setModalState(() {
-                              isScanning = true;
-                              scanStatusMessage = 'Memindai QR Code di layar...';
-                            });
-
-                            Future.delayed(const Duration(milliseconds: 1000), () {
-                              if (!ctx.mounted) return;
-                              final activeSession = currentSession;
-                              if (activeSession != null && !activeSession.isExpired) {
-                                setModalState(() {
-                                  isScanning = false;
-                                  tokenController.text = activeSession.token;
-                                  selectedCourse = activeSession.courseName;
-                                });
-                                executeVerification(activeSession.token);
-                              } else {
-                                setModalState(() {
-                                  isScanning = false;
-                                  scanStatusMessage = 'Tidak mendeteksi QR sesi aktif. Pastikan sesi dibuka terlebih dahulu.';
-                                });
-                              }
-                            });
-                          },
-                          child: const SizedBox.expand(),
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'Pemindaian kamera tidak tersedia di platform ini. Masukkan token yang diberikan pengurus.',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
                       ],
 
