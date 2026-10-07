@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
@@ -703,95 +705,119 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   const SizedBox(height: 12),
                 ],
 
-                // Interactive Camera Scanner Viewfinder
-                InkWell(
-                  onTap: () {
-                    if (isScanning) return;
-                    setModalState(() {
-                      isScanning = true;
-                      scanStatusMessage = 'Memindai QR Code di layar dosen/ketua kelas...';
-                    });
+                // Interactive Camera Scanner Viewfinder (Real Camera via MobileScanner)
+                Container(
+                  width: double.infinity,
+                  height: 190,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Active Hardware Camera Stream on Mobile/Device
+                      if (!kIsWeb)
+                        MobileScanner(
+                          fit: BoxFit.cover,
+                          onDetect: (capture) {
+                            final List<Barcode> barcodes = capture.barcodes;
+                            for (final barcode in barcodes) {
+                              final rawVal = barcode.rawValue;
+                              if (rawVal != null && rawVal.isNotEmpty) {
+                                executeVerification(rawVal);
+                                break;
+                              }
+                            }
+                          },
+                        )
+                      else ...[
+                        // Web / Desktop Fallback Interactive Viewfinder
+                        InkWell(
+                          onTap: () {
+                            if (isScanning) return;
+                            setModalState(() {
+                              isScanning = true;
+                              scanStatusMessage = 'Memindai QR Code di layar...';
+                            });
 
-                    // Simulasi scan optik kamera berkecepatan tinggi (1.2 detik)
-                    Future.delayed(const Duration(milliseconds: 1200), () {
-                      if (!ctx.mounted) return;
-                      final activeSession = currentSession;
-                      if (activeSession != null && !activeSession.isExpired) {
-                        setModalState(() {
-                          isScanning = false;
-                          tokenController.text = activeSession.token;
-                          selectedCourse = activeSession.courseName;
-                        });
-                        executeVerification(activeSession.token);
-                      } else {
-                        setModalState(() {
-                          isScanning = false;
-                          scanStatusMessage = 'Tidak mendeteksi QR sesi aktif. Pastikan sesi dibuka terlebih dahulu.';
-                        });
-                      }
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: double.infinity,
-                    height: 155,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                            Future.delayed(const Duration(milliseconds: 1000), () {
+                              if (!ctx.mounted) return;
+                              final activeSession = currentSession;
+                              if (activeSession != null && !activeSession.isExpired) {
+                                setModalState(() {
+                                  isScanning = false;
+                                  tokenController.text = activeSession.token;
+                                  selectedCourse = activeSession.courseName;
+                                });
+                                executeVerification(activeSession.token);
+                              } else {
+                                setModalState(() {
+                                  isScanning = false;
+                                  scanStatusMessage = 'Tidak mendeteksi QR sesi aktif. Pastikan sesi dibuka terlebih dahulu.';
+                                });
+                              }
+                            });
+                          },
+                          child: const SizedBox.expand(),
+                        ),
                       ],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Viewfinder Box
-                        Container(
-                          width: 110,
-                          height: 110,
+
+                      // Viewfinder Overlay Box & Target Reticle
+                      IgnorePointer(
+                        child: Container(
+                          width: 120,
+                          height: 120,
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: isScanning ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
+                              color: const Color(0xFF10B981),
                               width: 2.5,
                             ),
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        // Scanner Icon & State
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (isScanning) ...[
-                              const SizedBox(
-                                width: 34,
-                                height: 34,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                      ),
+
+                      // Scanning Animation Bar / Status Overlays
+                      Positioned(
+                        bottom: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                'Memindai QR Code...',
-                                style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w700),
-                              ),
-                            ] else ...[
-                              const Icon(Icons.qr_code_scanner_rounded, size: 38, color: Color(0xFF10B981)),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Klik untuk Pindai QR Kamera',
-                                style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 2),
+                              const SizedBox(width: 6),
                               Text(
-                                'Arahkan kamera ke layar proyektor / HP',
-                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10),
+                                !kIsWeb
+                                    ? 'Kamera Device Aktif • Arahkan ke QR'
+                                    : 'Arahkan kamera ke QR Code',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ],
-                          ],
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
 
