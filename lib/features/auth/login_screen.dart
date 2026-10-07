@@ -361,10 +361,59 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  const SizedBox(height: 16),
+
+                  // Quick Demo Roles Login (Ketua, Bendahara, Sekretaris, Mahasiswa, Admin)
+                  const Text(
+                    'Uji Coba Cepat Berdasarkan Jabatan & Role:',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildQuickRoleChip('Ketua Kelas', '260250023', 'Nur Farida', const Color(0xFFD97706), const Color(0xFFFEF3C7)),
+                      _buildQuickRoleChip('Bendahara', '260250020', "Alya Nabilah", const Color(0xFF16A34A), const Color(0xFFDCFCE7)),
+                      _buildQuickRoleChip('Sekretaris', '260250008', 'Stefani', const Color(0xFF6D28D9), const Color(0xFFEDE9FE)),
+                      _buildQuickRoleChip('Mahasiswa', '260250002', 'Larasati', const Color(0xFF0284C7), const Color(0xFFE0F2FE)),
+                      _buildQuickRoleChip('Admin', 'admin', 'Administrator', const Color(0xFFDC2626), const Color(0xFFFEE2E2)),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickRoleChip(String roleLabel, String nim, String name, Color textColor, Color bgColor) {
+    return InkWell(
+      onTap: () {
+        _nimController.text = nim;
+        _passwordController.text = '123456';
+        _handleLogin();
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: textColor.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(roleLabel, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: textColor)),
+            Text(name, style: TextStyle(fontSize: 9.5, color: textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
+          ],
         ),
       ),
     );

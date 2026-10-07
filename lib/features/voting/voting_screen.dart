@@ -383,13 +383,27 @@ class _VotingScreenState extends State<VotingScreen> {
                         color: poll.isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        poll.isOpen ? '🟢 AKTIF' : '⚪ SELESAI',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: poll.isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: poll.isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            poll.isOpen ? 'AKTIF' : 'SELESAI',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: poll.isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),

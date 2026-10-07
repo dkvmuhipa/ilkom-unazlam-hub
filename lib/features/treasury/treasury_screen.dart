@@ -24,6 +24,7 @@ class TreasuryScreen extends StatefulWidget {
 
 class _TreasuryScreenState extends State<TreasuryScreen> {
   String _selectedFilter = 'Semua';
+  String _selectedCategoryFilter = 'Semua Kategori';
   String _activeTab = 'transaksi'; // 'transaksi' or 'iuran'
   final Map<String, bool> _iuranStatus = {};
 
@@ -412,7 +413,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     final cleanPhone = s.noWa.replaceAll(RegExp(r'\D'), '');
     final internationalPhone = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
     final message = Uri.encodeComponent(
-      'Halo ${s.nama}, kami dari Bendahara Kelas ILKOM UNAZLAM mengingatkan untuk iuran kas kelas bulan Oktober senilai Rp 20.000. Mohon kerja samanya ya, terima kasih banyak! 🙏',
+      'Halo ${s.nama}, kami dari Bendahara Kelas ILKOM UNAZLAM mengingatkan untuk pembayaran iuran kas kelas bulan Oktober 2026 sebesar Rp 20.000.\n\n'
+      'Pembayaran dapat ditransfer melalui:\n'
+      '• Dana/GoPay: 0812-4100-0113 (a.n. Alya Nabilah)\n'
+      '• Bank Mandiri: 1520-0012-3456-7 (a.n. Alya Nabilah)\n\n'
+      'Setelah transfer, mohon kirim bukti transfer ke chat ini agar status iuran dapat langsung diperbarui. Terima kasih atas kerja samanya!',
     );
     final url = 'https://wa.me/$internationalPhone?text=$message';
     final uri = Uri.parse(url);
@@ -757,10 +762,13 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
   @override
   Widget build(BuildContext context) {
     final transactions = DummyData.treasuryTransactions.where((t) {
-      if (_selectedFilter == 'Pemasukan') return t.isPemasukan;
-      if (_selectedFilter == 'Pengeluaran') return !t.isPemasukan;
+      if (_selectedFilter == 'Pemasukan' && !t.isPemasukan) return false;
+      if (_selectedFilter == 'Pengeluaran' && t.isPemasukan) return false;
+      if (_selectedCategoryFilter != 'Semua Kategori' && t.kategori != _selectedCategoryFilter) return false;
       return true;
     }).toList();
+
+    final availableCategories = ['Semua Kategori', ...DummyData.treasuryTransactions.map((t) => t.kategori).toSet()];
 
     final totalSaldo = DummyData.totalKasSaldo;
 
@@ -984,13 +992,24 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                               : null,
                         ),
                         child: Center(
-                          child: Text(
-                            '💳 Transaksi Kas',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: _activeTab == 'transaksi' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_rounded,
+                                size: 15,
+                                color: _activeTab == 'transaksi' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Transaksi Kas',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _activeTab == 'transaksi' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1010,13 +1029,24 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                               : null,
                         ),
                         child: Center(
-                          child: Text(
-                            '📋 Iuran Mahasiswa',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: _activeTab == 'iuran' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.groups_rounded,
+                                size: 15,
+                                color: _activeTab == 'iuran' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Iuran Mahasiswa',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: _activeTab == 'iuran' ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1030,35 +1060,89 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
             if (_activeTab == 'iuran') ...[
               _buildIuranMahasiswaSection(),
             ] else ...[
-              // Filter Tabs
+              // Filter Tabs & Category Filter
               Row(
-                children: ['Semua', 'Pemasukan', 'Pengeluaran'].map((filter) {
-                  final isSelected = filter == _selectedFilter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedFilter = filter),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
-                        ),
-                        child: Text(
-                          filter,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? Colors.white : AppColors.textSub,
+                children: [
+                  ...['Semua', 'Pemasukan', 'Pengeluaran'].map((filter) {
+                    final isSelected = filter == _selectedFilter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedFilter = filter),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
+                          ),
+                          child: Text(
+                            filter,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? Colors.white : AppColors.textSub,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }),
+                ],
               ),
+              if (availableCategories.length > 1) ...[
+                const SizedBox(height: 10),
+                Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: availableCategories.contains(_selectedCategoryFilter)
+                          ? _selectedCategoryFilter
+                          : 'Semua Kategori',
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF6B7280)),
+                      items: availableCategories.map((cat) {
+                        return DropdownMenuItem<String>(
+                          value: cat,
+                          child: Row(
+                            children: [
+                              Icon(
+                                cat == 'Semua Kategori' ? Icons.filter_list_rounded : Icons.label_outline_rounded,
+                                size: 14,
+                                color: cat == 'Semua Kategori' ? const Color(0xFF6B7280) : const Color(0xFF5B3DE8),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  cat,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: cat == _selectedCategoryFilter ? FontWeight.w700 : FontWeight.w500,
+                                    color: const Color(0xFF1F2937),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedCategoryFilter = val);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
 
             // List Transaksi

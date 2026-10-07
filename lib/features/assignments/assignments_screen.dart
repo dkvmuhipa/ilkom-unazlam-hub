@@ -13,12 +13,12 @@ class AssignmentsScreen extends StatefulWidget {
   final String? userNim;
   const AssignmentsScreen({super.key, this.canManage = true, this.userNim});
 
-  static void showAssignmentDetail(BuildContext context, Assignment assignment, {VoidCallback? onStatusChanged}) {
+  static void showAssignmentDetail(BuildContext context, Assignment assignment, {VoidCallback? onStatusChanged, String? userNim}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AssignmentDetailSheet(assignment: assignment, onStatusChanged: onStatusChanged),
+      builder: (ctx) => _AssignmentDetailSheet(assignment: assignment, onStatusChanged: onStatusChanged, userNim: userNim),
     );
   }
 
@@ -28,6 +28,7 @@ class AssignmentsScreen extends StatefulWidget {
 
 class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String _selectedTab = 'Aktif';
+  String _selectedCourseFilter = 'Semua Mata Kuliah';
 
   @override
   void initState() {
@@ -314,10 +315,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   Widget build(BuildContext context) {
     List<Assignment> filteredList = DummyData.assignments;
     if (_selectedTab == 'Aktif') {
-      filteredList = DummyData.assignments.where((a) => a.status != 'selesai').toList();
+      filteredList = filteredList.where((a) => a.status != 'selesai').toList();
     } else if (_selectedTab == 'Selesai') {
-      filteredList = DummyData.assignments.where((a) => a.status == 'selesai').toList();
+      filteredList = filteredList.where((a) => a.status == 'selesai').toList();
     }
+
+    if (_selectedCourseFilter != 'Semua Mata Kuliah') {
+      filteredList = filteredList.where((a) => a.courseName == _selectedCourseFilter).toList();
+    }
+
+    final availableCourses = ['Semua Mata Kuliah', ...DummyData.courses.map((c) => c.nama).toSet()];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -353,17 +360,71 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       ),
       body: Column(
         children: [
-          // Filter Chips matching Screen 5 (Aktif, Selesai, Semua)
+          // Filter Chips matching Screen 5 (Aktif, Selesai, Semua) & Course Dropdown
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
-            child: Row(
+            child: Column(
               children: [
-                _buildFilterChip('Aktif'),
-                const SizedBox(width: 10),
-                _buildFilterChip('Selesai'),
-                const SizedBox(width: 10),
-                _buildFilterChip('Semua'),
+                Row(
+                  children: [
+                    _buildFilterChip('Aktif'),
+                    const SizedBox(width: 10),
+                    _buildFilterChip('Selesai'),
+                    const SizedBox(width: 10),
+                    _buildFilterChip('Semua'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: availableCourses.contains(_selectedCourseFilter)
+                          ? _selectedCourseFilter
+                          : 'Semua Mata Kuliah',
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF6B7280)),
+                      items: availableCourses.map((c) {
+                        return DropdownMenuItem<String>(
+                          value: c,
+                          child: Row(
+                            children: [
+                              Icon(
+                                c == 'Semua Mata Kuliah' ? Icons.filter_alt_outlined : Icons.book_outlined,
+                                size: 14,
+                                color: c == 'Semua Mata Kuliah' ? const Color(0xFF6B7280) : const Color(0xFF5B3DE8),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  c,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: c == _selectedCourseFilter ? FontWeight.w700 : FontWeight.w500,
+                                    color: const Color(0xFF1F2937),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedCourseFilter = val);
+                        }
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -395,6 +456,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         onTap: () => AssignmentsScreen.showAssignmentDetail(
                           context,
                           a,
+                          userNim: widget.userNim,
                           onStatusChanged: () => setState(() {}),
                         ),
                         borderRadius: BorderRadius.circular(18),
@@ -547,8 +609,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 class _AssignmentDetailSheet extends StatefulWidget {
   final Assignment assignment;
   final VoidCallback? onStatusChanged;
+  final String? userNim;
 
-  const _AssignmentDetailSheet({required this.assignment, this.onStatusChanged});
+  const _AssignmentDetailSheet({required this.assignment, this.onStatusChanged, this.userNim});
 
   @override
   State<_AssignmentDetailSheet> createState() => _AssignmentDetailSheetState();
@@ -556,6 +619,9 @@ class _AssignmentDetailSheet extends StatefulWidget {
 
 class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   late String _currentStatus;
+  String _submissionUrl = '';
+  String _submissionNotes = '';
+  String _submittedAt = '';
 
   final Map<String, Color> _courseColors = {
     'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
@@ -572,13 +638,52 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   void initState() {
     super.initState();
     _currentStatus = widget.assignment.status;
+    _loadSubmissionData();
   }
 
-  void _setStatus(String status) {
+  Future<void> _loadSubmissionData() async {
+    final nim = widget.userNim ?? 'default';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _submissionUrl = prefs.getString('asg_sub_url_${nim}_${widget.assignment.id}') ?? '';
+        _submissionNotes = prefs.getString('asg_sub_notes_${nim}_${widget.assignment.id}') ?? '';
+        _submittedAt = prefs.getString('asg_sub_time_${nim}_${widget.assignment.id}') ?? '';
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveSubmission(String url, String notes) async {
+    final nim = widget.userNim ?? 'default';
+    final now = DateTime.now();
+    final formattedTime = '${now.day} ${_monthName(now.month)} ${now.year}, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('asg_sub_url_${nim}_${widget.assignment.id}', url);
+      await prefs.setString('asg_sub_notes_${nim}_${widget.assignment.id}', notes);
+      await prefs.setString('asg_sub_time_${nim}_${widget.assignment.id}', formattedTime);
+    } catch (_) {}
+    setState(() {
+      _submissionUrl = url;
+      _submissionNotes = notes;
+      _submittedAt = formattedTime;
+      _currentStatus = 'selesai';
+      widget.assignment.status = 'selesai';
+    });
+    SupabaseRepository.updateAssignmentStatus(widget.assignment.id, 'selesai');
+    widget.onStatusChanged?.call();
+  }
+
+  void _setStatus(String status) async {
     setState(() {
       _currentStatus = status;
       widget.assignment.status = status;
     });
+    final nim = widget.userNim ?? 'default';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('assignment_status_${nim}_${widget.assignment.id}', status);
+    } catch (_) {}
     SupabaseRepository.updateAssignmentStatus(widget.assignment.id, status);
     widget.onStatusChanged?.call();
   }
@@ -588,6 +693,93 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _showSubmitFormDialog() {
+    final linkController = TextEditingController(text: _submissionUrl);
+    final notesController = TextEditingController(text: _submissionNotes);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.drive_folder_upload_rounded, color: Color(0xFF5B3DE8), size: 22),
+            SizedBox(width: 8),
+            Text('Kumpulkan Tugas', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Sertakan tautan Google Drive / Cloud Docs atau catatan tugas Anda:',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: linkController,
+                  decoration: InputDecoration(
+                    labelText: 'Tautan Tugas (Google Drive / GitHub / dll)',
+                    hintText: 'https://drive.google.com/...',
+                    prefixIcon: const Icon(Icons.link_rounded, size: 18),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Catatan Pengumpulan (Opsional)',
+                    hintText: 'Misal: Revisi Bab 3 sudah disesuaikan',
+                    prefixIcon: const Icon(Icons.notes_rounded, size: 18),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final link = linkController.text.trim();
+              if (link.isEmpty && notesController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Tautan atau catatan pengumpulan harus diisi!')),
+                );
+                return;
+              }
+              _saveSubmission(link, notesController.text.trim());
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tugas berhasil dikumpulkan dan ditandai selesai! 🎉'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Simpan & Kumpulkan'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showEditDialog() {
@@ -1150,6 +1342,128 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                     const SizedBox(height: 24),
                   ],
 
+                  // Section: Bukti & Catatan Pengumpulan Mahasiswa
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.drive_folder_upload_rounded, size: 18, color: Color(0xFF5B3DE8)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Pengumpulan Tugas Saya',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: _showSubmitFormDialog,
+                        icon: Icon(_submissionUrl.isNotEmpty ? Icons.edit_note_rounded : Icons.upload_file_rounded, size: 16, color: const Color(0xFF5B3DE8)),
+                        label: Text(_submissionUrl.isNotEmpty ? 'Ubah Tugas' : 'Kirim Tugas', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  if (_submissionUrl.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 18),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Tugas Telah Dikumpulkan',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                              ),
+                              const Spacer(),
+                              if (_submittedAt.isNotEmpty)
+                                Text(
+                                  _submittedAt,
+                                  style: const TextStyle(fontSize: 10, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.link_rounded, size: 14, color: Color(0xFF047857)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _submissionUrl,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF065F46), fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.open_in_new_rounded, size: 16, color: Color(0xFF047857)),
+                                tooltip: 'Buka Tugas Saya',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _openLink(_submissionUrl),
+                              ),
+                            ],
+                          ),
+                          if (_submissionNotes.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Catatan: $_submissionNotes',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF047857), fontStyle: FontStyle.italic),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF9CA3AF)),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Anda belum mengunggah link/berkas tugas ini.',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: _showSubmitFormDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF5B3DE8),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            child: const Text('Kirim', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
                   // Action Buttons
                   SizedBox(
                     width: double.infinity,
@@ -1165,8 +1479,8 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(_currentStatus == 'selesai'
-                                ? 'Selamat! Tugas berhasil ditandai selesai 🎉'
-                                : 'Status tugas dikembalikan ke belum selesai.'),
+                                ? 'Status tugas dikembalikan ke belum selesai.'
+                                : 'Selamat! Tugas berhasil ditandai selesai 🎉'),
                             duration: const Duration(seconds: 2),
                           ),
                         );

@@ -54,6 +54,165 @@ class AttendanceScreen extends StatefulWidget {
     this.onBack,
   });
 
+  // Global Class-Wide Session state
+  static ActiveAttendanceSession? currentSession;
+
+  static void showActiveQrModal(BuildContext context, {ActiveAttendanceSession? session}) {
+    final active = session ?? currentSession;
+    if (active == null || active.isExpired) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final secsLeft = active.remainingSeconds;
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.qr_code_2_rounded, size: 22, color: Color(0xFF10B981)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            active.courseName,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pertemuan ke-${active.pertemuanKe} • QR Sesi Aktif',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // ISO-Compliant QR Code View
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: QrCodeWidget(
+                    data: active.token,
+                    size: 210,
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Token Box with Tap-to-Copy
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F0FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.vpn_key_rounded, size: 16, color: Color(0xFF5B3DE8)),
+                      const SizedBox(width: 8),
+                      SelectableText(
+                        'TOKEN: ${active.token}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF5B3DE8),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Attendance Status and Countdown Info
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.people_alt_outlined, size: 16, color: Color(0xFF5B3DE8)),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${active.attendedNims.length} Mahasiswa Hadir',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.timer_outlined, size: 15, color: Color(0xFFEF4444)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Sisa: ${secsLeft ~/ 60}:${(secsLeft % 60).toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFEF4444)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Text(
+                  'Tunjukkan QR ini kepada mahasiswa untuk di-scan menggunakan kamera atau masukkan kode TOKEN langsung di layar presensi.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, height: 1.3),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
@@ -61,8 +220,9 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   late List<AttendanceHistoryItem> _history;
 
-  // Shared active QR session across the class
-  static ActiveAttendanceSession? currentSession;
+  // Reference to shared currentSession
+  ActiveAttendanceSession? get currentSession => AttendanceScreen.currentSession;
+  set currentSession(ActiveAttendanceSession? val) => AttendanceScreen.currentSession = val;
   Timer? _countdownTimer;
 
   int _activeTab = 0; // 0: Presensi Saya, 1: Rekap Seluruh Kelas (Khusus Pengurus/Admin)
@@ -436,26 +596,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ElevatedButton.icon(
                   onPressed: () {
                     final now = DateTime.now();
+                    final newSession = ActiveAttendanceSession(
+                      courseName: selectedCourse,
+                      pertemuanKe: pertemuan,
+                      token: token,
+                      startTime: now,
+                      expiresAt: now.add(const Duration(minutes: 15)),
+                    );
+
                     setState(() {
-                      currentSession = ActiveAttendanceSession(
-                        courseName: selectedCourse,
-                        pertemuanKe: pertemuan,
-                        token: token,
-                        startTime: now,
-                        expiresAt: now.add(const Duration(minutes: 15)),
-                      );
+                      currentSession = newSession;
                       _startTimerIfNeeded();
                     });
 
+                    // Broadcast class announcement so every classmate sees it in Notifications & Announcements
+                    SupabaseRepository.createAnnouncement(
+                      judul: 'Presensi Dibuka: $selectedCourse Pertemuan $pertemuan',
+                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas. Berlaku selama 15 menit dengan Token: $token. Segera lakukan scan QR atau input token sebelum waktu berakhir.',
+                      kategori: 'Kelas',
+                      isPinned: true,
+                      authorName: 'Pengurus Kelas (Ketua)',
+                    );
+
                     Navigator.pop(ctx);
+
+                    // Re-open persistent active session presenter modal so Ketua can project/show it to the entire class
+                    AttendanceScreen.showActiveQrModal(context, session: newSession);
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Row(
                           children: [
-                            const Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+                            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text('Sesi presensi "$selectedCourse" aktif selama 15 menit! Timer dimulai.'),
+                              child: Text('Sesi presensi "$selectedCourse" aktif selama 15 menit! Pengumuman kelas telah disiarkan.'),
                             ),
                           ],
                         ),
@@ -532,8 +707,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
             final activeNim = widget.userNim ?? '260250023';
 
-            // 2. Validasi Token jika diberikan
-            if (tokenToVerify.isNotEmpty && tokenToVerify.trim().toUpperCase() != targetSession.token.toUpperCase()) {
+            // 2. Validasi Token jika diberikan (trim & case-insensitive)
+            final cleanTokenInput = tokenToVerify.trim().toUpperCase();
+            final cleanSessionToken = targetSession.token.trim().toUpperCase();
+            if (cleanTokenInput.isNotEmpty && cleanTokenInput != cleanSessionToken) {
               setModalState(() {
                 scanStatusMessage = 'Token tidak cocok dengan sesi aktif ("${targetSession.token}")';
               });
@@ -1292,6 +1469,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               ),
                             ),
                             const Spacer(),
+                            // Tombol Tampilkan QR Code (Dapat dilihat oleh siapapun/Ketua untuk proyektor)
+                            TextButton.icon(
+                              onPressed: () => AttendanceScreen.showActiveQrModal(context, session: session),
+                              icon: const Icon(Icons.qr_code_rounded, size: 15, color: Color(0xFF5B3DE8)),
+                              label: const Text('Lihat QR', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8))),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                backgroundColor: isDark ? const Color(0xFF2E2E3E) : Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
                             if (widget.canManageClassAttendance) ...[
                               TextButton.icon(
                                 onPressed: () {
@@ -1307,7 +1497,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   );
                                 },
                                 icon: const Icon(Icons.stop_circle_outlined, size: 15, color: Color(0xFFDC2626)),
-                                label: const Text('Tutup Sesi', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626))),
+                                label: const Text('Tutup', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626))),
                                 style: TextButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   backgroundColor: isDark ? const Color(0xFF2E1A1A) : Colors.white,
@@ -1315,23 +1505,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 ),
                               ),
                             ] else ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: hasAttended
-                                      ? (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7))
-                                      : (isDark ? const Color(0xFF713F12) : const Color(0xFFFEF3C7)),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  hasAttended ? '✅ Anda Sudah Hadir' : '⚠️ Belum Presensi',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: hasAttended ? const Color(0xFF16A34A) : const Color(0xFFB45309),
+                              if (!hasAttended)
+                                ElevatedButton.icon(
+                                  onPressed: () => _showScanQrModal(context),
+                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                                  label: const Text('Scan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    '✅ Sudah Hadir',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF16A34A),
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           ],
                         ),
@@ -1482,20 +1685,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Rekap Kehadiran Mahasiswa (${students.length})',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : const Color(0xFF111827),
+            Expanded(
+              child: Text(
+                'Rekap Kehadiran Mahasiswa (${students.length})',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             TextButton.icon(
               onPressed: _showClassAttendanceModal,
               icon: const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFF5B3DE8)),
               label: const Text(
                 'Presensi Cepat',
                 style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ],

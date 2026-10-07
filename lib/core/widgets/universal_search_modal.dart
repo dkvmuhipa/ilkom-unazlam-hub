@@ -76,10 +76,43 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
                 s.jabatan.toLowerCase().contains(q))
             .toList();
 
+    // 5. Filter Announcements
+    final matchedAnnouncements = q.isEmpty
+        ? <Announcement>[]
+        : DummyData.announcements
+            .where((ann) =>
+                ann.judul.toLowerCase().contains(q) ||
+                ann.isi.toLowerCase().contains(q) ||
+                ann.kategori.toLowerCase().contains(q))
+            .toList();
+
+    // 6. Quick Actions
+    final allActions = [
+      {'title': 'Presensi Kuliah (Scan QR)', 'desc': 'Scan QR Code atau input token absensi', 'tab': 5, 'badge': 'Presensi', 'icon': Icons.qr_code_scanner_rounded},
+      {'title': 'Jadwal Kuliah Semester 1', 'desc': 'Daftar mata kuliah, ruangan, & kontak dosen', 'tab': 1, 'badge': 'Jadwal', 'icon': Icons.calendar_today_rounded},
+      {'title': 'Tugas & Deadline Kuliah', 'desc': 'Manajemen tugas aktif, deadline, & kirim tugas', 'tab': 2, 'badge': 'Tugas', 'icon': Icons.assignment_outlined},
+      {'title': 'Kas & Keuangan Kelas', 'desc': 'Laporan saldo transparan & status iuran mahasiswa', 'tab': 8, 'badge': 'Kas', 'icon': Icons.account_balance_wallet_outlined},
+      {'title': 'Gudang Materi & Silabus', 'desc': 'Kumpulan slide kuliah, RPS, e-book, dan modul', 'tab': 6, 'badge': 'Materi', 'icon': Icons.menu_book_rounded},
+      {'title': 'Voting & Musyawarah Kelas', 'desc': 'Polling musyawarah kesepakatan jadwal dan makrab', 'tab': 12, 'badge': 'Voting', 'icon': Icons.how_to_vote_rounded},
+      {'title': 'Pengumuman Kelas', 'desc': 'Pemberitahuan resmi dari Komti dan dosen', 'tab': 7, 'badge': 'Info', 'icon': Icons.campaign_rounded},
+      {'title': 'Surat Akademik Resmi', 'desc': 'Generator surat izin kuliah dan dispensasi', 'tab': 11, 'badge': 'Surat', 'icon': Icons.description_outlined},
+    ];
+
+    final matchedActions = q.isEmpty
+        ? <Map<String, dynamic>>[]
+        : allActions
+            .where((act) =>
+                (act['title'] as String).toLowerCase().contains(q) ||
+                (act['desc'] as String).toLowerCase().contains(q) ||
+                (act['badge'] as String).toLowerCase().contains(q))
+            .toList();
+
     final totalResults = matchedCourses.length +
         matchedResources.length +
         matchedAssignments.length +
-        matchedStudents.length;
+        matchedStudents.length +
+        matchedAnnouncements.length +
+        matchedActions.length;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -282,6 +315,40 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
                                   onTap: () {
                                     Navigator.pop(context);
                                     widget.onNavigateTab(4); // Direktori
+                                  },
+                                )),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // 5. Pengumuman
+                          if (matchedAnnouncements.isNotEmpty) ...[
+                            _buildSectionHeader('PENGUMUMAN KELAS (${matchedAnnouncements.length})', Icons.campaign_rounded, isDark),
+                            ...matchedAnnouncements.map((ann) => _buildResultTile(
+                                  title: ann.judul,
+                                  subtitle: '${ann.authorName} • ${ann.isi}',
+                                  badge: ann.kategori,
+                                  badgeColor: const Color(0xFF8B5CF6),
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    widget.onNavigateTab(7); // Pengumuman
+                                  },
+                                )),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // 6. Aksi Cepat & Navigasi
+                          if (matchedActions.isNotEmpty) ...[
+                            _buildSectionHeader('AKSI CEPAT (${matchedActions.length})', Icons.bolt_rounded, isDark),
+                            ...matchedActions.map((act) => _buildResultTile(
+                                  title: act['title'] as String,
+                                  subtitle: act['desc'] as String,
+                                  badge: act['badge'] as String,
+                                  badgeColor: AppColors.primary,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    widget.onNavigateTab(act['tab'] as int);
                                   },
                                 )),
                           ],

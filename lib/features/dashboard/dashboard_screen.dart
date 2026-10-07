@@ -5,6 +5,7 @@ import '../../core/widgets/scale_button.dart';
 import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
 import '../announcements/announcements_screen.dart';
+import '../attendance/attendance_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -474,7 +475,170 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ],
               ),
-              const SizedBox(height: 18),
+              // ==========================================
+              // LIVE ACTIVE ATTENDANCE SESSION ALERT (CLASS-WIDE)
+              // ==========================================
+              if (AttendanceScreen.currentSession != null && !AttendanceScreen.currentSession!.isExpired) ...[
+                Builder(
+                  builder: (context) {
+                    final session = AttendanceScreen.currentSession!;
+                    final secsLeft = session.remainingSeconds;
+                    final hasAttended = session.attendedNims.contains(student.nim);
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    const Text(
+                                      'SESI PRESENSI DIBUKA',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.timer_outlined, size: 13, color: Color(0xFFFBBF24)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${secsLeft ~/ 60}:${(secsLeft % 60).toString().padLeft(2, '0')}',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFFFBBF24),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            session.courseName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pertemuan ke-${session.pertemuanKe} • Token: ${session.token}',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  hasAttended
+                                      ? '✅ Anda Sudah Hadir'
+                                      : '${session.attendedNims.length} Mahasiswa Hadir',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: hasAttended ? const Color(0xFF4ADE80) : Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              // Tombol Lihat QR Code
+                              TextButton.icon(
+                                onPressed: () => AttendanceScreen.showActiveQrModal(context, session: session),
+                                icon: const Icon(Icons.qr_code_rounded, size: 14, color: Colors.white),
+                                label: const Text('Lihat QR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Tombol Scan Langsung jika belum hadir
+                              if (!hasAttended)
+                                ElevatedButton.icon(
+                                  onPressed: () => widget.onNavigateTab(5),
+                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                                  label: const Text('Absen', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
 
               // ==========================================
               // 2. HERO CARD (STREAMLINED & DYNAMIC)
