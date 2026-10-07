@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/scale_button.dart';
 import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
@@ -28,11 +29,24 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late PageController _heroController;
   int _currentHeroPage = 0;
+  List<Map<String, dynamic>> _realAttendanceLogs = [];
 
   @override
   void initState() {
     super.initState();
     _heroController = PageController(viewportFraction: 0.92);
+    _loadDashboardAttendance();
+  }
+
+  Future<void> _loadDashboardAttendance() async {
+    try {
+      final logs = await SupabaseRepository.getAttendanceLogs();
+      if (mounted) {
+        setState(() {
+          _realAttendanceLogs = logs;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -50,10 +64,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        final totalAttendanceSessions = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.sesiBerjalan);
-        final totalHadir = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.hadir);
-        final totalIzin = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.izin);
-        final totalAlpa = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.alpa);
+        final totalSessions = _realAttendanceLogs.length;
+        final totalHadir = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'hadir').length;
+        final totalIzin = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'izin').length;
+        final totalSakit = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'sakit').length;
+        final totalAlpa = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'alpa').length;
+
+        final avgPct = totalSessions > 0 ? ((totalHadir / totalSessions) * 100).round() : 100;
+        final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
 
         return SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.88,
@@ -69,7 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Rekap Kelas', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF111827))),
-                        Text('Pendidikan Pancasila • Oktober 2026', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
+                        Text('Rekap Keseluruhan Pertemuan Perkuliahan', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
                       ],
                     ),
                     IconButton(
@@ -101,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               width: 100,
                               height: 100,
                               child: CircularProgressIndicator(
-                                value: totalAttendanceSessions > 0 ? (totalHadir / totalAttendanceSessions) : 1.0,
+                                value: totalSessions > 0 ? (totalHadir / totalSessions) : 1.0,
                                 strokeWidth: 10,
                                 backgroundColor: const Color(0xFFE5E7EB),
                                 valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
@@ -112,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  totalAttendanceSessions > 0 ? '${((totalHadir / totalAttendanceSessions) * 100).round()}%' : '100%',
+                                  '$avgPct%',
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w900,
@@ -142,8 +160,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           _buildStatCounter('$totalHadir', 'Hadir', const Color(0xFF10B981)),
                           _buildStatCounter('$totalIzin', 'Izin', const Color(0xFFF59E0B)),
-                          _buildStatCounter('0', 'Sakit', const Color(0xFF0284C7)),
-                          _buildStatCounter('$totalAlpa', 'Alpha', const Color(0xFFEF4444)),
+                          _buildStatCounter('$totalSakit', 'Sakit', const Color(0xFF0284C7)),
+                          _buildStatCounter('$totalAlpa', 'Alpa', const Color(0xFFEF4444)),
                         ],
                       ),
                     ],
@@ -151,16 +169,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                const Text('Daftar Kehadiran Mahasiswa', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                Text('Daftar Kehadiran Mahasiswa (${students.length})', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                 const SizedBox(height: 10),
 
                 Expanded(
                   child: ListView.builder(
-                    itemCount: DummyData.students.where((s) => s.role != 'ADMIN').length,
+                    itemCount: students.length,
                     itemBuilder: (ctx, i) {
-                      final s = DummyData.students.where((s) => s.role != 'ADMIN').toList()[i];
-                      const pct = '100%';
-                      const color = Color(0xFF10B981);
+                      final s = students[i];
+                      final sLogs = _realAttendanceLogs.where((l) => l['student_nim'] == s.nim).toList();
+                      final sHadir = sLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'hadir').length;
+                      final int pctNum = sLogs.isNotEmpty ? ((sHadir / sLogs.length) * 100).round() : 100;
+                      final isSafe = pctNum >= 75;
+                      final color = isSafe ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -177,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               backgroundColor: color.withValues(alpha: 0.12),
                               child: Text(
                                 s.nama.isNotEmpty ? s.nama[0] : 'M',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -186,12 +207,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5), overflow: TextOverflow.ellipsis),
-                                  Text('${s.nim} • Semester 1', style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280))),
+                                  Text(
+                                    sLogs.isNotEmpty
+                                        ? '${s.nim} • $sHadir/${sLogs.length} Pertemuan'
+                                        : '${s.nim} • Semester 1',
+                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280)),
+                                  ),
                                 ],
                               ),
                             ),
-                            const Text(
-                              pct,
+                            Text(
+                              sLogs.isNotEmpty ? '$pctNum%' : '100%',
                               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: color),
                             ),
                           ],
@@ -1418,10 +1444,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final todayCourse = todayCourses.isNotEmpty ? todayCourses.first : null;
 
     final hasUpcoming = nearestAssignment != null;
-    final totalAttendanceSessions = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.sesiBerjalan);
-    final totalHadir = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.hadir);
-    final totalIzin = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.izin);
-    final totalAlpa = DummyData.attendanceRecords.fold(0, (sum, c) => sum + c.alpa);
+    final totalAttendanceSessions = _realAttendanceLogs.length;
+    final totalHadir = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'hadir').length;
+    final totalIzin = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'izin').length;
+    final totalAlpa = _realAttendanceLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'alpa').length;
 
     return Column(
       children: [
@@ -1484,12 +1510,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 tagText: totalAttendanceSessions > 0
                     ? '${((totalHadir / totalAttendanceSessions) * 100).round()}% Kehadiran'
                     : '100% Kehadiran',
-                title: 'Performa Kehadiran Aman',
+                title: totalAttendanceSessions > 0 ? '$totalHadir Hadir dari $totalAttendanceSessions Sesi' : 'Performa Kehadiran Aman',
                 line1Icon: Icons.check_circle_rounded,
                 line1Text: '$totalHadir Hadir • $totalIzin Izin • $totalAlpa Alpa',
                 line2Icon: Icons.shield_rounded,
                 line2Text: totalAttendanceSessions > 0
-                    ? '$totalAttendanceSessions Sesi Berjalan (Memenuhi Syarat UTS)'
+                    ? '$totalAttendanceSessions Sesi Tercatat di Supabase'
                     : 'Presensi semester 1 berjalan tertib',
                 actionLabel: 'Cek Presensi',
                 onTapArrow: () => widget.onNavigateTab(5),

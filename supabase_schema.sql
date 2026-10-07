@@ -250,9 +250,11 @@ CREATE POLICY "Allow insert permission letter" ON permission_letters
 CREATE POLICY "Allow read own permission letters" ON permission_letters 
     FOR SELECT USING (true);
 
--- Presensi kuliah dapat diinput
+-- Presensi kuliah dapat diinput dan di-reset/dikosongkan oleh pengurus/mahasiswa
 CREATE POLICY "Allow insert attendance" ON attendance_logs 
     FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow delete attendance" ON attendance_logs 
+    FOR DELETE USING (true);
 
 -- Audit log hanya bisa di-insert, tidak bisa diubah atau dihapus
 CREATE POLICY "Allow insert audit log" ON audit_logs 

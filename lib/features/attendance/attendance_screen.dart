@@ -218,59 +218,157 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  late List<AttendanceHistoryItem> _history;
-
-  // Reference to shared currentSession
-  ActiveAttendanceSession? get currentSession => AttendanceScreen.currentSession;
-  set currentSession(ActiveAttendanceSession? val) => AttendanceScreen.currentSession = val;
   Timer? _countdownTimer;
+  int _activeTab = 0; // 0: Presensi Saya, 1: Rekap Seluruh Kelas
+  ActiveAttendanceSession? get currentSession => AttendanceScreen.currentSession;
+  set currentSession(ActiveAttendanceSession? s) => AttendanceScreen.currentSession = s;
 
-  int _activeTab = 0; // 0: Presensi Saya, 1: Rekap Seluruh Kelas (Khusus Pengurus/Admin)
+  List<AttendanceHistoryItem> _history = [];
+  List<Map<String, dynamic>> _allClassLogs = [];
+  bool _isLoadingAttendance = true;
 
   @override
   void initState() {
     super.initState();
-    _initPersonalHistory();
+    _loadRealAttendanceData();
     _startTimerIfNeeded();
   }
 
-  void _initPersonalHistory() {
-    // Generate realistic personal attendance records for the logged-in student
+  Future<void> _loadRealAttendanceData() async {
     final activeNim = widget.userNim ?? '260250023';
-    final isSpecialCase = activeNim.endsWith('7') || activeNim.endsWith('9');
-    
-    _history = [
-      AttendanceHistoryItem(
-        date: 'Senin, 05 Okt 2026 (15:35 WITA)',
-        courseName: 'Pendidikan Pancasila',
-        status: 'Hadir',
+
+    try {
+      // 1. Ambil data log presensi real dari Supabase
+      final rawLogs = await SupabaseRepository.getAttendanceLogs();
+      
+      if (!mounted) return;
+
+      setState(() {
+        _allClassLogs = rawLogs;
+
+        // 2. Filter riwayat presensi khusus untuk mahasiswa yang sedang aktif login
+        final personalLogs = rawLogs.where((l) => l['student_nim'] == activeNim).toList();
+
+        _history = personalLogs.map((l) {
+          final createdAt = l['created_at'] != null ? DateTime.parse(l['created_at']) : DateTime.now();
+          final formattedDate = '${DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(createdAt)} (${DateFormat('HH:mm').format(createdAt)} WITA)';
+
+          String cName = 'Mata Kuliah';
+          if (l['courses'] != null && l['courses']['nama_mk'] != null) {
+            cName = l['courses']['nama_mk'].toString();
+          } else if (l['course_id'] != null) {
+            final match = DummyData.courses.firstWhere(
+              (c) => c.id == l['course_id'],
+              orElse: () => DummyData.courses.first,
+            );
+            cName = match.nama;
+          }
+
+          final rawSt = (l['status'] ?? 'hadir').toString().toLowerCase();
+          String stFormatted = 'Hadir';
+          if (rawSt == 'izin') stFormatted = 'Izin';
+          if (rawSt == 'sakit') stFormatted = 'Sakit';
+          if (rawSt == 'alpa') stFormatted = 'Alpa';
+
+          return AttendanceHistoryItem(
+            date: formattedDate,
+            courseName: cName,
+            status: stFormatted,
+          );
+        }).toList();
+
+        _isLoadingAttendance = false;
+      });
+    } catch (e) {
+      debugPrint('Error load real attendance: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingAttendance = false;
+        });
+      }
+    }
+  }
+
+  void _confirmResetPersonalAttendance() {
+    final activeNim = widget.userNim ?? '260250023';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kosongkan Riwayat Presensi Pribadi?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: const Text(
+          'Semua catatan scan presensi Anda akan dihapus karena belum ada aktivitas perkuliahan yang aktif. Riwayat Anda akan kembali bersih/kosong.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() {
+                _history = [];
+                _allClassLogs.removeWhere((l) => l['student_nim'] == activeNim);
+              });
+              await SupabaseRepository.clearAttendanceLogs(studentNim: activeNim);
+              await _loadRealAttendanceData();
+
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Riwayat presensi pribadi telah berhasil dikosongkan.'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
+            },
+            child: const Text('Kosongkan Sekarang'),
+          ),
+        ],
       ),
-      AttendanceHistoryItem(
-        date: 'Senin, 05 Okt 2026 (18:40 WITA)',
-        courseName: 'Pendidikan Kewarganegaraan',
-        status: 'Hadir',
+    );
+  }
+
+  void _confirmResetAllAttendance() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kosongkan Rekap Seluruh Kelas?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: const Text(
+          'Semua catatan log presensi kelas akan dibersihkan dari server karena belum ada perkuliahan aktif. Rekap kehadiran seluruh mahasiswa akan kembali ke kondisi awal (0 sesi).',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() {
+                _history = [];
+                _allClassLogs = [];
+              });
+              await SupabaseRepository.clearAttendanceLogs();
+              await _loadRealAttendanceData();
+
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Rekap presensi seluruh kelas telah berhasil dikosongkan.'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
+            },
+            child: const Text('Kosongkan Sekarang'),
+          ),
+        ],
       ),
-      AttendanceHistoryItem(
-        date: 'Selasa, 29 Sep 2026 (15:35 WITA)',
-        courseName: 'Pendidikan Agama Islam *',
-        status: isSpecialCase ? 'Izin' : 'Hadir',
-      ),
-      AttendanceHistoryItem(
-        date: 'Rabu, 23 Sep 2026 (15:32 WITA)',
-        courseName: 'Bahasa Indonesia *',
-        status: 'Hadir',
-      ),
-      AttendanceHistoryItem(
-        date: 'Kamis, 17 Sep 2026 (18:35 WITA)',
-        courseName: 'Bahasa Inggris *',
-        status: 'Hadir',
-      ),
-      AttendanceHistoryItem(
-        date: 'Jumat, 11 Sep 2026 (18:31 WITA)',
-        courseName: 'Pengantar Ilmu Politik *',
-        status: 'Hadir',
-      ),
-    ];
+    );
   }
 
   @override
@@ -458,20 +556,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Menyimpan rekap presensi kelas untuk $selectedCourse...'),
+                        backgroundColor: const Color(0xFF5B3DE8),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+
                     for (var s in students) {
                       final st = statusMap[s.id] ?? 'Hadir';
-                      SupabaseRepository.logAttendance(
+                      await SupabaseRepository.logAttendance(
                         courseId: selectedCourse,
                         studentNim: s.nim,
                         pertemuanKe: 1,
                         status: st,
+                        catatan: 'Rekap Presensi Cepat Pengurus',
                       );
                     }
-                    Navigator.pop(ctx);
+
+                    await _loadRealAttendanceData();
+
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Presensi kelas untuk $selectedCourse berhasil disimpan!'),
+                        content: Text('Presensi kelas untuk $selectedCourse berhasil disimpan dan disinkronkan!'),
                         backgroundColor: const Color(0xFF16A34A),
                       ),
                     );
@@ -745,17 +856,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               pertemuanKe: targetSession.pertemuanKe,
               status: 'Hadir',
               catatan: tokenToVerify.isNotEmpty ? 'Presensi Token: $tokenToVerify' : 'Presensi Scanner QR',
-            );
-
-            setState(() {
-              _history.insert(
-                0,
-                AttendanceHistoryItem(
-                  date: 'Hari Ini, ${DateTime.now().day} Okt 2026 (${DateFormat('HH:mm').format(DateTime.now())} WITA)',
-                  courseName: targetSession.courseName,
-                  status: 'Hadir',
-                ),
-              );
+            ).then((_) {
+              _loadRealAttendanceData();
             });
 
             ScaffoldMessenger.of(context).showSnackBar(
@@ -1548,7 +1650,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             // ==========================================
             // VIEW SEPARATION: TAB 1 (CLASS RECAP FOR ADMIN/KETUA)
             // ==========================================
-            if (widget.canManageClassAttendance && _activeTab == 1) ...[
+            if (_isLoadingAttendance) ...[
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: CircularProgressIndicator(color: Color(0xFF5B3DE8)),
+                ),
+              ),
+            ] else if (widget.canManageClassAttendance && _activeTab == 1) ...[
               _buildClassRecapView(isDark),
             ] else ...[
               // ==========================================
@@ -1654,30 +1763,38 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
 
         // Class Quick Overview
-        Row(
-          children: [
-            Expanded(
-              child: _buildMetricCard(
-                title: 'Total Mahasiswa',
-                value: '${students.length}',
-                subtitle: 'Mahasiswa Terdaftar',
-                icon: Icons.groups_rounded,
-                color: const Color(0xFF5B3DE8),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMetricCard(
-                title: 'Rata-Rata Kelas',
-                value: '95.6%',
-                subtitle: 'Tingkat Kehadiran',
-                icon: Icons.trending_up_rounded,
-                color: const Color(0xFF10B981),
-                isDark: isDark,
-              ),
-            ),
-          ],
+        Builder(
+          builder: (context) {
+            final totalLogs = _allClassLogs.length;
+            final hadirLogs = _allClassLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'hadir').length;
+            final classAvgStr = totalLogs > 0 ? '${((hadirLogs / totalLogs) * 100).toStringAsFixed(1)}%' : '0.0%';
+
+            return Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    title: 'Total Mahasiswa',
+                    value: '${students.length}',
+                    subtitle: 'Mahasiswa Terdaftar',
+                    icon: Icons.groups_rounded,
+                    color: const Color(0xFF5B3DE8),
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricCard(
+                    title: 'Rata-Rata Kelas',
+                    value: classAvgStr,
+                    subtitle: totalLogs > 0 ? '$hadirLogs / $totalLogs Hadir' : 'Belum Ada Sesi',
+                    icon: Icons.trending_up_rounded,
+                    color: totalLogs > 0 ? const Color(0xFF10B981) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
 
@@ -1697,7 +1814,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
+            if (_allClassLogs.isNotEmpty) ...[
+              TextButton.icon(
+                onPressed: () => _confirmResetAllAttendance(),
+                icon: const Icon(Icons.delete_sweep_outlined, size: 15, color: Color(0xFFEF4444)),
+                label: const Text(
+                  'Kosongkan',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
             TextButton.icon(
               onPressed: _showClassAttendanceModal,
               icon: const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFF5B3DE8)),
@@ -1715,12 +1848,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
         const SizedBox(height: 10),
 
-        // Students Table List
-        ...students.asMap().entries.map((entry) {
-          final index = entry.key;
-          final s = entry.value;
-          final isPunctual = (index % 7 != 0);
-          final hadirPct = isPunctual ? 100 - (index % 3) * 5 : 70;
+        // Students Table List with Real Data from _allClassLogs
+        ...students.map((s) {
+          final sLogs = _allClassLogs.where((l) => l['student_nim'] == s.nim).toList();
+          final sHadir = sLogs.where((l) => (l['status'] ?? '').toString().toLowerCase() == 'hadir').length;
+          final int hadirPct = sLogs.isNotEmpty ? ((sHadir / sLogs.length) * 100).round() : 0;
+          final String sessionInfo = sLogs.isNotEmpty ? '$sHadir/${sLogs.length} Sesi' : 'Belum Ada Sesi';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -1757,7 +1890,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${s.nim} • ${s.jabatan}',
+                        '${s.nim} • ${s.jabatan} • $sessionInfo',
                         style: TextStyle(
                           fontSize: 10.5,
                           color: isDark ? Colors.white60 : const Color(0xFF6B7280),
@@ -1769,17 +1902,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: hadirPct >= 75
-                        ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
-                        : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)),
+                    color: sLogs.isNotEmpty
+                        ? (hadirPct >= 75
+                            ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
+                            : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
+                        : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '$hadirPct%',
+                    sLogs.isNotEmpty ? '$hadirPct%' : '-',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
-                      color: hadirPct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: sLogs.isNotEmpty
+                          ? (hadirPct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
+                          : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -1930,29 +2067,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                     decoration: BoxDecoration(
-                      color: isSafeZone
-                          ? (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7))
-                          : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2)),
+                      color: totalSessions == 0
+                          ? (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9))
+                          : (isSafeZone
+                              ? (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7))
+                              : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isSafeZone ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5),
+                        color: totalSessions == 0
+                            ? (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0))
+                            : (isSafeZone ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isSafeZone ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                          totalSessions == 0
+                              ? Icons.schedule_rounded
+                              : (isSafeZone ? Icons.check_circle_rounded : Icons.warning_amber_rounded),
                           size: 13,
-                          color: isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          color: totalSessions == 0
+                              ? (isDark ? Colors.white60 : const Color(0xFF64748B))
+                              : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          isSafeZone ? 'Syarat Ujian Aman' : 'Batas Kritis (<75%)',
+                          totalSessions == 0
+                              ? 'Belum Ada Sesi'
+                              : (isSafeZone ? 'Syarat Ujian Aman' : 'Batas Kritis (<75%)'),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            color: totalSessions == 0
+                                ? (isDark ? Colors.white60 : const Color(0xFF64748B))
+                                : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
                           ),
                         ),
                       ],
@@ -1973,11 +2122,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       width: 130,
                       height: 130,
                       child: CircularProgressIndicator(
-                        value: totalSessions > 0 ? attendanceRatio : 1.0,
+                        value: totalSessions > 0 ? attendanceRatio : 0.0,
                         strokeWidth: 11,
                         backgroundColor: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF3F0FF),
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          isSafeZone ? const Color(0xFF5B3DE8) : const Color(0xFFEF4444),
+                          totalSessions == 0
+                              ? const Color(0xFF94A3B8)
+                              : (isSafeZone ? const Color(0xFF5B3DE8) : const Color(0xFFEF4444)),
                         ),
                         strokeCap: StrokeCap.round,
                       ),
@@ -1986,7 +2137,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          totalSessions > 0 ? '$attendancePercent%' : '100%',
+                          totalSessions > 0 ? '$attendancePercent%' : '0%',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
@@ -2077,9 +2228,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         const SizedBox(height: 12),
 
         ...DummyData.courses.map((course) {
-          // Check if this course is in personal history
-          final courseSessions = _history.where((h) => h.courseName == course.nama).length;
-          final isAttended = courseSessions > 0;
+          // Check personal logs for this course
+          final courseLogs = _history.where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase()).toList();
+          final courseHadir = courseLogs.where((h) => h.status == 'Hadir').length;
+          final int coursePct = courseLogs.isNotEmpty ? ((courseHadir / courseLogs.length) * 100).round() : 100;
+          final String badgeText = courseLogs.isNotEmpty ? '$coursePct% Hadir ($courseHadir/${courseLogs.length})' : 'Belum Ada Sesi';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
@@ -2132,18 +2285,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isAttended
-                            ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
+                        color: courseLogs.isNotEmpty
+                            ? (coursePct >= 75
+                                ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
+                                : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
                             : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isAttended ? '100% Hadir' : 'Belum Ada Sesi',
+                        badgeText,
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: isAttended
-                              ? const Color(0xFF10B981)
+                          color: courseLogs.isNotEmpty
+                              ? (coursePct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
                               : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                         ),
                       ),
@@ -2152,16 +2307,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Pertemuan Indicator Matrix (P1 - P16)
+                // Pertemuan Indicator Matrix (P1 - P16) based on real sessions recorded
                 Row(
                   children: List.generate(16, (i) {
                     final pNum = i + 1;
-                    final isP1Attended = (pNum == 1 && isAttended);
-                    final isPastSession = pNum == 1;
+                    // Check if session pNum has real logs in this course
+                    final isRecorded = pNum <= courseLogs.length;
+                    final bool isHadir = isRecorded && courseLogs[courseLogs.length - pNum].status == 'Hadir';
 
-                    Color dotColor = isP1Attended
-                        ? const Color(0xFF10B981)
-                        : (isPastSession ? const Color(0xFFF59E0B) : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0)));
+                    Color dotColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0);
+                    if (isRecorded) {
+                      dotColor = isHadir ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+                    }
 
                     return Expanded(
                       child: Container(
@@ -2180,7 +2337,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'P1 (Selesai)',
+                      courseLogs.isNotEmpty ? '${courseLogs.length} Sesi Terlaksana' : 'P1 Belum Dimulai',
                       style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
                     ),
                     Text(
@@ -2203,14 +2360,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Riwayat Scan Presensi Pribadi',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : const Color(0xFF111827),
+            Expanded(
+              child: Text(
+                'Riwayat Scan Presensi Pribadi',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
+            if (_history.isNotEmpty) ...[
+              TextButton.icon(
+                onPressed: () => _confirmResetPersonalAttendance(),
+                icon: const Icon(Icons.delete_sweep_outlined, size: 15, color: Color(0xFFEF4444)),
+                label: const Text(
+                  'Kosongkan',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(

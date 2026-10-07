@@ -535,16 +535,62 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
+      // Resolve UUID if courseId is course name or short code
+      String resolvedCourseId = courseId;
+      final matchedCourse = DummyData.courses.firstWhere(
+        (c) => c.id == courseId || c.nama.toLowerCase() == courseId.toLowerCase(),
+        orElse: () => DummyData.courses.first,
+      );
+      if (resolvedCourseId.length != 36) {
+        resolvedCourseId = matchedCourse.id;
+      }
+
+      final normalizedStatus = status.toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
+
       await client.from('attendance_logs').insert({
-        'course_id': courseId,
+        'course_id': resolvedCourseId,
         'student_nim': studentNim,
         'pertemuan_ke': pertemuanKe,
-        'status': status,
+        'status': normalizedStatus,
         'catatan': catatan,
       });
       return true;
     } catch (e) {
       debugPrint('Error log attendance ke Supabase: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAttendanceLogs({String? studentNim}) async {
+    final client = SupabaseService.client;
+    if (client == null) return [];
+
+    try {
+      var query = client.from('attendance_logs').select('*, courses(nama_mk, kode_mk)');
+      if (studentNim != null && studentNim.isNotEmpty) {
+        query = query.eq('student_nim', studentNim);
+      }
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint('Error fetch attendance logs: $e');
+      return [];
+    }
+  }
+
+  static Future<bool> clearAttendanceLogs({String? studentNim}) async {
+    final client = SupabaseService.client;
+    if (client == null) return true;
+
+    try {
+      if (studentNim != null && studentNim.isNotEmpty) {
+        await client.from('attendance_logs').delete().eq('student_nim', studentNim);
+      } else {
+        await client.from('attendance_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error clear attendance logs: $e');
       return false;
     }
   }
