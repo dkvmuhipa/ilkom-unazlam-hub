@@ -234,7 +234,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   void _showGenerateQrModal(BuildContext context) {
     String selectedCourse = DummyData.courses.first.nama;
     int pertemuan = 5;
-    final token = 'ILKOM-UNAZLAM-P$pertemuan-9821';
 
     showModalBottomSheet(
       context: context,
@@ -244,107 +243,114 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('QR Code Presensi Sesi Kelas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                      Text('Tampilkan kode ini kepada mahasiswa di kelas', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+        builder: (ctx, setModalState) {
+          final courseCode = selectedCourse.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+          final shortCode = courseCode.length > 6 ? courseCode.substring(0, 6) : courseCode;
+          final token = 'ILKOM-$shortCode-P$pertemuan';
 
-              DropdownButtonFormField<String>(
-                initialValue: selectedCourse,
-                decoration: InputDecoration(
-                  labelText: 'Mata Kuliah',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                ),
-                items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13)))).toList(),
-                onChanged: (val) {
-                  if (val != null) setModalState(() => selectedCourse = val);
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // QR Code View
-              QrCodeWidget(
-                data: token,
-                size: 200,
-              ),
-              const SizedBox(height: 16),
-
-              // Token Box
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F0FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFDDD6FE)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.vpn_key_rounded, size: 16, color: Color(0xFF5B3DE8)),
-                    const SizedBox(width: 8),
-                    Text(
-                      'TOKEN: $token',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF5B3DE8), letterSpacing: 0.5),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('QR Code Presensi Sesi Kelas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                        Text('Tampilkan kode ini kepada mahasiswa di kelas', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.timer_outlined, size: 16, color: Color(0xFFEF4444)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Berlaku hingga 15 menit ke depan (10:15 WITA)',
-                    style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCourse,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mata Kuliah',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Sesi presensi QR aktif! Mahasiswa dapat memindai kode sekarang.'),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.done_all_rounded, size: 18),
-                label: const Text('Buka Sesi Presensi Sekarang', style: TextStyle(fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5B3DE8),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedCourse = val);
+                  },
                 ),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 20),
+
+                // ISO-Compliant QR Code View
+                QrCodeWidget(
+                  data: token,
+                  size: 200,
+                ),
+                const SizedBox(height: 16),
+
+                // Token Box
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F0FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.vpn_key_rounded, size: 16, color: Color(0xFF5B3DE8)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'TOKEN: $token',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF5B3DE8), letterSpacing: 0.5),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 16, color: Color(0xFFEF4444)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Berlaku hingga 15 menit ke depan (10:15 WITA)',
+                      style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Sesi presensi QR aktif! Mahasiswa dapat memindai kode sekarang.'),
+                        backgroundColor: Color(0xFF10B981),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.done_all_rounded, size: 18),
+                  label: const Text('Buka Sesi Presensi Sekarang', style: TextStyle(fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B3DE8),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
