@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../models/models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -325,35 +326,14 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           // List File
           Expanded(
             child: filtered.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primarySoft,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.menu_book_outlined, size: 32, color: AppColors.primary),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Belum Ada Berkas Materi',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Slide PPT, diktat e-book, atau jurnal perkuliahan dari dosen akan dihimpun di sini.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: AppColors.textSub, height: 1.4),
-                          ),
-                        ],
-                      ),
-                    ),
+                ? EmptyStateWidget(
+                    icon: Icons.menu_book_outlined,
+                    title: _searchQuery.isNotEmpty ? 'Materi Tidak Ditemukan' : 'Belum Ada Berkas Materi',
+                    subtitle: _searchQuery.isNotEmpty
+                        ? 'Tidak ada modul atau slide yang cocok dengan "$_searchQuery". Coba kata kunci lain.'
+                        : 'Slide PPT, diktat e-book, atau jurnal perkuliahan dari dosen akan dihimpun di sini.',
+                    actionLabel: widget.canManage ? 'Tambah Materi Pertama' : null,
+                    onAction: widget.canManage ? _showAddResourceDialog : null,
                   )
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),

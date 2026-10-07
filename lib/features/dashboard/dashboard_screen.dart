@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/widgets/scale_button.dart';
+import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
 import '../announcements/announcements_screen.dart';
 
@@ -404,6 +405,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Search Quick Button
+                  InkWell(
+                    onTap: () => UniversalSearchModal.show(context, onNavigateTab: widget.onNavigateTab),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF111827)),
                     ),
                   ),
                   const SizedBox(width: 8),

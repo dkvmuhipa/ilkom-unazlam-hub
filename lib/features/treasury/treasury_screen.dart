@@ -858,11 +858,89 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // Mini Visual Breakdown (Pemasukan vs Pengeluaran)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.arrow_downward_rounded, size: 12, color: Colors.white),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Pemasukan', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      _formatRupiah(DummyData.totalKasPemasukan),
+                                      style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.white),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Pengeluaran', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      _formatRupiah(DummyData.totalKasPengeluaran),
+                                      style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(

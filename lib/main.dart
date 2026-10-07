@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_notifier.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/supabase_repository.dart';
 import 'features/dashboard/dashboard_screen.dart';
@@ -106,26 +107,33 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ILKOM UNAZLAM Hub',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: _showSplash
-          ? SplashScreen(onFinish: _onSplashFinish)
-          : (!_isLoggedIn
-              ? LoginScreen(onLoginSuccess: _onLoginSuccess)
-              : (_isAdminMode
-                  ? AdminShellScreen(
-                      onLogout: _onLogout,
-                      onSwitchToStudentView: () => setState(() => _isAdminMode = false),
-                    )
-                  : MainResponsiveShell(
-                      userNim: _userNim,
-                      userName: _userName,
-                      isAdminUser: _userNim.trim().toLowerCase() == 'admin',
-                      onSwitchToAdminView: () => setState(() => _isAdminMode = true),
-                      onLogout: _onLogout,
-                    ))),
+    return ListenableBuilder(
+      listenable: ThemeScope.notifier,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'ILKOM UNAZLAM Hub',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeScope.notifier.themeMode,
+          home: _showSplash
+              ? SplashScreen(onFinish: _onSplashFinish)
+              : (!_isLoggedIn
+                  ? LoginScreen(onLoginSuccess: _onLoginSuccess)
+                  : (_isAdminMode
+                      ? AdminShellScreen(
+                          onLogout: _onLogout,
+                          onSwitchToStudentView: () => setState(() => _isAdminMode = false),
+                        )
+                      : MainResponsiveShell(
+                          userNim: _userNim,
+                          userName: _userName,
+                          isAdminUser: _userNim.trim().toLowerCase() == 'admin',
+                          onSwitchToAdminView: () => setState(() => _isAdminMode = true),
+                          onLogout: _onLogout,
+                        ))),
+        );
+      },
     );
   }
 }

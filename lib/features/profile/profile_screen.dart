@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/theme/theme_notifier.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
@@ -390,16 +391,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   const Divider(height: 1, indent: 60, color: Color(0xFFF3F4F6)),
+                  ListenableBuilder(
+                    listenable: ThemeScope.notifier,
+                    builder: (context, _) {
+                      final isDark = ThemeScope.notifier.isDarkMode;
+                      return _buildMenuItem(
+                        icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        iconColor: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                        iconBg: isDark ? const Color(0xFF261D4C) : const Color(0xFFFEF3C7),
+                        title: 'Mode Gelap (Dark Mode)',
+                        subtitle: isDark ? 'Aktif (OLED Dark)' : 'Non-aktif (Light Mode)',
+                        trailing: Switch.adaptive(
+                          value: isDark,
+                          activeColor: const Color(0xFF5B3DE8),
+                          onChanged: (_) => ThemeScope.notifier.toggleTheme(),
+                        ),
+                        onTap: () => ThemeScope.notifier.toggleTheme(),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 60, color: Color(0xFFF3F4F6)),
                   _buildMenuItem(
                     icon: Icons.tune_rounded,
                     iconColor: const Color(0xFF8B5CF6),
                     iconBg: const Color(0xFFF5F3FF),
-                    title: 'Pengaturan Akun',
-                    subtitle: 'Ganti kata sandi & notifikasi',
+                    title: 'Pengaturan Tampilan',
+                    subtitle: 'Pilih Light, Dark, atau Ikuti Sistem',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Pengaturan Akun')),
-                      );
+                      _showThemeSettingsDialog();
                     },
                   ),
                 ],
@@ -624,6 +643,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color iconBg,
     required String title,
     required String subtitle,
+    Widget? trailing,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -646,8 +666,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
           subtitle,
           style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF9CA3AF)),
+        trailing: trailing ?? const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF9CA3AF)),
         onTap: onTap,
+      ),
+    );
+  }
+
+  void _showThemeSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.palette_outlined, color: AppColors.primary, size: 22),
+            SizedBox(width: 8),
+            Text('Tema Tampilan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<ThemeMode>(
+              title: const Text('Mode Terang (Light)'),
+              subtitle: const Text('Palet cerah & bersih', style: TextStyle(fontSize: 11)),
+              value: ThemeMode.light,
+              groupValue: ThemeScope.notifier.themeMode,
+              activeColor: AppColors.primary,
+              onChanged: (mode) {
+                if (mode != null) ThemeScope.notifier.setThemeMode(mode);
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Mode Gelap (Dark)'),
+              subtitle: const Text('OLED Charcoal ramah mata', style: TextStyle(fontSize: 11)),
+              value: ThemeMode.dark,
+              groupValue: ThemeScope.notifier.themeMode,
+              activeColor: AppColors.primary,
+              onChanged: (mode) {
+                if (mode != null) ThemeScope.notifier.setThemeMode(mode);
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Ikuti Sistem HP'),
+              subtitle: const Text('Otomatis sesuai setelan Android', style: TextStyle(fontSize: 11)),
+              value: ThemeMode.system,
+              groupValue: ThemeScope.notifier.themeMode,
+              activeColor: AppColors.primary,
+              onChanged: (mode) {
+                if (mode != null) ThemeScope.notifier.setThemeMode(mode);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

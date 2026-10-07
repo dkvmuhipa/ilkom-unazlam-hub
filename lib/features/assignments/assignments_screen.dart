@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../models/models.dart';
 
 class AssignmentsScreen extends StatefulWidget {
@@ -370,25 +371,18 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           // Assignment List
           Expanded(
             child: filteredList.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFDCFCE7),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 32),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Tidak ada tugas di kategori ini',
-                          style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
+                ? EmptyStateWidget(
+                    icon: _selectedTab == 'Selesai'
+                        ? Icons.checklist_rtl_rounded
+                        : Icons.task_alt_rounded,
+                    title: _selectedTab == 'Selesai'
+                        ? 'Belum Ada Tugas Selesai'
+                        : 'Semua Tugas Telah Tuntas! 🎉',
+                    subtitle: _selectedTab == 'Selesai'
+                        ? 'Tandai tugas yang sudah dikerjakan sebagai selesai untuk memantau progres.'
+                        : 'Bagus sekali! Tidak ada tenggat tugas yang menumpuk saat ini.',
+                    actionLabel: widget.canManage ? 'Buat Tugas Baru' : null,
+                    onAction: widget.canManage ? _showAddAssignmentDialog : null,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
