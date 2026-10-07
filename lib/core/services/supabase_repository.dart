@@ -179,9 +179,30 @@ class SupabaseRepository {
     bool isPinned = false,
     String authorName = 'Nur Farida (Ketua Kelas)',
   }) async {
-    final newId = 'ann_${DateTime.now().millisecondsSinceEpoch}';
+    final client = SupabaseService.client;
+    String assignedId = 'ann_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (client != null) {
+      try {
+        final res = await client.from('announcements').insert({
+          'judul': judul,
+          'isi': isi,
+          'kategori': kategori,
+          'is_pinned': isPinned,
+          'author_name': authorName,
+          'author_role': 'Ketua Kelas',
+        }).select('id').single();
+
+        if (res['id'] != null) {
+          assignedId = res['id'].toString();
+        }
+      } catch (e) {
+        debugPrint('Sync announcement ke Supabase offline/error: $e');
+      }
+    }
+
     final newAnn = Announcement(
-      id: newId,
+      id: assignedId,
       authorName: authorName,
       authorRole: 'Ketua Kelas',
       judul: judul,
@@ -191,25 +212,7 @@ class SupabaseRepository {
       createdAt: DateTime.now(),
     );
     DummyData.announcements.insert(0, newAnn);
-
-    final client = SupabaseService.client;
-    if (client == null) return true;
-
-    try {
-      await client.from('announcements').insert({
-        'id': newId,
-        'judul': judul,
-        'isi': isi,
-        'kategori': kategori,
-        'is_pinned': isPinned,
-        'author_name': authorName,
-        'author_role': 'Ketua Kelas',
-      });
-      return true;
-    } catch (e) {
-      debugPrint('Sync announcement ke Supabase offline/error: $e');
-      return true;
-    }
+    return true;
   }
 
   static Future<bool> updateAnnouncement(Announcement announcement) async {
@@ -292,9 +295,36 @@ class SupabaseRepository {
     required DateTime deadline,
     String? linkPengumpulan,
   }) async {
-    final newId = 'asg_${DateTime.now().millisecondsSinceEpoch}';
+    final client = SupabaseService.client;
+    String assignedId = 'asg_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (client != null) {
+      try {
+        final payload = <String, dynamic>{
+          'course_name': courseName,
+          'judul': judul,
+          'deskripsi': deskripsi,
+          'kategori': kategori,
+          'deadline': deadline.toIso8601String(),
+          'link_pengumpulan': linkPengumpulan,
+          'status': 'belum',
+        };
+        // course_id on Supabase references courses(id) which may be UUID or nullable
+        if (courseId.isNotEmpty && !courseId.startsWith('c')) {
+          payload['course_id'] = courseId;
+        }
+
+        final res = await client.from('assignments').insert(payload).select('id').single();
+        if (res['id'] != null) {
+          assignedId = res['id'].toString();
+        }
+      } catch (e) {
+        debugPrint('Sync assignment ke Supabase error: $e');
+      }
+    }
+
     final newAssignment = Assignment(
-      id: newId,
+      id: assignedId,
       courseId: courseId,
       courseName: courseName,
       judul: judul,
@@ -305,27 +335,7 @@ class SupabaseRepository {
       status: 'belum',
     );
     DummyData.assignments.insert(0, newAssignment);
-
-    final client = SupabaseService.client;
-    if (client == null) return true;
-
-    try {
-      await client.from('assignments').insert({
-        'id': newId,
-        'course_id': courseId,
-        'course_name': courseName,
-        'judul': judul,
-        'deskripsi': deskripsi,
-        'kategori': kategori,
-        'deadline': deadline.toIso8601String(),
-        'link_pengumpulan': linkPengumpulan,
-        'status': 'belum',
-      });
-      return true;
-    } catch (e) {
-      debugPrint('Sync assignment ke Supabase error: $e');
-      return true;
-    }
+    return true;
   }
 
   static Future<bool> updateAssignment(Assignment assignment) async {
