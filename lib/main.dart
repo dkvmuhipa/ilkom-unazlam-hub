@@ -243,6 +243,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
         canManageClassAttendance: currentUser.canManageAttendance,
+        userNim: currentUser.nim,
         onBack: _goBack,
       ), // 5: Absensi Saya
       AgendaScreen(

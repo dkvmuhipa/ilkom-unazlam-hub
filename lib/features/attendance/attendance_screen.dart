@@ -20,11 +20,13 @@ class AttendanceHistoryItem {
 
 class AttendanceScreen extends StatefulWidget {
   final bool canManageClassAttendance;
+  final String? userNim;
   final VoidCallback? onBack;
 
   const AttendanceScreen({
     super.key,
     this.canManageClassAttendance = false,
+    this.userNim,
     this.onBack,
   });
 
@@ -358,122 +360,143 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Scan / Verifikasi QR Presensi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                    Text('Pindai QR dosen/ketua kelas atau masukkan token', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Simulated Camera Scanner Viewfinder
-            Container(
-              width: double.infinity,
-              height: 180,
-              decoration: BoxDecoration(
-                color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
-              ),
-              child: Stack(
-                alignment: Alignment.center,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Animated Scanner Target Box
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF10B981), width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
                   const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.qr_code_scanner_rounded, size: 44, color: Color(0xFF10B981)),
-                      SizedBox(height: 8),
-                      Text(
-                        'Arahkan kamera ke QR Code',
-                        style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
+                      Text('Scan / Verifikasi QR Presensi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                      Text('Pindai QR dosen/ketua kelas atau masukkan token', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
                     ],
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-            TextField(
-              controller: tokenController,
-              decoration: InputDecoration(
-                labelText: 'Atau Masukkan Kode Token Sesi',
-                hintText: 'Contoh: ILKOM-UNAZLAM-P5-9821',
-                prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              DropdownButtonFormField<String>(
+                initialValue: selectedCourse,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: 'Mata Kuliah',
+                  labelStyle: const TextStyle(fontSize: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+                items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => selectedCourse = val);
+                },
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-            ElevatedButton.icon(
-              onPressed: () {
-                final token = tokenController.text.trim();
-                Navigator.pop(ctx);
+              // Simulated Camera Scanner Viewfinder
+              Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Animated Scanner Target Box
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFF10B981), width: 2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.qr_code_scanner_rounded, size: 38, color: Color(0xFF10B981)),
+                        SizedBox(height: 6),
+                        Text(
+                          'Arahkan kamera ke QR Code',
+                          style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
 
-                // Record attendance into Supabase
-                SupabaseRepository.logAttendance(
-                  courseId: selectedCourse,
-                  studentNim: '260250023',
-                  pertemuanKe: 5,
-                  status: 'Hadir',
-                  catatan: token.isNotEmpty ? 'Presensi QR: $token' : 'Presensi QR Kamera',
-                );
+              TextField(
+                controller: tokenController,
+                decoration: InputDecoration(
+                  labelText: 'Atau Masukkan Kode Token Sesi',
+                  hintText: 'Contoh: ILKOM-UNAZLAM-P5-9821',
+                  prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
 
-                setState(() {
-                  _history.insert(
-                    0,
-                    AttendanceHistoryItem(
-                      date: 'Hari Ini, ${DateTime.now().day} Okt 2026',
-                      courseName: selectedCourse,
-                      status: 'Hadir',
+              ElevatedButton.icon(
+                onPressed: () {
+                  final token = tokenController.text.trim();
+                  Navigator.pop(ctx);
+
+                  final activeNim = widget.userNim ?? '260250023';
+
+                  // Record attendance into Supabase
+                  SupabaseRepository.logAttendance(
+                    courseId: selectedCourse,
+                    studentNim: activeNim,
+                    pertemuanKe: 5,
+                    status: 'Hadir',
+                    catatan: token.isNotEmpty ? 'Presensi QR: $token' : 'Presensi QR Kamera',
+                  );
+
+                  setState(() {
+                    _history.insert(
+                      0,
+                      AttendanceHistoryItem(
+                        date: 'Hari Ini, ${DateTime.now().day} Okt 2026',
+                        courseName: selectedCourse,
+                        status: 'Hadir',
+                      ),
+                    );
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Kehadiran untuk mata kuliah $selectedCourse berhasil diverifikasi Hadir! 🎉'),
+                      backgroundColor: const Color(0xFF10B981),
+                      duration: const Duration(seconds: 3),
                     ),
                   );
-                });
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Kehadiran untuk mata kuliah $selectedCourse berhasil diverifikasi Hadir! 🎉'),
-                    backgroundColor: const Color(0xFF10B981),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.verified_rounded, size: 18),
-              label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B3DE8),
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                },
+                icon: const Icon(Icons.verified_rounded, size: 18),
+                label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B3DE8),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
