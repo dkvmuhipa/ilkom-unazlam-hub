@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/export_service.dart';
@@ -16,6 +18,27 @@ class AttendanceHistoryItem {
     required this.courseName,
     required this.status,
   });
+}
+
+class ActiveAttendanceSession {
+  final String courseName;
+  final int pertemuanKe;
+  final String token;
+  final DateTime startTime;
+  final DateTime expiresAt;
+  final Set<String> attendedNims;
+
+  ActiveAttendanceSession({
+    required this.courseName,
+    required this.pertemuanKe,
+    required this.token,
+    required this.startTime,
+    required this.expiresAt,
+    Set<String>? attendedNims,
+  }) : attendedNims = attendedNims ?? {};
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  int get remainingSeconds => expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 9999);
 }
 
 class AttendanceScreen extends StatefulWidget {
@@ -37,10 +60,47 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   late List<AttendanceHistoryItem> _history;
 
+  // Shared active QR session across the class
+  static ActiveAttendanceSession? currentSession;
+  Timer? _countdownTimer;
+
   @override
   void initState() {
     super.initState();
     _history = [];
+    _startTimerIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimerIfNeeded() {
+    _countdownTimer?.cancel();
+    if (currentSession != null && !currentSession!.isExpired) {
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        if (currentSession == null || currentSession!.isExpired) {
+          timer.cancel();
+          setState(() {
+            currentSession = null;
+          });
+        } else {
+          setState(() {});
+        }
+      });
+    }
+  }
+
+  String _formatTimer(int totalSecs) {
+    final m = totalSecs ~/ 60;
+    final s = totalSecs % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _showClassAttendanceModal() {
@@ -333,16 +393,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
                 ElevatedButton.icon(
                   onPressed: () {
+                    final now = DateTime.now();
+                    setState(() {
+                      currentSession = ActiveAttendanceSession(
+                        courseName: selectedCourse,
+                        pertemuanKe: pertemuan,
+                        token: token,
+                        startTime: now,
+                        expiresAt: now.add(const Duration(minutes: 15)),
+                      );
+                      _startTimerIfNeeded();
+                    });
+
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Sesi presensi QR aktif! Mahasiswa dapat memindai kode sekarang.'),
-                        backgroundColor: Color(0xFF10B981),
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text('Sesi presensi "$selectedCourse" aktif selama 15 menit! Timer dimulai.'),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF10B981),
+                        duration: const Duration(seconds: 4),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.done_all_rounded, size: 18),
-                  label: const Text('Buka Sesi Presensi Sekarang', style: TextStyle(fontWeight: FontWeight.w700)),
+                  icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
+                  label: const Text('Buka Sesi Presensi Sekarang (15 Menit)', style: TextStyle(fontWeight: FontWeight.w700)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5B3DE8),
                     foregroundColor: Colors.white,
@@ -466,25 +547,73 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   final token = tokenController.text.trim();
-                  Navigator.pop(ctx);
+                  final session = currentSession;
 
+                  // 1. Validasi sesi aktif
+                  if (session == null || session.isExpired) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text('Tidak ada sesi presensi aktif atau sesi 15 menit telah berakhir/kadaluwarsa!'),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Color(0xFFEF4444),
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // 2. Validasi kesesuaian token (jika diinput manual)
+                  if (token.isNotEmpty && token.toUpperCase() != session.token.toUpperCase()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Kode Token salah! Token sesi saat ini adalah "${session.token}".'),
+                        backgroundColor: const Color(0xFFEF4444),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final targetCourse = session.courseName;
                   final activeNim = widget.userNim ?? '260250023';
 
-                  // Record attendance into Supabase
+                  // 3. Validasi duplikasi presensi
+                  if (session.attendedNims.contains(activeNim)) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('NIM $activeNim sudah tercatat hadir untuk sesi $targetCourse ini!'),
+                        backgroundColor: const Color(0xFFF59E0B),
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.pop(ctx);
+
+                  // Simpan ke sesi aktif & Supabase
+                  session.attendedNims.add(activeNim);
                   SupabaseRepository.logAttendance(
-                    courseId: selectedCourse,
+                    courseId: targetCourse,
                     studentNim: activeNim,
-                    pertemuanKe: 5,
+                    pertemuanKe: session.pertemuanKe,
                     status: 'Hadir',
-                    catatan: token.isNotEmpty ? 'Presensi QR: $token' : 'Presensi QR Kamera',
+                    catatan: token.isNotEmpty ? 'Presensi Token: $token' : 'Presensi Scanner QR',
                   );
 
                   setState(() {
                     _history.insert(
                       0,
                       AttendanceHistoryItem(
-                        date: 'Hari Ini, ${DateTime.now().day} Okt 2026',
-                        courseName: selectedCourse,
+                        date: 'Hari Ini, ${DateTime.now().day} Okt 2026 (${DateFormat('HH:mm').format(DateTime.now())})',
+                        courseName: targetCourse,
                         status: 'Hadir',
                       ),
                     );
@@ -492,7 +621,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Kehadiran untuk mata kuliah $selectedCourse berhasil diverifikasi Hadir! 🎉'),
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Presensi Hadir untuk "$targetCourse" berhasil diverifikasi! 🎉'),
+                          ),
+                        ],
+                      ),
                       backgroundColor: const Color(0xFF10B981),
                       duration: const Duration(seconds: 3),
                     ),
@@ -598,6 +735,204 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           children: [
+            // ==========================================
+            // LIVE ACTIVE SESSION COUNTDOWN BANNER
+            // ==========================================
+            if (currentSession != null && !currentSession!.isExpired) ...[
+              Builder(
+                builder: (context) {
+                  final session = currentSession!;
+                  final secsLeft = session.remainingSeconds;
+                  final isUrgent = secsLeft < 180; // Kurang dari 3 menit
+                  final activeNim = widget.userNim ?? '260250023';
+                  final hasAttended = session.attendedNims.contains(activeNim);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isUrgent ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isUrgent ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isUrgent ? const Color(0xFFEF4444) : const Color(0xFF16A34A)).withValues(alpha: 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isUrgent ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  const Text(
+                                    'SESI AKTIF',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            // Live Countdown Indicator
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isUrgent ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isUrgent ? const Color(0xFFEF4444) : const Color(0xFF16A34A),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    size: 14,
+                                    color: isUrgent ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _formatTimer(secsLeft),
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: isUrgent ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        Text(
+                          session.courseName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Token: ${session.token} • Pertemuan ke-${session.pertemuanKe}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Status Info Bar & Actions
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.people_alt_outlined, size: 14, color: Color(0xFF5B3DE8)),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    '${session.attendedNims.length} Hadir',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF5B3DE8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+
+                            if (widget.canManageClassAttendance) ...[
+                              TextButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    currentSession = null;
+                                    _countdownTimer?.cancel();
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Sesi presensi telah ditutup oleh pengurus kelas.'),
+                                      backgroundColor: Color(0xFF374151),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.stop_circle_outlined, size: 15, color: Color(0xFFDC2626)),
+                                label: const Text('Tutup Sesi', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626))),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ] else ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: hasAttended ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  hasAttended ? '✅ Anda Sudah Hadir' : '⚠️ Belum Presensi',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: hasAttended ? const Color(0xFF16A34A) : const Color(0xFFB45309),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+
             // QR Action Banner
             Container(
               margin: const EdgeInsets.only(bottom: 16),
