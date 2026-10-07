@@ -22,10 +22,18 @@ class LettersScreen extends StatefulWidget {
 
 class _LettersScreenState extends State<LettersScreen> {
   String _selectedType = 'Izin Sakit';
-  final _dosenController = TextEditingController(text: 'Drs. H. Ahmad Fauzi, M.Si.');
-  final _courseController = TextEditingController(text: 'Pendidikan Pancasila');
+  late final TextEditingController _dosenController;
+  late final TextEditingController _courseController;
   final _alasanController = TextEditingController(text: 'Kondisi kesehatan sedang menurun (demam) dan memerlukan istirahat');
-  final _tanggalController = TextEditingController(text: 'Senin, 5 Oktober 2026');
+  final _tanggalController = TextEditingController(text: 'Rabu, 7 Oktober 2026');
+
+  @override
+  void initState() {
+    super.initState();
+    final firstCourse = DummyData.courses.isNotEmpty ? DummyData.courses.first : null;
+    _courseController = TextEditingController(text: firstCourse?.nama ?? 'Pendidikan Pancasila');
+    _dosenController = TextEditingController(text: firstCourse?.dosen ?? 'Drs. H. M. Rusli, M.Si');
+  }
 
   @override
   void dispose() {

@@ -189,7 +189,80 @@ class DummyData {
     ),
   ];
 
-  static final List<ResourceItem> resources = [];
+  static final List<ResourceItem> resources = [
+    ResourceItem(
+      id: 'res_1',
+      courseName: 'Pendidikan Pancasila',
+      pertemuanKe: 1,
+      judul: 'Silabus, RPS & Pengantar Pendidikan Pancasila di PT',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_2',
+      courseName: 'Pendidikan Pancasila',
+      pertemuanKe: 3,
+      judul: 'Pancasila dalam Arus Sejarah Bangsa Indonesia (Modul)',
+      jenis: 'E-Book',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_3',
+      courseName: 'Pendidikan Kewarganegaraan',
+      pertemuanKe: 2,
+      judul: 'Identitas Nasional dan Integrasi Nasional',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_4',
+      courseName: 'Pendidikan Kewarganegaraan',
+      pertemuanKe: 4,
+      judul: 'Kumpulan Jurnal Konstitusi & Hak Asasi Manusia',
+      jenis: 'Jurnal Ilmiah',
+      linkUrl: 'https://scholar.google.com',
+    ),
+    ResourceItem(
+      id: 'res_5',
+      courseName: 'Pengantar Ilmu Politik *',
+      pertemuanKe: 1,
+      judul: 'Dasar-Dasar Ilmu Politik - Prof. Miriam Budiardjo',
+      jenis: 'E-Book',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_6',
+      courseName: 'Pengantar Ilmu Politik *',
+      pertemuanKe: 3,
+      judul: 'Sistem Politik Indonesia & Trias Politica',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_7',
+      courseName: 'Bahasa Indonesia *',
+      pertemuanKe: 2,
+      judul: 'Pedoman Umum Ejaan Bahasa Indonesia (PUEBI V) & Karya Tulis',
+      jenis: 'E-Book',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_8',
+      courseName: 'Ilmu Kealaman Dasar *',
+      pertemuanKe: 1,
+      judul: 'Pengantar Metodologi Ilmiah & Filsafat Sains',
+      jenis: 'Slide PPT',
+      linkUrl: 'https://drive.google.com',
+    ),
+    ResourceItem(
+      id: 'res_9',
+      courseName: 'Bahasa Inggris *',
+      pertemuanKe: 5,
+      judul: 'Bank Soal Latihan Midterm Academic Reading & Grammar',
+      jenis: 'Bank Soal',
+      linkUrl: 'https://drive.google.com',
+    ),
+  ];
 
   static final List<StudentProfile> students = [
     StudentProfile(

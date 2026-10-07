@@ -116,7 +116,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
   void _showCreateGroupDialog() {
     final nameController = TextEditingController();
     final assignmentController = TextEditingController();
+    final linkController = TextEditingController(text: 'https://drive.google.com');
     String selectedCourse = DummyData.courses.first.nama;
+    final nonAdminStudents = DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    List<StudentProfile> selectedMembers = nonAdminStudents.take(4).toList();
 
     showDialog(
       context: context,
@@ -133,7 +136,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: 420,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,11 +152,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: selectedCourse,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Mata Kuliah',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13)))).toList(),
+                    items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
                     onChanged: (val) {
                       if (val != null) setDialogState(() => selectedCourse = val);
                     },
@@ -165,6 +169,66 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       labelText: 'Judul Tugas / Proyek',
                       hintText: 'Misal: Laporan Observasi Lapangan',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: linkController,
+                    decoration: InputDecoration(
+                      labelText: 'Folder Google Drive / Dokumen',
+                      hintText: 'https://drive.google.com/...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Pilih Anggota (${4} Rekomendasi):',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final shuffled = List<StudentProfile>.from(nonAdminStudents)..shuffle();
+                          setDialogState(() {
+                            selectedMembers = shuffled.take(4).toList();
+                          });
+                        },
+                        child: const Text('Acak Anggota', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 140,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListView.builder(
+                      itemCount: nonAdminStudents.length,
+                      itemBuilder: (context, idx) {
+                        final student = nonAdminStudents[idx];
+                        final isPicked = selectedMembers.any((m) => m.id == student.id);
+                        return CheckboxListTile(
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          title: Text(student.nama, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          subtitle: Text('NIM: ${student.nim}', style: const TextStyle(fontSize: 10)),
+                          value: isPicked,
+                          activeColor: const Color(0xFF5B3DE8),
+                          onChanged: (val) {
+                            setDialogState(() {
+                              if (val == true) {
+                                selectedMembers.add(student);
+                              } else {
+                                selectedMembers.removeWhere((m) => m.id == student.id);
+                              }
+                            });
+                          },
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -180,9 +244,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
               onPressed: () {
                 final name = nameController.text.trim();
                 final assignment = assignmentController.text.trim();
+                final driveLink = linkController.text.trim();
                 if (name.isEmpty || assignment.isEmpty) return;
-
-                final randomMembers = DummyData.students.where((s) => s.role != 'ADMIN').toList()..shuffle();
 
                 setState(() {
                   _groups.insert(
@@ -192,8 +255,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       namaKelompok: name,
                       courseName: selectedCourse,
                       assignmentTitle: assignment,
-                      linkGDrive: 'https://drive.google.com',
-                      members: randomMembers.take(4).toList(),
+                      linkGDrive: driveLink.isNotEmpty ? driveLink : 'https://drive.google.com',
+                      members: selectedMembers.isNotEmpty
+                          ? List.from(selectedMembers)
+                          : nonAdminStudents.take(4).toList(),
                     ),
                   );
                 });
@@ -201,7 +266,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Kelompok tugas baru berhasil dibentuk!'),
+                    content: Text('Kelompok tugas baru berhasil dibentuk! 👥'),
                     backgroundColor: Color(0xFF10B981),
                   ),
                 );
@@ -322,6 +387,19 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         ],
                       ),
                     ),
+                    if (widget.canManage)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFF9CA3AF)),
+                        tooltip: 'Hapus Kelompok',
+                        onPressed: () {
+                          setState(() {
+                            _groups.removeWhere((g) => g.id == group.id);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Kelompok telah dihapus.'), duration: Duration(seconds: 1)),
+                          );
+                        },
+                      ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -349,7 +427,53 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 const SizedBox(height: 14),
 
                 // Tasks Checklist
-                const Text('Checklist Sub-Tugas:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280))),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Checklist Sub-Tugas:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6B7280))),
+                    if (widget.canManage)
+                      InkWell(
+                        onTap: () {
+                          final taskController = TextEditingController();
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Text('Tambah Sub-Tugas', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                              content: TextField(
+                                controller: taskController,
+                                decoration: InputDecoration(
+                                  hintText: 'Misal: Analisis data survei',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    final t = taskController.text.trim();
+                                    if (t.isNotEmpty) {
+                                      setState(() {
+                                        group.tasks.add(GroupTaskProgress(title: t, isCompleted: false));
+                                      });
+                                    }
+                                    Navigator.pop(ctx);
+                                  },
+                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+                                  child: const Text('Tambah'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text('+ Tambah Sub-Tugas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 6),
                 for (var task in group.tasks) ...[
                   InkWell(

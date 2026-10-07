@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
+import '../../core/services/dummy_data.dart';
+
 class ClassNotificationItem {
   final String id;
   final String title;
@@ -32,48 +34,62 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   String _selectedFilter = 'Semua';
 
-  final List<ClassNotificationItem> _notifications = [
-    ClassNotificationItem(
-      id: 'notif_1',
-      title: 'Pengingat Deadline Tugas',
-      message: 'Tugas Proposal Kampanye PR mata kuliah Public Relations deadline dalam 24 jam ke depan.',
-      time: '15 menit yang lalu',
-      category: 'deadline',
-      isRead: false,
-    ),
-    ClassNotificationItem(
-      id: 'notif_2',
-      title: 'Voting Baru Dibuka',
-      message: 'Ketua Kelas membuka voting untuk menentukan Jadwal Pengganti Kuliah Pengantar Ilmu Jurnalistik.',
-      time: '1 jam yang lalu',
-      category: 'voting',
-      isRead: false,
-    ),
-    ClassNotificationItem(
-      id: 'notif_3',
-      title: 'Pengumuman Penting',
-      message: 'Kuliah Teori Komunikasi besok dimulai pukul 08:30 WITA di Ruang Lab Multimedia.',
-      time: '3 jam yang lalu',
-      category: 'announcement',
-      isRead: false,
-    ),
-    ClassNotificationItem(
-      id: 'notif_4',
-      title: 'Iuran Kas Bulan Oktober',
-      message: 'Bendahara telah membuka rekap pembayaran uang kas kelas untuk bulan Oktober (Rp 20.000).',
-      time: 'Kemarin',
-      category: 'treasury',
-      isRead: true,
-    ),
-    ClassNotificationItem(
-      id: 'notif_5',
-      title: 'Presensi Kelas Terverifikasi',
-      message: 'Kehadiran Anda pada mata kuliah Pendidikan Pancasila Sesi 5 berhasil tercatat Hadir.',
-      time: '2 hari lalu',
-      category: 'attendance',
-      isRead: true,
-    ),
-  ];
+  late final List<ClassNotificationItem> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _initNotifications();
+  }
+
+  void _initNotifications() {
+    _notifications = [
+      ClassNotificationItem(
+        id: 'notif_presensi',
+        title: 'Sesi Presensi QR Aktif',
+        message: 'Ketua kelas telah membuka sesi presensi aktif untuk Pendidikan Pancasila Sesi 1.',
+        time: 'Baru saja',
+        category: 'attendance',
+        isRead: false,
+      ),
+      ClassNotificationItem(
+        id: 'notif_ann_1',
+        title: 'Pengumuman Perkuliahan',
+        message: DummyData.announcements.isNotEmpty
+            ? DummyData.announcements.first.judul
+            : 'Perkuliahan semester gasal TA 2026/2027 resmi dimulai di Kampus UNAZLAM Cilacap.',
+        time: '30 menit lalu',
+        category: 'announcement',
+        isRead: false,
+      ),
+      ClassNotificationItem(
+        id: 'notif_assign_1',
+        title: 'Pengingat Tugas Mandiri',
+        message: DummyData.assignments.isNotEmpty
+            ? 'Tugas "${DummyData.assignments.first.judul}" pada ${DummyData.assignments.first.courseName} menunggu penyelesaian.'
+            : 'Tugas rangkuman silabus Pendidikan Kewarganegaraan dapat dikumpulkan melalui portal.',
+        time: '2 jam lalu',
+        category: 'deadline',
+        isRead: false,
+      ),
+      ClassNotificationItem(
+        id: 'notif_kas_1',
+        title: 'Iuran Kas Kelas Terjadwal',
+        message: 'Rekap bendahara kas kelas: Iuran operasional kelas bulan Oktober dibuka (Rp 20.000).',
+        time: '1 hari lalu',
+        category: 'treasury',
+        isRead: true,
+      ),
+      ClassNotificationItem(
+        id: 'notif_vote_1',
+        title: 'Musyawarah Jadwal Pengganti',
+        message: 'Voting penentuan hari perkuliahan pengganti Bahasa Inggris dibuka di menu Voting.',
+        time: '2 hari lalu',
+        category: 'voting',
+        isRead: true,
+      ),
+    ];
+  }
 
   Color _getCategoryColor(String cat) {
     switch (cat) {

@@ -60,7 +60,22 @@ class VotingScreen extends StatefulWidget {
 }
 
 class _VotingScreenState extends State<VotingScreen> {
-  final List<ClassPoll> _polls = [];
+  final List<ClassPoll> _polls = [
+    ClassPoll(
+      id: 'poll_init_1',
+      title: 'Musyawarah Jadwal Pengganti Kuliah Bahasa Inggris *',
+      description: 'Dosen pengampu (Farid Wajdi, S.Pd., M.A) berhalangan di hari Kamis malam. Pilih opsi jadwal pengganti yang disepakati kelas:',
+      author: 'Nur Farida (Ketua Kelas)',
+      createdAt: DateTime(2026, 10, 5),
+      endsAt: DateTime(2026, 10, 12),
+      isOpen: true,
+      options: [
+        PollOption(id: 'opt_1', text: 'Sabtu Pagi (09:00 - 11:15 WIB)', votes: 8),
+        PollOption(id: 'opt_2', text: 'Minggu Sore (15:30 - 17:45 WIB)', votes: 14),
+        PollOption(id: 'opt_3', text: 'Kuliah Online Asinkron / Tugas Mandiri', votes: 5),
+      ],
+    ),
+  ];
 
   @override
   void initState() {
