@@ -28,7 +28,7 @@ class ExportService {
     return buffer.toString();
   }
 
-  /// Export Rekap Presensi Mahasiswa to CSV Format
+  /// Export Rekap Presensi Mahasiswa to CSV Format (Khusus Pengurus / Admin)
   static String exportAttendanceCsv(String courseName) {
     final buffer = StringBuffer();
     buffer.writeln('No,NIM,Nama Mahasiswa,Program Studi,Status Kehadiran,Mata Kuliah');
@@ -38,6 +38,35 @@ class ExportService {
       final s = students[i];
       final status = (i % 8 == 0) ? 'Izin' : 'Hadir';
       buffer.writeln('${i + 1},"${s.nim}","${s.nama}","${s.prodi}","$status","$courseName"');
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export Rekap Presensi Pribadi Mahasiswa (Privat untuk Mahasiswa bersangkutan)
+  static String exportPersonalAttendanceCsv({
+    required String studentNim,
+    required String studentName,
+    required List<dynamic> history,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('REKAP PRESENSI PRIBADI MAHASISWA');
+    buffer.writeln('NIM,"$studentNim"');
+    buffer.writeln('Nama,"$studentName"');
+    buffer.writeln('Tanggal Cetak,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"');
+    buffer.writeln('');
+    buffer.writeln('No,Tanggal / Waktu,Mata Kuliah,Status Kehadiran');
+
+    if (history.isEmpty) {
+      buffer.writeln('1,-,Semua Mata Kuliah,Belum ada data presensi');
+    } else {
+      for (int i = 0; i < history.length; i++) {
+        final item = history[i];
+        final date = item.date;
+        final course = item.courseName;
+        final status = item.status;
+        buffer.writeln('${i + 1},"$date","$course","$status"');
+      }
     }
 
     return buffer.toString();
