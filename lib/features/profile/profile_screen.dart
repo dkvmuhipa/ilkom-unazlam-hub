@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../../core/constants/app_colors.dart';
-<<<<<<< Updated upstream
-=======
 import '../../core/services/dummy_data.dart';
 import '../../core/services/auth_service.dart';
->>>>>>> Stashed changes
 import '../../core/theme/theme_notifier.dart';
 import '../../models/models.dart';
 
