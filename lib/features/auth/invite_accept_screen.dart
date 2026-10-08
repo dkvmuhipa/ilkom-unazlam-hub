@@ -110,7 +110,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                       const SizedBox(height: 18),
                       Text(
                         isInvite
-                            ? 'Aktifkan akun Admin'
+                            ? 'Aktifkan akun mahasiswa'
                             : 'Atur ulang kata sandi',
                         textAlign: TextAlign.center,
                         style: const TextStyle(

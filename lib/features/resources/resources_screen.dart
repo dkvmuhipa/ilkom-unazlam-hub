@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../models/models.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 class ResourcesScreen extends StatefulWidget {
@@ -17,9 +19,51 @@ class ResourcesScreen extends StatefulWidget {
 
 class _ResourcesScreenState extends State<ResourcesScreen> {
   String _selectedType = 'Semua';
-  final List<String> _types = ['Semua', 'Slide PPT', 'E-Book', 'Jurnal Ilmiah', 'Bank Soal'];
+  final List<String> _types = [
+    'Semua',
+    'Slide PPT',
+    'E-Book',
+    'Jurnal Ilmiah',
+    'Bank Soal',
+  ];
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<ResourceItem> _resources = [];
+  List<Course> _courses = [];
+  bool _isLoading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadResources();
+  }
+
+  Future<void> _loadResources() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
+      final results = await Future.wait<dynamic>([
+        SupabaseRepository.getResources(),
+        SupabaseRepository.getCoursesStrict(),
+      ]);
+      if (mounted)
+        setState(() {
+          _resources = results[0] as List<ResourceItem>;
+          _courses = results[1] as List<Course>;
+          _isLoading = false;
+        });
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _loadError = 'Materi gagal dimuat dari Supabase.';
+          _isLoading = false;
+        });
+      debugPrint('Gagal memuat materi: $error');
+    }
+  }
 
   @override
   void dispose() {
@@ -28,10 +72,16 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   }
 
   void _showAddResourceDialog() {
+    if (_courses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tambahkan mata kuliah terlebih dahulu.')),
+      );
+      return;
+    }
     final titleController = TextEditingController();
     final linkController = TextEditingController();
     final pertController = TextEditingController(text: '1');
-    String selectedCourse = DummyData.courses.first.nama;
+    String selectedCourse = _courses.first.nama;
     String selectedJenis = 'Slide PPT';
 
     showDialog(
@@ -39,12 +89,17 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
               Icon(Icons.post_add_rounded, color: AppColors.primary, size: 22),
               SizedBox(width: 8),
-              Text('Tambah Materi Kuliah', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              Text(
+                'Tambah Materi Kuliah',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -59,16 +114,25 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Mata Kuliah',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    items: DummyData.courses
-                        .map((c) => DropdownMenuItem(
-                              value: c.nama,
-                              child: Text(c.nama, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-                            ))
+                    items: _courses
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.nama,
+                            child: Text(
+                              c.nama,
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null) setDialogState(() => selectedCourse = val);
+                      if (val != null)
+                        setDialogState(() => selectedCourse = val);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -77,7 +141,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     decoration: InputDecoration(
                       labelText: 'Judul Dokumen / Materi',
                       hintText: 'Misal: PPT Pertemuan 1 - Konsep Dasar',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -88,13 +154,30 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                           initialValue: selectedJenis,
                           decoration: InputDecoration(
                             labelText: 'Jenis Materi',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          items: ['Slide PPT', 'E-Book', 'Jurnal Ilmiah', 'Bank Soal']
-                              .map((j) => DropdownMenuItem(value: j, child: Text(j, style: const TextStyle(fontSize: 12))))
-                              .toList(),
+                          items:
+                              [
+                                    'Slide PPT',
+                                    'E-Book',
+                                    'Jurnal Ilmiah',
+                                    'Bank Soal',
+                                  ]
+                                  .map(
+                                    (j) => DropdownMenuItem(
+                                      value: j,
+                                      child: Text(
+                                        j,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (val) {
-                            if (val != null) setDialogState(() => selectedJenis = val);
+                            if (val != null)
+                              setDialogState(() => selectedJenis = val);
                           },
                         ),
                       ),
@@ -106,7 +189,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                           decoration: InputDecoration(
                             labelText: 'Pertemuan Ke-',
                             hintText: '1',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -118,7 +203,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     decoration: InputDecoration(
                       labelText: 'Tautan Google Drive / Unduhan',
                       hintText: 'https://drive.google.com/...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -128,42 +215,67 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final judul = titleController.text.trim();
                 final link = linkController.text.trim();
                 if (judul.isEmpty) return;
+                final uri = Uri.tryParse(link);
+                if (uri == null ||
+                    !['http', 'https'].contains(uri.scheme) ||
+                    uri.host.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Masukkan tautan materi yang valid.'),
+                    ),
+                  );
+                  return;
+                }
 
                 final pert = int.tryParse(pertController.text.trim()) ?? 1;
-
-                setState(() {
-                  DummyData.resources.insert(
-                    0,
+                try {
+                  final saved = await SupabaseRepository.createResource(
                     ResourceItem(
-                      id: 'res_${DateTime.now().millisecondsSinceEpoch}',
+                      id: '',
                       courseName: selectedCourse,
                       pertemuanKe: pert,
                       judul: judul,
                       jenis: selectedJenis,
-                      linkUrl: link.isNotEmpty ? link : 'https://drive.google.com',
+                      linkUrl: link,
                     ),
                   );
-                });
-
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Materi kuliah baru berhasil ditambahkan! 📚'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                  if (!mounted) return;
+                  setState(() => _resources.insert(0, saved));
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Materi tersimpan.'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                } catch (error) {
+                  debugPrint('Gagal menyimpan materi: $error');
+                  if (mounted)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Materi gagal disimpan. Periksa koneksi dan izin akun.',
+                        ),
+                      ),
+                    );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Simpan Materi'),
             ),
@@ -197,7 +309,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = DummyData.resources.where((r) {
+    final filtered = _resources.where((r) {
       if (_selectedType != 'Semua' && r.jenis != _selectedType) return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -215,7 +327,10 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         scrolledUnderElevation: 0,
         leading: widget.onBack != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF111827),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
@@ -233,7 +348,10 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: IconButton(
-                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: AppColors.primary,
+                ),
                 tooltip: 'Tambah Materi',
                 onPressed: _showAddResourceDialog,
               ),
@@ -246,7 +364,10 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.post_add_rounded),
-              label: const Text('Tambah Materi', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                'Tambah Materi',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             )
           : null,
       body: Column(
@@ -259,7 +380,11 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               onChanged: (val) => setState(() => _searchQuery = val.trim()),
               decoration: InputDecoration(
                 hintText: 'Cari modul, PPT, atau jurnal kuliah...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF9CA3AF)),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: Color(0xFF9CA3AF),
+                ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 18),
@@ -269,7 +394,10 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                         },
                       )
                     : null,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 16,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -300,19 +428,26 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     onTap: () => setState(() => _selectedType = type),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected ? AppColors.primary : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.border,
                         ),
                       ),
                       child: Text(
                         type,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: isSelected ? Colors.white : AppColors.textSub,
                         ),
                       ),
@@ -325,14 +460,37 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
 
           // List File
           Expanded(
-            child: filtered.isEmpty
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                : _loadError != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_loadError!),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _loadResources,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Coba lagi'),
+                        ),
+                      ],
+                    ),
+                  )
+                : filtered.isEmpty
                 ? EmptyStateWidget(
                     icon: Icons.menu_book_outlined,
-                    title: _searchQuery.isNotEmpty ? 'Materi Tidak Ditemukan' : 'Belum Ada Berkas Materi',
+                    title: _searchQuery.isNotEmpty
+                        ? 'Materi Tidak Ditemukan'
+                        : 'Belum Ada Berkas Materi',
                     subtitle: _searchQuery.isNotEmpty
                         ? 'Tidak ada modul atau slide yang cocok dengan "$_searchQuery". Coba kata kunci lain.'
                         : 'Slide PPT, diktat e-book, atau jurnal perkuliahan dari dosen akan dihimpun di sini.',
-                    actionLabel: widget.canManage ? 'Tambah Materi Pertama' : null,
+                    actionLabel: widget.canManage
+                        ? 'Tambah Materi Pertama'
+                        : null,
                     onAction: widget.canManage ? _showAddResourceDialog : null,
                   )
                 : ListView.builder(
@@ -367,7 +525,11 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(_getIconForType(item.jenis), color: AppColors.primary, size: 20),
+            child: Icon(
+              _getIconForType(item.jenis),
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -389,37 +551,74 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                   item.pertemuanKe != null
                       ? '${item.courseName} • Pertemuan ${item.pertemuanKe}'
                       : item.courseName,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSub),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSub,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF6B7280)),
+            icon: const Icon(
+              Icons.copy_rounded,
+              size: 18,
+              color: Color(0xFF6B7280),
+            ),
             tooltip: 'Salin Tautan',
             onPressed: () {
               Clipboard.setData(ClipboardData(text: item.linkUrl));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tautan materi disalin ke clipboard! 📋'), duration: Duration(seconds: 1)),
+                const SnackBar(
+                  content: Text('Tautan materi disalin ke clipboard! 📋'),
+                  duration: Duration(seconds: 1),
+                ),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.arrow_outward_rounded, size: 18, color: AppColors.primary),
+            icon: const Icon(
+              Icons.arrow_outward_rounded,
+              size: 18,
+              color: AppColors.primary,
+            ),
             tooltip: 'Buka Dokumen',
             onPressed: () => _openResource(item.linkUrl),
           ),
           if (widget.canManage)
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: Color(0xFFEF4444),
+              ),
               tooltip: 'Hapus Materi',
-              onPressed: () {
-                setState(() {
-                  DummyData.resources.removeWhere((r) => r.id == item.id);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Materi telah dihapus.'), duration: Duration(seconds: 1)),
-                );
+              onPressed: () async {
+                try {
+                  await SupabaseRepository.deleteResource(item.id);
+                  if (!mounted) return;
+                  setState(
+                    () => _resources.removeWhere(
+                      (resource) => resource.id == item.id,
+                    ),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Materi dihapus.'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                } catch (error) {
+                  debugPrint('Gagal menghapus materi: $error');
+                  if (mounted)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Materi gagal dihapus. Periksa izin akun.',
+                        ),
+                      ),
+                    );
+                }
               },
             ),
         ],

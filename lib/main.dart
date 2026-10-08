@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/constants/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_notifier.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/supabase_repository.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/auth_callback_url.dart';
-import 'features/dashboard/dashboard_screen.dart';
+import 'features/dashboard/student_home_screen.dart';
 import 'features/schedule/schedule_screen.dart';
 import 'features/assignments/assignments_screen.dart';
 import 'features/attendance/attendance_screen.dart';
@@ -351,10 +352,9 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     final currentUser = _currentUser;
 
     final List<Widget> screens = [
-      DashboardScreen(
+      StudentHomeScreen(
         key: ValueKey('dash_${currentUser.nim}'),
-        userName: currentUser.nama,
-        userNim: currentUser.nim,
+        student: currentUser,
         onNavigateTab: _navigateToIndex,
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
       ), // 0: Beranda
@@ -375,6 +375,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         key: ValueKey('profile_${currentUser.nim}'),
         onNavigateTab: _navigateToIndex,
         userNim: currentUser.nim,
+        student: currentUser,
       ), // 4: Profil Saya
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
@@ -398,10 +399,17 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         onBack: _goBack,
       ), // 8: Kas Kelas
       GroupsScreen(onBack: _goBack), // 9: Kelompok Praktikum
-      ResourcesScreen(onBack: _goBack), // 10: Gudang Materi
+      ResourcesScreen(
+        canManage:
+            currentUser.isAdmin ||
+            currentUser.isKetuaKelas ||
+            currentUser.isSekretaris,
+        onBack: _goBack,
+      ), // 10: Gudang Materi
       NotificationScreen(
         onNavigateTab: _navigateToIndex,
         onBack: _goBack,
+        studentNim: currentUser.nim,
       ), // 11: Pusat Notifikasi
       VotingScreen(
         canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
@@ -455,39 +463,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                 constraints: BoxConstraints(maxWidth: isWide ? 1240 : 580),
                 child: Row(
                   children: [
-                    if (isWide)
-                      NavigationRail(
-                        selectedIndex: navBarIndex < 0 ? null : navBarIndex,
-                        onDestinationSelected: _navigateToIndex,
-                        labelType: NavigationRailLabelType.all,
-                        destinations: const [
-                          NavigationRailDestination(
-                            icon: Icon(Icons.home_outlined),
-                            selectedIcon: Icon(Icons.home_rounded),
-                            label: Text('Beranda'),
-                          ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.calendar_month_outlined),
-                            selectedIcon: Icon(Icons.calendar_month_rounded),
-                            label: Text('Jadwal'),
-                          ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.assignment_outlined),
-                            selectedIcon: Icon(Icons.assignment_rounded),
-                            label: Text('Tugas'),
-                          ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.people_alt_outlined),
-                            selectedIcon: Icon(Icons.people_alt_rounded),
-                            label: Text('Kelas'),
-                          ),
-                          NavigationRailDestination(
-                            icon: Icon(Icons.person_outline_rounded),
-                            selectedIcon: Icon(Icons.person_rounded),
-                            label: Text('Profil'),
-                          ),
-                        ],
-                      ),
+                    if (isWide) _buildDesktopSidebar(currentUser),
                     Expanded(
                       child: Center(
                         child: ConstrainedBox(
@@ -538,6 +514,310 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDesktopSidebar(StudentProfile student) {
+    return Container(
+      width: 238,
+      color: Colors.white,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 24, 18, 16),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/logo.jpg',
+                    width: 42,
+                    height: 42,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 11),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ILKOM HUB',
+                        style: TextStyle(
+                          fontSize: 13,
+                          letterSpacing: .55,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Ruang kuliahmu',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(17),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 19,
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    student.nama.isEmpty ? '?' : student.nama[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        student.nama,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${student.jabatan} · ${student.semester} semester',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: AppColors.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              children: [
+                _sidebarLabel('MENU UTAMA'),
+                _sidebarTile(
+                  Icons.home_rounded,
+                  'Beranda',
+                  0,
+                  const Color(0xFF5B3DE8),
+                ),
+                _sidebarTile(
+                  Icons.calendar_month_rounded,
+                  'Jadwal kuliah',
+                  1,
+                  const Color(0xFF3989D8),
+                ),
+                _sidebarTile(
+                  Icons.assignment_rounded,
+                  'Tugas',
+                  2,
+                  const Color(0xFFCA7900),
+                ),
+                _sidebarTile(
+                  Icons.people_alt_rounded,
+                  'Teman sekelas',
+                  3,
+                  const Color(0xFF087477),
+                ),
+                _sidebarTile(
+                  Icons.person_rounded,
+                  'Profil saya',
+                  4,
+                  const Color(0xFFE96C78),
+                ),
+                const SizedBox(height: 17),
+                _sidebarLabel('LAYANAN KELAS'),
+                _sidebarTile(
+                  Icons.fact_check_rounded,
+                  'Presensi',
+                  5,
+                  const Color(0xFF0B966B),
+                ),
+                _sidebarTile(
+                  Icons.event_note_rounded,
+                  'Agenda',
+                  6,
+                  const Color(0xFF3989D8),
+                ),
+                _sidebarTile(
+                  Icons.campaign_rounded,
+                  'Pengumuman',
+                  7,
+                  const Color(0xFF5B3DE8),
+                ),
+                _sidebarTile(
+                  Icons.account_balance_wallet_rounded,
+                  'Kas kelas',
+                  8,
+                  const Color(0xFF087477),
+                ),
+                _sidebarTile(
+                  Icons.group_work_rounded,
+                  'Kelompok',
+                  9,
+                  const Color(0xFFE96C78),
+                ),
+                _sidebarTile(
+                  Icons.folder_open_rounded,
+                  'Materi kuliah',
+                  10,
+                  const Color(0xFF3989D8),
+                ),
+                _sidebarTile(
+                  Icons.notifications_rounded,
+                  'Notifikasi',
+                  11,
+                  const Color(0xFFCA7900),
+                ),
+                _sidebarTile(
+                  Icons.how_to_vote_rounded,
+                  'Voting',
+                  12,
+                  const Color(0xFF087477),
+                ),
+                _sidebarTile(
+                  Icons.description_rounded,
+                  'Surat & dispensasi',
+                  13,
+                  const Color(0xFF5B3DE8),
+                ),
+                _sidebarTile(
+                  Icons.history_rounded,
+                  'Aktivitas kelas',
+                  14,
+                  const Color(0xFF3989D8),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.borderLight),
+          if (widget.isAdminUser && widget.onSwitchToAdminView != null)
+            ListTile(
+              dense: true,
+              leading: const Icon(
+                Icons.admin_panel_settings_rounded,
+                color: AppColors.primary,
+              ),
+              title: const Text(
+                'Panel administrator',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              onTap: widget.onSwitchToAdminView,
+            ),
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+            title: const Text(
+              'Keluar',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onTap: widget.onLogout,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarLabel(String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 10,
+        letterSpacing: .7,
+        color: AppColors.textMuted,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+
+  Widget _sidebarTile(IconData icon, String label, int index, Color accent) {
+    final selected = _currentIndex == index;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Material(
+        color: selected ? AppColors.primarySoft : Colors.transparent,
+        borderRadius: BorderRadius.circular(13),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(13),
+          onTap: () => _navigateToIndex(index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 19,
+                  color: selected ? AppColors.primary : accent,
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.primary : AppColors.textMain,
+                    ),
+                  ),
+                ),
+                if (selected)
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -789,18 +1069,23 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                         size: 20,
                       ),
                       title: const Text(
-                        'Pengaturan',
+                        'Ganti tema',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF4B5563),
                         ),
                       ),
+                      subtitle: const Text(
+                        'Beralih antara mode terang dan gelap',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: AppColors.textSub,
+                        ),
+                      ),
                       onTap: () {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Menu Pengaturan')),
-                        );
+                        ThemeScope.notifier.toggleTheme();
                       },
                     ),
                   ),

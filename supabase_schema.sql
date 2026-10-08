@@ -56,10 +56,15 @@ CREATE TABLE IF NOT EXISTS student_assignments (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     assignment_id TEXT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     student_nim TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'belum', -- 'belum', 'sedang_dikerjakan', 'selesai'
+    status TEXT NOT NULL DEFAULT 'belum'
+      CHECK (status IN ('belum','sedang_dikerjakan','dikumpulkan','dinilai','selesai')),
     link_pengumpulan TEXT,
     catatan TEXT,
     submitted_at TIMESTAMPTZ,
+    nilai NUMERIC(5,2) CHECK (nilai IS NULL OR (nilai >= 0 AND nilai <= 100)),
+    umpan_balik TEXT,
+    graded_by UUID,
+    graded_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(assignment_id, student_nim)
 );
@@ -296,12 +301,64 @@ CREATE POLICY students_read_self_or_officer ON public.students FOR SELECT TO aut
 CREATE POLICY attendance_read_self_or_officer ON public.attendance_logs FOR SELECT TO authenticated
   USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
 CREATE POLICY student_assignments_read_own ON public.student_assignments FOR SELECT TO authenticated
-  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN']));
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
 CREATE POLICY student_assignments_insert_own ON public.student_assignments FOR INSERT TO authenticated
   WITH CHECK (student_nim = (SELECT public.current_student_nim()));
 CREATE POLICY student_assignments_update_own ON public.student_assignments FOR UPDATE TO authenticated
   USING (student_nim = (SELECT public.current_student_nim()))
   WITH CHECK (student_nim = (SELECT public.current_student_nim()));
+CREATE POLICY student_assignments_grade_update ON public.student_assignments FOR UPDATE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']))
+  WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+
+CREATE OR REPLACE FUNCTION public.protect_assignment_grade_fields()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+BEGIN
+  IF NOT public.has_class_role(ARRAY['ADMIN','Ketua Kelas']) THEN
+    IF NEW.status = 'dinilai'
+       OR NEW.nilai IS NOT NULL
+       OR NEW.umpan_balik IS NOT NULL
+       OR NEW.graded_by IS NOT NULL
+       OR NEW.graded_at IS NOT NULL THEN
+      RAISE EXCEPTION 'Only class graders can set assignment grades';
+    END IF;
+    IF TG_OP = 'UPDATE' AND (
+        OLD.nilai IS DISTINCT FROM NEW.nilai
+        OR OLD.umpan_balik IS DISTINCT FROM NEW.umpan_balik
+        OR OLD.graded_by IS DISTINCT FROM NEW.graded_by
+        OR OLD.graded_at IS DISTINCT FROM NEW.graded_at) THEN
+      RAISE EXCEPTION 'Only class graders can change assignment grades';
+    END IF;
+  END IF;
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER protect_assignment_grade_fields
+  BEFORE INSERT OR UPDATE ON public.student_assignments
+  FOR EACH ROW EXECUTE FUNCTION public.protect_assignment_grade_fields();
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'assignment-submissions', 'assignment-submissions', false, 20971520,
+  ARRAY['application/pdf','application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip','image/png','image/jpeg','application/octet-stream']
+)
+ON CONFLICT (id) DO UPDATE SET public = false,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+CREATE POLICY assignment_submissions_read ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'assignment-submissions' AND (
+    (storage.foldername(name))[1] = (SELECT public.current_student_nim())
+    OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])
+  ));
+CREATE POLICY assignment_submissions_insert_own ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'assignment-submissions'
+    AND (storage.foldername(name))[1] = (SELECT public.current_student_nim()));
 CREATE POLICY polls_read ON public.polls FOR SELECT TO authenticated USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY poll_options_read ON public.poll_options FOR SELECT TO authenticated USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY poll_votes_read_own ON public.poll_votes FOR SELECT TO authenticated

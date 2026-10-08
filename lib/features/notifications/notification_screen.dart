@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
-import '../../core/services/dummy_data.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/services/student_dashboard_service.dart';
 
 class ClassNotificationItem {
   final String id;
   final String title;
   final String message;
   final String time;
-  final String category; // 'deadline', 'announcement', 'treasury', 'attendance', 'voting'
+  final String
+  category; // 'deadline', 'announcement', 'treasury', 'attendance', 'voting'
   bool isRead;
 
   ClassNotificationItem({
@@ -24,8 +25,14 @@ class ClassNotificationItem {
 class NotificationScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
   final VoidCallback? onBack;
+  final String studentNim;
 
-  const NotificationScreen({super.key, this.onNavigateTab, this.onBack});
+  const NotificationScreen({
+    super.key,
+    this.onNavigateTab,
+    this.onBack,
+    this.studentNim = '',
+  });
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -34,61 +41,73 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   String _selectedFilter = 'Semua';
 
-  late final List<ClassNotificationItem> _notifications;
+  List<ClassNotificationItem> _notifications = [];
+  bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    _initNotifications();
+    _loadNotifications();
   }
 
-  void _initNotifications() {
-    _notifications = [
-      ClassNotificationItem(
-        id: 'notif_presensi',
-        title: 'Sesi Presensi QR Aktif',
-        message: 'Ketua kelas telah membuka sesi presensi aktif untuk Pendidikan Pancasila Sesi 1.',
-        time: 'Baru saja',
-        category: 'attendance',
-        isRead: false,
-      ),
-      ClassNotificationItem(
-        id: 'notif_ann_1',
-        title: 'Pengumuman Perkuliahan',
-        message: DummyData.announcements.isNotEmpty
-            ? DummyData.announcements.first.judul
-            : 'Perkuliahan semester gasal TA 2026/2027 resmi dimulai di Kampus UNAZLAM Cilacap.',
-        time: '30 menit lalu',
-        category: 'announcement',
-        isRead: false,
-      ),
-      ClassNotificationItem(
-        id: 'notif_assign_1',
-        title: 'Pengingat Tugas Mandiri',
-        message: DummyData.assignments.isNotEmpty
-            ? 'Tugas "${DummyData.assignments.first.judul}" pada ${DummyData.assignments.first.courseName} menunggu penyelesaian.'
-            : 'Tugas rangkuman silabus Pendidikan Kewarganegaraan dapat dikumpulkan melalui portal.',
-        time: '2 jam lalu',
-        category: 'deadline',
-        isRead: false,
-      ),
-      ClassNotificationItem(
-        id: 'notif_kas_1',
-        title: 'Iuran Kas Kelas Terjadwal',
-        message: 'Rekap bendahara kas kelas: Iuran operasional kelas bulan Oktober dibuka (Rp 20.000).',
-        time: '1 hari lalu',
-        category: 'treasury',
-        isRead: true,
-      ),
-      ClassNotificationItem(
-        id: 'notif_vote_1',
-        title: 'Musyawarah Jadwal Pengganti',
-        message: 'Voting penentuan hari perkuliahan pengganti Bahasa Inggris dibuka di menu Voting.',
-        time: '2 hari lalu',
-        category: 'voting',
-        isRead: true,
-      ),
-    ];
+  Future<void> _loadNotifications() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
+      final data = await StudentDashboardService.load(widget.studentNim);
+      final rows = <ClassNotificationItem>[];
+      final announcement = data.latestAnnouncement;
+      if (announcement != null) {
+        rows.add(
+          ClassNotificationItem(
+            id: 'announcement_${announcement.id}',
+            title: 'Pengumuman terbaru',
+            message: announcement.judul,
+            time: _relativeTime(announcement.createdAt),
+            category: 'announcement',
+          ),
+        );
+      }
+      final assignment = data.nextAssignment;
+      if (assignment != null) {
+        rows.add(
+          ClassNotificationItem(
+            id: 'assignment_${assignment.id}',
+            title: 'Tugas menunggu penyelesaian',
+            message:
+                '${assignment.judul} · ${assignment.courseName} · tenggat ${_dateLabel(assignment.deadline)}',
+            time: _relativeTime(assignment.deadline),
+            category: 'deadline',
+          ),
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _notifications = rows;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _loadError = 'Notifikasi gagal dimuat dari Supabase.';
+          _isLoading = false;
+        });
+      debugPrint('Gagal memuat notifikasi: $error');
+    }
+  }
+
+  String _dateLabel(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  String _relativeTime(DateTime date) {
+    final difference = DateTime.now().difference(date);
+    if (difference.isNegative) return 'Mendatang';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} menit lalu';
+    if (difference.inHours < 24) return '${difference.inHours} jam lalu';
+    return '${difference.inDays} hari lalu';
   }
 
   Color _getCategoryColor(String cat) {
@@ -131,7 +150,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     final filtered = _notifications.where((n) {
       if (_selectedFilter == 'Belum Dibaca') return !n.isRead;
-      if (_selectedFilter == 'Tugas & Deadline') return n.category == 'deadline';
+      if (_selectedFilter == 'Tugas & Deadline')
+        return n.category == 'deadline';
       if (_selectedFilter == 'Pengumuman') return n.category == 'announcement';
       return true;
     }).toList();
@@ -144,7 +164,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         scrolledUnderElevation: 0,
         leading: widget.onBack != null || widget.onNavigateTab != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF111827),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack ?? () => widget.onNavigateTab?.call(0),
               )
@@ -169,7 +192,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 child: Text(
                   '$unreadCount Baru',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -193,7 +220,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
               },
               child: const Text(
                 'Tandai Dibaca',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5B3DE8),
+                ),
               ),
             ),
         ],
@@ -207,31 +238,46 @@ class _NotificationScreenState extends State<NotificationScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['Semua', 'Belum Dibaca', 'Tugas & Deadline', 'Pengumuman'].map((f) {
-                  final isSelected = _selectedFilter == f;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedFilter = f),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+                children:
+                    [
+                      'Semua',
+                      'Belum Dibaca',
+                      'Tugas & Deadline',
+                      'Pengumuman',
+                    ].map((f) {
+                      final isSelected = _selectedFilter == f;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: InkWell(
+                          onTap: () => setState(() => _selectedFilter = f),
                           borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          f,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF5B3DE8)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              f,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF4B5563),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             ),
           ),
@@ -239,22 +285,51 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
           // Notifications List
           Expanded(
-            child: filtered.isEmpty
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                : _loadError != null
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.notifications_off_outlined, size: 48, color: Colors.grey.shade400),
+                        Text(_loadError!),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _loadNotifications,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Coba lagi'),
+                        ),
+                      ],
+                    ),
+                  )
+                : filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           'Tidak ada notifikasi di filter ini',
-                          style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     itemCount: filtered.length,
                     itemBuilder: (context, i) {
                       final notif = filtered[i];
@@ -271,19 +346,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             color: const Color(0xFFEF4444),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(Icons.delete_outline, color: Colors.white),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white,
+                          ),
                         ),
                         onDismissed: (_) {
-                          setState(() => _notifications.removeWhere((n) => n.id == notif.id));
+                          setState(
+                            () => _notifications.removeWhere(
+                              (n) => n.id == notif.id,
+                            ),
+                          );
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: notif.isRead ? Colors.white : const Color(0xFFF5F3FF),
+                            color: notif.isRead
+                                ? Colors.white
+                                : const Color(0xFFF5F3FF),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: notif.isRead ? const Color(0xFFE5E7EB) : const Color(0xFFDDD6FE),
+                              color: notif.isRead
+                                  ? const Color(0xFFE5E7EB)
+                                  : const Color(0xFFDDD6FE),
                               width: notif.isRead ? 1 : 1.2,
                             ),
                             boxShadow: [
@@ -316,22 +402,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     color: catColor.withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(catIcon, color: catColor, size: 20),
+                                  child: Icon(
+                                    catIcon,
+                                    color: catColor,
+                                    size: 20,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Text(
                                               notif.title,
                                               style: TextStyle(
                                                 fontSize: 13.5,
-                                                fontWeight: notif.isRead ? FontWeight.w700 : FontWeight.w800,
+                                                fontWeight: notif.isRead
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w800,
                                                 color: const Color(0xFF111827),
                                               ),
                                             ),
@@ -350,12 +444,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         notif.message,
-                                        style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), height: 1.4),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF4B5563),
+                                          height: 1.4,
+                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
                                         notif.time,
-                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF9CA3AF), fontWeight: FontWeight.w500),
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          color: Color(0xFF9CA3AF),
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ],
                                   ),

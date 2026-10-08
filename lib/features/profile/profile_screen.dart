@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
 import '../../core/theme/theme_notifier.dart';
+import '../../models/models.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
   final String? userNim;
+  final StudentProfile? student;
 
-  const ProfileScreen({super.key, this.onNavigateTab, this.userNim});
+  const ProfileScreen({
+    super.key,
+    this.onNavigateTab,
+    this.userNim,
+    this.student,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -25,13 +32,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileScreen() {
-    final student = DummyData.students.firstWhere(
-      (s) => s.nim.toLowerCase() == (widget.userNim ?? '').toLowerCase(),
-      orElse: () => DummyData.students.firstWhere(
-        (s) => s.jabatan == 'Ketua Kelas',
-        orElse: () => DummyData.students.first,
-      ),
-    );
+    final student = widget.student;
+    if (student == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Profil akun tidak ditemukan. Silakan masuk kembali.'),
+        ),
+      );
+    }
 
     final parts = student.nama.trim().split(' ');
     final initials = parts.length >= 2
@@ -41,28 +49,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final roleBadgeText = student.isAdmin
         ? 'System Administrator'
         : (student.isKetuaKelas
-            ? 'Ketua Kelas ILKOM 2026'
-            : (student.isBendahara
-                ? 'Bendahara Kelas ILKOM 2026'
-                : (student.isSekretaris
-                    ? 'Sekretaris Kelas ILKOM 2026'
-                    : 'Mahasiswa ILKOM 2026')));
+              ? 'Ketua Kelas ILKOM 2026'
+              : (student.isBendahara
+                    ? 'Bendahara Kelas ILKOM 2026'
+                    : (student.isSekretaris
+                          ? 'Sekretaris Kelas ILKOM 2026'
+                          : 'Mahasiswa ILKOM 2026')));
 
     final roleBadgeBg = student.isAdmin
         ? const Color(0xFFFEE2E2)
         : (student.isKetuaKelas
-            ? const Color(0xFFFEF3C7)
-            : (student.isBendahara
-                ? const Color(0xFFDCFCE7)
-                : (student.isSekretaris ? const Color(0xFFEDE9FE) : const Color(0xFFF3F0FF))));
+              ? const Color(0xFFFEF3C7)
+              : (student.isBendahara
+                    ? const Color(0xFFDCFCE7)
+                    : (student.isSekretaris
+                          ? const Color(0xFFEDE9FE)
+                          : const Color(0xFFF3F0FF))));
 
     final roleBadgeColor = student.isAdmin
         ? const Color(0xFFDC2626)
         : (student.isKetuaKelas
-            ? const Color(0xFFB45309)
-            : (student.isBendahara
-                ? const Color(0xFF16A34A)
-                : (student.isSekretaris ? const Color(0xFF6D28D9) : AppColors.primary)));
+              ? const Color(0xFFB45309)
+              : (student.isBendahara
+                    ? const Color(0xFF16A34A)
+                    : (student.isSekretaris
+                          ? const Color(0xFF6D28D9)
+                          : AppColors.primary)));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -80,10 +92,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Color(0xFF111827), size: 22),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: Color(0xFF111827),
+              size: 22,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pengaturan aplikasi'), duration: Duration(seconds: 1)),
+                const SnackBar(
+                  content: Text('Pengaturan aplikasi'),
+                  duration: Duration(seconds: 1),
+                ),
               );
             },
           ),
@@ -121,7 +140,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Center(
                             child: Text(
                               initials,
-                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
@@ -137,7 +160,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -166,7 +193,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   child: const Padding(
                     padding: EdgeInsets.all(4.0),
-                    child: Icon(Icons.edit_outlined, size: 16, color: Color(0xFF6B7280)),
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
                 ),
               ],
@@ -180,7 +211,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Text(
                 roleBadgeText,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: roleBadgeColor),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: roleBadgeColor,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -206,7 +241,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(height: 22, color: Color(0xFFF3F4F6)),
                   _buildDetailRow('Program Studi', 'Ilmu Komunikasi'),
                   const Divider(height: 22, color: Color(0xFFF3F4F6)),
-                  _buildDetailRow('Fakultas', 'Ilmu Sosial dan Ilmu Politik (FISIP)'),
+                  _buildDetailRow(
+                    'Fakultas',
+                    'Ilmu Sosial dan Ilmu Politik (FISIP)',
+                  ),
                   const Divider(height: 22, color: Color(0xFFF3F4F6)),
                   _buildDetailRow('Semester', '1 (Satu) - T.A 2026/2027'),
                 ],
@@ -248,7 +286,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.workspace_premium_outlined, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.workspace_premium_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       const Expanded(
@@ -257,17 +299,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               'Panel Ketua Kelas',
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                             SizedBox(height: 2),
                             Text(
                               'Kelola absensi harian kelas, tugas, agenda & pengumuman',
-                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -301,7 +354,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       const Expanded(
@@ -310,17 +367,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               'Panel Bendahara Kelas',
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                             SizedBox(height: 2),
                             Text(
                               'Kelola transaksi kas kelas & perbarui QRIS iuran',
-                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -335,7 +403,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.school_outlined, color: Color(0xFF5B3DE8), size: 24),
+                    Icon(
+                      Icons.school_outlined,
+                      color: Color(0xFF5B3DE8),
+                      size: 24,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -343,12 +415,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(
                             'Status: Mahasiswa Aktif',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF5B3DE8),
+                            ),
                           ),
                           SizedBox(height: 2),
                           Text(
                             'Terdaftar resmi pada S1 Ilmu Komunikasi FISIP UNAZLAM angkatan 2026.',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF6B7280),
+                            ),
                           ),
                         ],
                       ),
@@ -377,7 +456,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _showClassInfoDialog();
                     },
                   ),
-                  const Divider(height: 1, indent: 60, color: Color(0xFFF3F4F6)),
+                  const Divider(
+                    height: 1,
+                    indent: 60,
+                    color: Color(0xFFF3F4F6),
+                  ),
                   _buildMenuItem(
                     icon: Icons.fact_check_outlined,
                     iconColor: const Color(0xFF10B981),
@@ -390,17 +473,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     },
                   ),
-                  const Divider(height: 1, indent: 60, color: Color(0xFFF3F4F6)),
+                  const Divider(
+                    height: 1,
+                    indent: 60,
+                    color: Color(0xFFF3F4F6),
+                  ),
                   ListenableBuilder(
                     listenable: ThemeScope.notifier,
                     builder: (context, _) {
                       final isDark = ThemeScope.notifier.isDarkMode;
                       return _buildMenuItem(
-                        icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                        iconColor: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
-                        iconBg: isDark ? const Color(0xFF261D4C) : const Color(0xFFFEF3C7),
+                        icon: isDark
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
+                        iconColor: isDark
+                            ? const Color(0xFFFBBF24)
+                            : const Color(0xFFD97706),
+                        iconBg: isDark
+                            ? const Color(0xFF261D4C)
+                            : const Color(0xFFFEF3C7),
                         title: 'Mode Gelap (Dark Mode)',
-                        subtitle: isDark ? 'Aktif (OLED Dark)' : 'Non-aktif (Light Mode)',
+                        subtitle: isDark
+                            ? 'Aktif (OLED Dark)'
+                            : 'Non-aktif (Light Mode)',
                         trailing: Switch.adaptive(
                           value: isDark,
                           activeColor: const Color(0xFF5B3DE8),
@@ -410,7 +505,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                   ),
-                  const Divider(height: 1, indent: 60, color: Color(0xFFF3F4F6)),
+                  const Divider(
+                    height: 1,
+                    indent: 60,
+                    color: Color(0xFFF3F4F6),
+                  ),
                   _buildMenuItem(
                     icon: Icons.tune_rounded,
                     iconColor: const Color(0xFF8B5CF6),
@@ -449,7 +548,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: const Row(
           children: [
-            Icon(Icons.workspace_premium_outlined, color: Color(0xFFD97706), size: 20),
+            Icon(
+              Icons.workspace_premium_outlined,
+              color: Color(0xFFD97706),
+              size: 20,
+            ),
             SizedBox(width: 8),
             Text(
               'Ketua Kelas',
@@ -480,7 +583,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: Text(
                     'Anda memiliki hak akses sebagai Ketua Kelas ILKOM UNAZLAM 2026.',
-                    style: TextStyle(color: Color(0xFF92400E), fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Color(0xFF92400E),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -588,7 +695,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Material(
           color: Colors.transparent,
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 4,
+            ),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -605,11 +715,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Color(0xFF111827),
               ),
             ),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF9CA3AF)),
+            trailing: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Color(0xFF9CA3AF),
+            ),
             onTap: onTap,
           ),
         ),
-        if (!isLast) const Divider(height: 1, indent: 64, color: Color(0xFFF3F4F6)),
+        if (!isLast)
+          const Divider(height: 1, indent: 64, color: Color(0xFFF3F4F6)),
       ],
     );
   }
@@ -622,7 +737,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           width: 105,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -630,7 +749,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+            ),
           ),
         ),
       ],
@@ -660,13 +783,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
         ),
         subtitle: Text(
           subtitle,
           style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
         ),
-        trailing: trailing ?? const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF9CA3AF)),
+        trailing:
+            trailing ??
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Color(0xFF9CA3AF),
+            ),
         onTap: onTap,
       ),
     );
@@ -681,7 +814,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(Icons.palette_outlined, color: AppColors.primary, size: 22),
             SizedBox(width: 8),
-            Text('Tema Tampilan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(
+              'Tema Tampilan',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
           ],
         ),
         content: Column(
@@ -689,7 +825,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             RadioListTile<ThemeMode>(
               title: const Text('Mode Terang (Light)'),
-              subtitle: const Text('Palet cerah & bersih', style: TextStyle(fontSize: 11)),
+              subtitle: const Text(
+                'Palet cerah & bersih',
+                style: TextStyle(fontSize: 11),
+              ),
               value: ThemeMode.light,
               groupValue: ThemeScope.notifier.themeMode,
               activeColor: AppColors.primary,
@@ -700,7 +839,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             RadioListTile<ThemeMode>(
               title: const Text('Mode Gelap (Dark)'),
-              subtitle: const Text('OLED Charcoal ramah mata', style: TextStyle(fontSize: 11)),
+              subtitle: const Text(
+                'OLED Charcoal ramah mata',
+                style: TextStyle(fontSize: 11),
+              ),
               value: ThemeMode.dark,
               groupValue: ThemeScope.notifier.themeMode,
               activeColor: AppColors.primary,
@@ -711,7 +853,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             RadioListTile<ThemeMode>(
               title: const Text('Ikuti Sistem HP'),
-              subtitle: const Text('Otomatis sesuai setelan Android', style: TextStyle(fontSize: 11)),
+              subtitle: const Text(
+                'Otomatis sesuai setelan Android',
+                style: TextStyle(fontSize: 11),
+              ),
               value: ThemeMode.system,
               groupValue: ThemeScope.notifier.themeMode,
               activeColor: AppColors.primary,
@@ -731,7 +876,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Informasi Kelas ILKOM', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Informasi Kelas ILKOM',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,7 +900,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Tutup',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

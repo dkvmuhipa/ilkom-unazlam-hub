@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 
 import '../../models/models.dart';
 import 'dummy_data.dart';
@@ -69,13 +72,38 @@ class SupabaseRepository {
     }
   }
 
+  static Future<List<Course>> getCoursesStrict() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final response = await client.from('courses').select().order('hari');
+    return (response as List).map((row) {
+      var start = row['jam_mulai']?.toString() ?? '08:00';
+      var end = row['jam_selesai']?.toString() ?? '10:00';
+      if (start.length >= 5) start = start.substring(0, 5);
+      if (end.length >= 5) end = end.substring(0, 5);
+      return Course(
+        id: row['id']?.toString() ?? '',
+        kode: row['kode_mk']?.toString() ?? '',
+        nama: row['nama_mk']?.toString() ?? '',
+        sks: (row['sks'] as num?)?.toInt() ?? 2,
+        semester: (row['semester'] as num?)?.toInt() ?? 1,
+        dosen: row['dosen_pengampu']?.toString() ?? '',
+        dosenWa: row['dosen_wa']?.toString(),
+        hari: row['hari']?.toString() ?? '',
+        jamMulai: start,
+        jamSelesai: end,
+        ruangan: row['ruangan']?.toString() ?? 'Ruang A2',
+        linkVirtual: row['link_virtual']?.toString(),
+      );
+    }).toList();
+  }
+
   static Future<bool> createCourse(Course course) async {
     final client = SupabaseService.client;
     if (client == null) return false;
 
     try {
       await client.from('courses').insert({
-        'id': course.id,
         'kode_mk': course.kode,
         'nama_mk': course.nama,
         'sks': course.sks,
@@ -132,6 +160,57 @@ class SupabaseRepository {
       debugPrint('Error delete course dari Supabase: $e');
       return false;
     }
+  }
+
+  static Future<List<ResourceItem>> getResources() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final rows = await client
+        .from('resources')
+        .select()
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows)
+        .map(
+          (row) => ResourceItem(
+            id: row['id']?.toString() ?? '',
+            courseName: row['course_name']?.toString() ?? '',
+            pertemuanKe: (row['pertemuan_ke'] as num?)?.toInt(),
+            judul: row['judul']?.toString() ?? '',
+            jenis: row['jenis']?.toString() ?? 'Slide PPT',
+            linkUrl: row['link_url']?.toString() ?? '',
+          ),
+        )
+        .toList();
+  }
+
+  static Future<ResourceItem> createResource(ResourceItem item) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final row = await client
+        .from('resources')
+        .insert({
+          'course_name': item.courseName,
+          'pertemuan_ke': item.pertemuanKe,
+          'judul': item.judul,
+          'jenis': item.jenis,
+          'link_url': item.linkUrl,
+        })
+        .select()
+        .single();
+    return ResourceItem(
+      id: row['id']?.toString() ?? '',
+      courseName: row['course_name']?.toString() ?? item.courseName,
+      pertemuanKe: (row['pertemuan_ke'] as num?)?.toInt() ?? item.pertemuanKe,
+      judul: row['judul']?.toString() ?? item.judul,
+      jenis: row['jenis']?.toString() ?? item.jenis,
+      linkUrl: row['link_url']?.toString() ?? item.linkUrl,
+    );
+  }
+
+  static Future<void> deleteResource(String id) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    await client.from('resources').delete().eq('id', id);
   }
 
   // ====================================================================
@@ -392,7 +471,7 @@ class SupabaseRepository {
         'status': status,
         if (submissionUrl != null) 'link_pengumpulan': submissionUrl,
         if (notes != null) 'catatan': notes,
-        'submitted_at': status == 'selesai' ? now : null,
+        if (status == 'dikumpulkan') 'submitted_at': now,
         'updated_at': now,
       }, onConflict: 'assignment_id,student_nim');
       return true;
@@ -466,7 +545,9 @@ class SupabaseRepository {
     try {
       return await client
           .from('student_assignments')
-          .select('link_pengumpulan,catatan,submitted_at')
+          .select(
+            'link_pengumpulan,catatan,submitted_at,status,nilai,umpan_balik,graded_at',
+          )
           .eq('assignment_id', assignmentId)
           .eq('student_nim', studentNim)
           .maybeSingle();
@@ -474,6 +555,79 @@ class SupabaseRepository {
       debugPrint('Error fetch personal assignment submission: $e');
       return null;
     }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAssignmentSubmissions(
+    String assignmentId,
+  ) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final rows = await client
+        .from('student_assignments')
+        .select(
+          'student_nim,status,link_pengumpulan,catatan,submitted_at,nilai,umpan_balik,graded_at',
+        )
+        .eq('assignment_id', assignmentId)
+        .order('submitted_at', ascending: false, nullsFirst: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  static Future<void> gradeAssignmentSubmission({
+    required String assignmentId,
+    required String studentNim,
+    required double grade,
+    required String feedback,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    if (grade < 0 || grade > 100) {
+      throw ArgumentError.value(grade, 'grade', 'Nilai harus 0 sampai 100.');
+    }
+    await client
+        .from('student_assignments')
+        .update({
+          'nilai': grade,
+          'umpan_balik': feedback.trim().isEmpty ? null : feedback.trim(),
+          'status': 'dinilai',
+          'graded_by': client.auth.currentUser?.id,
+          'graded_at': DateTime.now().toUtc().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('assignment_id', assignmentId)
+        .eq('student_nim', studentNim);
+  }
+
+  static Future<String> uploadAssignmentSubmissionFile({
+    required String assignmentId,
+    required String studentNim,
+    required String fileName,
+    required Uint8List bytes,
+    required String contentType,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final path =
+        '$studentNim/$assignmentId/${DateTime.now().toUtc().millisecondsSinceEpoch}_$safeName';
+    await client.storage
+        .from('assignment-submissions')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: contentType,
+            cacheControl: '3600',
+          ),
+        );
+    return path;
+  }
+
+  static Future<String> createAssignmentSubmissionSignedUrl(String path) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    return client.storage
+        .from('assignment-submissions')
+        .createSignedUrl(path, 60 * 60 * 24 * 7);
   }
 
   static Future<bool> deleteAssignment(String id) async {

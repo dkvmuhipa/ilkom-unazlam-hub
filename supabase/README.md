@@ -18,6 +18,10 @@ to that student, and reserve class writes for the appropriate officers. For a
 new project, run `supabase_schema.sql` in the SQL Editor. For an existing project,
 run `supabase_migrations/20261008_secure_access.sql` in the SQL Editor. That
 migration targets the existing production schema, where assignment IDs are UUIDs.
+Then run `supabase_migrations/20261008_assignment_grading.sql` to enable student
+file submissions, submission status, grades, feedback, private Storage access,
+and class-grader RLS rules. The bucket accepts supported documents, images, or
+ZIP files up to 20 MB.
 Do not
 combine either with an older copy of the schema that creates `USING (true)`
 policies.

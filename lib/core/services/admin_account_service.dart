@@ -114,4 +114,66 @@ class AdminAccountService {
       );
     }
   }
+
+  static Future<void> updateStudentAccount(StudentProfile account) async {
+    final client = SupabaseService.client;
+    if (client == null) {
+      throw const AdminAccountServiceException(
+        'Layanan Supabase belum dikonfigurasi.',
+      );
+    }
+
+    try {
+      final rows = await client
+          .from('students')
+          .update({
+            'nama': account.nama.trim(),
+            'no_wa': account.noWa.trim(),
+            'peminatan': account.peminatan.trim(),
+            'semester': account.semester,
+            'kelas': account.kelas.trim(),
+          })
+          .eq('nim', account.nim)
+          .select('nim');
+      if (rows.isEmpty) {
+        throw const AdminAccountServiceException(
+          'Akun tidak ditemukan atau Anda tidak memiliki izin mengubahnya.',
+        );
+      }
+    } on AdminAccountServiceException {
+      rethrow;
+    } catch (_) {
+      throw const AdminAccountServiceException(
+        'Perubahan akun gagal disimpan. Pastikan sesi admin masih aktif.',
+      );
+    }
+  }
+
+  static Future<void> setStudentActive(String nim, bool isActive) async {
+    final client = SupabaseService.client;
+    if (client == null) {
+      throw const AdminAccountServiceException(
+        'Layanan Supabase belum dikonfigurasi.',
+      );
+    }
+
+    try {
+      final rows = await client
+          .from('students')
+          .update({'is_aktif': isActive})
+          .eq('nim', nim)
+          .select('nim');
+      if (rows.isEmpty) {
+        throw const AdminAccountServiceException(
+          'Status akun tidak berubah. Periksa izin admin dan coba lagi.',
+        );
+      }
+    } on AdminAccountServiceException {
+      rethrow;
+    } catch (_) {
+      throw const AdminAccountServiceException(
+        'Status akun gagal diperbarui. Pastikan sesi admin masih aktif.',
+      );
+    }
+  }
 }

@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/assignment_file_picker.dart';
 import '../../core/services/dummy_data.dart';
+import '../../core/services/picked_assignment_file.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/widgets/empty_state_widget.dart';
@@ -20,6 +22,7 @@ class AssignmentsScreen extends StatefulWidget {
     Assignment assignment, {
     VoidCallback? onStatusChanged,
     String? userNim,
+    bool canManage = false,
   }) {
     showModalBottomSheet(
       context: context,
@@ -29,6 +32,7 @@ class AssignmentsScreen extends StatefulWidget {
         assignment: assignment,
         onStatusChanged: onStatusChanged,
         userNim: userNim,
+        canManage: canManage,
       ),
     );
   }
@@ -130,6 +134,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         return 'Belum Selesai';
       case 'sedang_dikerjakan':
         return 'Dikerjakan';
+      case 'dikumpulkan':
+        return 'Menunggu Nilai';
+      case 'dinilai':
+        return 'Sudah Dinilai';
       case 'selesai':
         return 'Selesai';
       default:
@@ -138,7 +146,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   String _deadlineLabel(Assignment assignment) {
-    if (assignment.status == 'selesai') return 'Tugas selesai';
+    if (assignment.status == 'selesai' || assignment.status == 'dinilai') {
+      return assignment.status == 'dinilai' ? 'Sudah dinilai' : 'Tugas selesai';
+    }
+    if (assignment.status == 'dikumpulkan') return 'Menunggu penilaian';
     final today = DateUtils.dateOnly(DateTime.now());
     final deadline = DateUtils.dateOnly(assignment.deadline);
     final daysLeft = deadline.difference(today).inDays;
@@ -149,7 +160,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   Color _deadlineColor(Assignment assignment) {
-    if (assignment.status == 'selesai') return const Color(0xFF059669);
+    if (assignment.status == 'selesai' || assignment.status == 'dinilai') {
+      return const Color(0xFF059669);
+    }
     final daysLeft = DateUtils.dateOnly(assignment.deadline)
         .difference(DateUtils.dateOnly(DateTime.now()))
         .inDays;
@@ -165,7 +178,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       case 'sedang_dikerjakan':
         return const Color(0xFFD97706);
       case 'selesai':
+      case 'dinilai':
         return const Color(0xFF059669);
+      case 'dikumpulkan':
+        return const Color(0xFF2563EB);
       default:
         return const Color(0xFF6B7280);
     }
@@ -178,7 +194,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       case 'sedang_dikerjakan':
         return const Color(0xFFFEF3C7);
       case 'selesai':
+      case 'dinilai':
         return const Color(0xFFDCFCE7);
+      case 'dikumpulkan':
+        return const Color(0xFFEFF6FF);
       default:
         return const Color(0xFFF3F4F6);
     }
@@ -432,9 +451,13 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   Widget build(BuildContext context) {
     List<Assignment> filteredList = DummyData.assignments;
     if (_selectedTab == 'Aktif') {
-      filteredList = filteredList.where((a) => a.status != 'selesai').toList();
+      filteredList = filteredList
+          .where((a) => a.status != 'selesai' && a.status != 'dinilai')
+          .toList();
     } else if (_selectedTab == 'Selesai') {
-      filteredList = filteredList.where((a) => a.status == 'selesai').toList();
+      filteredList = filteredList
+          .where((a) => a.status == 'selesai' || a.status == 'dinilai')
+          .toList();
     }
 
     if (_selectedCourseFilter != 'Semua Mata Kuliah') {
@@ -591,6 +614,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                           context,
                           a,
                           userNim: widget.userNim,
+                          canManage: widget.canManage,
                           onStatusChanged: () => setState(() {}),
                         ),
                         borderRadius: BorderRadius.circular(18),
@@ -795,11 +819,13 @@ class _AssignmentDetailSheet extends StatefulWidget {
   final Assignment assignment;
   final VoidCallback? onStatusChanged;
   final String? userNim;
+  final bool canManage;
 
   const _AssignmentDetailSheet({
     required this.assignment,
     this.onStatusChanged,
     this.userNim,
+    this.canManage = false,
   });
 
   @override
@@ -811,6 +837,17 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   String _submissionUrl = '';
   String _submissionNotes = '';
   String _submittedAt = '';
+  double? _grade;
+  String _feedback = '';
+  String _gradedAt = '';
+  bool _isSavingSubmission = false;
+
+  String get _submissionDisplayLabel {
+    final uri = Uri.tryParse(_submissionUrl);
+    return uri?.hasScheme == true
+        ? _submissionUrl
+        : _submissionUrl.split('/').last;
+  }
 
   final Map<String, Color> _courseColors = {
     'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
@@ -843,10 +880,18 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
           setState(() {
             _submissionUrl = submission['link_pengumpulan']?.toString() ?? '';
             _submissionNotes = submission['catatan']?.toString() ?? '';
+            _currentStatus = submission['status']?.toString() ?? _currentStatus;
+            widget.assignment.status = _currentStatus;
+            _grade = (submission['nilai'] as num?)?.toDouble();
+            _feedback = submission['umpan_balik']?.toString() ?? '';
             final submittedAt = submission['submitted_at']?.toString();
             _submittedAt = submittedAt == null
                 ? ''
                 : DateTime.parse(submittedAt).toLocal().toString();
+            final gradedAt = submission['graded_at']?.toString();
+            _gradedAt = gradedAt == null
+                ? ''
+                : DateTime.parse(gradedAt).toLocal().toString();
           });
         }
         return;
@@ -865,14 +910,14 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
     } catch (_) {}
   }
 
-  Future<void> _saveSubmission(String url, String notes) async {
+  Future<bool> _saveSubmission(String url, String notes) async {
     final nim = widget.userNim ?? 'default';
     final now = DateTime.now();
     final formattedTime =
         '${now.day} ${_monthName(now.month)} ${now.year}, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA';
     final saved = await SupabaseRepository.updateAssignmentStatus(
       widget.assignment.id,
-      'selesai',
+      'dikumpulkan',
       studentNim: nim,
       submissionUrl: url,
       notes: notes,
@@ -885,7 +930,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
           ),
         );
       }
-      return;
+      return false;
     }
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -903,10 +948,11 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
       _submissionUrl = url;
       _submissionNotes = notes;
       _submittedAt = formattedTime;
-      _currentStatus = 'selesai';
-      widget.assignment.status = 'selesai';
+      _currentStatus = 'dikumpulkan';
+      widget.assignment.status = 'dikumpulkan';
     });
     widget.onStatusChanged?.call();
+    return true;
   }
 
   Future<void> _setStatus(String status) async {
@@ -944,117 +990,500 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   }
 
   Future<void> _openLink(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      final parsed = Uri.tryParse(url);
+      final target = parsed?.hasScheme == true
+          ? url
+          : await SupabaseRepository.createAssignmentSubmissionSignedUrl(url);
+      final uri = Uri.parse(target);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (error) {
+      debugPrint('Gagal membuka berkas pengumpulan: $error');
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Berkas tidak dapat dibuka. Periksa akses penyimpanan Supabase.',
+            ),
+          ),
+        );
     }
   }
 
-  void _showSubmitFormDialog() {
-    final linkController = TextEditingController(text: _submissionUrl);
-    final notesController = TextEditingController(text: _submissionNotes);
-
-    showDialog(
+  Future<void> _showAssignmentSubmissions() async {
+    final submissions = SupabaseRepository.getAssignmentSubmissions(
+      widget.assignment.id,
+    );
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(
-              Icons.drive_folder_upload_rounded,
-              color: Color(0xFF5B3DE8),
-              size: 22,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Kumpulkan Tugas',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * .72,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Pengumpulan Mahasiswa',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: submissions,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Text('Pengumpulan gagal dimuat.'),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF5B3DE8),
+                        ),
+                      );
+                    }
+                    final rows = snapshot.data!
+                        .where(
+                          (row) =>
+                              row['status'] == 'dikumpulkan' ||
+                              row['status'] == 'dinilai' ||
+                              (row['link_pengumpulan']?.toString().isNotEmpty ??
+                                  false),
+                        )
+                        .toList();
+                    if (rows.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Belum ada mahasiswa yang mengumpulkan tugas.',
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: rows.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final row = rows[index];
+                        final nim = row['student_nim']?.toString() ?? '';
+                        final link = row['link_pengumpulan']?.toString() ?? '';
+                        final grade = (row['nilai'] as num?)?.toDouble();
+                        final submittedAt = row['submitted_at']?.toString();
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                backgroundColor: Color(0xFFEDE9FE),
+                                child: Icon(
+                                  Icons.person_outline_rounded,
+                                  color: Color(0xFF5B3DE8),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'NIM $nim',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      grade == null
+                                          ? 'Belum dinilai'
+                                          : 'Nilai ${grade.toStringAsFixed(grade % 1 == 0 ? 0 : 1)}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: grade == null
+                                            ? const Color(0xFFB45309)
+                                            : const Color(0xFF047857),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (submittedAt != null)
+                                      Text(
+                                        'Dikirim ${DateTime.tryParse(submittedAt)?.toLocal().toString().substring(0, 16) ?? submittedAt}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    if (row['umpan_balik']
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true)
+                                      Text(
+                                        'Catatan: ${row['umpan_balik']}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF4B5563),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (link.isNotEmpty)
+                                IconButton(
+                                  tooltip: 'Buka tugas',
+                                  onPressed: () => _openLink(link),
+                                  icon: const Icon(
+                                    Icons.open_in_new_rounded,
+                                    color: Color(0xFF5B3DE8),
+                                  ),
+                                ),
+                              IconButton(
+                                tooltip: 'Beri nilai',
+                                onPressed: () => _showGradeDialog(
+                                  nim,
+                                  grade,
+                                  row['umpan_balik']?.toString() ?? '',
+                                ),
+                                icon: const Icon(
+                                  Icons.rate_review_outlined,
+                                  color: Color(0xFF5B3DE8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-        content: SingleChildScrollView(
-          child: SizedBox(
-            width: 360,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Sertakan tautan Google Drive / Cloud Docs atau catatan tugas Anda:',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+      ),
+    );
+  }
+
+  Future<void> _showGradeDialog(
+    String studentNim,
+    double? oldGrade,
+    String oldFeedback,
+  ) async {
+    final gradeController = TextEditingController(
+      text: oldGrade?.toString() ?? '',
+    );
+    final feedbackController = TextEditingController(text: oldFeedback);
+    final result = await showDialog<(double, String)>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Nilai pengumpulan · $studentNim'),
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: gradeController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: linkController,
-                  decoration: InputDecoration(
-                    labelText: 'Tautan Tugas (Google Drive / GitHub / dll)',
-                    hintText: 'https://drive.google.com/...',
-                    prefixIcon: const Icon(Icons.link_rounded, size: 18),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                decoration: const InputDecoration(
+                  labelText: 'Nilai (0–100)',
+                  suffixText: '/ 100',
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Catatan Pengumpulan (Opsional)',
-                    hintText: 'Misal: Revisi Bab 3 sudah disesuaikan',
-                    prefixIcon: const Icon(Icons.notes_rounded, size: 18),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: feedbackController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Umpan balik (opsional)',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Batal',
-              style: TextStyle(color: Color(0xFF6B7280)),
-            ),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
-              final link = linkController.text.trim();
-              if (link.isEmpty && notesController.text.trim().isEmpty) {
+              final grade = double.tryParse(
+                gradeController.text.trim().replaceAll(',', '.'),
+              );
+              if (grade == null || grade < 0 || grade > 100) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      'Tautan atau catatan pengumpulan harus diisi!',
-                    ),
+                    content: Text('Masukkan nilai antara 0 sampai 100.'),
                   ),
                 );
                 return;
               }
-              _saveSubmission(link, notesController.text.trim());
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Tugas berhasil dikumpulkan dan ditandai selesai! 🎉',
-                  ),
-                  backgroundColor: Color(0xFF10B981),
-                ),
-              );
+              Navigator.pop(dialogContext, (
+                grade,
+                feedbackController.text.trim(),
+              ));
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5B3DE8),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Simpan & Kumpulkan'),
+            child: const Text('Simpan nilai'),
           ),
         ],
+      ),
+    );
+    if (result == null) return;
+    try {
+      await SupabaseRepository.gradeAssignmentSubmission(
+        assignmentId: widget.assignment.id,
+        studentNim: studentNim,
+        grade: result.$1,
+        feedback: result.$2,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      widget.onStatusChanged?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nilai dan umpan balik berhasil disimpan.'),
+        ),
+      );
+    } catch (error) {
+      debugPrint('Gagal menyimpan nilai tugas: $error');
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Nilai gagal disimpan. Periksa migrasi dan izin akun.',
+            ),
+          ),
+        );
+    }
+  }
+
+  void _showSubmitFormDialog() {
+    if (_grade != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tugas sudah dinilai. Hubungi pengurus bila perlu mengajukan revisi.',
+          ),
+        ),
+      );
+      return;
+    }
+    final linkController = TextEditingController(
+      text: Uri.tryParse(_submissionUrl)?.hasScheme == true
+          ? _submissionUrl
+          : '',
+    );
+    final notesController = TextEditingController(text: _submissionNotes);
+    PickedAssignmentFile? selectedFile;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.drive_folder_upload_rounded,
+                color: Color(0xFF5B3DE8),
+                size: 22,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Kumpulkan Tugas',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 360,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pilih berkas tugas atau tempel tautan Drive yang dapat dibuka dosen. Batas berkas 20 MB.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isSavingSubmission
+                        ? null
+                        : () async {
+                            try {
+                              final file = await pickAssignmentFile();
+                              if (file == null || !ctx.mounted) return;
+                              if (file.bytes.lengthInBytes > 20 * 1024 * 1024) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Ukuran berkas maksimal 20 MB.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              setDialogState(() => selectedFile = file);
+                            } catch (error) {
+                              debugPrint('Gagal memilih berkas tugas: $error');
+                              if (mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Berkas tidak dapat dibaca. Coba pilih berkas lain.',
+                                    ),
+                                  ),
+                                );
+                            }
+                          },
+                    icon: const Icon(Icons.attach_file_rounded, size: 18),
+                    label: Text(
+                      selectedFile?.name ?? 'Pilih berkas dari perangkat',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: linkController,
+                    decoration: InputDecoration(
+                      labelText: 'Tautan Tugas (Google Drive / GitHub / dll)',
+                      hintText: 'https://drive.google.com/...',
+                      prefixIcon: const Icon(Icons.link_rounded, size: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: 'Catatan Pengumpulan (Opsional)',
+                      hintText: 'Misal: Revisi Bab 3 sudah disesuaikan',
+                      prefixIcon: const Icon(Icons.notes_rounded, size: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isSavingSubmission ? null : () => Navigator.pop(ctx),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _isSavingSubmission
+                  ? null
+                  : () async {
+                      var link = linkController.text.trim();
+                      final parsedLink = Uri.tryParse(link);
+                      if (selectedFile == null &&
+                          (parsedLink == null ||
+                              !['http', 'https'].contains(parsedLink.scheme) ||
+                              parsedLink.host.isEmpty)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Pilih berkas atau masukkan tautan https yang valid.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      final notes = notesController.text.trim();
+                      setState(() => _isSavingSubmission = true);
+                      if (selectedFile != null) {
+                        try {
+                          link =
+                              await SupabaseRepository.uploadAssignmentSubmissionFile(
+                                assignmentId: widget.assignment.id,
+                                studentNim: widget.userNim ?? '',
+                                fileName: selectedFile!.name,
+                                bytes: selectedFile!.bytes,
+                                contentType: selectedFile!.contentType,
+                              );
+                        } catch (error) {
+                          debugPrint('Gagal mengunggah berkas tugas: $error');
+                          if (mounted)
+                            setState(() => _isSavingSubmission = false);
+                          if (ctx.mounted)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Berkas gagal diunggah. Pastikan migrasi penilaian sudah diterapkan.',
+                                ),
+                              ),
+                            );
+                          return;
+                        }
+                      }
+                      final saved = await _saveSubmission(link, notes);
+                      if (mounted) setState(() => _isSavingSubmission = false);
+                      if (saved && ctx.mounted) Navigator.pop(ctx);
+                      if (saved && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Tautan tugas berhasil dikirim. Menunggu penilaian.',
+                            ),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B3DE8),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                _isSavingSubmission ? 'Menyimpan...' : 'Kirim untuk Dinilai',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1473,24 +1902,26 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                 ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Color(0xFF5B3DE8),
-                        size: 20,
+                    if (widget.canManage)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          color: Color(0xFF5B3DE8),
+                          size: 20,
+                        ),
+                        tooltip: 'Edit Tugas',
+                        onPressed: _showEditDialog,
                       ),
-                      tooltip: 'Edit Tugas',
-                      onPressed: _showEditDialog,
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline_rounded,
-                        color: Color(0xFFEF4444),
-                        size: 20,
+                    if (widget.canManage)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 20,
+                        ),
+                        tooltip: 'Hapus Tugas',
+                        onPressed: _confirmDelete,
                       ),
-                      tooltip: 'Hapus Tugas',
-                      onPressed: _confirmDelete,
-                    ),
                     IconButton(
                       icon: const Icon(
                         Icons.close_rounded,
@@ -1597,43 +2028,40 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                   const SizedBox(height: 20),
 
                   // Status Selector
-                  const Text(
-                    'Status Pengerjaan',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF374151),
+                  if (!widget.canManage &&
+                      _currentStatus != 'dikumpulkan' &&
+                      _currentStatus != 'dinilai') ...[
+                    const Text(
+                      'Status Pengerjaan',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF374151),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      _buildStatusOption(
-                        label: 'Belum Mulai',
-                        statusKey: 'belum',
-                        icon: Icons.radio_button_unchecked_rounded,
-                        activeColor: const Color(0xFFEF4444),
-                        activeBg: const Color(0xFFFEF2F2),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusOption(
-                        label: 'Dikerjakan',
-                        statusKey: 'sedang_dikerjakan',
-                        icon: Icons.hourglass_top_rounded,
-                        activeColor: const Color(0xFFD97706),
-                        activeBg: const Color(0xFFFEF3C7),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusOption(
-                        label: 'Selesai',
-                        statusKey: 'selesai',
-                        icon: Icons.check_circle_rounded,
-                        activeColor: const Color(0xFF16A34A),
-                        activeBg: const Color(0xFFDCFCE7),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _buildStatusOption(
+                          label: 'Belum Mulai',
+                          statusKey: 'belum',
+                          icon: Icons.radio_button_unchecked_rounded,
+                          activeColor: const Color(0xFFEF4444),
+                          activeBg: const Color(0xFFFEF2F2),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusOption(
+                          label: 'Dikerjakan',
+                          statusKey: 'sedang_dikerjakan',
+                          icon: Icons.hourglass_top_rounded,
+                          activeColor: const Color(0xFFD97706),
+                          activeBg: const Color(0xFFFEF3C7),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // Detailed Instructions Box
                   const Row(
@@ -1793,6 +2221,53 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                   ],
 
                   // Section: Bukti & Catatan Pengumpulan Mahasiswa
+                  if (widget.canManage) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Penilaian tugas',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF312E81),
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Periksa tautan mahasiswa, lalu masukkan nilai dan umpan balik.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF5B556F),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.tonalIcon(
+                            onPressed: _showAssignmentSubmissions,
+                            icon: const Icon(
+                              Icons.rate_review_outlined,
+                              size: 17,
+                            ),
+                            label: const Text('Penilaian'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1815,16 +2290,22 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                         ],
                       ),
                       TextButton.icon(
-                        onPressed: _showSubmitFormDialog,
+                        onPressed: _grade == null
+                            ? _showSubmitFormDialog
+                            : null,
                         icon: Icon(
-                          _submissionUrl.isNotEmpty
+                          _grade != null
+                              ? Icons.verified_rounded
+                              : _submissionUrl.isNotEmpty
                               ? Icons.edit_note_rounded
                               : Icons.upload_file_rounded,
                           size: 16,
                           color: const Color(0xFF5B3DE8),
                         ),
                         label: Text(
-                          _submissionUrl.isNotEmpty
+                          _grade != null
+                              ? 'Sudah Dinilai'
+                              : _submissionUrl.isNotEmpty
                               ? 'Ubah Tugas'
                               : 'Kirim Tugas',
                           style: const TextStyle(
@@ -1888,7 +2369,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  _submissionUrl,
+                                  _submissionDisplayLabel,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -1980,64 +2461,69 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
-
-                  // Action Buttons
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_currentStatus == 'selesai') {
-                          _setStatus('belum');
-                        } else {
-                          _setStatus('selesai');
-                        }
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              _currentStatus == 'selesai'
-                                  ? 'Status tugas dikembalikan ke belum selesai.'
-                                  : 'Selamat! Tugas berhasil ditandai selesai 🎉',
-                            ),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _currentStatus == 'selesai'
-                            ? const Color(0xFFEF4444)
-                            : const Color(0xFF16A34A),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
+                  if (_grade != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            _currentStatus == 'selesai'
-                                ? Icons.undo_rounded
-                                : Icons.check_circle_outline_rounded,
-                            size: 18,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.grade_rounded,
+                                color: Color(0xFF1D4ED8),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                'Nilai ${_grade!.toStringAsFixed(_grade! % 1 == 0 ? 0 : 1)} / 100',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_gradedAt.isNotEmpty)
+                                Text(
+                                  _gradedAt,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _currentStatus == 'selesai'
-                                ? 'Buka Kembali (Tandai Belum Selesai)'
-                                : 'Tandai Tugas Selesai ✓',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
+                          if (_feedback.isNotEmpty) ...[
+                            const SizedBox(height: 7),
+                            Text(
+                              _feedback,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF1E3A8A),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
-                  ),
+                  ] else if (_currentStatus == 'dikumpulkan') ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Tugas telah dikirim dan sedang menunggu penilaian.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF1D4ED8),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

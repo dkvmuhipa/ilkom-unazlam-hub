@@ -54,23 +54,23 @@ class AppTheme {
             fontWeight: FontWeight.w600,
           ),
           titleSmall: TextStyle(
-            fontSize: 13,
-            height: 1.4,
+            fontSize: 14,
+            height: 1.45,
             fontWeight: FontWeight.w600,
           ),
           bodyLarge: TextStyle(
-            fontSize: 15,
-            height: 1.55,
+            fontSize: 16,
+            height: 1.6,
             fontWeight: FontWeight.w400,
           ),
           bodyMedium: TextStyle(
-            fontSize: 14,
-            height: 1.55,
+            fontSize: 15,
+            height: 1.6,
             fontWeight: FontWeight.w400,
           ),
           bodySmall: TextStyle(
-            fontSize: 12,
-            height: 1.45,
+            fontSize: 13,
+            height: 1.55,
             fontWeight: FontWeight.w400,
           ),
           labelLarge: TextStyle(
@@ -79,12 +79,12 @@ class AppTheme {
             fontWeight: FontWeight.w600,
           ),
           labelMedium: TextStyle(
-            fontSize: 12,
+            fontSize: 12.5,
             height: 1.3,
             fontWeight: FontWeight.w600,
           ),
           labelSmall: TextStyle(
-            fontSize: 11,
+            fontSize: 11.5,
             height: 1.3,
             fontWeight: FontWeight.w500,
           ),
@@ -154,7 +154,7 @@ class AppTheme {
           vertical: 15,
         ),
         hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-        labelStyle: const TextStyle(color: AppColors.textSub, fontSize: 13),
+        labelStyle: const TextStyle(color: AppColors.textSub, fontSize: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
@@ -305,12 +305,12 @@ class AppTheme {
         backgroundColor: Colors.white,
         elevation: 0,
         indicatorColor: AppColors.primarySoft,
-        height: 72,
+        height: 78,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontFamily: fontFamily,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
                 : FontWeight.w500,

@@ -1,12 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import '../../core/services/dummy_data.dart';
+import '../../core/services/export_service.dart';
 import '../../core/services/admin_account_service.dart';
+import '../../core/services/admin_academic_service.dart';
+import '../../core/services/admin_audit_service.dart';
 import '../../core/services/supabase_repository.dart';
+import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
 import 'create_student_account_dialog.dart';
+import 'edit_student_account_dialog.dart';
 
 class AdminShellScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -29,7 +35,14 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   int _navBarIndex = 0;
   List<StudentProfile> _managedAccounts = [];
   bool _isLoadingAccounts = false;
+  bool _isLoadingAcademicData = false;
+  String? _academicLoadError;
+  Future<Map<String, String>>? _reportFuture;
   String? _accountLoadError;
+  String? _updatingAccountNim;
+  Future<List<Map<String, dynamic>>>? _auditFuture;
+  String _auditActionFilter = 'Semua';
+  String _auditSearchQuery = '';
 
   // Local state for dynamic data
   late List<ClassItem> _classes;
@@ -40,69 +53,66 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   @override
   void initState() {
     super.initState();
-    _classes = [
-      ClassItem(nama: 'Ilmu Komunikasi', semester: 1, jumlahMahasiswa: 25),
-      ClassItem(nama: 'Ilmu Komunikasi', semester: 3, jumlahMahasiswa: 28),
-      ClassItem(nama: 'Ilmu Komunikasi', semester: 5, jumlahMahasiswa: 24),
-      ClassItem(nama: 'Ilmu Komunikasi', semester: 7, jumlahMahasiswa: 22),
-    ];
-    _academicYears = [
-      AcademicYearItem(tahun: '2026/2027', isAktif: true),
-      AcademicYearItem(tahun: '2025/2026', isAktif: false),
-      AcademicYearItem(tahun: '2024/2025', isAktif: false),
-      AcademicYearItem(tahun: '2023/2024', isAktif: false),
-    ];
-    _courses = List.from(DummyData.courses);
-    _lecturers = [
-      LecturerItem(
-        id: 'lec_1',
-        nama: 'Bapak Muh Fadly, S.Ag., M.Ag.',
-        mataKuliah: 'Pendidikan Agama Islam',
-        email: 'fadly@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_2',
-        nama: 'Bapak Jefri, S.Pd., M.Hum.',
-        mataKuliah: 'Pendidikan Agama Kristen',
-        email: 'jefri@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_3',
-        nama: 'Bapak Meldi Wijaya, M.Pd.',
-        mataKuliah: 'Ilmu Kealaman Dasar',
-        email: 'meldi@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_4',
-        nama: 'Ibu Ade Ayu Agustina, M.I.Kom.',
-        mataKuliah: 'Dasar-Dasar Ilmu Komunikasi',
-        email: 'adeayu@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_5',
-        nama: 'Bapak Dr. H. M. Yusuf, M.Si.',
-        mataKuliah: 'Pendidikan Pancasila',
-        email: 'yusuf@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_6',
-        nama: 'Bapak Drs. H. Ahmad, M.Pd.',
-        mataKuliah: 'Pendidikan Kewarganegaraan',
-        email: 'ahmad@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_7',
-        nama: 'Ibu Siti Rahmawati, M.I.Kom.',
-        mataKuliah: 'Pengantar Ilmu Komunikasi',
-        email: 'siti@unazlam.ac.id',
-      ),
-      LecturerItem(
-        id: 'lec_8',
-        nama: 'Bapak Hendra Saputra, M.Si.',
-        mataKuliah: 'Etika Komunikasi',
-        email: 'hendra@unazlam.ac.id',
-      ),
-    ];
+    _classes = [];
+    _academicYears = [];
+    _courses = [];
+    _lecturers = [];
+    _reportFuture = _loadReportSnapshot();
+    unawaited(_loadAcademicData());
+  }
+
+  Future<Map<String, String>> _loadReportSnapshot() async {
+    final client = SupabaseService.client;
+    if (client == null) throw Exception('Supabase belum terhubung.');
+    final results = await Future.wait([
+      client.from('attendance_logs').select('status'),
+      client.from('treasury_transactions').select('nominal,is_pemasukan'),
+      client.from('assignments').select('id'),
+      client.from('students').select('nim').eq('is_aktif', true).neq('role', 'ADMIN'),
+    ]);
+    final attendance = List<Map<String, dynamic>>.from(results[0] as List);
+    final cash = List<Map<String, dynamic>>.from(results[1] as List);
+    final assignments = List<dynamic>.from(results[2] as List);
+    final students = List<dynamic>.from(results[3] as List);
+    final present = attendance.where((row) => (row['status']?.toString().toLowerCase() ?? '') == 'hadir').length;
+    final attendanceRate = attendance.isEmpty ? null : (present * 100 / attendance.length).round();
+    final balance = cash.fold<int>(0, (sum, row) {
+      final amount = (row['nominal'] as num?)?.toInt() ?? 0;
+      return sum + (row['is_pemasukan'] == true ? amount : -amount);
+    });
+    final formattedBalance = balance.abs().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+    return {
+      'attendance': attendanceRate == null ? 'Belum ada data presensi' : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
+      'treasury': 'Saldo dari ${cash.length} transaksi: Rp ${balance < 0 ? '-' : ''}$formattedBalance',
+      'assignments': '${assignments.length} tugas tercatat di database',
+      'students': '${students.length} akun mahasiswa aktif',
+    };
+  }
+
+  Future<void> _loadAcademicData() async {
+    if (!mounted) return;
+    setState(() { _isLoadingAcademicData = true; _academicLoadError = null; });
+    try {
+      final results = await Future.wait([
+        AdminAcademicService.listClasses(),
+        AdminAcademicService.listLecturers(),
+        AdminAcademicService.listAcademicYears(),
+        SupabaseRepository.getCourses(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _classes = (results[0] as List<Map<String, dynamic>>).map((row) => ClassItem.fromMap(row)).toList();
+        _lecturers = (results[1] as List<Map<String, dynamic>>).map((row) => LecturerItem.fromMap(row)).toList();
+        _academicYears = (results[2] as List<Map<String, dynamic>>).map((row) => AcademicYearItem.fromMap(row)).toList();
+        _courses = results[3] as List<Course>;
+      });
+    } on AdminAcademicException catch (error) {
+      if (mounted) setState(() => _academicLoadError = error.message);
+    } catch (error) {
+      if (mounted) setState(() => _academicLoadError = 'Data akademik gagal dimuat: $error');
+    } finally {
+      if (mounted) setState(() => _isLoadingAcademicData = false);
+    }
   }
 
   void _navigateTo(String view, {StudentProfile? student}) {
@@ -126,11 +136,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _navBarIndex = 3;
       } else if (view == 'pengaturan' ||
           view == 'role_permission' ||
-          view == 'manajemen_akun') {
+          view == 'manajemen_akun' ||
+          view == 'audit_logs') {
         _navBarIndex = 4;
       }
     });
     if (view == 'manajemen_akun') unawaited(_loadManagedAccounts());
+    if (view == 'audit_logs') _loadAuditLogs();
   }
 
   Future<void> _loadManagedAccounts() async {
@@ -296,6 +308,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         return _buildPengaturanSistem();
       case 'role_permission':
         return _buildRolePermission();
+      case 'audit_logs':
+        return _buildAuditLogScreen();
       default:
         return _buildDashboard();
     }
@@ -494,55 +508,57 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           const SizedBox(height: 14),
 
           // 8 Grid Menu Tiles (Screen 3)
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.85,
-            children: [
-              _buildMenuTile(
-                icon: Icons.meeting_room_outlined,
-                title: 'Kelas',
-                onTap: () => _navigateTo('kelas'),
-              ),
-              _buildMenuTile(
-                icon: Icons.person_outline_rounded,
-                title: 'Mahasiswa',
-                onTap: () => _navigateTo('mahasiswa'),
-              ),
-              _buildMenuTile(
-                icon: Icons.badge_outlined,
-                title: 'Dosen',
-                onTap: () => _navigateTo('dosen'),
-              ),
-              _buildMenuTile(
-                icon: Icons.menu_book_rounded,
-                title: 'Mata Kuliah',
-                onTap: () => _navigateTo('matakuliah'),
-              ),
-              _buildMenuTile(
-                icon: Icons.calendar_month_outlined,
-                title: 'Tahun\nAkademik',
-                onTap: () => _navigateTo('tahun_akademik'),
-              ),
-              _buildMenuTile(
-                icon: Icons.manage_accounts_outlined,
-                title: 'Manajemen\nAkun',
-                onTap: () => _navigateTo('manajemen_akun'),
-              ),
-              _buildMenuTile(
-                icon: Icons.bar_chart_rounded,
-                title: 'Laporan',
-                onTap: () => _navigateTo('laporan'),
-              ),
-              _buildMenuTile(
-                icon: Icons.settings_outlined,
-                title: 'Pengaturan',
-                onTap: () => _navigateTo('pengaturan'),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) => GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: constraints.maxWidth < 360 ? 2 : 4,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 12,
+              mainAxisExtent: 96,
+              children: [
+                _buildMenuTile(
+                  icon: Icons.meeting_room_outlined,
+                  title: 'Kelas',
+                  onTap: () => _navigateTo('kelas'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Mahasiswa',
+                  onTap: () => _navigateTo('mahasiswa'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.badge_outlined,
+                  title: 'Dosen',
+                  onTap: () => _navigateTo('dosen'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.menu_book_rounded,
+                  title: 'Mata Kuliah',
+                  onTap: () => _navigateTo('matakuliah'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.calendar_month_outlined,
+                  title: 'Tahun\nAkademik',
+                  onTap: () => _navigateTo('tahun_akademik'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.manage_accounts_outlined,
+                  title: 'Manajemen\nAkun',
+                  onTap: () => _navigateTo('manajemen_akun'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.bar_chart_rounded,
+                  title: 'Laporan',
+                  onTap: () => _navigateTo('laporan'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.settings_outlined,
+                  title: 'Pengaturan',
+                  onTap: () => _navigateTo('pengaturan'),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -692,6 +708,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -736,7 +753,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
               // Search Field
-              _buildSearchBox(hintText: 'Cari nama kelas...'),
+              _buildSearchBox(hintText: 'Cari nama kelas...', onChanged: (value) => setState(() => _classSearchQuery = value)),
+              if (_academicLoadError != null) _academicErrorBanner(),
+              if (_isLoadingAcademicData) const LinearProgressIndicator(),
               const SizedBox(height: 14),
 
               // Button "+ Tambah Kelas" (Screen 4)
@@ -759,7 +778,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               const SizedBox(height: 16),
 
               // Class List
-              ..._classes.map((cls) {
+              ..._classes.where((cls) => '${cls.nama} ${cls.prodi} ${cls.academicYear}'.toLowerCase().contains(_classSearchQuery.toLowerCase())).map((cls) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(14),
@@ -797,7 +816,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Semester ${cls.semester} • ${cls.jumlahMahasiswa} Mahasiswa',
+                              '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear} • ${cls.jumlahMahasiswa} mahasiswa',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -813,14 +832,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: Color(0xFF9CA3AF),
                           size: 20,
                         ),
-                        onSelected: (val) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Aksi $val untuk kelas ${cls.nama}',
-                              ),
-                            ),
-                          );
+                        onSelected: (val) async {
+                          if (val == 'hapus' && cls.id != null) {
+                            if (await _confirmDelete('Hapus kelas ${cls.nama}?')) {
+                              try {
+                                await AdminAcademicService.deleteClass(cls.id!);
+                                _recordAudit(action: 'DELETE', module: 'KELAS', description: 'Menghapus kelas ${cls.nama}, semester ${cls.semester}.', metadata: {'class_id': cls.id});
+                                await _loadAcademicData();
+                              }
+                              catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                            }
+                          } else if (val == 'edit') {
+                            _showClassDialog(existing: cls);
+                          }
                         },
                         itemBuilder: (ctx) => [
                           const PopupMenuItem(
@@ -934,25 +958,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           selectedSemester.replaceAll(RegExp(r'[^0-9]'), ''),
                         ) ??
                         1;
-                    final kap = int.tryParse(kapasitasController.text) ?? 25;
-                    setState(() {
-                      _classes.add(
-                        ClassItem(
-                          nama: namaController.text.trim().isEmpty
-                              ? 'Ilmu Komunikasi'
-                              : namaController.text.trim(),
-                          semester: semNum,
-                          jumlahMahasiswa: kap,
-                        ),
-                      );
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Kelas baru berhasil ditambahkan!'),
-                        backgroundColor: Color(0xFF10B981),
-                      ),
-                    );
-                    _navigateTo('kelas');
+                    final name = namaController.text.trim();
+                    final kap = int.tryParse(kapasitasController.text);
+                    if (name.isEmpty || kap == null || kap < 1) { _showAdminMessage('Nama kelas dan kapasitas harus diisi dengan benar.', isError: true); return; }
+                    _saveClass(id: null, name: name, prodi: selectedProdi, semester: semNum, year: selectedTA, capacity: kap);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5B3DE8),
@@ -980,6 +989,86 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // SCREEN 6: DATA MAHASISWA
   // ==========================================
   String _studentFilter = 'Aktif';
+  String _classSearchQuery = '';
+
+  Widget _academicErrorBanner() => Container(
+    margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(12)),
+    child: Text(_academicLoadError!, style: const TextStyle(color: Color(0xFF9A3412), fontSize: 12)),
+  );
+
+  void _showAdminMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: isError ? const Color(0xFFB91C1C) : const Color(0xFF059669)));
+  }
+
+  void _recordAudit({
+    required String action,
+    required String module,
+    required String description,
+    Map<String, dynamic> metadata = const {},
+  }) {
+    unawaited(() async {
+      await AdminAuditService.record(
+        action: action,
+        module: module,
+        description: description,
+        metadata: metadata,
+      );
+      if (_currentView == 'audit_logs' && mounted) {
+        setState(() => _auditFuture = AdminAuditService.list());
+      }
+    }());
+  }
+
+  void _loadAuditLogs() {
+    setState(() => _auditFuture = AdminAuditService.list());
+  }
+
+  Future<bool> _confirmDelete(String message) async => await showDialog<bool>(
+    context: context, builder: (ctx) => AlertDialog(title: const Text('Konfirmasi hapus'), content: Text(message),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')), FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB91C1C)), child: const Text('Hapus'))]),
+  ) ?? false;
+
+  Future<void> _saveClass({String? id, required String name, required String prodi, required int semester, required String year, required int capacity}) async {
+    try {
+      await AdminAcademicService.saveClass(id: id, nama: name, prodi: prodi, semester: semester, academicYear: year, capacity: capacity);
+      _recordAudit(
+        action: id == null ? 'CREATE' : 'UPDATE',
+        module: 'KELAS',
+        description: '${id == null ? 'Menambahkan' : 'Memperbarui'} kelas $name, semester $semester ($year).',
+        metadata: {'program_studi': prodi, 'semester': semester, 'tahun_akademik': year, 'kapasitas': capacity},
+      );
+      await _loadAcademicData();
+      if (mounted) _navigateTo('kelas');
+      _showAdminMessage(id == null ? 'Kelas berhasil disimpan ke Supabase.' : 'Perubahan kelas berhasil disimpan.');
+    } catch (error) { _showAdminMessage(error.toString(), isError: true); }
+  }
+
+  Future<void> _showClassDialog({ClassItem? existing}) async {
+    final name = TextEditingController(text: existing?.nama ?? '');
+    final capacity = TextEditingController(text: '${existing?.kapasitas ?? 30}');
+    final prodis = ['Ilmu Komunikasi', 'Ilmu Pemerintahan', 'Hubungan Internasional'];
+    final years = _academicYears.map((year) => year.tahun).toList();
+    if (existing != null && !years.contains(existing.academicYear)) years.insert(0, existing.academicYear);
+    if (years.isEmpty) years.add('2026/2027');
+    var prodi = existing?.prodi ?? prodis.first;
+    var semester = existing?.semester ?? 1;
+    var year = existing?.academicYear ?? years.first;
+    final result = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setDialog) => AlertDialog(
+      title: Text(existing == null ? 'Tambah kelas' : 'Edit kelas'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama kelas')),
+        DropdownButtonFormField<String>(value: prodi, decoration: const InputDecoration(labelText: 'Program studi'), items: prodis.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) setDialog(() => prodi = v); }),
+        DropdownButtonFormField<int>(value: semester, decoration: const InputDecoration(labelText: 'Semester'), items: List.generate(8, (i) => i + 1).map((v) => DropdownMenuItem(value: v, child: Text('Semester $v'))).toList(), onChanged: (v) { if (v != null) setDialog(() => semester = v); }),
+        DropdownButtonFormField<String>(value: year, decoration: const InputDecoration(labelText: 'Tahun akademik'), items: years.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) setDialog(() => year = v); }),
+        TextField(controller: capacity, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Kapasitas mahasiswa')),
+      ])), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Simpan'))])));
+    if (result == true) {
+      final cap = int.tryParse(capacity.text);
+      if (name.text.trim().isEmpty || cap == null || cap < 1) { _showAdminMessage('Lengkapi nama dan kapasitas kelas.', isError: true); return; }
+      await _saveClass(id: existing?.id, name: name.text.trim(), prodi: prodi, semester: semester, year: year, capacity: cap);
+    }
+  }
   String _studentSearchQuery = '';
 
   Widget _buildDataMahasiswa() {
@@ -1235,7 +1324,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Tambah Mahasiswa Baru',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
@@ -1691,6 +1780,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
+              if (_academicLoadError != null) _academicErrorBanner(),
+              if (_isLoadingAcademicData) const LinearProgressIndicator(),
               _buildSearchBox(
                 hintText: 'Cari nama dosen...',
                 onChanged: (val) => setState(() => _dosenSearchQuery = val),
@@ -1769,12 +1860,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: Color(0xFF9CA3AF),
                           size: 20,
                         ),
-                        onSelected: (val) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Aksi $val untuk dosen ${d.nama}'),
-                            ),
-                          );
+                        onSelected: (val) async {
+                          if (val == 'hapus' && await _confirmDelete('Hapus data dosen ${d.nama}?')) {
+                            try {
+                              await AdminAcademicService.deleteLecturer(d.id);
+                              _recordAudit(action: 'DELETE', module: 'DOSEN', description: 'Menghapus data dosen ${d.nama}.', metadata: {'lecturer_id': d.id});
+                              await _loadAcademicData();
+                            }
+                            catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                          } else if (val == 'edit') {
+                            _showLecturerDialog(existing: d);
+                          }
                         },
                         itemBuilder: (ctx) => [
                           const PopupMenuItem(
@@ -1806,16 +1902,21 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }
 
   void _showTambahDosenDialog() {
-    final namaCtrl = TextEditingController();
-    final matkulCtrl = TextEditingController();
+    _showLecturerDialog();
+  }
 
-    showDialog(
+  Future<void> _showLecturerDialog({LecturerItem? existing}) async {
+    final namaCtrl = TextEditingController(text: existing?.nama ?? '');
+    final matkulCtrl = TextEditingController(text: existing?.mataKuliah ?? '');
+    final emailCtrl = TextEditingController(text: existing?.email ?? '');
+
+    final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Tambah Dosen Pengampu',
+        title: Text(
+          existing == null ? 'Tambah Dosen Pengampu' : 'Edit Dosen Pengampu',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
         content: Column(
@@ -1830,6 +1931,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               controller: matkulCtrl,
               hintText: 'Mata Kuliah Diampu',
             ),
+            const SizedBox(height: 10),
+            _buildFormField(controller: emailCtrl, hintText: 'Email dosen (opsional)'),
           ],
         ),
         actions: [
@@ -1838,28 +1941,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (namaCtrl.text.isNotEmpty && matkulCtrl.text.isNotEmpty) {
-                setState(() {
-                  _lecturers.add(
-                    LecturerItem(
-                      id: 'lec_${DateTime.now().millisecondsSinceEpoch}',
-                      nama: namaCtrl.text.trim(),
-                      mataKuliah: matkulCtrl.text.trim(),
-                      email:
-                          '${namaCtrl.text.trim().toLowerCase().replaceAll(' ', '.')}@unazlam.ac.id',
-                    ),
-                  );
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Dosen berhasil ditambahkan!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
-              }
-            },
+            onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5B3DE8),
               foregroundColor: Colors.white,
@@ -1869,6 +1951,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         ],
       ),
     );
+    if (saved == true) {
+      if (namaCtrl.text.trim().isEmpty || matkulCtrl.text.trim().isEmpty) { _showAdminMessage('Nama dan mata kuliah wajib diisi.', isError: true); return; }
+      try {
+        await AdminAcademicService.saveLecturer(id: existing?.id, nama: namaCtrl.text.trim(), email: emailCtrl.text.trim(), course: matkulCtrl.text.trim());
+        _recordAudit(action: existing == null ? 'CREATE' : 'UPDATE', module: 'DOSEN', description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} data dosen ${namaCtrl.text.trim()}.', metadata: {'mata_kuliah': matkulCtrl.text.trim()});
+        await _loadAcademicData();
+        _showAdminMessage('Data dosen tersimpan.');
+      }
+      catch (error) { _showAdminMessage(error.toString(), isError: true); }
+    }
   }
 
   // ==========================================
@@ -1891,6 +1983,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
+              if (_academicLoadError != null) _academicErrorBanner(),
+              if (_isLoadingAcademicData) const LinearProgressIndicator(),
               _buildSearchBox(
                 hintText: 'Cari mata kuliah...',
                 onChanged: (val) => setState(() => _matkulSearchQuery = val),
@@ -1973,12 +2067,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: Color(0xFF9CA3AF),
                           size: 20,
                         ),
-                        onSelected: (val) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Aksi $val untuk ${c.nama}'),
-                            ),
-                          );
+                        onSelected: (val) async {
+                          if (val == 'hapus' && await _confirmDelete('Hapus mata kuliah ${c.nama}?')) {
+                            final ok = await SupabaseRepository.deleteCourse(c.id);
+                            if (ok) {
+                              _recordAudit(action: 'DELETE', module: 'MATA_KULIAH', description: 'Menghapus mata kuliah ${c.nama} (${c.kode}).', metadata: {'course_id': c.id});
+                              await _loadAcademicData();
+                              _showAdminMessage('Mata kuliah dihapus.');
+                            }
+                            else { _showAdminMessage('Mata kuliah gagal dihapus.', isError: true); }
+                          } else if (val == 'edit') {
+                            _showTambahMataKuliahDialog(existing: c);
+                          }
                         },
                         itemBuilder: (ctx) => [
                           const PopupMenuItem(
@@ -2009,17 +2109,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
-  void _showTambahMataKuliahDialog() {
-    final namaCtrl = TextEditingController();
-    final kodeCtrl = TextEditingController();
+  void _showTambahMataKuliahDialog({Course? existing}) {
+    final namaCtrl = TextEditingController(text: existing?.nama ?? '');
+    final kodeCtrl = TextEditingController(text: existing?.kode ?? '');
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Tambah Mata Kuliah',
+        title: Text(
+          existing == null ? 'Tambah Mata Kuliah' : 'Edit Mata Kuliah',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
         content: Column(
@@ -2039,32 +2139,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (namaCtrl.text.isNotEmpty && kodeCtrl.text.isNotEmpty) {
-                setState(() {
-                  _courses.add(
-                    Course(
-                      id: 'crs_${DateTime.now().millisecondsSinceEpoch}',
-                      nama: namaCtrl.text.trim(),
-                      kode: kodeCtrl.text.trim(),
-                      dosen: 'Dosen Pengampu',
-                      sks: 2,
-                      semester: 1,
-                      hari: 'Senin',
-                      jamMulai: '08:00',
-                      jamSelesai: '09:40',
-                      ruangan: 'R. Teori 2',
-                    ),
-                  );
-                });
+            onPressed: () async {
+              if (namaCtrl.text.trim().isEmpty || kodeCtrl.text.trim().isEmpty) return;
+              final course = Course(id: existing?.id ?? '', nama: namaCtrl.text.trim(), kode: kodeCtrl.text.trim(), dosen: existing?.dosen ?? 'Belum ditentukan', sks: existing?.sks ?? 2, semester: existing?.semester ?? 1, hari: existing?.hari ?? 'Senin', jamMulai: existing?.jamMulai ?? '08:00', jamSelesai: existing?.jamSelesai ?? '09:40', ruangan: existing?.ruangan ?? 'Belum ditentukan');
+              final ok = existing == null ? await SupabaseRepository.createCourse(course) : await SupabaseRepository.updateCourse(course);
+              if (!ctx.mounted) return;
+              if (ok) {
+                _recordAudit(action: existing == null ? 'CREATE' : 'UPDATE', module: 'MATA_KULIAH', description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} mata kuliah ${course.nama} (${course.kode}).', metadata: {'course_id': course.id});
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Mata kuliah berhasil ditambahkan!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                await _loadAcademicData();
+                _showAdminMessage('Mata kuliah berhasil disimpan.');
               }
+              else { _showAdminMessage('Gagal menyimpan. Pastikan sesi admin aktif dan migrasi Supabase sudah diterapkan.', isError: true); }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5B3DE8),
@@ -2088,6 +2174,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
+              if (_academicLoadError != null) _academicErrorBanner(),
+              if (_isLoadingAcademicData) const LinearProgressIndicator(),
               ElevatedButton(
                 onPressed: _showTambahTahunAkademikDialog,
                 style: ElevatedButton.styleFrom(
@@ -2156,21 +2244,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: Color(0xFF9CA3AF),
                           size: 20,
                         ),
-                        onSelected: (val) {
-                          if (val == 'aktif') {
-                            setState(() {
-                              for (var item in _academicYears) {
-                                item.isAktif = false;
-                              }
-                              ta.isAktif = true;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Tahun Akademik ${ta.tahun} dijadikan aktif',
-                                ),
-                              ),
-                            );
+                        onSelected: (val) async {
+                          if (val == 'aktif' && ta.id != null) {
+                            try {
+                              await AdminAcademicService.setActiveAcademicYear(ta.id!);
+                              _recordAudit(action: 'UPDATE', module: 'TAHUN_AKADEMIK', description: 'Menetapkan ${ta.tahun} sebagai tahun akademik aktif.', metadata: {'academic_year_id': ta.id});
+                              await _loadAcademicData();
+                              _showAdminMessage('${ta.tahun} ditetapkan sebagai tahun aktif.');
+                            }
+                            catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                          } else if (val == 'hapus' && ta.id != null && await _confirmDelete('Hapus tahun akademik ${ta.tahun}?')) {
+                            try {
+                              await AdminAcademicService.deleteAcademicYear(ta.id!);
+                              _recordAudit(action: 'DELETE', module: 'TAHUN_AKADEMIK', description: 'Menghapus tahun akademik ${ta.tahun}.', metadata: {'academic_year_id': ta.id});
+                              await _loadAcademicData();
+                            }
+                            catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                          } else if (val == 'edit') {
+                            _showTambahTahunAkademikDialog(existing: ta);
                           }
                         },
                         itemBuilder: (ctx) => [
@@ -2182,6 +2273,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             value: 'edit',
                             child: Text('Edit'),
                           ),
+                          const PopupMenuItem(value: 'hapus', child: Text('Hapus', style: TextStyle(color: Colors.red))),
                         ],
                       ),
                     ],
@@ -2195,16 +2287,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
-  void _showTambahTahunAkademikDialog() {
-    final ctrl = TextEditingController();
+  void _showTambahTahunAkademikDialog({AcademicYearItem? existing}) {
+    final ctrl = TextEditingController(text: existing?.tahun ?? '');
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Tambah Tahun Akademik',
+        title: Text(
+          existing == null ? 'Tambah Tahun Akademik' : 'Edit Tahun Akademik',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
         content: _buildFormField(
@@ -2217,22 +2309,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (ctrl.text.isNotEmpty) {
-                setState(() {
-                  _academicYears.insert(
-                    0,
-                    AcademicYearItem(tahun: ctrl.text.trim(), isAktif: false),
-                  );
-                });
+            onPressed: () async {
+              final year = ctrl.text.trim();
+              if (!RegExp(r'^\d{4}/\d{4}$').hasMatch(year)) { _showAdminMessage('Format tahun harus seperti 2026/2027.', isError: true); return; }
+              try {
+                await AdminAcademicService.saveAcademicYear(id: existing?.id, year: year);
+                _recordAudit(action: existing == null ? 'CREATE' : 'UPDATE', module: 'TAHUN_AKADEMIK', description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} tahun akademik $year.');
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Tahun akademik berhasil ditambahkan!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                await _loadAcademicData();
+                _showAdminMessage('Tahun akademik tersimpan.');
               }
+              catch (error) { _showAdminMessage(error.toString(), isError: true); }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5B3DE8),
@@ -2258,6 +2346,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
     if (profile == null || !mounted) return;
 
+    _recordAudit(
+      action: 'CREATE',
+      module: 'AKUN',
+      description: 'Membuat akun mahasiswa ${profile.nama} (${profile.nim}) dan mengirim undangan.',
+      metadata: {'nim': profile.nim},
+    );
+
     setState(() => _accountFilter = 'Mahasiswa');
     await _loadManagedAccounts();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2266,6 +2361,111 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         backgroundColor: const Color(0xFF059669),
       ),
     );
+  }
+
+  Future<void> _editManagedAccount(StudentProfile account) async {
+    final updated = await showDialog<StudentProfile>(
+      context: context,
+      builder: (_) => EditStudentAccountDialog(account: account),
+    );
+    if (updated == null || !mounted) return;
+
+    setState(() => _updatingAccountNim = account.nim);
+    try {
+      await AdminAccountService.updateStudentAccount(updated);
+      _recordAudit(
+        action: 'UPDATE',
+        module: 'AKUN',
+        description: 'Memperbarui profil mahasiswa ${updated.nama} (${updated.nim}).',
+        metadata: {'nim': updated.nim},
+      );
+      if (!mounted) return;
+      setState(() {
+        final index = _managedAccounts.indexWhere(
+          (item) => item.nim == account.nim,
+        );
+        if (index >= 0) _managedAccounts[index] = updated;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data akun berhasil diperbarui.'),
+          backgroundColor: Color(0xFF059669),
+        ),
+      );
+    } on AdminAccountServiceException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _updatingAccountNim = null);
+    }
+  }
+
+  Future<void> _setManagedAccountActive(
+    StudentProfile account,
+    bool isActive,
+  ) async {
+    if (account.isAdmin) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isActive ? 'Aktifkan akun kembali?' : 'Nonaktifkan akun?'),
+        content: Text(
+          isActive
+              ? 'Akun ${account.nama} dapat masuk kembali setelah diaktifkan.'
+              : 'Akun ${account.nama} tidak dapat masuk setelah dinonaktifkan. Profil dan riwayatnya tetap disimpan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: isActive
+                  ? const Color(0xFF059669)
+                  : const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            child: Text(isActive ? 'Aktifkan' : 'Nonaktifkan'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final previousValue = account.isAktif;
+    setState(() {
+      _updatingAccountNim = account.nim;
+      account.isAktif = isActive;
+    });
+    try {
+      await AdminAccountService.setStudentActive(account.nim, isActive);
+      _recordAudit(
+        action: 'UPDATE',
+        module: 'AKUN',
+        description: '${isActive ? 'Mengaktifkan' : 'Menonaktifkan'} akun ${account.nama} (${account.nim}).',
+        metadata: {'nim': account.nim, 'is_aktif': isActive},
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isActive ? 'Akun diaktifkan.' : 'Akun dinonaktifkan.'),
+          backgroundColor: isActive
+              ? const Color(0xFF059669)
+              : const Color(0xFF4B5563),
+        ),
+      );
+    } on AdminAccountServiceException catch (error) {
+      if (!mounted) return;
+      setState(() => account.isAktif = previousValue);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _updatingAccountNim = null);
+    }
   }
 
   Widget _buildManajemenAkun() {
@@ -2422,30 +2622,51 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ],
             ),
           ),
-          if (isAdmin)
-            _accountStatusBadge(account.isAktif)
-          else
-            Switch(
-              value: account.isAktif,
-              activeThumbColor: const Color(0xFF10B981),
-              onChanged: (value) async {
-                setState(() => account.isAktif = value);
-                final saved = await SupabaseRepository.toggleStudentStatus(
-                  account.nim,
-                  value,
-                );
-                if (!saved && mounted) {
-                  setState(() => account.isAktif = !value);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Status akun gagal diperbarui di Supabase.',
+          _accountStatusBadge(account.isAktif),
+          PopupMenuButton<String>(
+            tooltip: 'Kelola akun',
+            enabled: _updatingAccountNim != account.nim,
+            onSelected: (action) {
+              if (action == 'edit') {
+                _editManagedAccount(account);
+              } else {
+                _setManagedAccountActive(account, action == 'activate');
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 18),
+                    SizedBox(width: 10),
+                    Text('Edit data'),
+                  ],
+                ),
+              ),
+              if (!isAdmin)
+                PopupMenuItem(
+                  value: account.isAktif ? 'deactivate' : 'activate',
+                  child: Row(
+                    children: [
+                      Icon(
+                        account.isAktif
+                            ? Icons.person_off_outlined
+                            : Icons.person_add_alt_1_outlined,
+                        size: 18,
+                        color: account.isAktif
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF059669),
                       ),
-                    ),
-                  );
-                }
-              },
-            ),
+                      const SizedBox(width: 10),
+                      Text(
+                        account.isAktif ? 'Nonaktifkan akun' : 'Aktifkan akun',
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -2494,6 +2715,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 onTap: () => _navigateTo('role_permission'),
               ),
               _buildSettingCard(
+                icon: Icons.history_rounded,
+                title: 'Log Aktivitas Admin',
+                onTap: () => _navigateTo('audit_logs'),
+              ),
+              _buildSettingCard(
                 icon: Icons.cloud_download_outlined,
                 title: 'Backup Data',
                 onTap: () {
@@ -2529,6 +2755,96 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildAuditLogScreen() {
+    final actions = ['Semua', 'CREATE', 'UPDATE', 'DELETE', 'EXPORT'];
+    return Column(children: [
+      _buildAppBar('Log Aktivitas Admin', showSearch: false, onSearch: _loadAuditLogs, onBack: () => _navigateTo('pengaturan')),
+      Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _auditFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.cloud_off_rounded, size: 36, color: Color(0xFF9CA3AF)),
+            const SizedBox(height: 10),
+            Text(snapshot.error.toString(), textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(onPressed: _loadAuditLogs, icon: const Icon(Icons.refresh), label: const Text('Coba lagi')),
+          ])));
+
+          final rows = snapshot.data ?? [];
+          final filtered = rows.where((row) {
+            final action = row['action_type']?.toString().toUpperCase() ?? '';
+            final matchesAction = _auditActionFilter == 'Semua' || action == _auditActionFilter;
+            final query = _auditSearchQuery.trim().toLowerCase();
+            final text = '${row['user_name'] ?? ''} ${row['user_identifier'] ?? ''} ${row['target_module'] ?? ''} ${row['description'] ?? ''}'.toLowerCase();
+            return matchesAction && (query.isEmpty || text.contains(query));
+          }).toList();
+
+          return ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 20), children: [
+            _buildSearchBox(hintText: 'Cari admin, modul, atau aktivitas...', onChanged: (value) => setState(() => _auditSearchQuery = value)),
+            const SizedBox(height: 12),
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: actions.map((action) {
+              final selected = _auditActionFilter == action;
+              return Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(action), selected: selected, onSelected: (_) => setState(() => _auditActionFilter = action), selectedColor: const Color(0xFFEDE9FE)));
+            }).toList())),
+            const SizedBox(height: 14),
+            if (filtered.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 44), child: Column(children: [
+              const Icon(Icons.history_toggle_off_rounded, size: 40, color: Color(0xFF9CA3AF)),
+              const SizedBox(height: 10),
+              Text(rows.isEmpty ? 'Belum ada aktivitas tercatat.' : 'Tidak ada aktivitas yang cocok dengan pencarian.', style: const TextStyle(color: Color(0xFF6B7280))),
+            ]))
+            else ...filtered.map(_buildAuditLogTile),
+            if (rows.length >= 200) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Menampilkan 200 aktivitas terbaru.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF6B7280), fontSize: 11))),
+          ]);
+        },
+      )),
+    ]);
+  }
+
+  Widget _buildAuditLogTile(Map<String, dynamic> row) {
+    final action = row['action_type']?.toString().toUpperCase() ?? 'UPDATE';
+    final color = switch (action) {
+      'CREATE' => const Color(0xFF059669),
+      'DELETE' => const Color(0xFFDC2626),
+      'EXPORT' => const Color(0xFF0284C7),
+      _ => const Color(0xFF7C3AED),
+    };
+    final createdAt = DateTime.tryParse(row['created_at']?.toString() ?? '')?.toLocal();
+    final dateLabel = createdAt == null ? 'Waktu tidak tersedia' : _formatAuditDate(createdAt);
+    return Container(margin: const EdgeInsets.only(bottom: 10), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFFE5E7EB))),
+      child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        leading: CircleAvatar(backgroundColor: color.withValues(alpha: .12), child: Icon(switch (action) { 'CREATE' => Icons.add_rounded, 'DELETE' => Icons.delete_outline_rounded, 'EXPORT' => Icons.download_rounded, _ => Icons.edit_outlined }, color: color, size: 19)),
+        title: Text(row['description']?.toString() ?? 'Aktivitas admin', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+        subtitle: Padding(padding: const EdgeInsets.only(top: 5), child: Text('${row['user_name'] ?? 'Admin'} • ${row['user_identifier'] ?? '-'}\n${row['target_module'] ?? 'LAINNYA'} • $dateLabel', style: const TextStyle(height: 1.45, fontSize: 11, color: Color(0xFF6B7280)))),
+        trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(20)), child: Text(action, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800))),
+        onTap: () => _showAuditDetails(row),
+      ));
+  }
+
+  String _formatAuditDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final day = date.day.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day ${months[date.month - 1]} ${date.year}, $hour:$minute';
+  }
+
+  void _showAuditDetails(Map<String, dynamic> row) {
+    final metadata = row['metadata'];
+    showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('Detail Aktivitas'),
+      content: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text(row['description']?.toString() ?? '-'),
+        const SizedBox(height: 12),
+        Text('Admin: ${row['user_name'] ?? '-'} (${row['user_identifier'] ?? '-'})'),
+        Text('Modul: ${row['target_module'] ?? '-'}'),
+        Text('Tindakan: ${row['action_type'] ?? '-'}'),
+        if (metadata != null) ...[const SizedBox(height: 12), const Text('Metadata', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 4), SelectableText(const JsonEncoder.withIndent('  ').convert(metadata), style: const TextStyle(fontFamily: 'monospace', fontSize: 11))],
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))],
+    ));
   }
 
   Widget _buildSettingCard({
@@ -2636,7 +2952,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         content: const Text(
-          'Seluruh data kelas, profil 25 mahasiswa, 8 dosen, dan transaksi kas dapat dicadangkan secara lokal atau disinkronkan ke Supabase.',
+          'Unduh salinan data yang tersimpan di Supabase: akun mahasiswa, mata kuliah, tugas, pengumuman, transaksi kas, kelas, dosen, dan tahun akademik.',
           style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563)),
         ),
         actions: [
@@ -2645,14 +2961,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Backup data JSON berhasil diekspor!'),
-                  backgroundColor: Color(0xFF10B981),
-                ),
-              );
+            onPressed: () async {
+              try {
+                final client = SupabaseService.client;
+                if (client == null) throw Exception('Supabase belum terhubung.');
+                final tables = ['students', 'courses', 'assignments', 'announcements', 'treasury_transactions', 'academic_classes', 'lecturers', 'academic_years'];
+                final backup = <String, dynamic>{'exported_at': DateTime.now().toUtc().toIso8601String(), 'format_version': 1};
+                for (final table in tables) {
+                  backup[table] = await client.from(table).select();
+                }
+                final payload = const JsonEncoder.withIndent('  ').convert(backup);
+                ExportService.downloadFile('ilkom_hub_backup_${DateTime.now().toIso8601String().substring(0, 10)}.json', payload);
+                _recordAudit(action: 'EXPORT', module: 'BACKUP', description: 'Mengekspor backup JSON data aplikasi.', metadata: {'tabel': tables});
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                _showAdminMessage('Backup JSON dibuat dari data Supabase.');
+              } catch (error) {
+                _showAdminMessage('Backup gagal: $error', isError: true);
+              }
             },
             icon: const Icon(Icons.download, size: 16),
             label: const Text('Ekspor JSON'),
@@ -2827,17 +3153,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             child: Text('Mahasiswa'),
                           ),
                         ],
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => s.jabatan = val);
-                            SupabaseRepository.updateStudentJabatan(s.nim, val);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Jabatan ${s.nama} diubah menjadi $val',
-                                ),
-                              ),
-                            );
+                        onChanged: (val) async {
+                          if (val != null && val != s.jabatan) {
+                            final previous = s.jabatan;
+                            final ok = await SupabaseRepository.updateStudentJabatan(s.nim, val);
+                            if (!mounted) return;
+                            if (ok) {
+                              setState(() => s.jabatan = val);
+                              _recordAudit(action: 'UPDATE', module: 'ROLE', description: 'Mengubah jabatan ${s.nama} (${s.nim}) dari $previous menjadi $val.', metadata: {'nim': s.nim, 'from': previous, 'to': val});
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Jabatan ${s.nama} diubah menjadi $val')));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan jabatan. Coba lagi.'), backgroundColor: Color(0xFFB91C1C)));
+                            }
                           }
                         },
                       ),
@@ -2858,36 +3185,54 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   Widget _buildLaporan() {
     return Column(
       children: [
-        _buildAppBar('Laporan & Rekapitulasi', showSearch: false),
+        _buildAppBar('Laporan & Rekapitulasi', showSearch: false, onSearch: () => setState(() => _reportFuture = _loadReportSnapshot())),
         Expanded(
-          child: ListView(
+          child: FutureBuilder<Map<String, String>>(
+            future: _reportFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.cloud_off_rounded, color: Color(0xFF9CA3AF), size: 36),
+                  const SizedBox(height: 10),
+                  Text('Laporan gagal dimuat: ${snapshot.error}', textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(onPressed: () => setState(() => _reportFuture = _loadReportSnapshot()), icon: const Icon(Icons.refresh), label: const Text('Coba lagi')),
+                ])));
+              }
+              final report = snapshot.data!;
+              return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             children: [
               _buildReportCard(
                 title: 'Rekap Presensi Seluruh Kelas',
-                subtitle: 'Tingkat kehadiran rata-rata: 92%',
+                subtitle: report['attendance']!,
                 icon: Icons.checklist_rounded,
                 color: const Color(0xFF10B981),
               ),
               _buildReportCard(
                 title: 'Laporan Keuangan Kas Kelas',
-                subtitle: 'Total saldo: Rp 3.250.000',
+                subtitle: report['treasury']!,
                 icon: Icons.account_balance_wallet_outlined,
                 color: const Color(0xFF5B3DE8),
               ),
               _buildReportCard(
                 title: 'Distribusi Tugas Mahasiswa',
-                subtitle: '6 tugas aktif terdistribusi',
+                subtitle: report['assignments']!,
                 icon: Icons.assignment_outlined,
                 color: const Color(0xFFF59E0B),
               ),
               _buildReportCard(
-                title: 'Inventaris & Perlengkapan Kelas',
-                subtitle: 'Proyektor, kabel HDMI, spidol siap',
+                title: 'Akun Mahasiswa Aktif',
+                subtitle: report['students']!,
                 icon: Icons.inventory_2_outlined,
                 color: const Color(0xFF0284C7),
               ),
             ],
+          );
+            },
           ),
         ),
       ],
@@ -2988,6 +3333,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             IconButton(
               icon: const Icon(Icons.search_rounded, color: Color(0xFF111827)),
               onPressed: onSearch ?? () {},
+            ),
+          if (!showSearch && onSearch != null)
+            IconButton(
+              tooltip: 'Muat ulang',
+              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF111827)),
+              onPressed: onSearch,
             ),
         ],
       ),
@@ -3131,22 +3482,40 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
 // Local helper classes
 class ClassItem {
+  final String? id;
   final String nama;
+  final String prodi;
   final int semester;
   final int jumlahMahasiswa;
+  final String academicYear;
+  final int kapasitas;
 
   ClassItem({
+    this.id,
     required this.nama,
+    this.prodi = 'Ilmu Komunikasi',
     required this.semester,
     required this.jumlahMahasiswa,
+    this.academicYear = '2026/2027',
+    this.kapasitas = 30,
   });
+  factory ClassItem.fromMap(Map<String, dynamic> map) => ClassItem(
+    id: map['id']?.toString(), nama: map['nama']?.toString() ?? '',
+    prodi: map['prodi']?.toString() ?? 'Ilmu Komunikasi',
+    semester: (map['semester'] as num?)?.toInt() ?? 1, jumlahMahasiswa: 0,
+    academicYear: map['academic_year']?.toString() ?? '', kapasitas: (map['kapasitas'] as num?)?.toInt() ?? 30,
+  );
 }
 
 class AcademicYearItem {
+  final String? id;
   final String tahun;
   bool isAktif;
 
-  AcademicYearItem({required this.tahun, required this.isAktif});
+  AcademicYearItem({this.id, required this.tahun, required this.isAktif});
+  factory AcademicYearItem.fromMap(Map<String, dynamic> map) => AcademicYearItem(
+    id: map['id']?.toString(), tahun: map['tahun']?.toString() ?? '', isAktif: map['is_aktif'] == true,
+  );
 }
 
 class LecturerItem {
@@ -3161,4 +3530,8 @@ class LecturerItem {
     required this.mataKuliah,
     required this.email,
   });
+  factory LecturerItem.fromMap(Map<String, dynamic> map) => LecturerItem(
+    id: map['id']?.toString() ?? '', nama: map['nama']?.toString() ?? '',
+    mataKuliah: map['mata_kuliah']?.toString() ?? '', email: map['email']?.toString() ?? '',
+  );
 }
