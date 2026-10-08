@@ -86,6 +86,8 @@ Deno.serve(async (request: Request) => {
   const nama = readString(body.nama, 120);
   const nim = readString(body.nim, 20);
   const email = readString(body.email, 254)?.toLowerCase() ?? null;
+  const initialPassword =
+    typeof body.initial_password === 'string' ? body.initial_password : '';
   const noWa = typeof body.no_wa === 'string' ? body.no_wa.trim() : '';
   const peminatan =
     typeof body.peminatan === 'string' ? body.peminatan.trim() : '';
@@ -97,6 +99,8 @@ Deno.serve(async (request: Request) => {
     !/^\d{6,20}$/.test(nim) ||
     !email ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    initialPassword.length < 8 ||
+    initialPassword.length > 128 ||
     noWa.length > 32 ||
     peminatan.length > 80 ||
     !Number.isInteger(semester) ||
@@ -153,9 +157,39 @@ Deno.serve(async (request: Request) => {
       data: { nama, nim },
     });
   if (inviteError || !invited.user) {
-    await adminClient.from('students').delete().eq('nim', nim);
+    const { error: cleanupError } = await adminClient
+      .from('students')
+      .delete()
+      .eq('nim', nim);
+    if (cleanupError) {
+      return jsonResponse(500, {
+        error: 'Undangan gagal dikirim dan profil sementara gagal dibersihkan. Hubungi administrator untuk menghapus profil tersebut sebelum mencoba lagi.',
+      });
+    }
     return jsonResponse(502, {
-      error: 'Profil tersimpan, tetapi undangan email gagal dikirim. Coba lagi.',
+      error: 'Undangan email gagal dikirim. Profil sementara sudah dibersihkan; silakan coba lagi.',
+    });
+  }
+
+  const { error: passwordError } = await adminClient.auth.admin.updateUserById(
+    invited.user.id,
+    { password: initialPassword },
+  );
+  if (passwordError) {
+    const { error: authCleanupError } = await adminClient.auth.admin.deleteUser(
+      invited.user.id,
+    );
+    const { error: profileCleanupError } = await adminClient
+      .from('students')
+      .delete()
+      .eq('nim', nim);
+    if (authCleanupError || profileCleanupError) {
+      return jsonResponse(500, {
+        error: 'Kata sandi awal gagal disetel dan pembersihan akun tidak tuntas. Hubungi administrator untuk memeriksa pengguna Auth dan profil mahasiswa.',
+      });
+    }
+    return jsonResponse(500, {
+      error: 'Kata sandi awal gagal disetel. Akun sementara sudah dibersihkan; silakan coba lagi.',
     });
   }
 
@@ -164,10 +198,20 @@ Deno.serve(async (request: Request) => {
     .update({ auth_user_id: invited.user.id })
     .eq('nim', nim);
   if (linkError) {
-    await adminClient.auth.admin.deleteUser(invited.user.id);
-    await adminClient.from('students').delete().eq('nim', nim);
+    const { error: authCleanupError } = await adminClient.auth.admin.deleteUser(
+      invited.user.id,
+    );
+    const { error: profileCleanupError } = await adminClient
+      .from('students')
+      .delete()
+      .eq('nim', nim);
+    if (authCleanupError || profileCleanupError) {
+      return jsonResponse(500, {
+        error: 'Profil gagal ditautkan dan pembersihan akun tidak tuntas. Hubungi administrator untuk memeriksa pengguna Auth dan profil mahasiswa sebelum mencoba lagi.',
+      });
+    }
     return jsonResponse(500, {
-      error: 'Akun dibuat, tetapi profil gagal ditautkan. Silakan coba lagi.',
+      error: 'Profil gagal ditautkan. Akun dan profil sementara sudah dibersihkan; silakan coba lagi.',
     });
   }
 

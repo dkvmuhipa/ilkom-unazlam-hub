@@ -17,6 +17,8 @@ class _CreateStudentAccountDialogState
   final _namaController = TextEditingController();
   final _nimController = TextEditingController();
   final _emailController = TextEditingController();
+  final _initialPasswordController = TextEditingController();
+  final _confirmInitialPasswordController = TextEditingController();
   final _noWaController = TextEditingController();
   final _peminatanController = TextEditingController();
   int _semester = 1;
@@ -27,6 +29,8 @@ class _CreateStudentAccountDialogState
     _namaController.dispose();
     _nimController.dispose();
     _emailController.dispose();
+    _initialPasswordController.dispose();
+    _confirmInitialPasswordController.dispose();
     _noWaController.dispose();
     _peminatanController.dispose();
     super.dispose();
@@ -41,6 +45,7 @@ class _CreateStudentAccountDialogState
         nama: _namaController.text,
         nim: _nimController.text,
         email: _emailController.text,
+        initialPassword: _initialPasswordController.text,
         noWa: _noWaController.text,
         semester: _semester,
         peminatan: _peminatanController.text,
@@ -138,6 +143,36 @@ class _CreateStudentAccountDialogState
                 ),
                 const SizedBox(height: 12),
                 _field(
+                  controller: _initialPasswordController,
+                  label: 'Kata sandi awal',
+                  obscureText: true,
+                  validator: (value) {
+                    if ((value ?? '').length < 8) {
+                      return 'Gunakan minimal 8 karakter.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                _field(
+                  controller: _confirmInitialPasswordController,
+                  label: 'Ulangi kata sandi awal',
+                  obscureText: true,
+                  validator: (value) => value == _initialPasswordController.text
+                      ? null
+                      : 'Kata sandi belum sama.',
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Sampaikan kata sandi ini kepada mahasiswa melalui saluran aman. Email undangan tidak menyertakan kata sandi.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.35,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _field(
                   controller: _noWaController,
                   label: 'Nomor WhatsApp (opsional)',
                   keyboardType: TextInputType.phone,
@@ -202,12 +237,14 @@ class _CreateStudentAccountDialogState
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool obscureText = false,
   }) {
     return TextFormField(
       controller: controller,
       enabled: !_isSubmitting,
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
+      obscureText: obscureText,
       validator: validator,
       decoration: _inputDecoration(label),
     );

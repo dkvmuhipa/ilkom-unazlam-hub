@@ -53,21 +53,28 @@ void main() async {
 
   String? authCallbackError;
   final tokenHash = authCallback.tokenHash;
-  if (tokenHash != null && authCallback.flowType == 'recovery') {
+  if (tokenHash != null &&
+      (authCallback.flowType == 'recovery' ||
+          authCallback.flowType == 'invite')) {
     try {
       final client = SupabaseService.client;
       if (client == null)
         throw const AuthServiceException('Supabase belum siap.');
-      await client.auth.verifyOTP(tokenHash: tokenHash, type: OtpType.recovery);
+      await client.auth.verifyOTP(
+        tokenHash: tokenHash,
+        type: authCallback.flowType == 'invite'
+            ? OtpType.invite
+            : OtpType.recovery,
+      );
       clearAuthCallbackUrl();
     } catch (error) {
       authCallbackError = error is AuthException
-          ? 'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru, lalu buka di aplikasi ini.'
-          : 'Verifikasi tautan reset gagal. Periksa koneksi lalu coba lagi.';
+          ? 'Tautan tidak valid atau sudah kedaluwarsa. Minta tautan baru, lalu buka di aplikasi ini.'
+          : 'Verifikasi tautan gagal. Periksa koneksi lalu coba lagi.';
     }
   } else if (authCallback.hasCode &&
       SupabaseService.client?.auth.currentSession == null) {
-    authCallbackError = 'Tautan reset lama tidak cocok dengan sesi browser ini. Atur template email Supabase ke token_hash, lalu kirim tautan baru.';
+    authCallbackError = 'Tautan lama tidak cocok dengan sesi browser ini. Atur template email Supabase agar memakai token_hash, lalu kirim tautan baru.';
   }
 
   runApp(

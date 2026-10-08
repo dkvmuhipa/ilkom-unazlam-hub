@@ -40,14 +40,17 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
   }
 
   Future<void> _submit() async {
+    final isInvite = widget.flowType == 'invite';
     final password = _passwordController.text;
-    if (password.length < 8) {
-      setState(() => _error = 'Gunakan kata sandi minimal 8 karakter.');
-      return;
-    }
-    if (password != _confirmController.text) {
-      setState(() => _error = 'Konfirmasi kata sandi belum sama.');
-      return;
+    if (!isInvite) {
+      if (password.length < 8) {
+        setState(() => _error = 'Gunakan kata sandi minimal 8 karakter.');
+        return;
+      }
+      if (password != _confirmController.text) {
+        setState(() => _error = 'Konfirmasi kata sandi belum sama.');
+        return;
+      }
     }
     if (!AuthService.hasActiveSession) {
       setState(
@@ -61,7 +64,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       _error = null;
     });
     try {
-      await AuthService.setPassword(password);
+      if (!isInvite) await AuthService.setPassword(password);
       final profile = await AuthService.restoreSession();
       if (profile == null) {
         throw const AuthServiceException(
@@ -122,7 +125,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                       const SizedBox(height: 10),
                       Text(
                         isInvite
-                            ? 'Buat kata sandi untuk menyelesaikan undangan dan masuk ke portal ILKOM UNAZLAM.'
+                            ? 'Undangan Anda sudah diverifikasi. Masuk menggunakan kata sandi awal yang diberikan admin. Anda dapat menggantinya dari menu Profil.'
                             : 'Buat kata sandi baru untuk akun portal ILKOM UNAZLAM.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -131,15 +134,17 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                         ),
                       ),
                       const SizedBox(height: 26),
-                      _passwordField(
-                        controller: _passwordController,
-                        label: 'Kata sandi baru',
-                      ),
-                      const SizedBox(height: 14),
-                      _passwordField(
-                        controller: _confirmController,
-                        label: 'Ulangi kata sandi',
-                      ),
+                      if (!isInvite) ...[
+                        _passwordField(
+                          controller: _passwordController,
+                          label: 'Kata sandi baru',
+                        ),
+                        const SizedBox(height: 14),
+                        _passwordField(
+                          controller: _confirmController,
+                          label: 'Ulangi kata sandi',
+                        ),
+                      ],
                       if (_error != null) ...[
                         const SizedBox(height: 16),
                         Text(
@@ -171,8 +176,8 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'Simpan dan lanjutkan',
+                              : Text(
+                                  isInvite ? 'Aktifkan dan masuk' : 'Simpan dan lanjutkan',
                                   style: TextStyle(fontWeight: FontWeight.w700),
                                 ),
                         ),

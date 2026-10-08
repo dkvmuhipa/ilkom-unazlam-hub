@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+<<<<<<< Updated upstream
+=======
+import '../../core/services/dummy_data.dart';
+import '../../core/services/auth_service.dart';
+>>>>>>> Stashed changes
 import '../../core/theme/theme_notifier.dart';
 import '../../models/models.dart';
 
@@ -22,6 +27,82 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showLeaderPanel = false;
+
+  Future<void> _changePassword() async {
+    final passwordController = TextEditingController();
+    final confirmationController = TextEditingController();
+    String? errorText;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Ubah kata sandi'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(labelText: 'Kata sandi baru'),
+              ),
+              TextField(
+                controller: confirmationController,
+                obscureText: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(labelText: 'Ulangi kata sandi'),
+              ),
+              if (errorText != null) ...[
+                const SizedBox(height: 8),
+                Text(errorText!, style: const TextStyle(color: Colors.red)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (passwordController.text.length < 8) {
+                  setDialogState(() => errorText = 'Minimal 8 karakter.');
+                  return;
+                }
+                if (passwordController.text != confirmationController.text) {
+                  setDialogState(() => errorText = 'Kata sandi belum sama.');
+                  return;
+                }
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await AuthService.setPassword(passwordController.text);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kata sandi berhasil diubah.')),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kata sandi gagal diubah. Coba lagi.')),
+          );
+        }
+      }
+    }
+    passwordController.dispose();
+    confirmationController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +300,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 24),
+
+            OutlinedButton.icon(
+              onPressed: _changePassword,
+              icon: const Icon(Icons.lock_reset_rounded),
+              label: const Text('Ubah kata sandi'),
+            ),
+            const SizedBox(height: 16),
 
             // Profile Details Card
             Container(
