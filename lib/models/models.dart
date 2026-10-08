@@ -160,6 +160,52 @@ class CourseAttendance {
   bool get isDangerZone => sisaAlpaAman <= 1;
 }
 
+class StudentCourseGrade {
+  final String id;
+  final String studentNim;
+  final String courseId;
+  final String courseCode;
+  final String courseName;
+  final int sks;
+  final int semester;
+  final String academicYear;
+  final double? numericScore;
+  final String letterGrade;
+  final DateTime updatedAt;
+
+  const StudentCourseGrade({
+    required this.id,
+    required this.studentNim,
+    required this.courseId,
+    required this.courseCode,
+    required this.courseName,
+    required this.sks,
+    required this.semester,
+    required this.academicYear,
+    required this.numericScore,
+    required this.letterGrade,
+    required this.updatedAt,
+  });
+
+  factory StudentCourseGrade.fromMap(Map<String, dynamic> map) {
+    return StudentCourseGrade(
+      id: map['id']?.toString() ?? '',
+      studentNim: map['student_nim']?.toString() ?? '',
+      courseId: map['course_id']?.toString() ?? '',
+      courseCode: map['course_code']?.toString() ?? '',
+      courseName: map['course_name']?.toString() ?? 'Mata Kuliah',
+      sks: (map['sks'] as num?)?.toInt() ?? 0,
+      semester: (map['semester'] as num?)?.toInt() ?? 1,
+      academicYear: map['academic_year']?.toString() ?? '',
+      numericScore: (map['nilai_angka'] as num?)?.toDouble(),
+      letterGrade: map['nilai_huruf']?.toString() ?? '-',
+      updatedAt:
+          DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
 class ResourceItem {
   final String id;
   final String courseName;

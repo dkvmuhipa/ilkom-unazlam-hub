@@ -9,6 +9,7 @@ import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/qr_widget.dart';
 import '../../core/widgets/scale_button.dart';
+import '../../models/models.dart';
 
 class AttendanceHistoryItem {
   final String date;
@@ -227,6 +228,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<AttendanceHistoryItem> _history = [];
   List<Map<String, dynamic>> _allClassLogs = [];
   bool _isLoadingAttendance = true;
+  String? _attendanceLoadError;
 
   @override
   void initState() {
@@ -236,11 +238,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _loadRealAttendanceData() async {
-    final activeNim = widget.userNim ?? '260250023';
+    final activeNim = widget.userNim ?? '';
+    if (mounted) {
+      setState(() {
+        _isLoadingAttendance = true;
+        _attendanceLoadError = null;
+      });
+    }
 
     try {
-      // 1. Ambil data log presensi real dari Supabase
-      final rawLogs = await SupabaseRepository.getAttendanceLogs();
+      if (!widget.canManageClassAttendance && activeNim.isEmpty) {
+        throw StateError('NIM akun tidak ditemukan. Silakan masuk kembali.');
+      }
+      final rawLogs = await SupabaseRepository.getAttendanceLogsStrict(
+        studentNim: widget.canManageClassAttendance ? null : activeNim,
+      );
       
       if (!mounted) return;
 
@@ -258,11 +270,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           if (l['courses'] != null && l['courses']['nama_mk'] != null) {
             cName = l['courses']['nama_mk'].toString();
           } else if (l['course_id'] != null) {
-            final match = DummyData.courses.firstWhere(
-              (c) => c.id == l['course_id'],
-              orElse: () => DummyData.courses.first,
-            );
-            cName = match.nama;
+            cName = 'Mata Kuliah';
           }
 
           final rawSt = (l['status'] ?? 'hadir').toString().toLowerCase();
@@ -285,13 +293,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       if (mounted) {
         setState(() {
           _isLoadingAttendance = false;
+          _attendanceLoadError =
+              'Riwayat presensi gagal dimuat. Periksa koneksi lalu coba lagi.';
         });
       }
     }
   }
 
   void _confirmResetPersonalAttendance() {
-    final activeNim = widget.userNim ?? '260250023';
+    final activeNim = widget.userNim ?? '';
+    if (activeNim.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'NIM akun tidak ditemukan. Masuk kembali sebelum mengubah riwayat.',
+          ),
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -825,7 +845,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               return;
             }
 
-            final activeNim = widget.userNim ?? '260250023';
+            final activeNim = widget.userNim ?? '';
 
             // 2. Validasi Token jika diberikan (trim & case-insensitive)
             final cleanTokenInput = tokenToVerify.trim().toUpperCase();
@@ -1160,10 +1180,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeNim = widget.userNim ?? '260250023';
+    final activeNim = widget.userNim ?? '';
     final studentProfile = DummyData.students.firstWhere(
       (s) => s.nim == activeNim,
-      orElse: () => DummyData.students.first,
+      orElse: () => StudentProfile(
+        id: '',
+        nim: activeNim,
+        nama: activeNim.isEmpty ? 'Mahasiswa' : 'Mahasiswa $activeNim',
+        email: '',
+        noWa: '',
+      ),
     );
 
     final totalSessions = _history.length;
@@ -1638,7 +1664,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             // ==========================================
             // VIEW SEPARATION: TAB 1 (CLASS RECAP FOR ADMIN/KETUA)
             // ==========================================
-            if (_isLoadingAttendance) ...[
+            if (_attendanceLoadError != null) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 40,
+                  horizontal: 20,
+                ),
+                child: Column(
+                  children: [
+                    Text(_attendanceLoadError!, textAlign: TextAlign.center),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _loadRealAttendanceData,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Coba lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (_isLoadingAttendance) ...[
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),

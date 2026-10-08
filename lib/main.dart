@@ -29,6 +29,7 @@ import 'features/notifications/notification_screen.dart';
 import 'features/voting/voting_screen.dart';
 import 'features/letters/letters_screen.dart';
 import 'features/audit/audit_log_screen.dart';
+import 'features/gpa/academic_grades_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
 import 'core/services/dummy_data.dart';
@@ -356,6 +357,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     // 12: Voting & Polling
     // 13: Surat Izin & Dispensasi
     // 14: Audit Log Aktivitas
+    // 15: Transkrip Nilai & IPK
     final currentUser = _currentUser;
 
     final List<Widget> screens = [
@@ -428,6 +430,12 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         onBack: _goBack,
       ), // 13: Surat Izin & Dispensasi
       AuditLogScreen(onBack: _goBack), // 14: Audit Log Aktivitas
+      AcademicGradesScreen(
+        key: ValueKey('grades_${currentUser.nim}'),
+        studentNim: currentUser.nim,
+        canManage: currentUser.isAdmin,
+        student: currentUser,
+      ), // 15: Transkrip Nilai & IPK
     ];
 
     final isTopLevel = _currentIndex <= 4;
@@ -1008,6 +1016,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                   _buildDrawerTile(Icons.home_outlined, 'Beranda', 0),
                   _buildDrawerTile(Icons.calendar_month_outlined, 'Jadwal', 1),
                   _buildDrawerTile(Icons.assignment_outlined, 'Tugas', 2),
+                  _buildDrawerTile(Icons.school_outlined, 'Nilai & IPK', 15),
                   _buildDrawerTile(Icons.people_alt_outlined, 'Kelas', 3),
                   _buildDrawerTile(Icons.campaign_outlined, 'Pengumuman', 7),
                   _buildDrawerTile(Icons.event_note_outlined, 'Agenda', 6),

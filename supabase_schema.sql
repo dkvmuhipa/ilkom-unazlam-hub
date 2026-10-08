@@ -135,6 +135,25 @@ CREATE TABLE IF NOT EXISTS students (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 8a. NILAI AKHIR PER MAHASISWA, MATA KULIAH, DAN SEMESTER
+CREATE TABLE IF NOT EXISTS student_course_grades (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    student_nim TEXT NOT NULL REFERENCES students(nim) ON DELETE CASCADE,
+    course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
+    course_code TEXT NOT NULL DEFAULT '',
+    course_name TEXT NOT NULL,
+    sks SMALLINT NOT NULL CHECK (sks BETWEEN 1 AND 24),
+    semester SMALLINT NOT NULL CHECK (semester BETWEEN 1 AND 16),
+    academic_year TEXT NOT NULL,
+    nilai_angka NUMERIC(5,2) CHECK (nilai_angka IS NULL OR nilai_angka BETWEEN 0 AND 100),
+    nilai_huruf TEXT NOT NULL CHECK (nilai_huruf IN ('A','A-','B+','B','B-','C+','C','D','E')),
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (student_nim, course_id, semester, academic_year)
+);
+
 -- 9. TABEL RESOURCES (GUDANG MATERI KULIAH)
 CREATE TABLE IF NOT EXISTS resources (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -257,7 +276,7 @@ CREATE TRIGGER prevent_client_auth_link_change BEFORE UPDATE OF auth_user_id
   ON public.students FOR EACH ROW EXECUTE FUNCTION public.prevent_client_auth_link_change();
 
 DO $$ DECLARE t text; BEGIN
-  FOREACH t IN ARRAY ARRAY['courses','assignments','student_assignments','announcements',
+  FOREACH t IN ARRAY ARRAY['courses','assignments','student_assignments','student_course_grades','announcements',
     'treasury_transactions','agenda_items','attendance_logs','students','resources',
     'polls','poll_options','poll_votes','permission_letters','audit_logs'] LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
@@ -271,7 +290,7 @@ END $$;
 DO $$ DECLARE p record; BEGIN
   FOR p IN SELECT schemaname, tablename, policyname FROM pg_policies
     WHERE schemaname = 'public' AND tablename = ANY(ARRAY[
-      'courses','assignments','student_assignments','announcements','treasury_transactions',
+      'courses','assignments','student_assignments','student_course_grades','announcements','treasury_transactions',
       'agenda_items','attendance_logs','students','resources','polls','poll_options',
       'poll_votes','permission_letters','audit_logs'])
   LOOP EXECUTE format('DROP POLICY %I ON %I.%I', p.policyname, p.schemaname, p.tablename); END LOOP;
@@ -310,6 +329,14 @@ CREATE POLICY student_assignments_update_own ON public.student_assignments FOR U
 CREATE POLICY student_assignments_grade_update ON public.student_assignments FOR UPDATE TO authenticated
   USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']))
   WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY student_course_grades_read_own_or_admin ON public.student_course_grades FOR SELECT TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY student_course_grades_insert_admin ON public.student_course_grades FOR INSERT TO authenticated
+  WITH CHECK (public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY student_course_grades_update_admin ON public.student_course_grades FOR UPDATE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY student_course_grades_delete_admin ON public.student_course_grades FOR DELETE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN']));
 
 CREATE OR REPLACE FUNCTION public.protect_assignment_grade_fields()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$

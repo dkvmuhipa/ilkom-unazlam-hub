@@ -44,6 +44,8 @@ class AssignmentsScreen extends StatefulWidget {
 class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String _selectedTab = 'Aktif';
   String _selectedCourseFilter = 'Semua Mata Kuliah';
+  bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -52,24 +54,39 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   Future<void> _loadPersonalAssignmentStatuses() async {
-    final nim = widget.userNim ?? 'default';
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
-      await SupabaseRepository.getAssignments();
-      final cloudStatuses =
-          await SupabaseRepository.getPersonalAssignmentStatuses(nim);
-      final prefs = await SharedPreferences.getInstance();
-      for (var a in DummyData.assignments) {
-        final saved =
-            cloudStatuses[a.id] ??
-            (SupabaseService.client == null
-                ? prefs.getString('assignment_status_${nim}_${a.id}')
-                : null);
-        if (saved != null) {
-          a.status = saved;
-        }
+      final nim = widget.userNim;
+      final results = await Future.wait<dynamic>([
+        SupabaseRepository.getAssignmentsStrict(),
+        SupabaseRepository.getCoursesStrict(),
+        SupabaseRepository.getPersonalAssignmentStatusesStrict(nim ?? ''),
+      ]);
+      final courses = results[1] as List<Course>;
+      DummyData.courses
+        ..clear()
+        ..addAll(courses);
+
+      final cloudStatuses = results[2] as Map<String, String>;
+      for (final assignment in DummyData.assignments) {
+        assignment.status = cloudStatuses[assignment.id] ?? 'belum';
       }
-      if (mounted) setState(() {});
-    } catch (_) {}
+      if (mounted) setState(() => _isLoading = false);
+    } catch (error) {
+      debugPrint('Gagal memuat tugas kelas dari Supabase: $error');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadError =
+              'Tugas gagal dimuat dari server. Periksa koneksi lalu coba lagi.';
+        });
+      }
+    }
   }
 
   final Map<String, Color> _courseColors = {
@@ -84,7 +101,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   };
 
   Future<void> _cycleStatus(Assignment assignment) async {
-    final nim = widget.userNim ?? 'default';
+    final nim = widget.userNim ?? '';
     final previousStatus = assignment.status;
     final nextStatus = previousStatus == 'belum'
         ? 'sedang_dikerjakan'
@@ -204,6 +221,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   void _showAddAssignmentDialog() {
+    if (_isLoading || _loadError != null || DummyData.courses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Mata kuliah belum berhasil dimuat. Coba muat ulang dahulu.',
+          ),
+        ),
+      );
+      return;
+    }
     final titleController = TextEditingController();
     final descController = TextEditingController();
     final linkController = TextEditingController();
@@ -468,7 +495,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
     final availableCourses = [
       'Semua Mata Kuliah',
-      ...DummyData.courses.map((c) => c.nama).toSet(),
+      if (!_isLoading && _loadError == null)
+        ...DummyData.courses.map((c) => c.nama).toSet(),
     ];
 
     return Scaffold(
@@ -581,16 +609,48 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
           // Assignment List
           Expanded(
-            child: filteredList.isEmpty
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                : _loadError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.cloud_off_rounded,
+                            size: 38,
+                            color: AppColors.textSub,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(_loadError!, textAlign: TextAlign.center),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _loadPersonalAssignmentStatuses,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Coba lagi'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : filteredList.isEmpty
                 ? EmptyStateWidget(
                     icon: _selectedTab == 'Selesai'
                         ? Icons.checklist_rtl_rounded
                         : Icons.task_alt_rounded,
-                    title: _selectedTab == 'Selesai'
+                    title: DummyData.assignments.isEmpty
+                        ? 'Belum Ada Tugas'
+                        : _selectedTab == 'Selesai'
                         ? 'Belum Ada Tugas Selesai'
                         : 'Semua Tugas Telah Tuntas! 🎉',
-                    subtitle: _selectedTab == 'Selesai'
-                        ? 'Tandai tugas yang sudah dikerjakan sebagai selesai untuk memantau progres.'
+                    subtitle: DummyData.assignments.isEmpty
+                        ? 'Tugas dari pengurus kelas akan muncul di sini.'
+                        : _selectedTab == 'Selesai'
+                        ? 'Tugas yang sudah selesai atau dinilai akan muncul di sini.'
                         : 'Bagus sekali! Tidak ada tenggat tugas yang menumpuk saat ini.',
                     actionLabel: widget.canManage ? 'Buat Tugas Baru' : null,
                     onAction: widget.canManage
@@ -868,7 +928,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   }
 
   Future<void> _loadSubmissionData() async {
-    final nim = widget.userNim ?? 'default';
+    final nim = widget.userNim ?? '';
     try {
       if (SupabaseService.client != null) {
         final submission =
@@ -911,7 +971,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   }
 
   Future<bool> _saveSubmission(String url, String notes) async {
-    final nim = widget.userNim ?? 'default';
+    final nim = widget.userNim ?? '';
     final now = DateTime.now();
     final formattedTime =
         '${now.day} ${_monthName(now.month)} ${now.year}, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA';
@@ -956,7 +1016,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   }
 
   Future<void> _setStatus(String status) async {
-    final nim = widget.userNim ?? 'default';
+    final nim = widget.userNim ?? '';
     final previousStatus = _currentStatus;
     setState(() {
       _currentStatus = status;

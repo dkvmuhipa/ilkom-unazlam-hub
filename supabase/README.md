@@ -22,9 +22,11 @@ Then run `supabase_migrations/20261008_assignment_grading.sql` to enable student
 file submissions, submission status, grades, feedback, private Storage access,
 and class-grader RLS rules. The bucket accepts supported documents, images, or
 ZIP files up to 20 MB.
-Do not
-combine either with an older copy of the schema that creates `USING (true)`
-policies.
+Then run `supabase_migrations/20261009_student_course_grades.sql` to enable the
+official course transcript and restrict grade changes to administrators. This
+migration targets the existing production schema, where course IDs are UUIDs.
+Do not combine these with an older copy of the schema that creates
+`USING (true)` policies.
 
 From the repository root, with the Supabase CLI installed and authenticated:
 

@@ -375,6 +375,39 @@ class SupabaseRepository {
     }
   }
 
+  /// Loads assignments from Supabase without falling back to demo data.
+  /// Use this on signed-in screens where showing stale sample work would be
+  /// misleading.
+  static Future<List<Assignment>> getAssignmentsStrict() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+
+    final response = await client
+        .from('assignments')
+        .select()
+        .order('deadline');
+    final assignments = (response as List).map((row) {
+      return Assignment(
+        id: row['id']?.toString() ?? '',
+        courseId: row['course_id']?.toString() ?? '',
+        courseName: row['course_name']?.toString() ?? 'Mata Kuliah',
+        judul: row['judul']?.toString() ?? '',
+        deskripsi: row['deskripsi']?.toString() ?? '',
+        kategori: row['kategori']?.toString() ?? 'Individu',
+        deadline:
+            DateTime.tryParse(row['deadline']?.toString() ?? '') ??
+            DateTime.now().add(const Duration(days: 3)),
+        linkPengumpulan: row['link_pengumpulan']?.toString(),
+        status: 'belum',
+      );
+    }).toList();
+
+    DummyData.assignments
+      ..clear()
+      ..addAll(assignments);
+    return assignments;
+  }
+
   static Future<bool> createAssignment({
     required String courseId,
     required String courseName,
@@ -534,6 +567,24 @@ class SupabaseRepository {
       debugPrint('Error fetch personal assignment statuses: $e');
       return const {};
     }
+  }
+
+  static Future<Map<String, String>> getPersonalAssignmentStatusesStrict(
+    String studentNim,
+  ) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    if (studentNim.isEmpty) {
+      throw ArgumentError.value(studentNim, 'studentNim', 'NIM wajib diisi.');
+    }
+    final rows = await client
+        .from('student_assignments')
+        .select('assignment_id,status')
+        .eq('student_nim', studentNim);
+    return {
+      for (final row in rows as List)
+        row['assignment_id'].toString(): row['status'].toString(),
+    };
   }
 
   static Future<Map<String, dynamic>?> getPersonalAssignmentSubmission(
@@ -849,6 +900,24 @@ class SupabaseRepository {
       debugPrint('Error fetch attendance logs: $e');
       return [];
     }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAttendanceLogsStrict({
+    String? studentNim,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final dynamic response = studentNim == null
+        ? await client
+              .from('attendance_logs')
+              .select('*, courses(nama_mk, kode_mk)')
+              .order('created_at', ascending: false)
+        : await client
+              .from('attendance_logs')
+              .select('*, courses(nama_mk, kode_mk)')
+              .eq('student_nim', studentNim)
+              .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
   }
 
   static Future<bool> clearAttendanceLogs({String? studentNim}) async {
