@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 class DirectoryScreen extends StatefulWidget {
@@ -15,11 +16,27 @@ class DirectoryScreen extends StatefulWidget {
 
 class _DirectoryScreenState extends State<DirectoryScreen> {
   String _searchQuery = '';
+  List<StudentProfile> _students = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudents();
+  }
+
+  Future<void> _loadStudents() async {
+    final students = await SupabaseRepository.getClassDirectory();
+    if (mounted) setState(() => _students = students);
+  }
 
   Future<void> _openWhatsApp(String phone, String name) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final internationalPhone = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
-    final message = Uri.encodeComponent('Halo $name, saya teman sekelas dari S1 Ilmu Komunikasi UNAZLAM...');
+    final internationalPhone = cleanPhone.startsWith('0')
+        ? '62${cleanPhone.substring(1)}'
+        : cleanPhone;
+    final message = Uri.encodeComponent(
+      'Halo $name, saya teman sekelas dari S1 Ilmu Komunikasi UNAZLAM...',
+    );
     final url = 'https://wa.me/$internationalPhone?text=$message';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -72,7 +89,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = DummyData.students.where((s) {
+    final filtered = _students.where((s) {
       if (s.role == 'ADMIN') return false;
       return s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           s.nim.contains(_searchQuery);
@@ -110,7 +127,11 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 decoration: const InputDecoration(
                   hintText: 'Cari nama atau NIM...',
                   hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                  prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF9CA3AF)),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: Color(0xFF9CA3AF),
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -147,7 +168,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   child: Material(
                     color: Colors.transparent,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
                       leading: Container(
                         width: 44,
                         height: 44,
@@ -178,8 +202,12 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                         roleLabel,
                         style: TextStyle(
                           fontSize: 11.5,
-                          fontWeight: s.role != 'mahasiswa' ? FontWeight.w700 : FontWeight.w500,
-                          color: s.role != 'mahasiswa' ? avatarTextColor : const Color(0xFF6B7280),
+                          fontWeight: s.role != 'mahasiswa'
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: s.role != 'mahasiswa'
+                              ? avatarTextColor
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       trailing: const Icon(
@@ -188,7 +216,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                         color: Color(0xFF9CA3AF),
                       ),
                       onTap: () {
-                        _showStudentDetailModal(s, initials, avatarBg, avatarTextColor, roleLabel);
+                        _showStudentDetailModal(
+                          s,
+                          initials,
+                          avatarBg,
+                          avatarTextColor,
+                          roleLabel,
+                        );
                       },
                     ),
                   ),
@@ -201,7 +235,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     );
   }
 
-  void _showStudentDetailModal(StudentProfile s, String initials, Color avatarBg, Color avatarTextColor, String roleLabel) {
+  void _showStudentDetailModal(
+    StudentProfile s,
+    String initials,
+    Color avatarBg,
+    Color avatarTextColor,
+    String roleLabel,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -224,14 +264,22 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 child: Center(
                   child: Text(
                     initials,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: avatarTextColor),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: avatarTextColor,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 s.nama,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111827),
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -245,13 +293,21 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   height: 48,
                   child: ElevatedButton.icon(
                     onPressed: () => _openWhatsApp(s.noWa, s.nama),
-                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                    label: const Text('Hubungi via WhatsApp', style: TextStyle(fontWeight: FontWeight.w700)),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      'Hubungi via WhatsApp',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF25D366),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -266,12 +322,17 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       _showManageMemberDialog(s);
                     },
                     icon: const Icon(Icons.manage_accounts_rounded, size: 18),
-                    label: const Text('Kelola Jabatan & Info Anggota', style: TextStyle(fontWeight: FontWeight.w700)),
+                    label: const Text(
+                      'Kelola Jabatan & Info Anggota',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF5B3DE8),
                       side: const BorderSide(color: Color(0xFF5B3DE8)),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -292,27 +353,55 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Kelola Anggota: ${s.nama.split(' ').first}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Kelola Anggota: ${s.nama.split(' ').first}',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('NIM: ${s.nim}', style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              Text(
+                'NIM: ${s.nim}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 initialValue: selectedJabatan,
                 decoration: InputDecoration(
                   labelText: 'Jabatan Pengurus',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'Ketua Kelas', child: Text('Ketua Kelas')),
-                  DropdownMenuItem(value: 'Wakil Ketua', child: Text('Wakil Ketua')),
-                  DropdownMenuItem(value: 'Bendahara', child: Text('Bendahara')),
-                  DropdownMenuItem(value: 'Sekretaris', child: Text('Sekretaris')),
-                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
+                  DropdownMenuItem(
+                    value: 'Ketua Kelas',
+                    child: Text('Ketua Kelas'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Wakil Ketua',
+                    child: Text('Wakil Ketua'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Bendahara',
+                    child: Text('Bendahara'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Sekretaris',
+                    child: Text('Sekretaris'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Mahasiswa',
+                    child: Text('Mahasiswa'),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) setDialogState(() => selectedJabatan = val);
@@ -325,8 +414,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nomor WhatsApp',
                   hintText: '0812xxxxxxxx',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ],
@@ -334,19 +428,27 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 setState(() {
                   s.jabatan = selectedJabatan;
                 });
-                await SupabaseRepository.updateStudentJabatan(s.nim, selectedJabatan);
+                await SupabaseRepository.updateStudentJabatan(
+                  s.nim,
+                  selectedJabatan,
+                );
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Jabatan ${s.nama} berhasil diperbarui menjadi $selectedJabatan!'),
+                      content: Text(
+                        'Jabatan ${s.nama} berhasil diperbarui menjadi $selectedJabatan!',
+                      ),
                       backgroundColor: const Color(0xFF10B981),
                     ),
                   );
@@ -355,7 +457,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5B3DE8),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Simpan'),
             ),

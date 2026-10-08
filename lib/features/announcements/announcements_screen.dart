@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
@@ -9,11 +10,7 @@ class AnnouncementsScreen extends StatefulWidget {
   final bool canPost;
   final VoidCallback? onBack;
 
-  const AnnouncementsScreen({
-    super.key,
-    this.canPost = true,
-    this.onBack,
-  });
+  const AnnouncementsScreen({super.key, this.canPost = true, this.onBack});
 
   static void showAnnouncementDetail(
     BuildContext context,
@@ -70,8 +67,13 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Buat Pengumuman Baru', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Buat Pengumuman Baru',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -101,7 +103,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                   maxLines: 4,
                   decoration: const InputDecoration(
                     labelText: 'Isi Pengumuman',
-                    hintText: 'Tuliskan informasi penting untuk seluruh mahasiswa...',
+                    hintText:
+                        'Tuliskan informasi penting untuk seluruh mahasiswa...',
                   ),
                 ),
               ],
@@ -110,25 +113,40 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty) return;
-                Navigator.pop(ctx);
-                await SupabaseRepository.createAnnouncement(
+                final saved = await SupabaseRepository.createAnnouncement(
                   judul: titleController.text.trim(),
                   isi: contentController.text.trim(),
                   kategori: category,
                   isPinned: true,
                   authorName: 'Nur Farida (Ketua Kelas)',
                 );
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (!saved) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Pengumuman gagal disimpan ke server.'),
+                      ),
+                    );
+                  }
+                  return;
+                }
                 _loadAnnouncements();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Kirim'),
             ),
@@ -143,9 +161,14 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     final filtered = _selectedCategory == 'Semua'
         ? _announcements
         : _announcements.where((a) {
-            if (_selectedCategory == 'Akademik') return a.kategori.toLowerCase().contains('akademik') || a.kategori.toLowerCase().contains('fakultas');
-            if (_selectedCategory == 'Dosen') return a.kategori.toLowerCase().contains('dosen') || a.kategori.toLowerCase().contains('jadwal');
-            return a.kategori.toLowerCase().contains('kelas') || a.kategori.toLowerCase().contains('penting');
+            if (_selectedCategory == 'Akademik')
+              return a.kategori.toLowerCase().contains('akademik') ||
+                  a.kategori.toLowerCase().contains('fakultas');
+            if (_selectedCategory == 'Dosen')
+              return a.kategori.toLowerCase().contains('dosen') ||
+                  a.kategori.toLowerCase().contains('jadwal');
+            return a.kategori.toLowerCase().contains('kelas') ||
+                a.kategori.toLowerCase().contains('penting');
           }).toList();
 
     return Scaffold(
@@ -156,7 +179,10 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         scrolledUnderElevation: 0,
         leading: widget.onBack != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF111827),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
@@ -171,7 +197,11 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF111827), size: 20),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Color(0xFF111827),
+              size: 20,
+            ),
             onPressed: _loadAnnouncements,
           ),
           const SizedBox(width: 8),
@@ -195,17 +225,26 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                       borderRadius: BorderRadius.circular(20),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+                          color: isSelected
+                              ? const Color(0xFF5B3DE8)
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           cat,
                           style: TextStyle(
                             fontSize: 12.5,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF4B5563),
                           ),
                         ),
                       ),
@@ -221,122 +260,135 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filtered.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Belum ada pengumuman di kategori ini.',
-                          style: TextStyle(color: Color(0xFF6B7280)),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadAnnouncements,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final ann = filtered[index];
-                            final isYellow = index % 2 == 0;
+                ? const Center(
+                    child: Text(
+                      'Belum ada pengumuman di kategori ini.',
+                      style: TextStyle(color: Color(0xFF6B7280)),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadAnnouncements,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final ann = filtered[index];
+                        final isYellow = index % 2 == 0;
 
-                            return InkWell(
-                              onTap: () => AnnouncementsScreen.showAnnouncementDetail(
+                        return InkWell(
+                          onTap: () =>
+                              AnnouncementsScreen.showAnnouncementDetail(
                                 context,
                                 ann,
                                 onChanged: _loadAnnouncements,
                                 canManage: widget.canPost,
                               ),
+                          borderRadius: BorderRadius.circular(18),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(18),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 14),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.02),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Icon Badge
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: isYellow ? const Color(0xFFFEF3C7) : const Color(0xFFF3F0FF),
-                                        borderRadius: BorderRadius.circular(14),
+                              ],
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Icon Badge
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isYellow
+                                        ? const Color(0xFFFEF3C7)
+                                        : const Color(0xFFF3F0FF),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    isYellow
+                                        ? Icons.campaign_rounded
+                                        : Icons.description_outlined,
+                                    color: isYellow
+                                        ? const Color(0xFFB45309)
+                                        : const Color(0xFF5B3DE8),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                // Announcement Body
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        ann.judul,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF111827),
+                                        ),
                                       ),
-                                      child: Icon(
-                                        isYellow ? Icons.campaign_rounded : Icons.description_outlined,
-                                        color: isYellow ? const Color(0xFFB45309) : const Color(0xFF5B3DE8),
-                                        size: 24,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        ann.isi,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF4B5563),
+                                          height: 1.4,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    // Announcement Body
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      const SizedBox(height: 10),
+                                      Row(
                                         children: [
                                           Text(
-                                            ann.judul,
+                                            '${ann.createdAt.day} ${_monthName(ann.createdAt.month)} ${ann.createdAt.year}',
                                             style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w800,
-                                              color: Color(0xFF111827),
+                                              fontSize: 11,
+                                              color: Color(0xFF9CA3AF),
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            ann.isi,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Color(0xFF4B5563),
-                                              height: 1.4,
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Oleh ${ann.authorName}',
+                                              textAlign: TextAlign.end,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF6B7280),
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                '${ann.createdAt.day} ${_monthName(ann.createdAt.month)} ${ann.createdAt.year}',
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF9CA3AF),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  'Oleh ${ann.authorName}',
-                                                  textAlign: TextAlign.end,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontSize: 11,
-                                                    color: Color(0xFF6B7280),
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -353,7 +405,21 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   String _monthName(int month) {
-    const m = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const m = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
     return m[month];
   }
 }
@@ -380,8 +446,13 @@ class _AnnouncementDetailSheet extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Edit Pengumuman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Edit Pengumuman',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -389,11 +460,16 @@ class _AnnouncementDetailSheet extends StatelessWidget {
               children: [
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Judul Pengumuman'),
+                  decoration: const InputDecoration(
+                    labelText: 'Judul Pengumuman',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: ['Akademik', 'Dosen', 'Kelas'].contains(category) ? category : 'Kelas',
+                  initialValue:
+                      ['Akademik', 'Dosen', 'Kelas'].contains(category)
+                      ? category
+                      : 'Kelas',
                   decoration: const InputDecoration(labelText: 'Kategori'),
                   items: ['Akademik', 'Dosen', 'Kelas']
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -404,16 +480,22 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 CheckboxListTile(
-                  title: const Text('Sematkan di atas (Penting)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Sematkan di atas (Penting)',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
                   value: isPinned,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: (val) => setDialogState(() => isPinned = val ?? false),
+                  onChanged: (val) =>
+                      setDialogState(() => isPinned = val ?? false),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: contentController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Isi Pengumuman'),
+                  decoration: const InputDecoration(
+                    labelText: 'Isi Pengumuman',
+                  ),
                 ),
               ],
             ),
@@ -421,34 +503,64 @@ class _AnnouncementDetailSheet extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final judul = titleController.text.trim();
                 final isi = contentController.text.trim();
                 if (judul.isEmpty) return;
 
+                final oldValues = (
+                  announcement.judul,
+                  announcement.isi,
+                  announcement.kategori,
+                  announcement.isPinned,
+                );
                 announcement.judul = judul;
                 announcement.isi = isi;
                 announcement.kategori = category;
                 announcement.isPinned = isPinned;
-                SupabaseRepository.updateAnnouncement(announcement);
-
-                Navigator.pop(ctx);
-                Navigator.pop(context);
-                onChanged?.call();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Pengumuman berhasil diperbarui!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
+                final saved = await SupabaseRepository.updateAnnouncement(
+                  announcement,
                 );
+                if (!saved) {
+                  announcement.judul = oldValues.$1;
+                  announcement.isi = oldValues.$2;
+                  announcement.kategori = oldValues.$3;
+                  announcement.isPinned = oldValues.$4;
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Perubahan pengumuman gagal disimpan.'),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) Navigator.pop(context);
+                onChanged?.call();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pengumuman berhasil diperbarui!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Simpan'),
             ),
@@ -464,20 +576,36 @@ class _AnnouncementDetailSheet extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Hapus Pengumuman?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Hapus Pengumuman?',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: Text('Hapus pengumuman "${announcement.judul}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               final nav = Navigator.of(context);
-              Navigator.pop(ctx);
-              nav.pop();
-              await SupabaseRepository.deleteAnnouncement(announcement.id);
+              final saved = await SupabaseRepository.deleteAnnouncement(
+                announcement.id,
+              );
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (!saved) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Pengumuman gagal dihapus dari server.'),
+                  ),
+                );
+                return;
+              }
+              if (nav.mounted) nav.pop();
               onChanged?.call();
               messenger.showSnackBar(
                 const SnackBar(
@@ -489,7 +617,9 @@ class _AnnouncementDetailSheet extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Hapus'),
           ),
@@ -499,7 +629,8 @@ class _AnnouncementDetailSheet extends StatelessWidget {
   }
 
   Future<void> _shareToWhatsApp(BuildContext context) async {
-    final text = '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n*${announcement.judul}*\n\n${announcement.isi}\n\n_Diposting oleh: ${announcement.authorName} (${announcement.authorRole})_';
+    final text =
+        '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n*${announcement.judul}*\n\n${announcement.isi}\n\n_Diposting oleh: ${announcement.authorName} (${announcement.authorRole})_';
     final url = 'https://wa.me/?text=${Uri.encodeComponent(text)}';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -524,7 +655,21 @@ class _AnnouncementDetailSheet extends StatelessWidget {
   }
 
   String _monthName(int month) {
-    const m = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const m = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
     return m[month];
   }
 
@@ -566,7 +711,10 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: catBg,
                         borderRadius: BorderRadius.circular(12),
@@ -583,18 +731,29 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                     if (announcement.isPinned) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF2F2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.push_pin_rounded, size: 12, color: Color(0xFFDC2626)),
+                            Icon(
+                              Icons.push_pin_rounded,
+                              size: 12,
+                              color: Color(0xFFDC2626),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Disematkan',
-                              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFDC2626),
+                              ),
                             ),
                           ],
                         ),
@@ -606,18 +765,30 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                   children: [
                     if (canManage) ...[
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF5B3DE8), size: 20),
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          color: Color(0xFF5B3DE8),
+                          size: 20,
+                        ),
                         tooltip: 'Edit Pengumuman',
                         onPressed: () => _showEditDialog(context),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 20,
+                        ),
                         tooltip: 'Hapus Pengumuman',
                         onPressed: () => _confirmDelete(context),
                       ),
                     ],
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 22),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Color(0xFF9CA3AF),
+                        size: 22,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -658,10 +829,16 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.15),
+                          backgroundColor: const Color(0xFF5B3DE8)
+                              .withValues(alpha: 0.15),
                           child: Text(
-                            announcement.authorName.isNotEmpty ? announcement.authorName[0] : 'U',
-                            style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                            announcement.authorName.isNotEmpty
+                                ? announcement.authorName[0]
+                                : 'U',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF5B3DE8),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -671,12 +848,19 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                             children: [
                               Text(
                                 announcement.authorName,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1F2937),
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${announcement.authorRole} • ${announcement.createdAt.day} ${_monthName(announcement.createdAt.month)} ${announcement.createdAt.year}, ${announcement.createdAt.hour.toString().padLeft(2, '0')}:${announcement.createdAt.minute.toString().padLeft(2, '0')} WITA',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF6B7280),
+                                ),
                               ),
                             ],
                           ),
@@ -713,21 +897,36 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: '${announcement.judul}\n\n${announcement.isi}'));
+                            Clipboard.setData(
+                              ClipboardData(
+                                text:
+                                    '${announcement.judul}\n\n${announcement.isi}',
+                              ),
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Teks pengumuman berhasil disalin!'),
+                                content: Text(
+                                  'Teks pengumuman berhasil disalin!',
+                                ),
                                 duration: Duration(seconds: 2),
                               ),
                             );
                           },
                           icon: const Icon(Icons.copy_rounded, size: 16),
-                          label: const Text('Salin Isi', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          label: const Text(
+                            'Salin Isi',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF374151),
                             side: const BorderSide(color: Color(0xFFD1D5DB)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -737,12 +936,20 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () => _shareToWhatsApp(context),
                           icon: const Icon(Icons.share_rounded, size: 16),
-                          label: const Text('Bagikan WA', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          label: const Text(
+                            'Bagikan WA',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF16A34A),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                           ),
                         ),

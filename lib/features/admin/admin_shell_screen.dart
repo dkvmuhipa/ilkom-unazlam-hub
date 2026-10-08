@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import '../../core/services/dummy_data.dart';
 import '../../core/services/admin_account_service.dart';
 import '../../core/services/supabase_repository.dart';
@@ -53,14 +54,54 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     ];
     _courses = List.from(DummyData.courses);
     _lecturers = [
-      LecturerItem(id: 'lec_1', nama: 'Bapak Muh Fadly, S.Ag., M.Ag.', mataKuliah: 'Pendidikan Agama Islam', email: 'fadly@unazlam.ac.id'),
-      LecturerItem(id: 'lec_2', nama: 'Bapak Jefri, S.Pd., M.Hum.', mataKuliah: 'Pendidikan Agama Kristen', email: 'jefri@unazlam.ac.id'),
-      LecturerItem(id: 'lec_3', nama: 'Bapak Meldi Wijaya, M.Pd.', mataKuliah: 'Ilmu Kealaman Dasar', email: 'meldi@unazlam.ac.id'),
-      LecturerItem(id: 'lec_4', nama: 'Ibu Ade Ayu Agustina, M.I.Kom.', mataKuliah: 'Dasar-Dasar Ilmu Komunikasi', email: 'adeayu@unazlam.ac.id'),
-      LecturerItem(id: 'lec_5', nama: 'Bapak Dr. H. M. Yusuf, M.Si.', mataKuliah: 'Pendidikan Pancasila', email: 'yusuf@unazlam.ac.id'),
-      LecturerItem(id: 'lec_6', nama: 'Bapak Drs. H. Ahmad, M.Pd.', mataKuliah: 'Pendidikan Kewarganegaraan', email: 'ahmad@unazlam.ac.id'),
-      LecturerItem(id: 'lec_7', nama: 'Ibu Siti Rahmawati, M.I.Kom.', mataKuliah: 'Pengantar Ilmu Komunikasi', email: 'siti@unazlam.ac.id'),
-      LecturerItem(id: 'lec_8', nama: 'Bapak Hendra Saputra, M.Si.', mataKuliah: 'Etika Komunikasi', email: 'hendra@unazlam.ac.id'),
+      LecturerItem(
+        id: 'lec_1',
+        nama: 'Bapak Muh Fadly, S.Ag., M.Ag.',
+        mataKuliah: 'Pendidikan Agama Islam',
+        email: 'fadly@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_2',
+        nama: 'Bapak Jefri, S.Pd., M.Hum.',
+        mataKuliah: 'Pendidikan Agama Kristen',
+        email: 'jefri@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_3',
+        nama: 'Bapak Meldi Wijaya, M.Pd.',
+        mataKuliah: 'Ilmu Kealaman Dasar',
+        email: 'meldi@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_4',
+        nama: 'Ibu Ade Ayu Agustina, M.I.Kom.',
+        mataKuliah: 'Dasar-Dasar Ilmu Komunikasi',
+        email: 'adeayu@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_5',
+        nama: 'Bapak Dr. H. M. Yusuf, M.Si.',
+        mataKuliah: 'Pendidikan Pancasila',
+        email: 'yusuf@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_6',
+        nama: 'Bapak Drs. H. Ahmad, M.Pd.',
+        mataKuliah: 'Pendidikan Kewarganegaraan',
+        email: 'ahmad@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_7',
+        nama: 'Ibu Siti Rahmawati, M.I.Kom.',
+        mataKuliah: 'Pengantar Ilmu Komunikasi',
+        email: 'siti@unazlam.ac.id',
+      ),
+      LecturerItem(
+        id: 'lec_8',
+        nama: 'Bapak Hendra Saputra, M.Si.',
+        mataKuliah: 'Etika Komunikasi',
+        email: 'hendra@unazlam.ac.id',
+      ),
     ];
   }
 
@@ -72,13 +113,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       // Sync bottom navigation index
       if (view == 'dashboard') {
         _navBarIndex = 0;
-      } else if (view == 'kelas' || view == 'mahasiswa' || view == 'tambah_kelas' || view == 'detail_mahasiswa') {
+      } else if (view == 'kelas' ||
+          view == 'mahasiswa' ||
+          view == 'tambah_kelas' ||
+          view == 'detail_mahasiswa') {
         _navBarIndex = 1;
-      } else if (view == 'dosen' || view == 'matakuliah' || view == 'tahun_akademik') {
+      } else if (view == 'dosen' ||
+          view == 'matakuliah' ||
+          view == 'tahun_akademik') {
         _navBarIndex = 2;
       } else if (view == 'laporan') {
         _navBarIndex = 3;
-      } else if (view == 'pengaturan' || view == 'role_permission' || view == 'manajemen_akun') {
+      } else if (view == 'pengaturan' ||
+          view == 'role_permission' ||
+          view == 'manajemen_akun') {
         _navBarIndex = 4;
       }
     });
@@ -127,81 +175,98 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 580),
-        child: PopScope(
-          canPop: _currentView == 'dashboard',
-          onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && _currentView != 'dashboard') {
-              _navigateTo('dashboard');
-            }
-          },
-          child: Scaffold(
-            backgroundColor: const Color(0xFFF9FAFB),
-            body: SafeArea(
-              child: _buildCurrentView(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isWide ? 1240 : 580),
+            child: PopScope(
+              canPop: _currentView == 'dashboard',
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop && _currentView != 'dashboard')
+                  _navigateTo('dashboard');
+              },
+              child: Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: Row(
+                  children: [
+                    if (isWide)
+                      NavigationRail(
+                        selectedIndex: _navBarIndex,
+                        onDestinationSelected: _handleBottomNav,
+                        labelType: NavigationRailLabelType.all,
+                        destinations: const [
+                          NavigationRailDestination(
+                            icon: Icon(Icons.dashboard_outlined),
+                            selectedIcon: Icon(Icons.dashboard_rounded),
+                            label: Text('Beranda'),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.folder_outlined),
+                            selectedIcon: Icon(Icons.folder_rounded),
+                            label: Text('Data'),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.school_outlined),
+                            selectedIcon: Icon(Icons.school_rounded),
+                            label: Text('Akademik'),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.insert_chart_outlined_rounded),
+                            selectedIcon: Icon(Icons.insert_chart_rounded),
+                            label: Text('Laporan'),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.person_outline_rounded),
+                            selectedIcon: Icon(Icons.person_rounded),
+                            label: Text('Pengaturan'),
+                          ),
+                        ],
+                      ),
+                    Expanded(child: SafeArea(child: _buildCurrentView())),
+                  ],
+                ),
+                bottomNavigationBar: isWide ? null : _buildBottomNav(),
+              ),
             ),
-            bottomNavigationBar: _buildBottomNav(),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _navBarIndex,
-        onTap: _handleBottomNav,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF5B3DE8),
-        unselectedItemColor: const Color(0xFF9CA3AF),
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded, size: 22),
-            activeIcon: Icon(Icons.dashboard_rounded, size: 22),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_outlined, size: 22),
-            activeIcon: Icon(Icons.folder_rounded, size: 22),
-            label: 'Data',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school_outlined, size: 22),
-            activeIcon: Icon(Icons.school_rounded, size: 22),
-            label: 'Akademik',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insert_chart_outlined_rounded, size: 22),
-            activeIcon: Icon(Icons.insert_chart_rounded, size: 22),
-            label: 'Laporan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded, size: 22),
-            activeIcon: Icon(Icons.person_rounded, size: 22),
-            label: 'Profil',
-          ),
-        ],
-      ),
+    return NavigationBar(
+      selectedIndex: _navBarIndex,
+      onDestinationSelected: _handleBottomNav,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard_rounded),
+          label: 'Beranda',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.folder_outlined),
+          selectedIcon: Icon(Icons.folder_rounded),
+          label: 'Data',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.school_outlined),
+          selectedIcon: Icon(Icons.school_rounded),
+          label: 'Akademik',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.insert_chart_outlined_rounded),
+          selectedIcon: Icon(Icons.insert_chart_rounded),
+          label: 'Laporan',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline_rounded),
+          selectedIcon: Icon(Icons.person_rounded),
+          label: 'Pengaturan',
+        ),
+      ],
     );
   }
 
@@ -240,7 +305,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // SCREEN 3: DASHBOARD ADMIN
   // ==========================================
   Widget _buildDashboard() {
-    final activeStudentsCount = DummyData.students.where((s) => s.role != 'ADMIN').length;
+    final activeStudentsCount = DummyData.students
+        .where((s) => s.role != 'ADMIN')
+        .length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -299,7 +366,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     onTap: widget.onSwitchToStudentView,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF3F0FF),
                         borderRadius: BorderRadius.circular(12),
@@ -307,7 +377,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.visibility_outlined, size: 14, color: Color(0xFF5B3DE8)),
+                          Icon(
+                            Icons.visibility_outlined,
+                            size: 14,
+                            color: Color(0xFF5B3DE8),
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Siswa',
@@ -332,7 +406,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFE5E7EB)),
                         ),
-                        child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF5B3DE8), size: 22),
+                        child: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Color(0xFF5B3DE8),
+                          size: 22,
+                        ),
                       ),
                       Positioned(
                         right: 8,
@@ -494,7 +572,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.security_rounded, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.security_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 const Expanded(
@@ -503,7 +585,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     children: [
                       Text(
                         'Pusat Kendali Administrator',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
                       ),
                       SizedBox(height: 2),
                       Text(
@@ -534,20 +620,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: color.withValues(alpha: 0.055),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: 0.18)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: color.withValues(alpha: 0.07),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const Spacer(),
+                Icon(Icons.arrow_outward_rounded, color: color, size: 17),
+              ],
+            ),
+            const SizedBox(height: 14),
             Text(
               count,
               style: const TextStyle(
@@ -576,6 +678,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
+    final color = switch (title.replaceAll('\n', ' ')) {
+      'Kelas' => const Color(0xFF3989D8),
+      'Mahasiswa' => const Color(0xFF159D9A),
+      'Dosen' => const Color(0xFFE96C78),
+      'Mata Kuliah' => const Color(0xFFF0A52B),
+      'Tahun Akademik' => const Color(0xFF7258D8),
+      'Manajemen Akun' => const Color(0xFF269A6C),
+      'Laporan' => const Color(0xFFDF7A36),
+      _ => const Color(0xFF6574C9),
+    };
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -586,11 +698,14 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F0FF),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE9D5FF), width: 0.8),
+              border: Border.all(
+                color: color.withValues(alpha: 0.22),
+                width: 0.8,
+              ),
             ),
-            child: Icon(icon, color: const Color(0xFF5B3DE8), size: 24),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
           Text(
@@ -631,10 +746,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   backgroundColor: const Color(0xFF5B3DE8),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('+ Tambah Kelas', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: const Text(
+                  '+ Tambah Kelas',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -656,7 +776,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: const Color(0xFFF3F0FF),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.groups_rounded, color: Color(0xFF5B3DE8), size: 22),
+                        child: const Icon(
+                          Icons.groups_rounded,
+                          color: Color(0xFF5B3DE8),
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -684,16 +808,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         ),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
                         onSelected: (val) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Aksi $val untuk kelas ${cls.nama}')),
+                            SnackBar(
+                              content: Text(
+                                'Aksi $val untuk kelas ${cls.nama}',
+                              ),
+                            ),
                           );
                         },
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'detail', child: Text('Detail Kelas')),
-                          const PopupMenuItem(value: 'edit', child: Text('Edit Data')),
-                          const PopupMenuItem(value: 'hapus', child: Text('Hapus Kelas', style: TextStyle(color: Colors.red))),
+                          const PopupMenuItem(
+                            value: 'detail',
+                            child: Text('Detail Kelas'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit Data'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'hapus',
+                            child: Text(
+                              'Hapus Kelas',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -726,13 +870,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               children: [
                 _buildFormLabel('Nama Kelas'),
-                _buildFormField(controller: namaController, hintText: 'Contoh: Ilmu Komunikasi'),
+                _buildFormField(
+                  controller: namaController,
+                  hintText: 'Contoh: Ilmu Komunikasi',
+                ),
                 const SizedBox(height: 14),
 
                 _buildFormLabel('Program Studi'),
                 _buildDropdownField<String>(
                   value: selectedProdi,
-                  items: const ['Ilmu Komunikasi', 'Ilmu Pemerintahan', 'Hubungan Internasional'],
+                  items: const [
+                    'Ilmu Komunikasi',
+                    'Ilmu Pemerintahan',
+                    'Hubungan Internasional',
+                  ],
                   onChanged: (val) {
                     if (val != null) setFormState(() => selectedProdi = val);
                   },
@@ -742,7 +893,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 _buildFormLabel('Semester'),
                 _buildDropdownField<String>(
                   value: selectedSemester,
-                  items: const ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'],
+                  items: const [
+                    'Semester 1',
+                    'Semester 2',
+                    'Semester 3',
+                    'Semester 4',
+                    'Semester 5',
+                    'Semester 6',
+                    'Semester 7',
+                    'Semester 8',
+                  ],
                   onChanged: (val) {
                     if (val != null) setFormState(() => selectedSemester = val);
                   },
@@ -760,19 +920,31 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 const SizedBox(height: 14),
 
                 _buildFormLabel('Kapasitas Mahasiswa'),
-                _buildFormField(controller: kapasitasController, hintText: 'Contoh: 30', keyboardType: TextInputType.number),
+                _buildFormField(
+                  controller: kapasitasController,
+                  hintText: 'Contoh: 30',
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 28),
 
                 ElevatedButton(
                   onPressed: () {
-                    final semNum = int.tryParse(selectedSemester.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+                    final semNum =
+                        int.tryParse(
+                          selectedSemester.replaceAll(RegExp(r'[^0-9]'), ''),
+                        ) ??
+                        1;
                     final kap = int.tryParse(kapasitasController.text) ?? 25;
                     setState(() {
-                      _classes.add(ClassItem(
-                        nama: namaController.text.trim().isEmpty ? 'Ilmu Komunikasi' : namaController.text.trim(),
-                        semester: semNum,
-                        jumlahMahasiswa: kap,
-                      ));
+                      _classes.add(
+                        ClassItem(
+                          nama: namaController.text.trim().isEmpty
+                              ? 'Ilmu Komunikasi'
+                              : namaController.text.trim(),
+                          semester: semNum,
+                          jumlahMahasiswa: kap,
+                        ),
+                      );
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -786,10 +958,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     backgroundColor: const Color(0xFF5B3DE8),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  child: const Text(
+                    'Simpan',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
                 ),
               ],
             ),
@@ -806,15 +983,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   String _studentSearchQuery = '';
 
   Widget _buildDataMahasiswa() {
-    final students = DummyData.students.where((s) => s.role != 'ADMIN').where((s) {
-      if (_studentFilter == 'Aktif') return s.isAktif;
-      if (_studentFilter == 'Nonaktif') return !s.isAktif;
-      return true;
-    }).where((s) {
-      if (_studentSearchQuery.isEmpty) return true;
-      final q = _studentSearchQuery.toLowerCase();
-      return s.nama.toLowerCase().contains(q) || s.nim.contains(q);
-    }).toList();
+    final students = DummyData.students
+        .where((s) => s.role != 'ADMIN')
+        .where((s) {
+          if (_studentFilter == 'Aktif') return s.isAktif;
+          if (_studentFilter == 'Nonaktif') return !s.isAktif;
+          return true;
+        })
+        .where((s) {
+          if (_studentSearchQuery.isEmpty) return true;
+          final q = _studentSearchQuery.toLowerCase();
+          return s.nama.toLowerCase().contains(q) || s.nim.contains(q);
+        })
+        .toList();
 
     return Column(
       children: [
@@ -823,13 +1004,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 child: Column(
                   children: [
                     // Search Bar
                     _buildSearchBox(
                       hintText: 'Cari nama atau NIM...',
-                      onChanged: (val) => setState(() => _studentSearchQuery = val),
+                      onChanged: (val) =>
+                          setState(() => _studentSearchQuery = val),
                     ),
                     const SizedBox(height: 12),
                     // Filter Chips: Semua, Aktif, Nonaktif
@@ -842,17 +1027,26 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             onTap: () => setState(() => _studentFilter = f),
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSel ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+                                color: isSel
+                                    ? const Color(0xFF5B3DE8)
+                                    : const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 f,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSel ? Colors.white : const Color(0xFF4B5563),
+                                  fontWeight: isSel
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSel
+                                      ? Colors.white
+                                      : const Color(0xFF4B5563),
                                 ),
                               ),
                             ),
@@ -867,7 +1061,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               // Student List
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
+                  ),
                   itemCount: students.length,
                   itemBuilder: (ctx, i) {
                     final s = students[i];
@@ -876,14 +1073,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE5E7EB)),
                       ),
                       child: InkWell(
-                        onTap: () => _navigateTo('detail_mahasiswa', student: s),
+                        onTap: () =>
+                            _navigateTo('detail_mahasiswa', student: s),
                         borderRadius: BorderRadius.circular(16),
                         child: Row(
                           children: [
@@ -919,11 +1120,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                       ),
                                       if (s.jabatan != 'Mahasiswa')
                                         Container(
-                                          margin: const EdgeInsets.only(left: 6),
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          margin: const EdgeInsets.only(
+                                            left: 6,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFFEF3C7),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             s.jabatan,
@@ -948,22 +1156,35 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                               ),
                             ),
                             PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: Color(0xFF9CA3AF),
+                                size: 20,
+                              ),
                               onSelected: (val) {
                                 if (val == 'detail') {
                                   _navigateTo('detail_mahasiswa', student: s);
                                 } else if (val == 'toggle') {
                                   setState(() => s.isAktif = !s.isAktif);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Akun ${s.nama} diubah jadi ${s.isAktif ? "Aktif" : "Nonaktif"}')),
+                                    SnackBar(
+                                      content: Text(
+                                        'Akun ${s.nama} diubah jadi ${s.isAktif ? "Aktif" : "Nonaktif"}',
+                                      ),
+                                    ),
                                   );
                                 }
                               },
                               itemBuilder: (ctx) => [
-                                const PopupMenuItem(value: 'detail', child: Text('Lihat Detail')),
+                                const PopupMenuItem(
+                                  value: 'detail',
+                                  child: Text('Lihat Detail'),
+                                ),
                                 PopupMenuItem(
                                   value: 'toggle',
-                                  child: Text(s.isAktif ? 'Nonaktifkan' : 'Aktifkan Akun'),
+                                  child: Text(
+                                    s.isAktif ? 'Nonaktifkan' : 'Aktifkan Akun',
+                                  ),
                                 ),
                               ],
                             ),
@@ -984,10 +1205,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     backgroundColor: const Color(0xFF5B3DE8),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text('+ Tambah Mahasiswa', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  child: const Text(
+                    '+ Tambah Mahasiswa',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1006,43 +1235,61 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tambah Mahasiswa Baru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Tambah Mahasiswa Baru',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildFormField(controller: namaCtrl, hintText: 'Nama Lengkap'),
             const SizedBox(height: 10),
-            _buildFormField(controller: nimCtrl, hintText: 'NIM (9 Digit)', keyboardType: TextInputType.number),
+            _buildFormField(
+              controller: nimCtrl,
+              hintText: 'NIM (9 Digit)',
+              keyboardType: TextInputType.number,
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (namaCtrl.text.isNotEmpty && nimCtrl.text.isNotEmpty) {
                 setState(() {
-                  DummyData.students.add(StudentProfile(
-                    id: 'm_${DateTime.now().millisecondsSinceEpoch}',
-                    nama: namaCtrl.text.trim(),
-                    nim: nimCtrl.text.trim(),
-                    email: '${nimCtrl.text.trim()}@unazlam.ac.id',
-                    noWa: '+62 821-xxxx-xxxx',
-                    peminatan: 'Public Relations',
-                    prodi: 'Ilmu Komunikasi',
-                    semester: 1,
-                    kelas: 'Ilmu Komunikasi',
-                    role: 'MAHASISWA',
-                    jabatan: 'Mahasiswa',
-                    isAktif: true,
-                  ));
+                  DummyData.students.add(
+                    StudentProfile(
+                      id: 'm_${DateTime.now().millisecondsSinceEpoch}',
+                      nama: namaCtrl.text.trim(),
+                      nim: nimCtrl.text.trim(),
+                      email: '${nimCtrl.text.trim()}@unazlam.ac.id',
+                      noWa: '+62 821-xxxx-xxxx',
+                      peminatan: 'Public Relations',
+                      prodi: 'Ilmu Komunikasi',
+                      semester: 1,
+                      kelas: 'Ilmu Komunikasi',
+                      role: 'MAHASISWA',
+                      jabatan: 'Mahasiswa',
+                      isAktif: true,
+                    ),
+                  );
                 });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mahasiswa berhasil ditambahkan!'), backgroundColor: Color(0xFF10B981)),
+                  const SnackBar(
+                    content: Text('Mahasiswa berhasil ditambahkan!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -1061,7 +1308,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
     return Column(
       children: [
-        _buildAppBar('Detail Mahasiswa', onBack: () => _navigateTo('mahasiswa')),
+        _buildAppBar(
+          'Detail Mahasiswa',
+          onBack: () => _navigateTo('mahasiswa'),
+        ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -1078,7 +1328,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   children: [
                     CircleAvatar(
                       radius: 36,
-                      backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      backgroundColor: const Color(0xFFF59E0B)
+                          .withValues(alpha: 0.15),
                       child: Text(
                         initials,
                         style: const TextStyle(
@@ -1100,22 +1351,37 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     const SizedBox(height: 3),
                     Text(
                       'NIM ${s.nim}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: s.isAktif ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                        color: s.isAktif
+                            ? const Color(0xFFECFDF5)
+                            : const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: s.isAktif ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA)),
+                        border: Border.all(
+                          color: s.isAktif
+                              ? const Color(0xFFA7F3D0)
+                              : const Color(0xFFFECACA),
+                        ),
                       ),
                       child: Text(
                         s.isAktif ? 'Aktif' : 'Nonaktif',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: s.isAktif ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          color: s.isAktif
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                         ),
                       ),
                     ),
@@ -1130,34 +1396,44 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
                 ),
                 child: Row(
-                  children: ['Informasi', 'Kelas', 'Riwayat'].asMap().entries.map((e) {
-                    final isSel = _detailTab == e.key;
-                    return Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _detailTab = e.key),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: isSel ? const Color(0xFF5B3DE8) : Colors.transparent,
-                                width: 2,
+                  children: ['Informasi', 'Kelas', 'Riwayat']
+                      .asMap()
+                      .entries
+                      .map((e) {
+                        final isSel = _detailTab == e.key;
+                        return Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _detailTab = e.key),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: isSel
+                                        ? const Color(0xFF5B3DE8)
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                e.value,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSel
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                  color: isSel
+                                      ? const Color(0xFF5B3DE8)
+                                      : const Color(0xFF6B7280),
+                                ),
                               ),
                             ),
                           ),
-                          child: Text(
-                            e.value,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSel ? FontWeight.w800 : FontWeight.w500,
-                              color: isSel ? const Color(0xFF5B3DE8) : const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      })
+                      .toList(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1173,21 +1449,49 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ),
                   child: Column(
                     children: [
-                      _buildDetailRow(Icons.person_outline, 'Nama Lengkap', s.nama),
+                      _buildDetailRow(
+                        Icons.person_outline,
+                        'Nama Lengkap',
+                        s.nama,
+                      ),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.school_outlined, 'Program Studi', s.prodi),
+                      _buildDetailRow(
+                        Icons.school_outlined,
+                        'Program Studi',
+                        s.prodi,
+                      ),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.account_balance_outlined, 'Fakultas', 'Ilmu Sosial dan Ilmu Politik (FISIP)'),
+                      _buildDetailRow(
+                        Icons.account_balance_outlined,
+                        'Fakultas',
+                        'Ilmu Sosial dan Ilmu Politik (FISIP)',
+                      ),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.format_list_numbered, 'Semester', '${s.semester} (Satu)'),
+                      _buildDetailRow(
+                        Icons.format_list_numbered,
+                        'Semester',
+                        '${s.semester} (Satu)',
+                      ),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.meeting_room_outlined, 'Kelas', s.kelas),
+                      _buildDetailRow(
+                        Icons.meeting_room_outlined,
+                        'Kelas',
+                        s.kelas,
+                      ),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.badge_outlined, 'Jabatan Organisasi', s.jabatan),
+                      _buildDetailRow(
+                        Icons.badge_outlined,
+                        'Jabatan Organisasi',
+                        s.jabatan,
+                      ),
                       const Divider(height: 18),
                       _buildDetailRow(Icons.email_outlined, 'Email', s.email),
                       const Divider(height: 18),
-                      _buildDetailRow(Icons.phone_outlined, 'No. HP', s.noWa.isEmpty ? '-' : s.noWa),
+                      _buildDetailRow(
+                        Icons.phone_outlined,
+                        'No. HP',
+                        s.noWa.isEmpty ? '-' : s.noWa,
+                      ),
                     ],
                   ),
                 ),
@@ -1202,11 +1506,29 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Kelas yang Diikuti', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      Text(
+                        'Kelas yang Diikuti',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
                       SizedBox(height: 10),
-                      Text('• ILKOM Semester 1 (Pagi) - Angkatan 2026', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+                      Text(
+                        '• ILKOM Semester 1 (Pagi) - Angkatan 2026',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text('• Beban SKS: 20 SKS Paket Semester 1', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+                      Text(
+                        '• Beban SKS: 20 SKS Paket Semester 1',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1221,11 +1543,30 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Riwayat Aktivitas', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      Text(
+                        'Riwayat Aktivitas',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
                       SizedBox(height: 10),
-                      Text('• Terdaftar pada KRS Semester 1 Ganjil 2026', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+                      Text(
+                        '• Terdaftar pada KRS Semester 1 Ganjil 2026',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text('• Presensi Kehadiran: 90% (Tertib)', style: TextStyle(fontSize: 12, color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
+                      Text(
+                        '• Presensi Kehadiran: 90% (Tertib)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF10B981),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1239,16 +1580,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Form edit profil untuk ${s.nama} dibuka')),
+                          SnackBar(
+                            content: Text(
+                              'Form edit profil untuk ${s.nama} dibuka',
+                            ),
+                          ),
                         );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF5B3DE8),
                         side: const BorderSide(color: Color(0xFF5B3DE8)),
                         minimumSize: const Size.fromHeight(46),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('Edit', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -1256,18 +1606,28 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         setState(() => s.isAktif = !s.isAktif);
-                        SupabaseRepository.toggleStudentStatus(s.nim, s.isAktif);
+                        SupabaseRepository.toggleStudentStatus(
+                          s.nim,
+                          s.isAktif,
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Status mahasiswa ${s.nama} diubah!')),
+                          SnackBar(
+                            content: Text('Status mahasiswa ${s.nama} diubah!'),
+                          ),
                         );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFEF4444),
                         side: const BorderSide(color: Color(0xFFEF4444)),
                         minimumSize: const Size.fromHeight(46),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: Text(s.isAktif ? 'Nonaktifkan' : 'Aktifkan', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      child: Text(
+                        s.isAktif ? 'Nonaktifkan' : 'Aktifkan',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],
@@ -1289,14 +1649,22 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           flex: 2,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         Expanded(
           flex: 3,
           child: Text(
             value,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+            ),
           ),
         ),
       ],
@@ -1312,7 +1680,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final filtered = _lecturers.where((d) {
       if (_dosenSearchQuery.isEmpty) return true;
       final q = _dosenSearchQuery.toLowerCase();
-      return d.nama.toLowerCase().contains(q) || d.mataKuliah.toLowerCase().contains(q);
+      return d.nama.toLowerCase().contains(q) ||
+          d.mataKuliah.toLowerCase().contains(q);
     }).toList();
 
     return Column(
@@ -1334,10 +1703,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   backgroundColor: const Color(0xFF5B3DE8),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('+ Tambah Dosen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: const Text(
+                  '+ Tambah Dosen',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -1358,7 +1732,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: const Color(0xFFE0F2FE),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.person_rounded, color: Color(0xFF0284C7), size: 22),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: Color(0xFF0284C7),
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -1386,16 +1764,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         ),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
                         onSelected: (val) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Aksi $val untuk dosen ${d.nama}')),
+                            SnackBar(
+                              content: Text('Aksi $val untuk dosen ${d.nama}'),
+                            ),
                           );
                         },
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'detail', child: Text('Detail Dosen')),
-                          const PopupMenuItem(value: 'edit', child: Text('Edit Data')),
-                          const PopupMenuItem(value: 'hapus', child: Text('Hapus Dosen', style: TextStyle(color: Colors.red))),
+                          const PopupMenuItem(
+                            value: 'detail',
+                            child: Text('Detail Dosen'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit Data'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'hapus',
+                            child: Text(
+                              'Hapus Dosen',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -1418,35 +1814,56 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tambah Dosen Pengampu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Tambah Dosen Pengampu',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildFormField(controller: namaCtrl, hintText: 'Nama Lengkap & Gelar'),
+            _buildFormField(
+              controller: namaCtrl,
+              hintText: 'Nama Lengkap & Gelar',
+            ),
             const SizedBox(height: 10),
-            _buildFormField(controller: matkulCtrl, hintText: 'Mata Kuliah Diampu'),
+            _buildFormField(
+              controller: matkulCtrl,
+              hintText: 'Mata Kuliah Diampu',
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (namaCtrl.text.isNotEmpty && matkulCtrl.text.isNotEmpty) {
                 setState(() {
-                  _lecturers.add(LecturerItem(
-                    id: 'lec_${DateTime.now().millisecondsSinceEpoch}',
-                    nama: namaCtrl.text.trim(),
-                    mataKuliah: matkulCtrl.text.trim(),
-                    email: '${namaCtrl.text.trim().toLowerCase().replaceAll(' ', '.')}@unazlam.ac.id',
-                  ));
+                  _lecturers.add(
+                    LecturerItem(
+                      id: 'lec_${DateTime.now().millisecondsSinceEpoch}',
+                      nama: namaCtrl.text.trim(),
+                      mataKuliah: matkulCtrl.text.trim(),
+                      email:
+                          '${namaCtrl.text.trim().toLowerCase().replaceAll(' ', '.')}@unazlam.ac.id',
+                    ),
+                  );
                 });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Dosen berhasil ditambahkan!'), backgroundColor: Color(0xFF10B981)),
+                  const SnackBar(
+                    content: Text('Dosen berhasil ditambahkan!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -1463,7 +1880,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final filtered = _courses.where((c) {
       if (_matkulSearchQuery.isEmpty) return true;
       final q = _matkulSearchQuery.toLowerCase();
-      return c.nama.toLowerCase().contains(q) || c.kode.toLowerCase().contains(q);
+      return c.nama.toLowerCase().contains(q) ||
+          c.kode.toLowerCase().contains(q);
     }).toList();
 
     return Column(
@@ -1485,10 +1903,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   backgroundColor: const Color(0xFF5B3DE8),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('+ Tambah Mata Kuliah', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: const Text(
+                  '+ Tambah Mata Kuliah',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -1513,7 +1936,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           color: color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.description_outlined, color: color, size: 22),
+                        child: Icon(
+                          Icons.description_outlined,
+                          color: color,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -1541,16 +1968,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         ),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
                         onSelected: (val) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Aksi $val untuk ${c.nama}')),
+                            SnackBar(
+                              content: Text('Aksi $val untuk ${c.nama}'),
+                            ),
                           );
                         },
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'detail', child: Text('Detail Mata Kuliah')),
-                          const PopupMenuItem(value: 'edit', child: Text('Edit Data')),
-                          const PopupMenuItem(value: 'hapus', child: Text('Hapus', style: TextStyle(color: Colors.red))),
+                          const PopupMenuItem(
+                            value: 'detail',
+                            child: Text('Detail Mata Kuliah'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit Data'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'hapus',
+                            child: Text(
+                              'Hapus',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -1573,41 +2018,58 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tambah Mata Kuliah', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Tambah Mata Kuliah',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildFormField(controller: namaCtrl, hintText: 'Nama Mata Kuliah'),
             const SizedBox(height: 10),
-            _buildFormField(controller: kodeCtrl, hintText: 'Kode Matkul (Contoh: IK-107)'),
+            _buildFormField(
+              controller: kodeCtrl,
+              hintText: 'Kode Matkul (Contoh: IK-107)',
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (namaCtrl.text.isNotEmpty && kodeCtrl.text.isNotEmpty) {
                 setState(() {
-                  _courses.add(Course(
-                    id: 'crs_${DateTime.now().millisecondsSinceEpoch}',
-                    nama: namaCtrl.text.trim(),
-                    kode: kodeCtrl.text.trim(),
-                    dosen: 'Dosen Pengampu',
-                    sks: 2,
-                    semester: 1,
-                    hari: 'Senin',
-                    jamMulai: '08:00',
-                    jamSelesai: '09:40',
-                    ruangan: 'R. Teori 2',
-                  ));
+                  _courses.add(
+                    Course(
+                      id: 'crs_${DateTime.now().millisecondsSinceEpoch}',
+                      nama: namaCtrl.text.trim(),
+                      kode: kodeCtrl.text.trim(),
+                      dosen: 'Dosen Pengampu',
+                      sks: 2,
+                      semester: 1,
+                      hari: 'Senin',
+                      jamMulai: '08:00',
+                      jamSelesai: '09:40',
+                      ruangan: 'R. Teori 2',
+                    ),
+                  );
                 });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mata kuliah berhasil ditambahkan!'), backgroundColor: Color(0xFF10B981)),
+                  const SnackBar(
+                    content: Text('Mata kuliah berhasil ditambahkan!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -1632,17 +2094,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   backgroundColor: const Color(0xFF5B3DE8),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('+ Tambah Tahun Akademik', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: const Text(
+                  '+ Tambah Tahun Akademik',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
               ),
               const SizedBox(height: 16),
 
               ..._academicYears.map((ta) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -1661,7 +2131,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       const Spacer(),
                       if (ta.isAktif)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFECFDF5),
                             borderRadius: BorderRadius.circular(16),
@@ -1678,7 +2151,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         ),
                       const SizedBox(width: 8),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 20),
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
                         onSelected: (val) {
                           if (val == 'aktif') {
                             setState(() {
@@ -1688,13 +2165,23 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                               ta.isAktif = true;
                             });
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Tahun Akademik ${ta.tahun} dijadikan aktif')),
+                              SnackBar(
+                                content: Text(
+                                  'Tahun Akademik ${ta.tahun} dijadikan aktif',
+                                ),
+                              ),
                             );
                           }
                         },
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'aktif', child: Text('Jadikan Tahun Aktif')),
-                          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          const PopupMenuItem(
+                            value: 'aktif',
+                            child: Text('Jadikan Tahun Aktif'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
                         ],
                       ),
                     ],
@@ -1716,23 +2203,41 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tambah Tahun Akademik', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        content: _buildFormField(controller: ctrl, hintText: 'Contoh: 2027/2028'),
+        title: const Text(
+          'Tambah Tahun Akademik',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
+        content: _buildFormField(
+          controller: ctrl,
+          hintText: 'Contoh: 2027/2028',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (ctrl.text.isNotEmpty) {
                 setState(() {
-                  _academicYears.insert(0, AcademicYearItem(tahun: ctrl.text.trim(), isAktif: false));
+                  _academicYears.insert(
+                    0,
+                    AcademicYearItem(tahun: ctrl.text.trim(), isAktif: false),
+                  );
                 });
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tahun akademik berhasil ditambahkan!'), backgroundColor: Color(0xFF10B981)),
+                  const SnackBar(
+                    content: Text('Tahun akademik berhasil ditambahkan!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -1802,17 +2307,26 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       onTap: () => setState(() => _accountFilter = f),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSel ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+                          color: isSel
+                              ? const Color(0xFF5B3DE8)
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           f,
                           style: TextStyle(
                             fontSize: 12.5,
-                            fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                            color: isSel ? Colors.white : const Color(0xFF4B5563),
+                            fontWeight: isSel
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSel
+                                ? Colors.white
+                                : const Color(0xFF4B5563),
                           ),
                         ),
                       ),
@@ -1924,7 +2438,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   setState(() => account.isAktif = !value);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Status akun gagal diperbarui di Supabase.'),
+                      content: Text(
+                        'Status akun gagal diperbarui di Supabase.',
+                      ),
                     ),
                   );
                 }
@@ -1936,23 +2452,23 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }
 
   Widget _accountStatusBadge(bool isActive) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isActive ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
-          ),
-        ),
-        child: Text(
-          isActive ? 'Aktif' : 'Nonaktif',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: isActive ? const Color(0xFF059669) : const Color(0xFFB91C1C),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: isActive ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
+      ),
+    ),
+    child: Text(
+      isActive ? 'Aktif' : 'Nonaktif',
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        color: isActive ? const Color(0xFF059669) : const Color(0xFFB91C1C),
+      ),
+    ),
+  );
 
   // ==========================================
   // SCREEN 12: PENGATURAN SISTEM
@@ -1989,7 +2505,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 title: 'Notifikasi',
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pengaturan notifikasi push aktif')),
+                    const SnackBar(
+                      content: Text('Pengaturan notifikasi push aktif'),
+                    ),
                   );
                 },
               ),
@@ -2030,7 +2548,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         color: Colors.transparent,
         child: ListTile(
           onTap: onTap,
-          leading: Icon(icon, color: color == const Color(0xFFEF4444) ? color : const Color(0xFF5B3DE8), size: 22),
+          leading: Icon(
+            icon,
+            color: color == const Color(0xFFEF4444)
+                ? color
+                : const Color(0xFF5B3DE8),
+            size: 22,
+          ),
           title: Text(
             title,
             style: TextStyle(
@@ -2039,8 +2563,14 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               color: color,
             ),
           ),
-          trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.grey.shade400,
+            size: 20,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -2052,24 +2582,42 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Profil Aplikasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Profil Aplikasi',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nama Aplikasi: ILKOM UNAZLAM Hub', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            Text(
+              'Nama Aplikasi: ILKOM UNAZLAM Hub',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
             SizedBox(height: 6),
-            Text('Target: Mahasiswa & Pengurus Kelas', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+            Text(
+              'Target: Mahasiswa & Pengurus Kelas',
+              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+            ),
             SizedBox(height: 4),
-            Text('Semester: 1 (Ganjil 2026/2027)', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+            Text(
+              'Semester: 1 (Ganjil 2026/2027)',
+              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+            ),
             SizedBox(height: 4),
-            Text('Versi: 2.4.0 (RBAC Production Ready)', style: TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+            Text(
+              'Versi: 2.4.0 (RBAC Production Ready)',
+              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+            ),
           ],
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Tutup'),
           ),
         ],
@@ -2083,23 +2631,35 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Backup & Arsip Data', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Backup & Arsip Data',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Text(
           'Seluruh data kelas, profil 25 mahasiswa, 8 dosen, dan transaksi kas dapat dicadangkan secara lokal atau disinkronkan ke Supabase.',
           style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Backup data JSON berhasil diekspor!'), backgroundColor: Color(0xFF10B981)),
+                const SnackBar(
+                  content: Text('Backup data JSON berhasil diekspor!'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
               );
             },
             icon: const Icon(Icons.download, size: 16),
             label: const Text('Ekspor JSON'),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
@@ -2112,15 +2672,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tentang ILKOM Hub', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Tentang ILKOM Hub',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Text(
           'Aplikasi Pengelolaan Kelas Terpadu Ilmu Komunikasi Universitas Al-Azhar Menggala (UNAZLAM).\n\n"Satu Kelas, Banyak Cerita, Lebih Banyak Karya."',
-          style: TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF4B5563)),
+          style: TextStyle(
+            fontSize: 12.5,
+            height: 1.4,
+            color: Color(0xFF4B5563),
+          ),
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Tutup'),
           ),
         ],
@@ -2132,11 +2702,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // EXTRA: ROLE & PERMISSION MATRIX
   // ==========================================
   Widget _buildRolePermission() {
-    final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    final students = DummyData.students
+        .where((s) => s.role != 'ADMIN')
+        .toList();
 
     return Column(
       children: [
-        _buildAppBar('Role & Permission', showSearch: false, onBack: () => _navigateTo('pengaturan')),
+        _buildAppBar(
+          'Role & Permission',
+          showSearch: false,
+          onBack: () => _navigateTo('pengaturan'),
+        ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -2150,12 +2726,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.info_outline, color: Color(0xFF5B3DE8), size: 20),
+                    Icon(
+                      Icons.info_outline,
+                      color: Color(0xFF5B3DE8),
+                      size: 20,
+                    ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Role Sistem adalah MAHASISWA. Atur Jabatan Struktural untuk memberikan wewenang operasional kelas.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFF5B3DE8), fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF5B3DE8),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -2166,7 +2750,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ...students.map((s) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -2179,7 +2766,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         backgroundColor: const Color(0xFFF3F0FF),
                         child: Text(
                           _getInitials(s.nama),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF5B3DE8),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -2189,30 +2780,63 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           children: [
                             Text(
                               s.nama,
-                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Text('NIM ${s.nim}', style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280))),
+                            Text(
+                              'NIM ${s.nim}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       DropdownButton<String>(
                         value: s.jabatan,
                         underline: const SizedBox(),
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF5B3DE8),
+                        ),
                         items: const [
-                          DropdownMenuItem(value: 'Ketua Kelas', child: Text('Ketua Kelas')),
-                          DropdownMenuItem(value: 'Wakil Ketua', child: Text('Wakil Ketua')),
-                          DropdownMenuItem(value: 'Bendahara', child: Text('Bendahara')),
-                          DropdownMenuItem(value: 'Sekretaris', child: Text('Sekretaris')),
-                          DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
+                          DropdownMenuItem(
+                            value: 'Ketua Kelas',
+                            child: Text('Ketua Kelas'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Wakil Ketua',
+                            child: Text('Wakil Ketua'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Bendahara',
+                            child: Text('Bendahara'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Sekretaris',
+                            child: Text('Sekretaris'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Mahasiswa',
+                            child: Text('Mahasiswa'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) {
                             setState(() => s.jabatan = val);
                             SupabaseRepository.updateStudentJabatan(s.nim, val);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Jabatan ${s.nama} diubah menjadi $val')),
+                              SnackBar(
+                                content: Text(
+                                  'Jabatan ${s.nama} diubah menjadi $val',
+                                ),
+                              ),
                             );
                           }
                         },
@@ -2299,13 +2923,30 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF111827))),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13.5,
+                    color: Color(0xFF111827),
+                  ),
+                ),
                 const SizedBox(height: 3),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
               ],
             ),
           ),
-          const Icon(Icons.file_download_outlined, color: Color(0xFF9CA3AF), size: 22),
+          const Icon(
+            Icons.file_download_outlined,
+            color: Color(0xFF9CA3AF),
+            size: 22,
+          ),
         ],
       ),
     );
@@ -2326,7 +2967,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: Color(0xFF111827),
+            ),
             onPressed: onBack ?? () => _navigateTo('dashboard'),
           ),
           const SizedBox(width: 4),
@@ -2350,7 +2994,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
-  Widget _buildSearchBox({required String hintText, ValueChanged<String>? onChanged}) {
+  Widget _buildSearchBox({
+    required String hintText,
+    ValueChanged<String>? onChanged,
+  }) {
     return Container(
       height: 46,
       decoration: BoxDecoration(
@@ -2363,7 +3010,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
-          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF), size: 20),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: Color(0xFF9CA3AF),
+            size: 20,
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -2376,7 +3027,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+        style: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF374151),
+        ),
       ),
     );
   }
@@ -2400,7 +3055,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           hintText: hintText,
           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -2422,8 +3080,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w600),
-          items: items.map((item) => DropdownMenuItem(value: item, child: Text('$item'))).toList(),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF111827),
+            fontWeight: FontWeight.w600,
+          ),
+          items: items
+              .map(
+                (item) => DropdownMenuItem(value: item, child: Text('$item')),
+              )
+              .toList(),
           onChanged: onChanged,
         ),
       ),
@@ -2480,10 +3146,7 @@ class AcademicYearItem {
   final String tahun;
   bool isAktif;
 
-  AcademicYearItem({
-    required this.tahun,
-    required this.isAktif,
-  });
+  AcademicYearItem({required this.tahun, required this.isAktif});
 }
 
 class LecturerItem {

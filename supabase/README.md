@@ -11,13 +11,49 @@ The function is deployed to the `ilkomunazlam` project at:
 
 ## Deploy
 
+The client must never use the legacy permissive policies from older SQL copies.
+The checked-in `supabase_schema.sql` and security migration now require an active
+student profile linked to Supabase Auth, scope attendance and assignment progress
+to that student, and reserve class writes for the appropriate officers. For a
+new project, run `supabase_schema.sql` in the SQL Editor. For an existing project,
+run `supabase_migrations/20261008_secure_access.sql` in the SQL Editor. That
+migration targets the existing production schema, where assignment IDs are UUIDs.
+Do not
+combine either with an older copy of the schema that creates `USING (true)`
+policies.
+
 From the repository root, with the Supabase CLI installed and authenticated:
 
 ```powershell
 supabase login
 supabase link --project-ref boffbpvyqhajfiqzyztx
 supabase functions deploy admin-create-student --project-ref boffbpvyqhajfiqzyztx
+supabase functions deploy student-login --project-ref boffbpvyqhajfiqzyztx
 ```
+
+The `student-login` function accepts an active student's NIM and password,
+looks up the linked Auth email on the server, then returns only the refresh
+token needed by the Flutter client. Email login remains available, and password
+reset continues to use the student's registered email. This function has
+`verify_jwt = false` so signed-out users can reach it; it validates the project's
+public API key and never returns the mapped email. Deploy it before enabling NIM
+login for users.
+
+## Password recovery email
+
+The app verifies reset links with Supabase's one-time `token_hash`, which avoids
+requiring the original browser's PKCE verifier. In **Authentication → Email
+Templates → Reset Password**, keep the existing message and replace its reset
+link with:
+
+```html
+<p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery">Atur ulang kata sandi</a></p>
+```
+
+The app passes its current origin as `redirectTo`; add that origin (for local
+development, `http://localhost:5141`) to **Authentication → URL Configuration →
+Redirect URLs**. Save the template, then request a new reset email. Old links
+that contain `?code=` cannot be reused after changing the template.
 
 The function requires `verify_jwt = true`, configured in `config.toml`. Keep the
 project's secret/service role key in Supabase's server environment only. Never

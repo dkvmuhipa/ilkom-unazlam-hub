@@ -6,11 +6,13 @@ import '../../models/models.dart';
 class InviteAcceptScreen extends StatefulWidget {
   final String flowType;
   final ValueChanged<StudentProfile> onSuccess;
+  final String? initialError;
 
   const InviteAcceptScreen({
     super.key,
     required this.flowType,
     required this.onSuccess,
+    this.initialError,
   });
 
   @override
@@ -23,6 +25,12 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _error = widget.initialError;
+  }
 
   @override
   void dispose() {
@@ -42,8 +50,9 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       return;
     }
     if (!AuthService.hasActiveSession) {
-      setState(() => _error =
-          'Sesi undangan tidak ditemukan. Tautan mungkin sudah kedaluwarsa. Minta administrator mengirim tautan baru.');
+      setState(
+        () => _error = 'Sesi undangan tidak ditemukan. Tautan mungkin sudah kedaluwarsa. Minta administrator mengirim tautan baru.',
+      );
       return;
     }
 
@@ -63,9 +72,9 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       widget.onSuccess(profile);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error is AuthServiceException
-          ? error.message
-          : 'Kata sandi belum dapat disimpan. Periksa koneksi lalu coba kembali.');
+      setState(
+        () => _error = error is AuthServiceException ? error.message : 'Kata sandi belum dapat disimpan. Periksa koneksi lalu coba kembali.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -93,11 +102,16 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.verified_user_rounded,
-                          color: Color(0xFF5B3DE8), size: 46),
+                      const Icon(
+                        Icons.verified_user_rounded,
+                        color: Color(0xFF5B3DE8),
+                        size: 46,
+                      ),
                       const SizedBox(height: 18),
                       Text(
-                        isInvite ? 'Aktifkan akun Admin' : 'Atur ulang kata sandi',
+                        isInvite
+                            ? 'Aktifkan akun Admin'
+                            : 'Atur ulang kata sandi',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 22,
@@ -112,7 +126,9 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                             : 'Buat kata sandi baru untuk akun portal ILKOM UNAZLAM.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                            color: Color(0xFF6B7280), height: 1.5),
+                          color: Color(0xFF6B7280),
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 26),
                       _passwordField(
@@ -126,9 +142,13 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 16),
-                        Text(_error!,
-                            style: const TextStyle(
-                                color: Color(0xFFDC2626), height: 1.4)),
+                        Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: Color(0xFFDC2626),
+                            height: 1.4,
+                          ),
+                        ),
                       ],
                       const SizedBox(height: 22),
                       SizedBox(
@@ -139,18 +159,22 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                             backgroundColor: const Color(0xFF5B3DE8),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
                                   child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2.5),
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
                                 )
-                              : const Text('Simpan dan lanjutkan',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700)),
+                              : const Text(
+                                  'Simpan dan lanjutkan',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                         ),
                       ),
                     ],
@@ -179,9 +203,11 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         suffixIcon: IconButton(
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          icon: Icon(_obscurePassword
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined),
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+          ),
         ),
       ),
     );

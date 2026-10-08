@@ -1,2 +1,5 @@
 [functions.admin-create-student]
 verify_jwt = true
+
+[functions.student-login]
+verify_jwt = false

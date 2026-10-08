@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../../models/models.dart';
 import 'dummy_data.dart';
 import 'supabase_service.dart';
@@ -17,10 +18,13 @@ class SupabaseRepository {
         getAnnouncements(),
         getAssignments(),
         getTreasuryTransactions(),
+        getClassDirectory(),
       ]);
       debugPrint('Sinkronisasi data Supabase berhasil dimuat!');
     } catch (e) {
-      debugPrint('Sinkronisasi Supabase sebagian gagal (menggunakan cache lokal): $e');
+      debugPrint(
+        'Sinkronisasi Supabase sebagian gagal (menggunakan cache lokal): $e',
+      );
     }
   }
 
@@ -55,13 +59,10 @@ class SupabaseRepository {
         );
       }).toList();
 
-      if (list.isNotEmpty) {
-        DummyData.courses
-          ..clear()
-          ..addAll(list);
-        return list;
-      }
-      return DummyData.courses;
+      DummyData.courses
+        ..clear()
+        ..addAll(list);
+      return list;
     } catch (e) {
       debugPrint('Error fetch courses dari Supabase: $e');
       return DummyData.courses;
@@ -98,18 +99,21 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client.from('courses').update({
-        'kode_mk': course.kode,
-        'nama_mk': course.nama,
-        'sks': course.sks,
-        'semester': course.semester,
-        'dosen_pengampu': course.dosen,
-        'dosen_wa': course.dosenWa,
-        'hari': course.hari,
-        'jam_mulai': '${course.jamMulai}:00',
-        'jam_selesai': '${course.jamSelesai}:00',
-        'ruangan': course.ruangan,
-      }).eq('id', course.id);
+      await client
+          .from('courses')
+          .update({
+            'kode_mk': course.kode,
+            'nama_mk': course.nama,
+            'sks': course.sks,
+            'semester': course.semester,
+            'dosen_pengampu': course.dosen,
+            'dosen_wa': course.dosenWa,
+            'hari': course.hari,
+            'jam_mulai': '${course.jamMulai}:00',
+            'jam_selesai': '${course.jamSelesai}:00',
+            'ruangan': course.ruangan,
+          })
+          .eq('id', course.id);
       return true;
     } catch (e) {
       debugPrint('Error update course di Supabase: $e');
@@ -159,13 +163,10 @@ class SupabaseRepository {
         );
       }).toList();
 
-      if (list.isNotEmpty) {
-        DummyData.announcements
-          ..clear()
-          ..addAll(list);
-        return list;
-      }
-      return DummyData.announcements;
+      DummyData.announcements
+        ..clear()
+        ..addAll(list);
+      return list;
     } catch (e) {
       debugPrint('Error fetch announcements dari Supabase: $e');
       return DummyData.announcements;
@@ -180,39 +181,37 @@ class SupabaseRepository {
     String authorName = 'Nur Farida (Ketua Kelas)',
   }) async {
     final client = SupabaseService.client;
-    String assignedId = 'ann_${DateTime.now().millisecondsSinceEpoch}';
+    if (client == null) return false;
+    try {
+      final res = await client
+          .from('announcements')
+          .insert({
+            'judul': judul,
+            'isi': isi,
+            'kategori': kategori,
+            'is_pinned': isPinned,
+            'author_name': authorName,
+            'author_role': 'Ketua Kelas',
+          })
+          .select('id')
+          .single();
 
-    if (client != null) {
-      try {
-        final res = await client.from('announcements').insert({
-          'judul': judul,
-          'isi': isi,
-          'kategori': kategori,
-          'is_pinned': isPinned,
-          'author_name': authorName,
-          'author_role': 'Ketua Kelas',
-        }).select('id').single();
-
-        if (res['id'] != null) {
-          assignedId = res['id'].toString();
-        }
-      } catch (e) {
-        debugPrint('Sync announcement ke Supabase offline/error: $e');
-      }
+      final newAnn = Announcement(
+        id: res['id']?.toString() ?? '',
+        authorName: authorName,
+        authorRole: 'Ketua Kelas',
+        judul: judul,
+        isi: isi,
+        isPinned: isPinned,
+        kategori: kategori,
+        createdAt: DateTime.now(),
+      );
+      DummyData.announcements.insert(0, newAnn);
+      return true;
+    } catch (e) {
+      debugPrint('Sync announcement ke Supabase offline/error: $e');
+      return false;
     }
-
-    final newAnn = Announcement(
-      id: assignedId,
-      authorName: authorName,
-      authorRole: 'Ketua Kelas',
-      judul: judul,
-      isi: isi,
-      isPinned: isPinned,
-      kategori: kategori,
-      createdAt: DateTime.now(),
-    );
-    DummyData.announcements.insert(0, newAnn);
-    return true;
   }
 
   static Future<bool> updateAnnouncement(Announcement announcement) async {
@@ -220,12 +219,17 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client.from('announcements').update({
-        'judul': announcement.judul,
-        'isi': announcement.isi,
-        'kategori': announcement.kategori,
-        'is_pinned': announcement.isPinned,
-      }).eq('id', announcement.id);
+      await client
+          .from('announcements')
+          .update({
+            'judul': announcement.judul,
+            'isi': announcement.isi,
+            'kategori': announcement.kategori,
+            'is_pinned': announcement.isPinned,
+          })
+          .eq('id', announcement.id)
+          .select('id')
+          .single();
       return true;
     } catch (e) {
       debugPrint('Error update announcement di Supabase: $e');
@@ -234,12 +238,17 @@ class SupabaseRepository {
   }
 
   static Future<bool> deleteAnnouncement(String id) async {
-    DummyData.announcements.removeWhere((a) => a.id == id);
     final client = SupabaseService.client;
     if (client == null) return false;
 
     try {
-      await client.from('announcements').delete().eq('id', id);
+      await client
+          .from('announcements')
+          .delete()
+          .eq('id', id)
+          .select('id')
+          .single();
+      DummyData.announcements.removeWhere((a) => a.id == id);
       return true;
     } catch (e) {
       debugPrint('Sync delete announcement error: $e');
@@ -255,7 +264,10 @@ class SupabaseRepository {
     if (client == null) return DummyData.assignments;
 
     try {
-      final response = await client.from('assignments').select().order('deadline');
+      final response = await client
+          .from('assignments')
+          .select()
+          .order('deadline');
 
       final list = (response as List).map((row) {
         return Assignment(
@@ -269,17 +281,15 @@ class SupabaseRepository {
               ? DateTime.parse(row['deadline'])
               : DateTime.now().add(const Duration(days: 3)),
           linkPengumpulan: row['link_pengumpulan'],
-          status: row['status'] ?? 'belum',
+          // Completion is per student and is loaded from student_assignments.
+          status: 'belum',
         );
       }).toList();
 
-      if (list.isNotEmpty) {
-        DummyData.assignments
-          ..clear()
-          ..addAll(list);
-        return list;
-      }
-      return DummyData.assignments;
+      DummyData.assignments
+        ..clear()
+        ..addAll(list);
+      return list;
     } catch (e) {
       debugPrint('Error fetch assignments dari Supabase: $e');
       return DummyData.assignments;
@@ -296,46 +306,46 @@ class SupabaseRepository {
     String? linkPengumpulan,
   }) async {
     final client = SupabaseService.client;
-    String assignedId = 'asg_${DateTime.now().millisecondsSinceEpoch}';
-
-    if (client != null) {
-      try {
-        final payload = <String, dynamic>{
-          'course_name': courseName,
-          'judul': judul,
-          'deskripsi': deskripsi,
-          'kategori': kategori,
-          'deadline': deadline.toIso8601String(),
-          'link_pengumpulan': linkPengumpulan,
-          'status': 'belum',
-        };
-        // course_id on Supabase references courses(id) which may be UUID or nullable
-        if (courseId.isNotEmpty && !courseId.startsWith('c')) {
-          payload['course_id'] = courseId;
-        }
-
-        final res = await client.from('assignments').insert(payload).select('id').single();
-        if (res['id'] != null) {
-          assignedId = res['id'].toString();
-        }
-      } catch (e) {
-        debugPrint('Sync assignment ke Supabase error: $e');
+    if (client == null) return false;
+    try {
+      final payload = <String, dynamic>{
+        'course_name': courseName,
+        'judul': judul,
+        'deskripsi': deskripsi,
+        'kategori': kategori,
+        'deadline': deadline.toIso8601String(),
+        'link_pengumpulan': linkPengumpulan,
+        'status': 'belum',
+      };
+      // course_id on Supabase references courses(id) which may be UUID or nullable
+      if (courseId.isNotEmpty && !courseId.startsWith('c')) {
+        payload['course_id'] = courseId;
       }
-    }
 
-    final newAssignment = Assignment(
-      id: assignedId,
-      courseId: courseId,
-      courseName: courseName,
-      judul: judul,
-      deskripsi: deskripsi,
-      kategori: kategori,
-      deadline: deadline,
-      linkPengumpulan: linkPengumpulan,
-      status: 'belum',
-    );
-    DummyData.assignments.insert(0, newAssignment);
-    return true;
+      final res = await client
+          .from('assignments')
+          .insert(payload)
+          .select('id')
+          .single();
+      final assignedId = res['id']?.toString() ?? '';
+
+      final newAssignment = Assignment(
+        id: assignedId,
+        courseId: courseId,
+        courseName: courseName,
+        judul: judul,
+        deskripsi: deskripsi,
+        kategori: kategori,
+        deadline: deadline,
+        linkPengumpulan: linkPengumpulan,
+        status: 'belum',
+      );
+      DummyData.assignments.insert(0, newAssignment);
+      return true;
+    } catch (e) {
+      debugPrint('Sync assignment ke Supabase error: $e');
+      return false;
+    }
   }
 
   static Future<bool> updateAssignment(Assignment assignment) async {
@@ -343,16 +353,20 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client.from('assignments').update({
-        'judul': assignment.judul,
-        'course_id': assignment.courseId,
-        'course_name': assignment.courseName,
-        'deskripsi': assignment.deskripsi,
-        'kategori': assignment.kategori,
-        'deadline': assignment.deadline.toIso8601String(),
-        'link_pengumpulan': assignment.linkPengumpulan,
-        'status': assignment.status,
-      }).eq('id', assignment.id);
+      await client
+          .from('assignments')
+          .update({
+            'judul': assignment.judul,
+            'course_id': assignment.courseId,
+            'course_name': assignment.courseName,
+            'deskripsi': assignment.deskripsi,
+            'kategori': assignment.kategori,
+            'deadline': assignment.deadline.toIso8601String(),
+            'link_pengumpulan': assignment.linkPengumpulan,
+          })
+          .eq('id', assignment.id)
+          .select('id')
+          .single();
       return true;
     } catch (e) {
       debugPrint('Error update assignment di Supabase: $e');
@@ -360,12 +374,27 @@ class SupabaseRepository {
     }
   }
 
-  static Future<bool> updateAssignmentStatus(String id, String status) async {
+  static Future<bool> updateAssignmentStatus(
+    String id,
+    String status, {
+    required String studentNim,
+    String? submissionUrl,
+    String? notes,
+  }) async {
     final client = SupabaseService.client;
-    if (client == null) return false;
+    if (client == null || studentNim.isEmpty) return false;
 
     try {
-      await client.from('assignments').update({'status': status}).eq('id', id);
+      final now = DateTime.now().toUtc().toIso8601String();
+      await client.from('student_assignments').upsert({
+        'assignment_id': id,
+        'student_nim': studentNim,
+        'status': status,
+        if (submissionUrl != null) 'link_pengumpulan': submissionUrl,
+        if (notes != null) 'catatan': notes,
+        'submitted_at': status == 'selesai' ? now : null,
+        'updated_at': now,
+      }, onConflict: 'assignment_id,student_nim');
       return true;
     } catch (e) {
       debugPrint('Error update status assignment di Supabase: $e');
@@ -373,13 +402,92 @@ class SupabaseRepository {
     }
   }
 
+  static Future<List<StudentProfile>> getClassDirectory() async {
+    final client = SupabaseService.client;
+    if (client == null) return DummyData.students;
+    try {
+      final rows = await client.rpc('get_class_directory');
+      final students = (rows as List)
+          .map(
+            (row) => StudentProfile(
+              id: row['id']?.toString() ?? '',
+              nim: row['nim']?.toString() ?? '',
+              nama: row['nama']?.toString() ?? '',
+              email: '',
+              noWa: row['no_wa']?.toString() ?? '',
+              peminatan: row['peminatan']?.toString() ?? '',
+              prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+              semester: (row['semester'] as num?)?.toInt() ?? 1,
+              kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+              role: row['role']?.toString() ?? 'MAHASISWA',
+              jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+              isAktif: row['is_aktif'] as bool? ?? true,
+              instagram: row['instagram']?.toString(),
+              linkedin: row['linkedin']?.toString(),
+            ),
+          )
+          .toList();
+      DummyData.students
+        ..clear()
+        ..addAll(students);
+      return students;
+    } catch (e) {
+      debugPrint('Error fetch class directory: $e');
+      return const [];
+    }
+  }
+
+  static Future<Map<String, String>> getPersonalAssignmentStatuses(
+    String studentNim,
+  ) async {
+    final client = SupabaseService.client;
+    if (client == null || studentNim.isEmpty) return const {};
+    try {
+      final rows = await client
+          .from('student_assignments')
+          .select('assignment_id,status')
+          .eq('student_nim', studentNim);
+      return {
+        for (final row in rows as List)
+          row['assignment_id'].toString(): row['status'].toString(),
+      };
+    } catch (e) {
+      debugPrint('Error fetch personal assignment statuses: $e');
+      return const {};
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getPersonalAssignmentSubmission(
+    String assignmentId,
+    String studentNim,
+  ) async {
+    final client = SupabaseService.client;
+    if (client == null || studentNim.isEmpty) return null;
+    try {
+      return await client
+          .from('student_assignments')
+          .select('link_pengumpulan,catatan,submitted_at')
+          .eq('assignment_id', assignmentId)
+          .eq('student_nim', studentNim)
+          .maybeSingle();
+    } catch (e) {
+      debugPrint('Error fetch personal assignment submission: $e');
+      return null;
+    }
+  }
+
   static Future<bool> deleteAssignment(String id) async {
-    DummyData.assignments.removeWhere((a) => a.id == id);
     final client = SupabaseService.client;
     if (client == null) return false;
 
     try {
-      await client.from('assignments').delete().eq('id', id);
+      await client
+          .from('assignments')
+          .delete()
+          .eq('id', id)
+          .select('id')
+          .single();
+      DummyData.assignments.removeWhere((a) => a.id == id);
       return true;
     } catch (e) {
       debugPrint('Error delete assignment dari Supabase: $e');
@@ -414,20 +522,19 @@ class SupabaseRepository {
         );
       }).toList();
 
-      if (list.isNotEmpty) {
-        DummyData.treasuryTransactions
-          ..clear()
-          ..addAll(list);
-        return list;
-      }
-      return DummyData.treasuryTransactions;
+      DummyData.treasuryTransactions
+        ..clear()
+        ..addAll(list);
+      return list;
     } catch (e) {
       debugPrint('Error fetch treasury dari Supabase: $e');
       return DummyData.treasuryTransactions;
     }
   }
 
-  static Future<bool> createTreasuryTransaction(TreasuryTransaction item) async {
+  static Future<bool> createTreasuryTransaction(
+    TreasuryTransaction item,
+  ) async {
     final client = SupabaseService.client;
     if (client == null) return false;
 
@@ -448,17 +555,22 @@ class SupabaseRepository {
     }
   }
 
-  static Future<bool> updateTreasuryTransaction(TreasuryTransaction item) async {
+  static Future<bool> updateTreasuryTransaction(
+    TreasuryTransaction item,
+  ) async {
     final client = SupabaseService.client;
     if (client == null) return false;
 
     try {
-      await client.from('treasury_transactions').update({
-        'judul': item.judul,
-        'nominal': item.nominal,
-        'is_pemasukan': item.isPemasukan,
-        'kategori': item.kategori,
-      }).eq('id', item.id);
+      await client
+          .from('treasury_transactions')
+          .update({
+            'judul': item.judul,
+            'nominal': item.nominal,
+            'is_pemasukan': item.isPemasukan,
+            'kategori': item.kategori,
+          })
+          .eq('id', item.id);
       return true;
     } catch (e) {
       debugPrint('Error update treasury di Supabase: $e');
@@ -539,14 +651,16 @@ class SupabaseRepository {
       // Resolve UUID if courseId is course name or short code
       String resolvedCourseId = courseId;
       final matchedCourse = DummyData.courses.firstWhere(
-        (c) => c.id == courseId || c.nama.toLowerCase() == courseId.toLowerCase(),
+        (c) =>
+            c.id == courseId || c.nama.toLowerCase() == courseId.toLowerCase(),
         orElse: () => DummyData.courses.first,
       );
       if (resolvedCourseId.length != 36) {
         resolvedCourseId = matchedCourse.id;
       }
 
-      final normalizedStatus = status.toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
+      final normalizedStatus = status
+          .toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
 
       await client.from('attendance_logs').insert({
         'course_id': resolvedCourseId,
@@ -562,12 +676,16 @@ class SupabaseRepository {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getAttendanceLogs({String? studentNim}) async {
+  static Future<List<Map<String, dynamic>>> getAttendanceLogs({
+    String? studentNim,
+  }) async {
     final client = SupabaseService.client;
     if (client == null) return [];
 
     try {
-      var query = client.from('attendance_logs').select('*, courses(nama_mk, kode_mk)');
+      var query = client
+          .from('attendance_logs')
+          .select('*, courses(nama_mk, kode_mk)');
       if (studentNim != null && studentNim.isNotEmpty) {
         query = query.eq('student_nim', studentNim);
       }
@@ -585,9 +703,15 @@ class SupabaseRepository {
 
     try {
       if (studentNim != null && studentNim.isNotEmpty) {
-        await client.from('attendance_logs').delete().eq('student_nim', studentNim);
+        await client
+            .from('attendance_logs')
+            .delete()
+            .eq('student_nim', studentNim);
       } else {
-        await client.from('attendance_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await client
+            .from('attendance_logs')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
       }
       return true;
     } catch (e) {
@@ -617,7 +741,10 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client.from('students').update({'is_aktif': isAktif}).eq('nim', nim);
+      await client
+          .from('students')
+          .update({'is_aktif': isAktif})
+          .eq('nim', nim);
       return true;
     } catch (e) {
       debugPrint('Error toggle status di Supabase: $e');

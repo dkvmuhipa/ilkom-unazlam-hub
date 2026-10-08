@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/services/auth_service.dart';
 import '../../models/models.dart';
 
@@ -25,13 +26,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    final email = _nimController.text.trim();
+    final identifier = _nimController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty) {
+    if (identifier.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Silakan masukkan email akun Anda.'),
+          content: Text('Silakan masukkan NIM atau email akun Anda.'),
           backgroundColor: Color(0xFFEF4444),
           duration: Duration(seconds: 2),
         ),
@@ -52,16 +53,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final profile = await AuthService.signIn(email: email, password: password);
+      final profile = await AuthService.signIn(
+        identifier: identifier,
+        password: password,
+      );
       if (!mounted) return;
       widget.onLoginSuccess(profile);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error is AuthServiceException
-              ? error.message
-              : 'Email atau kata sandi salah, atau koneksi ke layanan login gagal.'),
+          content: Text(
+            error is AuthServiceException ? error.message : 'NIM/email atau kata sandi salah, atau koneksi ke layanan login gagal.',
+          ),
           backgroundColor: const Color(0xFFEF4444),
           duration: const Duration(seconds: 3),
         ),
@@ -71,8 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showForgotPasswordDialog() {
-    showDialog(
+  Future<void> _showForgotPasswordDialog() async {
+    final emailController = TextEditingController(
+      text: _nimController.text.contains('@') ? _nimController.text.trim() : '',
+    );
+    final email = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
@@ -83,39 +90,105 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(width: 10),
             Text(
               'Lupa Password?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+              ),
             ),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Untuk me-reset kata sandi akun kelas ILKOM UNAZLAM, silakan hubungi:',
-              style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.4),
+            const Text(
+              'Masukkan email akun yang terdaftar. Tautan untuk membuat kata sandi baru akan dikirim ke email tersebut. NIM hanya digunakan untuk login.',
+              style: TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFF4B5563),
+                height: 1.4,
+              ),
             ),
-            SizedBox(height: 12),
-            Text('• Ketua Kelas: Nur Farida', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            SizedBox(height: 4),
-            Text('• Bendahara: Alya Nabilah', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            SizedBox(height: 4),
-            Text('• Layanan IT / Akademik FISIP UNAZLAM', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (value) => Navigator.pop(ctx, value.trim()),
+              decoration: InputDecoration(
+                labelText: 'Email pemulihan',
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
+              ),
+            ),
           ],
         ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5B3DE8),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Mengerti'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () =>
+                    Navigator.pop(ctx, emailController.text.trim()),
+                icon: const Icon(Icons.send_rounded, size: 16),
+                label: const Text('Kirim tautan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B3DE8),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+    emailController.dispose();
+
+    if (email == null || email.isEmpty || !mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.requestPasswordReset(
+        email: email,
+        redirectTo: Uri.base.origin,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Jika email terdaftar, tautan reset telah dikirim. Periksa kotak masuk dan folder spam.',
+          ),
+          backgroundColor: Color(0xFF059669),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is AuthServiceException ? error.message : 'Tautan reset gagal dikirim. Periksa koneksi dan konfigurasi URL Auth Supabase.',
+          ),
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -139,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5B3DE8).withValues(alpha: 0.12),
+                          color: const Color(0xFF5B3DE8)
+                              .withValues(alpha: 0.12),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -152,7 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: const Color(0xFFF3F0FF),
-                          child: const Icon(Icons.school_rounded, color: Color(0xFF5B3DE8), size: 48),
+                          child: const Icon(
+                            Icons.school_rounded,
+                            color: Color(0xFF5B3DE8),
+                            size: 48,
+                          ),
                         ),
                       ),
                     ),
@@ -201,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Form Input Email
+                  // Form accepts student NIM or account email.
                   Container(
                     height: 52,
                     decoration: BoxDecoration(
@@ -211,13 +289,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: TextField(
                       controller: _nimController,
-                      keyboardType: TextInputType.emailAddress,
+                      keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        hintText: 'Email akun',
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                        hintText: 'NIM atau email akun',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9CA3AF),
+                        ),
                         prefixIcon: Icon(
-                          Icons.alternate_email_rounded,
+                          Icons.person_outline_rounded,
                           color: Color(0xFF6B7280),
                           size: 20,
                         ),
@@ -243,11 +324,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       onSubmitted: (_) => _handleLogin(),
                       decoration: InputDecoration(
                         hintText: 'Password',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF6B7280), size: 20),
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline_rounded,
+                          color: Color(0xFF6B7280),
+                          size: 20,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                             color: const Color(0xFF9CA3AF),
                             size: 20,
                           ),
@@ -258,7 +348,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -271,7 +363,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox.shrink(),
                       TextButton(
                         onPressed: _showForgotPasswordDialog,
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                        ),
                         child: const Text(
                           'Lupa password?',
                           style: TextStyle(
@@ -303,7 +398,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : const Text(
                               'Masuk',
@@ -329,5 +427,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 }

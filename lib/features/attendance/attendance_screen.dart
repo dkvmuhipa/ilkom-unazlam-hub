@@ -835,8 +835,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 scanStatusMessage = 'Token tidak cocok dengan sesi aktif.';
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
+                SnackBar(
+                  content: const Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
                   backgroundColor: const Color(0xFFEF4444),
                 ),
               );
@@ -1123,9 +1123,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
                 // Submit Verification Button
                 ElevatedButton.icon(
-                  onPressed: isScanning
-                      ? null
-                      : () {
+                  onPressed: () {
                           final token = tokenController.text.trim();
                           if (token.isEmpty) {
                             // Coba auto-scan dari sesi aktif jika ada

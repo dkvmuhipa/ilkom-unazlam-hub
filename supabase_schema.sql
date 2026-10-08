@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS students (
     is_aktif BOOLEAN DEFAULT true,
     instagram TEXT,
     linkedin TEXT,
+    auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -194,84 +195,150 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ====================================================================
--- ROW LEVEL SECURITY (RLS) - KEAMANAN DATABASE PRODUKSI
+-- ROW LEVEL SECURITY: only active, linked students can access class data.
+-- Run this script with the Supabase SQL Editor or CLI as a trusted operator.
 -- ====================================================================
-ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE student_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE treasury_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agenda_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE polls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE poll_options ENABLE ROW LEVEL SECURITY;
-ALTER TABLE poll_votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE permission_letters ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.current_student_nim()
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT s.nim FROM public.students s
+  WHERE s.auth_user_id = (SELECT auth.uid()) AND s.is_aktif = true
+  LIMIT 1;
+$$;
 
--- --------------------------------------------------------------------
--- A. KEBIJAKAN BACA PUBLIK (READ-ONLY SELECT)
--- Mahasiswa dan publik diperbolehkan melihat jadwal, pengumuman, materi, dll.
--- --------------------------------------------------------------------
-CREATE POLICY "Allow public read courses" ON courses FOR SELECT USING (true);
-CREATE POLICY "Allow public read assignments" ON assignments FOR SELECT USING (true);
-CREATE POLICY "Allow public read student_assignments" ON student_assignments FOR SELECT USING (true);
-CREATE POLICY "Allow public read announcements" ON announcements FOR SELECT USING (true);
-CREATE POLICY "Allow public read treasury" ON treasury_transactions FOR SELECT USING (true);
-CREATE POLICY "Allow public read agenda" ON agenda_items FOR SELECT USING (true);
-CREATE POLICY "Allow public read attendance" ON attendance_logs FOR SELECT USING (true);
-CREATE POLICY "Allow public read students" ON students FOR SELECT USING (true);
-CREATE POLICY "Allow public read resources" ON resources FOR SELECT USING (true);
-CREATE POLICY "Allow public read polls" ON polls FOR SELECT USING (true);
-CREATE POLICY "Allow public read poll_options" ON poll_options FOR SELECT USING (true);
-CREATE POLICY "Allow public read poll_votes" ON poll_votes FOR SELECT USING (true);
-CREATE POLICY "Allow public read audit_logs" ON audit_logs FOR SELECT USING (true);
+CREATE OR REPLACE FUNCTION public.has_class_role(allowed_roles text[])
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.students s
+    WHERE s.auth_user_id = (SELECT auth.uid()) AND s.is_aktif = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(allowed_roles) r(role_name)
+        WHERE upper(s.role) = upper(r.role_name) OR upper(s.jabatan) = upper(r.role_name)
+      )
+  );
+$$;
 
--- --------------------------------------------------------------------
--- B. KEBIJAKAN TULIS & MODIFIKASI (INSERT / UPDATE)
--- Dibatasi agar tidak dapat dieksploitasi sembarang oleh penyerang publik
--- Catatan: Untuk autentikasi penuh Supabase, gunakan: TO authenticated
--- --------------------------------------------------------------------
--- Mahasiswa dapat menambahkan/mengupdate progres tugas pribadinya
-CREATE POLICY "Allow insert own student assignment" ON student_assignments 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow update own student assignment" ON student_assignments 
-    FOR UPDATE USING (true);
+CREATE OR REPLACE FUNCTION public.get_class_directory()
+RETURNS TABLE (id text, nim text, nama text, no_wa text, peminatan text,
+  prodi text, semester integer, kelas text, role text, jabatan text,
+  is_aktif boolean, instagram text, linkedin text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT s.id, s.nim, s.nama, s.no_wa, s.peminatan, s.prodi, s.semester,
+    s.kelas, s.role, s.jabatan, s.is_aktif, s.instagram, s.linkedin
+  FROM public.students s
+  WHERE s.is_aktif = true
+    AND (SELECT public.current_student_nim()) IS NOT NULL
+  ORDER BY s.nama;
+$$;
 
--- Mahasiswa dapat memberikan suara (vote) sekali
-CREATE POLICY "Allow vote insert" ON poll_votes 
-    FOR INSERT WITH CHECK (true);
+REVOKE ALL ON FUNCTION public.current_student_nim() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.has_class_role(text[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.current_student_nim() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_class_role(text[]) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_class_directory() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_class_directory() TO authenticated;
 
--- Mahasiswa dapat mengarsipkan surat izin
-CREATE POLICY "Allow insert permission letter" ON permission_letters 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow read own permission letters" ON permission_letters 
-    FOR SELECT USING (true);
+CREATE OR REPLACE FUNCTION public.prevent_client_auth_link_change()
+RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF (SELECT auth.uid()) IS NOT NULL
+     AND NEW.auth_user_id IS DISTINCT FROM OLD.auth_user_id THEN
+    RAISE EXCEPTION 'Auth account links can only be managed by a trusted administrator';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS prevent_client_auth_link_change ON public.students;
+CREATE TRIGGER prevent_client_auth_link_change BEFORE UPDATE OF auth_user_id
+  ON public.students FOR EACH ROW EXECUTE FUNCTION public.prevent_client_auth_link_change();
 
--- Presensi kuliah dapat diinput dan di-reset/dikosongkan oleh pengurus/mahasiswa
-CREATE POLICY "Allow insert attendance" ON attendance_logs 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow delete attendance" ON attendance_logs 
-    FOR DELETE USING (true);
+DO $$ DECLARE t text; BEGIN
+  FOREACH t IN ARRAY ARRAY['courses','assignments','student_assignments','announcements',
+    'treasury_transactions','agenda_items','attendance_logs','students','resources',
+    'polls','poll_options','poll_votes','permission_letters','audit_logs'] LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'active_student_read', t);
+  END LOOP;
+END $$;
 
--- Audit log hanya bisa di-insert, tidak bisa diubah atau dihapus
-CREATE POLICY "Allow insert audit log" ON audit_logs 
-    FOR INSERT WITH CHECK (true);
+-- Remove policies from older versions of this script before installing the
+-- scoped policies below. RLS policies are permissive by default, so stale
+-- USING (true) policies would otherwise continue to grant access.
+DO $$ DECLARE p record; BEGIN
+  FOR p IN SELECT schemaname, tablename, policyname FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = ANY(ARRAY[
+      'courses','assignments','student_assignments','announcements','treasury_transactions',
+      'agenda_items','attendance_logs','students','resources','polls','poll_options',
+      'poll_votes','permission_letters','audit_logs'])
+  LOOP EXECUTE format('DROP POLICY %I ON %I.%I', p.policyname, p.schemaname, p.tablename); END LOOP;
+END $$;
 
--- Transaksi Kas, Pengumuman, dan Jadwal (Membutuhkan Otorisasi)
--- CATATAN KEAMANAN: Jangan membuka DELETE publik pada kas dan mata kuliah!
-CREATE POLICY "Allow auth insert treasury" ON treasury_transactions 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow auth insert announcements" ON announcements 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow auth insert courses" ON courses 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow auth insert resources" ON resources 
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow auth insert agenda" ON agenda_items 
-    FOR INSERT WITH CHECK (true);
+DO $$ BEGIN
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    EXECUTE 'REVOKE ALL ON public.profiles FROM PUBLIC, anon, authenticated';
+    EXECUTE 'ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY';
+  END IF;
+END $$;
 
--- Mencegah penghapusan kas dan pengumuman tanpa otorisasi terverifikasi
--- (Policy DELETE sengaja tidak dibuka untuk anonim publik demi keamanan dana kelas)
+CREATE POLICY active_student_read ON public.courses FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY assignments_read ON public.assignments FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY announcements_read ON public.announcements FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY treasury_read ON public.treasury_transactions FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY agenda_read ON public.agenda_items FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY resources_read ON public.resources FOR SELECT TO authenticated
+  USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY students_read_self_or_officer ON public.students FOR SELECT TO authenticated
+  USING (auth_user_id = (SELECT auth.uid()) OR public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY attendance_read_self_or_officer ON public.attendance_logs FOR SELECT TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY student_assignments_read_own ON public.student_assignments FOR SELECT TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY student_assignments_insert_own ON public.student_assignments FOR INSERT TO authenticated
+  WITH CHECK (student_nim = (SELECT public.current_student_nim()));
+CREATE POLICY student_assignments_update_own ON public.student_assignments FOR UPDATE TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()))
+  WITH CHECK (student_nim = (SELECT public.current_student_nim()));
+CREATE POLICY polls_read ON public.polls FOR SELECT TO authenticated USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY poll_options_read ON public.poll_options FOR SELECT TO authenticated USING ((SELECT public.current_student_nim()) IS NOT NULL);
+CREATE POLICY poll_votes_read_own ON public.poll_votes FOR SELECT TO authenticated
+  USING (voter_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY poll_votes_insert_own ON public.poll_votes FOR INSERT TO authenticated
+  WITH CHECK (voter_nim = (SELECT public.current_student_nim()));
+CREATE POLICY permission_letters_read_own_or_officer ON public.permission_letters FOR SELECT TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
+CREATE POLICY permission_letters_insert_own ON public.permission_letters FOR INSERT TO authenticated
+  WITH CHECK (student_nim = (SELECT public.current_student_nim()));
+CREATE POLICY audit_logs_read_admin ON public.audit_logs FOR SELECT TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY audit_logs_insert_own ON public.audit_logs FOR INSERT TO authenticated
+  WITH CHECK (user_identifier = (SELECT public.current_student_nim()));
+
+-- Authorized class maintenance.
+CREATE POLICY courses_manage ON public.courses FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY assignments_manage ON public.assignments FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY announcements_manage ON public.announcements FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
+CREATE POLICY treasury_manage ON public.treasury_transactions FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Bendahara'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Bendahara']));
+CREATE POLICY agenda_manage ON public.agenda_items FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
+CREATE POLICY resources_manage ON public.resources FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
+CREATE POLICY students_update_admin ON public.students FOR UPDATE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN']));
+CREATE POLICY attendance_insert_self_or_officer ON public.attendance_logs FOR INSERT TO authenticated
+  WITH CHECK (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY attendance_manage_officer ON public.attendance_logs FOR UPDATE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY attendance_delete_officer ON public.attendance_logs FOR DELETE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY polls_manage ON public.polls FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
+CREATE POLICY poll_options_manage ON public.poll_options FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas']));
