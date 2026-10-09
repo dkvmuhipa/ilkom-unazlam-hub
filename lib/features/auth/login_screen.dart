@@ -156,7 +156,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-    emailController.dispose();
+
+    // Schedule dispose after dialog route pop animation completes to avoid
+    // 'A TextEditingController was used after being disposed' during pop transition.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      emailController.dispose();
+    });
 
     if (email == null || email.isEmpty || !mounted) return;
     setState(() => _isLoading = true);

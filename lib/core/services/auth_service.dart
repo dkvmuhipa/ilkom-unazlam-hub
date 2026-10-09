@@ -29,7 +29,17 @@ class AuthService {
         'Sesi undangan tidak ditemukan. Tautan mungkin sudah kedaluwarsa; minta administrator mengirim tautan baru.',
       );
     }
-    await _client.auth.updateUser(UserAttributes(password: password));
+    try {
+      await _client.auth.updateUser(UserAttributes(password: password));
+    } on AuthException catch (e) {
+      if (e.message.toLowerCase().contains('same password') ||
+          e.statusCode == '422' && e.message.toLowerCase().contains('different')) {
+        throw const AuthServiceException(
+          'Kata sandi baru tidak boleh sama dengan kata sandi lama.',
+        );
+      }
+      throw AuthServiceException(e.message);
+    }
   }
 
   static Future<StudentProfile> signIn({

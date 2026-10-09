@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/auth_service.dart';
 import '../../models/models.dart';
@@ -73,10 +74,22 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       }
       if (!mounted) return;
       widget.onSuccess(profile);
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        if (error.statusCode == '422' &&
+            error.message.toLowerCase().contains('different')) {
+          _error = 'Kata sandi baru tidak boleh sama dengan kata sandi lama Anda.';
+        } else {
+          _error = error.message;
+        }
+      });
     } catch (error) {
       if (!mounted) return;
       setState(
-        () => _error = error is AuthServiceException ? error.message : 'Kata sandi belum dapat disimpan. Periksa koneksi lalu coba kembali.',
+        () => _error = error is AuthServiceException
+            ? error.message
+            : 'Kata sandi belum dapat disimpan. Periksa koneksi lalu coba kembali.',
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

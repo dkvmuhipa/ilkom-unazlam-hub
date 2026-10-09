@@ -6,9 +6,9 @@ class AppTheme {
   static const String fontFamily = 'Poppins';
 
   static ThemeData get lightTheme {
-    final textTheme =
-        TextTheme(
-          displayLarge: TextStyle(
+    final base = ThemeData.light(useMaterial3: true);
+    final textTheme = base.textTheme.copyWith(
+          displayLarge: const TextStyle(
             fontSize: 40,
             height: 1.12,
             fontWeight: FontWeight.w700,
@@ -473,8 +473,14 @@ class AppTheme {
           foregroundColor: const Color(0xFFCDC5FF),
           side: const BorderSide(color: border),
           minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),

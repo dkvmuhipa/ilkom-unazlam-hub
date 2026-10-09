@@ -54,13 +54,13 @@ void main() async {
 
   String? authCallbackError;
   final tokenHash = authCallback.tokenHash;
-  if (tokenHash != null &&
+  final client = SupabaseService.client;
+
+  if (client != null &&
+      tokenHash != null &&
       (authCallback.flowType == 'recovery' ||
           authCallback.flowType == 'invite')) {
     try {
-      final client = SupabaseService.client;
-      if (client == null)
-        throw const AuthServiceException('Supabase belum siap.');
       await client.auth.verifyOTP(
         tokenHash: tokenHash,
         type: authCallback.flowType == 'invite'
@@ -73,9 +73,19 @@ void main() async {
           ? 'Tautan tidak valid atau sudah kedaluwarsa. Minta tautan baru, lalu buka di aplikasi ini.'
           : 'Verifikasi tautan gagal. Periksa koneksi lalu coba lagi.';
     }
-  } else if (authCallback.hasCode &&
-      SupabaseService.client?.auth.currentSession == null) {
-    authCallbackError = 'Tautan lama tidak cocok dengan sesi browser ini. Atur template email Supabase agar memakai token_hash, lalu kirim tautan baru.';
+  } else if (client != null && authCallback.hasCode) {
+    // If the link came from default Supabase PKCE flow (?code=...)
+    try {
+      if (client.auth.currentSession == null) {
+        await client.auth.getSessionFromUrl(Uri.base);
+      }
+      clearAuthCallbackUrl();
+    } catch (error) {
+      if (client.auth.currentSession == null) {
+        authCallbackError =
+            'Tautan pemulihan tidak dapat diverifikasi di sesi browser ini. Silakan kirim ulang tautan reset password baru dari menu login.';
+      }
+    }
   }
 
   runApp(
