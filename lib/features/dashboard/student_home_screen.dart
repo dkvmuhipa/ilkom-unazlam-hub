@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/dummy_data.dart';
 import '../../core/services/student_dashboard_service.dart';
 import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
@@ -107,6 +108,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               ),
               const SizedBox(height: 14),
               _buildQuickActions(),
+              const SizedBox(height: 26),
+              _buildTodayScheduleSection(),
               if (student.isKetuaKelas ||
                   student.isBendahara ||
                   student.isSekretaris) ...[
@@ -182,30 +185,81 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     StudentProfile student,
     String greeting,
   ) {
+    final now = DateTime.now();
+    const daysIndo = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const monthsIndo = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    final todayStr = '${daysIndo[now.weekday]}, ${now.day} ${monthsIndo[now.month]} ${now.year}';
+
+    final initials = student.nama.trim().split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
+
     return Row(
       children: [
+        // Avatar Inisial Mahasiswa
+        InkWell(
+          onTap: () => widget.onNavigateTab(4), // Profil
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5B3DE8), Color(0xFF8667FA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF5B3DE8).withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                greeting,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSub),
+                '$greeting 👋',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSub,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 student.nama.split(' ').first,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  letterSpacing: -0.3,
+                ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 2),
               Text(
-                'NIM ${student.nim}  ·  Semester ${student.semester}',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSub),
+                todayStr,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF5B3DE8),
+                ),
               ),
             ],
           ),
@@ -624,8 +678,197 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
+  Widget _buildTodayScheduleSection() {
+    final now = DateTime.now();
+    final dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    final todayName = (now.weekday >= 1 && now.weekday <= 7) ? dayNames[now.weekday] : '';
+    final todayCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Jadwal Kuliah Hari Ini',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  todayCourses.isEmpty
+                      ? '$todayName • Tidak ada perkuliahan'
+                      : '$todayName • ${todayCourses.length} mata kuliah (${todayCourses.fold<int>(0, (s, c) => s + c.sks)} SKS)',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSub),
+                ),
+              ],
+            ),
+            InkWell(
+              onTap: () => widget.onNavigateTab(1), // Jadwal Kuliah
+              borderRadius: BorderRadius.circular(12),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      'Semua',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF5B3DE8),
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 11,
+                      color: Color(0xFF5B3DE8),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (todayCourses.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.6)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.event_available_rounded, color: Color(0xFF5B3DE8), size: 24),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tidak Ada Perkuliahan Hari Ini 🎉',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Waktunya mengerjakan tugas, belajar mandiri, atau istirahat.',
+                        style: TextStyle(fontSize: 11.5, color: AppColors.textSub),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...todayCourses.map((c) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.7)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        c.jamMulai,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF5B3DE8)),
+                      ),
+                      Text(
+                        c.jamSelesai,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF7C3AED)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDE9FE),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              '${c.sks} SKS',
+                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSub),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        c.nama,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        c.dosen,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSub),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => widget.onNavigateTab(1),
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textLight),
+                ),
+              ],
+            ),
+          )),
+      ],
+    );
+  }
+
   Widget _buildAttendanceCard(int? percentage, int hadir) {
     final value = percentage == null ? 0.0 : percentage / 100;
+    final isEligible = percentage != null && percentage >= 75;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -645,15 +888,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   value: percentage == null ? 0 : value,
                   strokeWidth: 6,
                   strokeCap: StrokeCap.round,
-                  backgroundColor: AppColors.primarySoft,
-                  color: AppColors.primary,
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  color: isEligible ? const Color(0xFF10B981) : const Color(0xFF5B3DE8),
                 ),
                 Icon(
                   percentage == null
                       ? Icons.event_busy_rounded
-                      : Icons.done_rounded,
+                      : (isEligible ? Icons.verified_rounded : Icons.trending_up_rounded),
                   size: 20,
-                  color: AppColors.primary,
+                  color: isEligible ? const Color(0xFF10B981) : const Color(0xFF5B3DE8),
                 ),
               ],
             ),
@@ -663,17 +906,39 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  percentage == null
-                      ? 'Belum ada catatan presensi'
-                      : '$percentage% kehadiran',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  children: [
+                    Text(
+                      percentage == null
+                          ? 'Belum ada catatan presensi'
+                          : '$percentage% Kehadiran',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    if (percentage != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isEligible ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isEligible ? 'UAS Aman' : 'Perlu Rajin',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: isEligible ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 3),
                 Text(
                   percentage == null
-                      ? 'Riwayatmu akan muncul setelah presensi pertama.'
-                      : '$hadir hadir dari ${_attendance.length} sesi tercatat.',
+                      ? 'Riwayat kehadiranmu akan muncul setelah presensi pertama.'
+                      : '$hadir hadir dari ${_attendance.length} sesi tercatat (Minimal 75% untuk UAS).',
                   style: Theme.of(context).textTheme.bodySmall
                       ?.copyWith(color: AppColors.textSub),
                 ),
@@ -699,21 +964,25 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         icon: Icons.task_alt_rounded,
         color: AppColors.success,
         surface: AppColors.successSoft,
-        title: 'Kamu sudah menyusul semua tugas',
-        subtitle: 'Tugas baru dari dosen akan muncul di sini.',
+        title: 'Semua Tugas Telah Tuntas! 🎉',
+        subtitle: 'Tidak ada tenggat tugas yang menumpuk saat ini.',
         onTap: () => widget.onNavigateTab(2),
       );
     }
     final due = assignment.deadline;
     final days = due.difference(DateTime.now()).inDays;
+    final isUrgent = days <= 1;
+
     return _FeatureCard(
       icon: Icons.assignment_rounded,
-      color: AppColors.secondaryDark,
-      surface: AppColors.secondarySoft,
+      color: isUrgent ? const Color(0xFFDC2626) : const Color(0xFF5B3DE8),
+      surface: isUrgent ? const Color(0xFFFEE2E2) : const Color(0xFFF5F3FF),
       eyebrow: days < 0
           ? 'SUDAH LEWAT TENGGAT'
           : days == 0
           ? 'TENGGAT HARI INI'
+          : days == 1
+          ? 'TENGGAT BESOK'
           : 'TENGGAT $days HARI LAGI',
       title: assignment.judul,
       subtitle: assignment.courseName,
