@@ -241,96 +241,166 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   Widget _buildWelcomeCard(StudentProfile student) {
     final title = student.isKetuaKelas
-        ? 'Siap memimpin kegiatan kelas?'
+        ? 'Koordinator Kelas Aktif'
         : student.isBendahara
-        ? 'Kelola kas kelas dengan tertib.'
+        ? 'Pengelola Keuangan Kelas'
         : student.isSekretaris
-        ? 'Agenda dan informasi kelas ada di sini.'
-        : 'Semua kebutuhan kuliah dalam satu tempat.';
+        ? 'Pencatat & Pengelola Agenda'
+        : 'Portal Terpadu Mahasiswa';
+
+    final subtitle = student.isKetuaKelas
+        ? 'Siap memimpin koordinasi perkuliahan hari ini?'
+        : student.isBendahara
+        ? 'Transparansi kas dan iuran kelas terkontrol rapi.'
+        : student.isSekretaris
+        ? 'Informasi dan agenda kelas terpusat di satu portal.'
+        : 'Pantau jadwal, presensi, tugas, dan nilai akademikmu.';
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, Color(0xFF8068F2)],
+          colors: [
+            Color(0xFF4C2CE2),
+            Color(0xFF6B4CF6),
+            Color(0xFF8667FA),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: .2),
-            blurRadius: 22,
-            offset: const Offset(0, 9),
+            color: const Color(0xFF5B3DE8).withValues(alpha: .28),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -14,
-            bottom: -22,
+            right: -15,
+            top: -15,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: .06),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 15,
+            bottom: -20,
             child: Icon(
-              Icons.auto_awesome_rounded,
-              size: 116,
+              Icons.school_rounded,
+              size: 110,
               color: Colors.white.withValues(alpha: .09),
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .16),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Text(
-                  student.jabatan.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: .45,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: .25)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.stars_rounded, color: Color(0xFFFDE047), size: 14),
+                        const SizedBox(width: 5),
+                        Text(
+                          student.jabatan.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: .5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: .15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'SMT ${student.semester}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 17),
+              const SizedBox(height: 16),
               Text(
                 title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
                 ),
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 6),
               Text(
-                '${student.prodi}  ·  UNAZLAM',
+                subtitle,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: .84),
-                  fontSize: 13,
-                  height: 1.5,
+                  color: Colors.white.withValues(alpha: .88),
+                  fontSize: 12.5,
+                  height: 1.45,
                 ),
               ),
               const SizedBox(height: 18),
-              TextButton.icon(
-                onPressed: () => widget.onNavigateTab(4),
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => widget.onNavigateTab(10), // KHS & IPK
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5B3DE8),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.school_outlined, size: 16),
+                    label: const Text(
+                      'KHS & Nilai',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    ),
                   ),
-                ),
-                icon: const Icon(Icons.person_outline_rounded, size: 18),
-                label: const Text(
-                  'Lihat profil',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+                  OutlinedButton.icon(
+                    onPressed: () => widget.onNavigateTab(4), // Profil
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withValues(alpha: .5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.badge_outlined, size: 16),
+                    label: const Text(
+                      'Profil Saya',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -804,46 +874,58 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: Material(
       color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 118),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 7),
+          constraints: const BoxConstraints(minHeight: 124),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.6),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(icon, color: color, size: 21),
+                child: Icon(icon, color: color, size: 22),
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.1,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 11,
                   color: AppColors.textSub,
                 ),
               ),
