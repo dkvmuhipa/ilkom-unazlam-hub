@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/dummy_data.dart';
 import '../../core/services/student_dashboard_service.dart';
+import '../../models/models.dart';
 
 class ClassNotificationItem {
   final String id;
@@ -59,6 +61,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     try {
       final data = await StudentDashboardService.load(widget.studentNim);
       final rows = <ClassNotificationItem>[];
+      final now = DateTime.now();
+
+      // 1. Pengumuman terbaru
       final announcement = data.latestAnnouncement;
       if (announcement != null) {
         rows.add(
@@ -71,19 +76,71 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
         );
       }
-      final assignment = data.nextAssignment;
-      if (assignment != null) {
+
+      // 2. Pengingat Deadline Tugas Mahasiswa (H-3, H-1, Hari H)
+      final assignments = data.pendingAssignments.isNotEmpty
+          ? data.pendingAssignments
+          : (data.nextAssignment != null ? [data.nextAssignment!] : <Assignment>[]);
+
+      for (final assignment in assignments) {
+        final diff = assignment.deadline.difference(now);
+        final inDays = diff.inDays;
+        final inHours = diff.inHours;
+
+        String reminderTitle;
+        if (diff.isNegative) {
+          reminderTitle = '⚠️ Tenggat Tugas Telah Lewat!';
+        } else if (inHours <= 24) {
+          reminderTitle = '🚨 PENGINGAT DEADLINE: HARI INI!';
+        } else if (inDays <= 2) {
+          reminderTitle = '⏳ Pengingat Tugas: H-1 Menjelang Deadline';
+        } else {
+          reminderTitle = '📝 Tugas Kuliah Mendatang';
+        }
+
         rows.add(
           ClassNotificationItem(
             id: 'assignment_${assignment.id}',
-            title: 'Tugas menunggu penyelesaian',
+            title: reminderTitle,
             message:
-                '${assignment.judul} · ${assignment.courseName} · tenggat ${_dateLabel(assignment.deadline)}',
+                '${assignment.judul} • ${assignment.courseName} • Batas: ${_dateLabel(assignment.deadline)} (${_relativeTime(assignment.deadline)})',
             time: _relativeTime(assignment.deadline),
             category: 'deadline',
           ),
         );
       }
+
+      // 3. Pengingat Jadwal Kuliah Hari Ini & Besok
+      final daysId = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      final todayName = daysId[(now.weekday - 1) % 7];
+      final tomorrowName = daysId[now.weekday % 7];
+
+      final todayCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
+      for (final c in todayCourses) {
+        rows.add(
+          ClassNotificationItem(
+            id: 'schedule_today_${c.id}',
+            title: '📅 Kuliah Hari Ini: ${c.nama}',
+            message: 'Pukul ${c.jamMulai} - ${c.jamSelesai} WIB di ${c.ruangan} • Dosen: ${c.dosen}',
+            time: 'Hari ini',
+            category: 'attendance',
+          ),
+        );
+      }
+
+      final tomorrowCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == tomorrowName.toLowerCase()).toList();
+      for (final c in tomorrowCourses) {
+        rows.add(
+          ClassNotificationItem(
+            id: 'schedule_tomorrow_${c.id}',
+            title: '⏰ Pengingat Kuliah Besok ($tomorrowName)',
+            message: '${c.nama} (${c.sks} SKS) • ${c.jamMulai} WIB • ${c.ruangan}',
+            time: 'Besok',
+            category: 'attendance',
+          ),
+        );
+      }
+
       if (!mounted) return;
       setState(() {
         _notifications = rows;

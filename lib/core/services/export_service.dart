@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import 'download_stub.dart' if (dart.library.html) 'download_web.dart';
 import '../../models/models.dart';
+import 'academic_grade_service.dart';
 
 class ExportService {
   /// Trigger direct file download in browser or copy to clipboard on other platforms
@@ -83,6 +84,47 @@ class ExportService {
         final course = item.courseName;
         final status = item.status;
         buffer.writeln('${i + 1},"$date","$course","$status"');
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export Kartu Hasil Studi (KHS) / Transkrip Nilai Mahasiswa
+  static String exportKhsCsv({
+    required StudentProfile student,
+    required List<StudentCourseGrade> grades,
+    required double gpa,
+    required int totalSks,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('KARTU HASIL STUDI (KHS) / TRANSKRIP AKADEMIK');
+    buffer.writeln('PORTAL ILKOM UNAZLAM - UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI');
+    buffer.writeln('NIM,"${student.nim}"');
+    buffer.writeln('Nama Mahasiswa,"${student.nama}"');
+    buffer.writeln('Program Studi,"${student.prodi}"');
+    buffer.writeln('Semester Aktif,${student.semester}');
+    buffer.writeln('Indeks Prestasi Kumulatif (IPK),${gpa.toStringAsFixed(2)}');
+    buffer.writeln('Total SKS Ditempuh,$totalSks SKS');
+    buffer.writeln(
+      'Tanggal Unduh,"${DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(DateTime.now())}"',
+    );
+    buffer.writeln('');
+    buffer.writeln(
+      'No,Kode MK,Nama Mata Kuliah,SKS,Semester,Tahun Akademik,Nilai Huruf,Nilai Angka,Bobot',
+    );
+
+    if (grades.isEmpty) {
+      buffer.writeln('1,-,Belum ada nilai yang dicatat,-,-,-,-,-,-');
+    } else {
+      for (int i = 0; i < grades.length; i++) {
+        final g = grades[i];
+        final bobot = (AcademicGradeService.gradePoints[g.letterGrade] ?? 0.0)
+            .toStringAsFixed(1);
+        final score = g.numericScore != null ? g.numericScore.toString() : '-';
+        buffer.writeln(
+          '${i + 1},"${g.courseCode}","${g.courseName}",${g.sks},${g.semester},"${g.academicYear}","${g.letterGrade}",$score,$bobot',
+        );
       }
     }
 

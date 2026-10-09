@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/academic_grade_service.dart';
+import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
@@ -380,6 +381,39 @@ class _AcademicGradesScreenState extends State<AcademicGradesScreen> {
       appBar: AppBar(
         title: const Text('Transkrip Nilai & IPK'),
         actions: [
+          IconButton(
+            tooltip: 'Ekspor KHS / Transkrip',
+            onPressed: () {
+              final nimValue = _selectedNim ?? widget.studentNim;
+              final studentToExport = displayStudent ??
+                  StudentProfile(
+                    id: nimValue,
+                    nim: nimValue,
+                    nama: 'Mahasiswa',
+                    email: '',
+                    noWa: '',
+                    semester: 1,
+                    prodi: 'Ilmu Komunikasi',
+                    kelas: 'Ilmu Komunikasi',
+                  );
+              final gpa = _calculateGpa(_grades);
+              final totalSks = _grades.fold<int>(0, (sum, g) => sum + g.sks);
+              final csvContent = ExportService.exportKhsCsv(
+                student: studentToExport,
+                grades: _grades,
+                gpa: gpa,
+                totalSks: totalSks,
+              );
+              ExportService.showExportSheet(
+                context,
+                title: 'Ekspor KHS / Transkrip Nilai',
+                subtitle: '${studentToExport.nama} (${studentToExport.nim}) • IPK ${gpa.toStringAsFixed(2)}',
+                fileName: 'KHS_${studentToExport.nim}.csv',
+                content: csvContent,
+              );
+            },
+            icon: const Icon(Icons.file_download_outlined),
+          ),
           IconButton(
             tooltip: 'Muat ulang',
             onPressed: _load,

@@ -6,11 +6,13 @@ import 'supabase_service.dart';
 class StudentDashboardSnapshot {
   final List<Map<String, dynamic>> attendance;
   final Assignment? nextAssignment;
+  final List<Assignment> pendingAssignments;
   final Announcement? latestAnnouncement;
 
   const StudentDashboardSnapshot({
     required this.attendance,
     required this.nextAssignment,
+    this.pendingAssignments = const [],
     required this.latestAnnouncement,
   });
 }
@@ -102,6 +104,7 @@ class StudentDashboardService {
     return StudentDashboardSnapshot(
       attendance: attendance,
       nextAssignment: assignments.isEmpty ? null : assignments.first,
+      pendingAssignments: assignments,
       latestAnnouncement: announcement,
     );
   }
