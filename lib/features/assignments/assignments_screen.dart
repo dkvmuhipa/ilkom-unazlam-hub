@@ -528,29 +528,32 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       ),
       body: Column(
         children: [
-          // Filter Chips matching Screen 5 (Aktif, Selesai, Semua) & Course Dropdown
+          // Filter Chips & Course Dropdown
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    _buildFilterChip('Aktif'),
-                    const SizedBox(width: 10),
-                    _buildFilterChip('Selesai'),
-                    const SizedBox(width: 10),
-                    _buildFilterChip('Semua'),
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Aktif', DummyData.assignments.where((a) => a.status != 'selesai' && a.status != 'dinilai').length),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Selesai', DummyData.assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Semua', DummyData.assignments.length),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  height: 38,
+                  height: 40,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -560,21 +563,24 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       isExpanded: true,
                       icon: const Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        size: 18,
-                        color: Color(0xFF6B7280),
+                        size: 20,
+                        color: Color(0xFF64748B),
                       ),
                       items: availableCourses.map((c) {
+                        final countInCourse = c == 'Semua Mata Kuliah'
+                            ? DummyData.assignments.length
+                            : DummyData.assignments.where((a) => a.courseName == c).length;
                         return DropdownMenuItem<String>(
                           value: c,
                           child: Row(
                             children: [
                               Icon(
                                 c == 'Semua Mata Kuliah'
-                                    ? Icons.filter_alt_outlined
-                                    : Icons.book_outlined,
-                                size: 14,
+                                    ? Icons.tune_rounded
+                                    : Icons.menu_book_rounded,
+                                size: 15,
                                 color: c == 'Semua Mata Kuliah'
-                                    ? const Color(0xFF6B7280)
+                                    ? const Color(0xFF64748B)
                                     : const Color(0xFF5B3DE8),
                               ),
                               const SizedBox(width: 8),
@@ -582,15 +588,27 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                 child: Text(
                                   c,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 12.5,
                                     fontWeight: c == _selectedCourseFilter
                                         ? FontWeight.w700
                                         : FontWeight.w500,
-                                    color: const Color(0xFF1F2937),
+                                    color: const Color(0xFF1E293B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (countInCourse > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE2E8F0),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '$countInCourse',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                  ),
+                                ),
                             ],
                           ),
                         );
@@ -605,6 +623,66 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                 ),
               ],
             ),
+          ),
+
+          // Assignment Progress Bar
+          Builder(
+            builder: (context) {
+              final total = DummyData.assignments.length;
+              final finished = DummyData.assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length;
+              final percent = total > 0 ? (finished / total) : 0.0;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Progres Tugas Semester Ini: $finished/$total selesai',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                              Text(
+                                '${(percent * 100).toInt()}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF5B3DE8),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: percent,
+                              minHeight: 5,
+                              backgroundColor: const Color(0xFFE2E8F0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B3DE8)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
 
           // Assignment List
@@ -659,7 +737,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
+                      horizontal: 18,
                       vertical: 16,
                     ),
                     itemCount: filteredList.length,
@@ -668,6 +746,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       final courseColor =
                           _courseColors[a.courseName] ??
                           const Color(0xFF5B3DE8);
+                      final isDone = a.status == 'selesai' || a.status == 'dinilai';
 
                       return InkWell(
                         onTap: () => AssignmentsScreen.showAssignmentDetail(
@@ -677,50 +756,54 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                           canManage: widget.canManage,
                           onStatusChanged: () => setState(() {}),
                         ),
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 14),
-                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDone
+                                  ? const Color(0xFFE2E8F0)
+                                  : const Color(0xFFE2E8F0),
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    color: isDone ? const Color(0xFF10B981) : courseColor,
+                                    width: 4,
+                                  ),
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Icon box in course color
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: courseColor.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: Icon(
-                                      Icons.description_outlined,
-                                      color: courseColor,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
+                                  // Top row: Course Pill, Category & Status / Quick Check Action
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3.5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: courseColor.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
                                           a.courseName,
                                           style: TextStyle(
                                             fontSize: 11,
@@ -728,98 +811,188 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                             color: courseColor,
                                           ),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          a.judul,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w800,
-                                            color: Color(0xFF111827),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.more_vert_rounded,
-                                      size: 18,
-                                      color: Color(0xFF9CA3AF),
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => _cycleStatus(a),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              const Divider(
-                                height: 1,
-                                color: Color(0xFFF3F4F6),
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today_outlined,
-                                        size: 12,
-                                        color: Color(0xFF9CA3AF),
                                       ),
                                       const SizedBox(width: 6),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}',
-                                            style: const TextStyle(
-                                              fontSize: 11.5,
-                                              color: Color(0xFF6B7280),
-                                              fontWeight: FontWeight.w500,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 3.5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          a.kategori,
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      // Quick Checkbox / Status Indicator
+                                      InkWell(
+                                        onTap: () => _cycleStatus(a),
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 9,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _statusBgColor(a.status),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: _statusTextColor(a.status).withValues(alpha: 0.3),
+                                              width: 1,
                                             ),
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            _deadlineLabel(a),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: _deadlineColor(a),
-                                              fontWeight: FontWeight.w700,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                isDone
+                                                    ? Icons.check_circle_rounded
+                                                    : Icons.radio_button_unchecked_rounded,
+                                                size: 13,
+                                                color: _statusTextColor(a.status),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _statusLabel(a.status),
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: _statusTextColor(a.status),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Assignment Title
+                                  Text(
+                                    a.judul,
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDone ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+                                      decoration: isDone ? TextDecoration.lineThrough : null,
+                                      height: 1.25,
+                                    ),
+                                  ),
+
+                                  if (a.deskripsi.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      a.deskripsi,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF64748B),
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 12),
+                                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                  const SizedBox(height: 10),
+
+                                  // Bottom Row: Deadline & Link
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_month_outlined,
+                                            size: 14,
+                                            color: _deadlineColor(a),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}',
+                                                style: const TextStyle(
+                                                  fontSize: 11.5,
+                                                  color: Color(0xFF475569),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: _deadlineColor(a).withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              _deadlineLabel(a),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: _deadlineColor(a),
+                                                fontWeight: FontWeight.w800,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                  InkWell(
-                                    onTap: () => _cycleStatus(a),
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _statusBgColor(a.status),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        _statusLabel(a.status),
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: _statusTextColor(a.status),
+                                      if (a.linkPengumpulan != null && a.linkPengumpulan!.isNotEmpty)
+                                        InkWell(
+                                          onTap: () async {
+                                            final uri = Uri.tryParse(a.linkPengumpulan!);
+                                            if (uri != null && await canLaunchUrl(uri)) {
+                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEFF6FF),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.link_rounded, size: 12, color: Color(0xFF2563EB)),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Link Tugas',
+                                                  style: TextStyle(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF2563EB),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 13,
+                                          color: Color(0xFF94A3B8),
                                         ),
-                                      ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       );
@@ -850,25 +1023,62 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     return m[month];
   }
 
-  Widget _buildFilterChip(String label) {
+  Widget _buildFilterChip(String label, int count) {
     final isSelected = _selectedTab == label;
     return InkWell(
       onTap: () => setState(() => _selectedTab = label),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(20),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF4B5563),
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF475569),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
