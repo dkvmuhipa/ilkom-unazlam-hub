@@ -525,44 +525,133 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
       body: Column(
         children: [
-          // Filter Hari (Pill bar matching Screen 4)
+          // Filter Hari (Pill bar with Today indicator)
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _days.map((day) {
-                  final isSelected = day == _selectedDay;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedDay = day),
-                      borderRadius: BorderRadius.circular(20),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              child: Builder(
+                builder: (context) {
+                  final now = DateTime.now();
+                  final dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                  final todayName = (now.weekday >= 1 && now.weekday <= 7) ? dayNames[now.weekday] : '';
+
+                  return Row(
+                    children: _days.map((day) {
+                      final isSelected = day == _selectedDay;
+                      final isToday = day == todayName;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: InkWell(
+                          onTap: () => setState(() => _selectedDay = day),
+                          borderRadius: BorderRadius.circular(22),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : null,
+                              color: isSelected ? null : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isToday) ...[
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    margin: const EdgeInsets.only(right: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFF86EFAC) : const Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                                Text(
+                                  day,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    color: isSelected ? Colors.white : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
             ),
           ),
 
-          // Timeline List matching Screen 4
+          // Schedule Summary Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.event_note_rounded,
+                  size: 15,
+                  color: Color(0xFF5B3DE8),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _selectedDay == 'Semua'
+                      ? 'Total ${_courses.length} mata kuliah terdaftar'
+                      : '$_selectedDay • ${filteredCourses.length} mata kuliah (${filteredCourses.fold<int>(0, (sum, c) => sum + c.sks)} SKS)',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF334155),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Semester 1',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF5B3DE8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Timeline List
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -570,12 +659,48 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     onRefresh: _fetchCourses,
                     child: filteredCourses.isEmpty
                         ? ListView(
-                            children: const [
-                              SizedBox(height: 80),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 70),
                               Center(
-                                child: Text(
-                                  'Tidak ada perkuliahan di hari ini.',
-                                  style: TextStyle(color: Color(0xFF6B7280)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(32),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFF5F3FF),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.event_available_rounded,
+                                          size: 46,
+                                          color: Color(0xFF5B3DE8),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Tidak Ada Kuliah di Hari $_selectedDay',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      const Text(
+                                        'Tidak ada agenda perkuliahan tatap muka terjadwal untuk hari ini. Waktunya belajar mandiri atau diskusi tugas!',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          color: Color(0xFF64748B),
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -584,7 +709,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             physics: const AlwaysScrollableScrollPhysics(
                               parent: BouncingScrollPhysics(),
                             ),
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
                             itemCount: filteredCourses.length,
                             itemBuilder: (context, index) {
                               final c = filteredCourses[index];
@@ -598,56 +723,150 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  // Timeline UI matching Screen 4
+  Color _getCourseAccentColor(String courseName) {
+    final colors = [
+      const Color(0xFF5B3DE8), // Royal Purple
+      const Color(0xFF0284C7), // Sky Blue
+      const Color(0xFF0D9488), // Teal
+      const Color(0xFFD97706), // Amber
+      const Color(0xFF7C3AED), // Violet
+      const Color(0xFF2563EB), // Indigo Blue
+      const Color(0xFFDC2626), // Crimson
+    ];
+    return colors[courseName.hashCode.abs() % colors.length];
+  }
+
+  bool _isCourseOngoing(Course c) {
+    final now = DateTime.now();
+    final dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    if (now.weekday < 1 || now.weekday > 7 || dayNames[now.weekday] != c.hari) {
+      return false;
+    }
+    try {
+      final startParts = c.jamMulai.split(':');
+      final endParts = c.jamSelesai.split(':');
+      final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+      final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+      final currentMinutes = now.hour * 60 + now.minute;
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isCourseFinished(Course c) {
+    final now = DateTime.now();
+    final dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    if (now.weekday < 1 || now.weekday > 7 || dayNames[now.weekday] != c.hari) {
+      return false;
+    }
+    try {
+      final endParts = c.jamSelesai.split(':');
+      final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+      final currentMinutes = now.hour * 60 + now.minute;
+      return currentMinutes > endMinutes;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Widget _buildLecturerAvatar(String name, Color color) {
+    final clean = name.replaceAll(RegExp(r'(Dr\.|M\.I\.Kom|S\.Sos|Prof\.|H\.|Hj\.)'), '').trim();
+    final initials = clean.isNotEmpty
+        ? clean.split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join()
+        : 'DS';
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  // Modern Timeline UI
   Widget _buildTimelineItem(Course c, {required bool isLast}) {
+    final accentColor = _getCourseAccentColor(c.nama);
+    final isOngoing = _isCourseOngoing(c);
+    final isFinished = _isCourseFinished(c);
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Left Time Column
           SizedBox(
-            width: 48,
+            width: 52,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   c.jamMulai,
-                  style: const TextStyle(
-                    fontSize: 12.5,
+                  style: TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
+                    color: isOngoing ? const Color(0xFF10B981) : const Color(0xFF0F172A),
+                    letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  c.jamSelesai,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF9CA3AF),
+                const SizedBox(height: 3),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    c.jamSelesai,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Timeline Dot and Vertical Line
+          // Timeline Dot & Connecting Line
           Column(
             children: [
               Container(
-                width: 10,
-                height: 10,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF5B3DE8),
+                width: 14,
+                height: 14,
+                margin: const EdgeInsets.only(top: 3),
+                decoration: BoxDecoration(
+                  color: isOngoing ? const Color(0xFF10B981) : Colors.white,
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isOngoing ? Colors.white : accentColor,
+                    width: isOngoing ? 2 : 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isOngoing ? const Color(0xFF10B981) : accentColor).withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: const Color(0xFFE5E7EB),
+                    color: const Color(0xFFE2E8F0),
                     margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
@@ -659,105 +878,226 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           Expanded(
             child: InkWell(
               onTap: () => _showCourseDetailModal(c),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isOngoing
+                        ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                        : const Color(0xFFE2E8F0),
+                    width: isOngoing ? 1.5 : 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            c.nama,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: isOngoing ? const Color(0xFF10B981) : accentColor,
+                          width: 4,
                         ),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF9CA3AF)),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-
-                    // Room Location
-                    Row(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF6B7280)),
-                        const SizedBox(width: 4),
-                        Text(
-                          c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F0FF),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${c.sks} SKS',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Lecturer
-                    Row(
-                      children: [
-                        const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF6B7280)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            c.dosen,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
-                          ),
-                        ),
-                        if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
-                          InkWell(
-                            onTap: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
-                            child: Container(
+                        // Top Badges Row
+                        Row(
+                          children: [
+                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFDCFCE7),
-                                borderRadius: BorderRadius.circular(8),
+                                color: accentColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(7),
                               ),
-                              child: const Row(
+                              child: Text(
+                                c.kode.isNotEmpty ? c.kode : 'ILKOM',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: accentColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              child: Text(
+                                '${c.sks} SKS',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            if (isOngoing)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.circle, size: 7, color: Color(0xFF16A34A)),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Berlangsung',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF16A34A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (isFinished)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Selesai',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              )
+                            else
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                size: 18,
+                                color: Color(0xFF94A3B8),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Course Title
+                        Text(
+                          c.nama,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Room badge
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.chat_bubble_outline_rounded, size: 11, color: Color(0xFF16A34A)),
-                                  SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.meeting_room_outlined,
+                                    size: 13,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'WA Dosen',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF16A34A)),
+                                    c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: Color(0xFF334155),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        const SizedBox(height: 10),
+
+                        // Lecturer & Contact
+                        Row(
+                          children: [
+                            _buildLecturerAvatar(c.dosen, accentColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                c.dosen,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                            if (c.dosenWa != null && c.dosenWa!.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.chat_rounded, size: 12, color: Color(0xFF059669)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Chat WA',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF059669),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
