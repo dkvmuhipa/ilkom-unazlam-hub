@@ -405,6 +405,8 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       TreasuryScreen(
         key: ValueKey('treasury_${currentUser.nim}'),
         canManage: currentUser.canManageTreasury,
+        userNim: currentUser.nim,
+        userName: currentUser.nama,
         onBack: _goBack,
       ), // 8: Kas Kelas
       GroupsScreen(onBack: _goBack), // 9: Kelompok Praktikum

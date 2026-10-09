@@ -135,6 +135,21 @@ CREATE TABLE IF NOT EXISTS students (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 8a. STATUS IURAN KELAS PER MAHASISWA DAN BULAN
+CREATE TABLE IF NOT EXISTS treasury_dues (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    student_nim TEXT NOT NULL REFERENCES students(nim) ON DELETE CASCADE,
+    period TEXT NOT NULL CHECK (period ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
+    nominal BIGINT NOT NULL DEFAULT 20000 CHECK (nominal > 0),
+    is_lunas BOOLEAN NOT NULL DEFAULT false,
+    paid_at TIMESTAMPTZ,
+    recorded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (student_nim, period),
+    CHECK ((is_lunas AND paid_at IS NOT NULL) OR (NOT is_lunas AND paid_at IS NULL))
+);
+
 -- 8a. NILAI AKHIR PER MAHASISWA, MATA KULIAH, DAN SEMESTER
 CREATE TABLE IF NOT EXISTS student_course_grades (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -277,7 +292,7 @@ CREATE TRIGGER prevent_client_auth_link_change BEFORE UPDATE OF auth_user_id
 
 DO $$ DECLARE t text; BEGIN
   FOREACH t IN ARRAY ARRAY['courses','assignments','student_assignments','student_course_grades','announcements',
-    'treasury_transactions','agenda_items','attendance_logs','students','resources',
+    'treasury_transactions','treasury_dues','agenda_items','attendance_logs','students','resources',
     'polls','poll_options','poll_votes','permission_letters','audit_logs'] LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'active_student_read', t);
@@ -290,7 +305,7 @@ END $$;
 DO $$ DECLARE p record; BEGIN
   FOR p IN SELECT schemaname, tablename, policyname FROM pg_policies
     WHERE schemaname = 'public' AND tablename = ANY(ARRAY[
-      'courses','assignments','student_assignments','student_course_grades','announcements','treasury_transactions',
+      'courses','assignments','student_assignments','student_course_grades','announcements','treasury_transactions','treasury_dues',
       'agenda_items','attendance_logs','students','resources','polls','poll_options',
       'poll_votes','permission_letters','audit_logs'])
   LOOP EXECUTE format('DROP POLICY %I ON %I.%I', p.policyname, p.schemaname, p.tablename); END LOOP;
@@ -311,6 +326,11 @@ CREATE POLICY announcements_read ON public.announcements FOR SELECT TO authentic
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY treasury_read ON public.treasury_transactions FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
+REVOKE ALL ON TABLE public.treasury_dues FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.treasury_dues TO authenticated;
+CREATE POLICY treasury_dues_read_own_or_treasurer ON public.treasury_dues
+  FOR SELECT TO authenticated
+  USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Bendahara']));
 CREATE POLICY agenda_read ON public.agenda_items FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY resources_read ON public.resources FOR SELECT TO authenticated
@@ -410,6 +430,12 @@ CREATE POLICY announcements_manage ON public.announcements FOR ALL TO authentica
   USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
 CREATE POLICY treasury_manage ON public.treasury_transactions FOR ALL TO authenticated
   USING (public.has_class_role(ARRAY['ADMIN','Bendahara'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Bendahara']));
+CREATE POLICY treasury_dues_insert_treasurer ON public.treasury_dues FOR INSERT TO authenticated
+  WITH CHECK (public.has_class_role(ARRAY['ADMIN','Bendahara']));
+CREATE POLICY treasury_dues_update_treasurer ON public.treasury_dues FOR UPDATE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Bendahara'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Bendahara']));
+CREATE POLICY treasury_dues_delete_treasurer ON public.treasury_dues FOR DELETE TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN','Bendahara']));
 CREATE POLICY agenda_manage ON public.agenda_items FOR ALL TO authenticated
   USING (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris'])) WITH CHECK (public.has_class_role(ARRAY['ADMIN','Ketua Kelas','Sekretaris']));
 CREATE POLICY resources_manage ON public.resources FOR ALL TO authenticated

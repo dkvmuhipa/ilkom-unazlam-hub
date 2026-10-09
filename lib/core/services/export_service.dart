@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'dummy_data.dart';
+
 import 'package:intl/intl.dart';
+
 import 'download_stub.dart' if (dart.library.html) 'download_web.dart';
+import '../../models/models.dart';
 
 class ExportService {
   /// Trigger direct file download in browser or copy to clipboard on other platforms
@@ -14,15 +18,20 @@ class ExportService {
       Clipboard.setData(ClipboardData(text: content));
     }
   }
+
   /// Export Rekap Kas Kelas to CSV Format
-  static String exportTreasuryCsv() {
+  static String exportTreasuryCsv({
+    required List<TreasuryTransaction> transactions,
+  }) {
     final buffer = StringBuffer();
     buffer.writeln('ID,Judul Transaksi,Kategori,Tipe,Nominal,Tanggal,Pencatat');
 
-    for (var tx in DummyData.treasuryTransactions) {
+    for (var tx in transactions) {
       final dateStr = DateFormat('yyyy-MM-dd').format(tx.tanggal);
       final type = tx.isPemasukan ? 'Pemasukan' : 'Pengeluaran';
-      buffer.writeln('"${tx.id}","${tx.judul}","${tx.kategori}","$type",${tx.nominal},"$dateStr","${tx.pencatat}"');
+      buffer.writeln(
+        '"${tx.id}","${tx.judul}","${tx.kategori}","$type",${tx.nominal},"$dateStr","${tx.pencatat}"',
+      );
     }
 
     return buffer.toString();
@@ -31,13 +40,19 @@ class ExportService {
   /// Export Rekap Presensi Mahasiswa to CSV Format (Khusus Pengurus / Admin)
   static String exportAttendanceCsv(String courseName) {
     final buffer = StringBuffer();
-    buffer.writeln('No,NIM,Nama Mahasiswa,Program Studi,Status Kehadiran,Mata Kuliah');
+    buffer.writeln(
+      'No,NIM,Nama Mahasiswa,Program Studi,Status Kehadiran,Mata Kuliah',
+    );
 
-    final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    final students = DummyData.students
+        .where((s) => s.role != 'ADMIN')
+        .toList();
     for (int i = 0; i < students.length; i++) {
       final s = students[i];
       final status = (i % 8 == 0) ? 'Izin' : 'Hadir';
-      buffer.writeln('${i + 1},"${s.nim}","${s.nama}","${s.prodi}","$status","$courseName"');
+      buffer.writeln(
+        '${i + 1},"${s.nim}","${s.nama}","${s.prodi}","$status","$courseName"',
+      );
     }
 
     return buffer.toString();
@@ -53,7 +68,9 @@ class ExportService {
     buffer.writeln('REKAP PRESENSI PRIBADI MAHASISWA');
     buffer.writeln('NIM,"$studentNim"');
     buffer.writeln('Nama,"$studentName"');
-    buffer.writeln('Tanggal Cetak,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"');
+    buffer.writeln(
+      'Tanggal Cetak,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"',
+    );
     buffer.writeln('');
     buffer.writeln('No,Tanggal / Waktu,Mata Kuliah,Status Kehadiran');
 
@@ -101,7 +118,11 @@ class ExportService {
                     color: const Color(0xFFDCFCE7),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A), size: 22),
+                  child: const Icon(
+                    Icons.table_chart_rounded,
+                    color: Color(0xFF16A34A),
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -110,10 +131,20 @@ class ExportService {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
                       ),
                       if (subtitle != null)
-                        Text(subtitle, style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -135,21 +166,39 @@ class ExportService {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.insert_drive_file_outlined, color: Color(0xFF5B3DE8), size: 20),
+                  const Icon(
+                    Icons.insert_drive_file_outlined,
+                    color: Color(0xFF5B3DE8),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       fileName,
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3F0FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('CSV / Excel', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8))),
+                    child: const Text(
+                      'CSV / Excel',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF5B3DE8),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -157,7 +206,10 @@ class ExportService {
             const SizedBox(height: 14),
 
             // Preview Text Box
-            const Text('Pratinjau Data Laporan:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+            const Text(
+              'Pratinjau Data Laporan:',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+            ),
             const SizedBox(height: 6),
             Container(
               width: double.infinity,
@@ -171,7 +223,12 @@ class ExportService {
               child: SingleChildScrollView(
                 child: SelectableText(
                   content,
-                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace', height: 1.4, color: Color(0xFF374151)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    height: 1.4,
+                    color: Color(0xFF374151),
+                  ),
                 ),
               ),
             ),
@@ -187,7 +244,9 @@ class ExportService {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Data CSV berhasil disalin! Anda bisa langsung paste di Excel / Google Sheets.'),
+                          content: Text(
+                            'Data CSV berhasil disalin! Anda bisa langsung paste di Excel / Google Sheets.',
+                          ),
                           backgroundColor: Color(0xFF10B981),
                         ),
                       );
@@ -198,7 +257,9 @@ class ExportService {
                       foregroundColor: const Color(0xFF5B3DE8),
                       side: const BorderSide(color: Color(0xFF5B3DE8)),
                       minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -210,7 +271,9 @@ class ExportService {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('File "$fileName" berhasil diunduh ke perangkat Anda! 📁'),
+                          content: Text(
+                            'File "$fileName" berhasil diunduh ke perangkat Anda! 📁',
+                          ),
                           backgroundColor: const Color(0xFF16A34A),
                         ),
                       );
@@ -221,7 +284,9 @@ class ExportService {
                       backgroundColor: const Color(0xFF16A34A),
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),

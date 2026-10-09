@@ -805,7 +805,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ? session.courseName
         : DummyData.courses.first.nama;
 
-    bool isScanning = false;
     String? scanStatusMessage;
 
     showModalBottomSheet(

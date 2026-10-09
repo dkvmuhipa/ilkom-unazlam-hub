@@ -518,27 +518,7 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) return DummyData.students;
     try {
-      final rows = await client.rpc('get_class_directory');
-      final students = (rows as List)
-          .map(
-            (row) => StudentProfile(
-              id: row['id']?.toString() ?? '',
-              nim: row['nim']?.toString() ?? '',
-              nama: row['nama']?.toString() ?? '',
-              email: '',
-              noWa: row['no_wa']?.toString() ?? '',
-              peminatan: row['peminatan']?.toString() ?? '',
-              prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
-              semester: (row['semester'] as num?)?.toInt() ?? 1,
-              kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
-              role: row['role']?.toString() ?? 'MAHASISWA',
-              jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
-              isAktif: row['is_aktif'] as bool? ?? true,
-              instagram: row['instagram']?.toString(),
-              linkedin: row['linkedin']?.toString(),
-            ),
-          )
-          .toList();
+      final students = await getClassDirectoryStrict();
       DummyData.students
         ..clear()
         ..addAll(students);
@@ -547,6 +527,33 @@ class SupabaseRepository {
       debugPrint('Error fetch class directory: $e');
       return const [];
     }
+  }
+
+  static Future<List<StudentProfile>> getClassDirectoryStrict() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum terhubung.');
+
+    final rows = await client.rpc('get_class_directory');
+    return (rows as List)
+        .map(
+          (row) => StudentProfile(
+            id: row['id']?.toString() ?? '',
+            nim: row['nim']?.toString() ?? '',
+            nama: row['nama']?.toString() ?? '',
+            email: '',
+            noWa: row['no_wa']?.toString() ?? '',
+            peminatan: row['peminatan']?.toString() ?? '',
+            prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+            semester: (row['semester'] as num?)?.toInt() ?? 1,
+            kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+            role: row['role']?.toString() ?? 'MAHASISWA',
+            jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+            isAktif: row['is_aktif'] as bool? ?? true,
+            instagram: row['instagram']?.toString(),
+            linkedin: row['linkedin']?.toString(),
+          ),
+        )
+        .toList();
   }
 
   static Future<Map<String, String>> getPersonalAssignmentStatuses(
@@ -708,24 +715,7 @@ class SupabaseRepository {
     if (client == null) return DummyData.treasuryTransactions;
 
     try {
-      final response = await client
-          .from('treasury_transactions')
-          .select()
-          .order('tanggal', ascending: false);
-
-      final list = (response as List).map((row) {
-        return TreasuryTransaction(
-          id: row['id']?.toString() ?? '',
-          judul: row['judul'] ?? '',
-          nominal: (row['nominal'] as num?)?.toInt() ?? 0,
-          isPemasukan: row['is_pemasukan'] ?? true,
-          kategori: row['kategori'] ?? 'Kas Bulanan',
-          tanggal: row['tanggal'] != null
-              ? DateTime.parse(row['tanggal'])
-              : DateTime.now(),
-          pencatat: row['pencatat'] ?? 'Farah Nabila (Bendahara)',
-        );
-      }).toList();
+      final list = await getTreasuryTransactionsStrict();
 
       DummyData.treasuryTransactions
         ..clear()
@@ -734,6 +724,69 @@ class SupabaseRepository {
     } catch (e) {
       debugPrint('Error fetch treasury dari Supabase: $e');
       return DummyData.treasuryTransactions;
+    }
+  }
+
+  static Future<List<TreasuryTransaction>>
+  getTreasuryTransactionsStrict() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum terhubung.');
+
+    final response = await client
+        .from('treasury_transactions')
+        .select()
+        .order('tanggal', ascending: false);
+    return (response as List).map((row) {
+      return TreasuryTransaction(
+        id: row['id']?.toString() ?? '',
+        judul: row['judul'] ?? '',
+        nominal: (row['nominal'] as num?)?.toInt() ?? 0,
+        isPemasukan: row['is_pemasukan'] ?? true,
+        kategori: row['kategori'] ?? 'Kas Bulanan',
+        tanggal: row['tanggal'] != null
+            ? DateTime.parse(row['tanggal'])
+            : DateTime.now(),
+        pencatat: row['pencatat'] ?? 'Pengurus Kelas',
+      );
+    }).toList();
+  }
+
+  static Future<List<Map<String, dynamic>>> getTreasuryDuesForPeriod(
+    String period,
+  ) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum terhubung.');
+
+    final rows = await client
+        .from('treasury_dues')
+        .select('student_nim,period,nominal,is_lunas,paid_at')
+        .eq('period', period);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  static Future<bool> saveTreasuryDue({
+    required String studentNim,
+    required String period,
+    required int nominal,
+    required bool isPaid,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client.from('treasury_dues').upsert({
+        'student_nim': studentNim,
+        'period': period,
+        'nominal': nominal,
+        'is_lunas': isPaid,
+        'paid_at': isPaid ? DateTime.now().toUtc().toIso8601String() : null,
+        'recorded_by': client.auth.currentUser?.id,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'student_nim,period');
+      return true;
+    } catch (e) {
+      debugPrint('Error menyimpan status iuran di Supabase: $e');
+      return false;
     }
   }
 
@@ -799,6 +852,17 @@ class SupabaseRepository {
   // ====================================================================
   // 5. AGENDA & KALENDER KELAS (AGENDA ITEMS)
   // ====================================================================
+  static Future<List<Map<String, dynamic>>> getAgendaItems() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum terhubung.');
+
+    final rows = await client
+        .from('agenda_items')
+        .select('id,day,month,title,course,color_value,created_at')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   static Future<bool> createAgendaItem({
     required String id,
     required int day,
@@ -822,6 +886,27 @@ class SupabaseRepository {
       return true;
     } catch (e) {
       debugPrint('Sync insert agenda ke Supabase: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateAgendaItem({
+    required String id,
+    required String title,
+    required String course,
+    required int colorValue,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client
+          .from('agenda_items')
+          .update({'title': title, 'course': course, 'color_value': colorValue})
+          .eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error update agenda di Supabase: $e');
       return false;
     }
   }
