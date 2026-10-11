@@ -14,6 +14,7 @@ enum SoftPillVariant {
   amber, // Pending / Menunggu / Peringatan
   rose, // Batal / Bahaya / Terlambat
   navy, // Info / Peran / Modul
+  blue, // Royal Blue Info
   slate, // Netral / Nonaktif / Arsip
   violet, // Analitik / Polling / Unggulan
   cyan, // Berkas / Materi / Download
@@ -50,6 +51,9 @@ class SoftPillBadge extends StatelessWidget {
 
   factory SoftPillBadge.info({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
       SoftPillBadge(label: label, variant: SoftPillVariant.navy, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.blue({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.blue, icon: icon, showDot: showDot, fontSize: fontSize);
 
   factory SoftPillBadge.neutral({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
       SoftPillBadge(label: label, variant: SoftPillVariant.slate, icon: icon, showDot: showDot, fontSize: fontSize);
@@ -89,6 +93,7 @@ class SoftPillBadge extends StatelessWidget {
         border = AppColors.roseBorder;
         break;
       case SoftPillVariant.navy:
+      case SoftPillVariant.blue:
         bg = AppColors.primarySoft;
         text = AppColors.primary;
         border = AppColors.primaryBorder;
