@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/course_schedule_service.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
@@ -422,15 +423,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  void _autoSelectActiveDay(List<Course> list) {
+    if (list.isEmpty) return;
+    final now = DateTime.now();
+    final today = CourseScheduleService.getDayName(now);
+    final todayHasCourses = list.any((c) => c.hari.trim().toLowerCase() == today.toLowerCase());
+    if (todayHasCourses) {
+      _selectedDay = today;
+    } else {
+      // Jika hari ini tidak ada jadwal sama sekali, lewati ke hari aktif berikutnya!
+      final nextInfo = CourseScheduleService.getNextActiveDayInfo(list, now);
+      if (nextInfo != null) {
+        _selectedDay = nextInfo.dayName;
+      } else {
+        _selectedDay = 'Senin';
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    // Default to today if weekday is Mon-Fri
-    final now = DateTime.now();
-    final dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    if (now.weekday >= 1 && now.weekday <= 5) {
-      _selectedDay = dayNames[now.weekday];
-    }
+    _autoSelectActiveDay(_courses);
     _fetchCourses();
   }
 
@@ -461,6 +475,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         if (mounted) {
           setState(() {
             _courses = loaded;
+            _autoSelectActiveDay(loaded);
           });
         }
       }
@@ -549,6 +564,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     children: _days.map((day) {
                       final isSelected = day == _selectedDay;
                       final isToday = day == todayName;
+                      final count = day == 'Semua'
+                          ? _courses.length
+                          : _courses
+                              .where((c) =>
+                                  c.hari.trim().toLowerCase() ==
+                                  day.toLowerCase())
+                              .length;
 
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -593,7 +615,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   ),
                                 ],
                                 Text(
-                                  day,
+                                  day == 'Semua' ? 'Semua ($count)' : '$day ($count)',
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -706,6 +728,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           color: Color(0xFF64748B),
                                           height: 1.4,
                                         ),
+                                      ),
+                                      Builder(
+                                        builder: (ctx) {
+                                          final nextInfo = CourseScheduleService.getNextActiveDayInfo(_courses);
+                                          if (nextInfo != null && nextInfo.dayName != _selectedDay) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(top: 18),
+                                              child: ElevatedButton.icon(
+                                                onPressed: () => setState(() => _selectedDay = nextInfo.dayName),
+                                                icon: const Icon(Icons.fast_forward_rounded, size: 16),
+                                                label: Text('Lihat Jadwal ${nextInfo.dayName} (${nextInfo.courses.length} Kuliah)'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(0xFF1E40AF),
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
                                       ),
                                     ],
                                   ),

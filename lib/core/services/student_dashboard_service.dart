@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/models.dart';
+import 'course_schedule_service.dart';
 import 'dummy_data.dart';
 import 'supabase_service.dart';
 
@@ -11,6 +12,13 @@ class StudentDashboardSnapshot {
   final List<Assignment> pendingAssignments;
   final Announcement? latestAnnouncement;
   final List<Course> todayCourses;
+  final List<Course> upcomingCourses;
+  final String nextActiveDayName;
+  final String nextActiveDayLabel;
+  final int daysUntilNext;
+  final bool todayHasClasses;
+  final bool todayClassesFinished;
+  final List<Course> allCourses;
   final bool? isKasLunas;
   final int kasNominal;
   final String currentPeriodLabel;
@@ -21,6 +29,13 @@ class StudentDashboardSnapshot {
     this.pendingAssignments = const [],
     required this.latestAnnouncement,
     this.todayCourses = const [],
+    this.upcomingCourses = const [],
+    this.nextActiveDayName = '',
+    this.nextActiveDayLabel = '',
+    this.daysUntilNext = 0,
+    this.todayHasClasses = false,
+    this.todayClassesFinished = false,
+    this.allCourses = const [],
     this.isKasLunas,
     this.kasNominal = 0,
     this.currentPeriodLabel = '',
@@ -148,11 +163,11 @@ class StudentDashboardService {
       loadedCourses = DummyData.courses;
     }
 
-    const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    final todayName = (now.weekday >= 1 && now.weekday <= 7) ? dayNames[now.weekday] : '';
-    final todayCourses = loadedCourses
-        .where((c) => c.hari.trim().toLowerCase() == todayName.toLowerCase())
-        .toList();
+    final todayCourses = CourseScheduleService.getTodayCourses(loadedCourses, now);
+    final nextDayInfo = CourseScheduleService.getNextActiveDayInfo(loadedCourses, now);
+    final hasRemaining = CourseScheduleService.hasRemainingCoursesToday(todayCourses, now);
+    final todayHasClasses = todayCourses.isNotEmpty;
+    final todayFinished = todayHasClasses && !hasRemaining;
 
     // Ambil status iuran kas pribadi mahasiswa untuk periode berjalan
     bool? isKasLunas;
@@ -179,6 +194,13 @@ class StudentDashboardService {
       pendingAssignments: assignments,
       latestAnnouncement: announcement,
       todayCourses: todayCourses,
+      upcomingCourses: nextDayInfo?.courses ?? [],
+      nextActiveDayName: nextDayInfo?.dayName ?? '',
+      nextActiveDayLabel: nextDayInfo?.dayLabel ?? '',
+      daysUntilNext: nextDayInfo?.daysAhead ?? 0,
+      todayHasClasses: todayHasClasses,
+      todayClassesFinished: todayFinished,
+      allCourses: loadedCourses,
       isKasLunas: isKasLunas,
       kasNominal: kasNominal,
       currentPeriodLabel: periodLabel,

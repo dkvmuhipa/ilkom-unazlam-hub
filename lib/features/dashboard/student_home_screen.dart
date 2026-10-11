@@ -31,6 +31,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   List<Assignment> _pendingAssignments = [];
   Announcement? _announcement;
   List<Course> _todayCourses = [];
+  List<Course> _upcomingCourses = [];
+  String _nextActiveDayName = '';
+  String _nextActiveDayLabel = '';
+  bool _todayHasClasses = false;
+  bool _todayClassesFinished = false;
+  int _scheduleViewMode = 0; // 0 = Hari Ini, 1 = Mendatang
   bool? _isKasLunas;
   int _kasNominal = 0;
   String _currentPeriodLabel = '';
@@ -84,6 +90,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         _pendingAssignments = snapshot.pendingAssignments;
         _announcement = snapshot.latestAnnouncement;
         _todayCourses = snapshot.todayCourses;
+        _upcomingCourses = snapshot.upcomingCourses;
+        _nextActiveDayName = snapshot.nextActiveDayName;
+        _nextActiveDayLabel = snapshot.nextActiveDayLabel;
+        _todayHasClasses = snapshot.todayHasClasses;
+        _todayClassesFinished = snapshot.todayClassesFinished;
+        // Jika hari ini tidak ada kuliah atau sudah selesai, lewati hari kosong & default ke jadwal mendatang!
+        if (!_todayHasClasses || _todayClassesFinished) {
+          _scheduleViewMode = 1;
+        } else {
+          _scheduleViewMode = 0;
+        }
         _isKasLunas = snapshot.isKasLunas;
         _kasNominal = snapshot.kasNominal;
         _currentPeriodLabel = snapshot.currentPeriodLabel;
@@ -1132,7 +1149,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   // ==========================================
-  // 7. AKTIVITAS HARI INI (HORIZONTAL CAROUSEL)
+  // 7. AKTIVITAS HARI INI & JADWAL MENDATANG (SMART DAY SKIP & CAROUSEL)
   // ==========================================
   Widget _buildTodayActivitiesSection(BuildContext context, bool isDark) {
     final now = DateTime.now();
@@ -1142,16 +1159,24 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
+    // Tentukan mode tampilan: Jika hari ini tidak ada kuliah, lewati & langsung tampilkan jadwal mendatang!
+    final bool isShowingUpcoming = _scheduleViewMode == 1 || !_todayHasClasses;
+    final List<Course> displayCourses = isShowingUpcoming ? _upcomingCourses : _todayCourses;
+    final String currentDayLabel = isShowingUpcoming
+        ? (_nextActiveDayLabel.isNotEmpty ? _nextActiveDayLabel : 'Mendatang')
+        : todayName;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header Bar: Title, Badge, & Lihat Semua
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
                 Text(
-                  'Aktivitas Kuliah',
+                  isShowingUpcoming ? 'Jadwal Kuliah Mendatang' : 'Aktivitas Kuliah Hari Ini',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -1166,11 +1191,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    todayName,
+                    currentDayLabel,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? const Color(0xFFA78BFA) : textSub,
+                      color: isDark ? const Color(0xFFA78BFA) : AppColors.primary,
                     ),
                   ),
                 ),
@@ -1193,22 +1218,84 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
 
-        // Horizontal Carousel Jadwal Kuliah Hari Ini
+        // Subtitle / Smart Day-Skip Notification / Tab Switcher
+        if (!_todayHasClasses) ...[
+          // Hari ini tidak ada perkuliahan -> hari kosong dilewati secara cerdas!
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.fast_forward_rounded,
+                  size: 13,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: textSub,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (_upcomingCourses.isNotEmpty) ...[
+          // Hari ini ada kuliah, dan ada juga jadwal aktif hari berikutnya -> berikan switcher
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                _buildSchedulePillButton(
+                  title: 'Hari Ini (${_todayCourses.length})',
+                  isSelected: _scheduleViewMode == 0,
+                  isDark: isDark,
+                  onTap: () => setState(() => _scheduleViewMode = 0),
+                ),
+                const SizedBox(width: 8),
+                _buildSchedulePillButton(
+                  title: 'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
+                  isSelected: _scheduleViewMode == 1,
+                  isDark: isDark,
+                  onTap: () => setState(() => _scheduleViewMode = 1),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // Horizontal Carousel Jadwal Kuliah Real-Time
         SizedBox(
           height: 134,
           child: ListView(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
             children: [
-              // Kartu Jadwal Kuliah Real-Time dari Supabase
-              if (_todayCourses.isEmpty)
+              if (displayCourses.isEmpty)
                 _buildFreeDayHorizontalCard(isDark)
               else
-                ..._todayCourses.map((c) => Padding(
+                ...displayCourses.map((c) => Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: _buildCourseHorizontalCard(c, isDark),
+                      child: _buildCourseHorizontalCard(
+                        c,
+                        isDark,
+                        isUpcomingDay: isShowingUpcoming,
+                      ),
                     )),
             ],
           ),
@@ -1217,241 +1304,289 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
-  Widget _buildCourseHorizontalCard(Course course, bool isDark) {
+  Widget _buildSchedulePillButton({
+    required String title,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? const Color(0xFF26223D) : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCourseHorizontalCard(
+    Course course,
+    bool isDark, {
+    bool isUpcomingDay = false,
+  }) {
     final now = DateTime.now();
     final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E2C3D) : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
+    const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    final todayName = (now.weekday >= 1 && now.weekday <= 7) ? dayNames[now.weekday] : '';
+    final isToday = !isUpcomingDay && (course.hari.trim().toLowerCase() == todayName.toLowerCase());
+
     // Hitung status waktu kelas (Sedang berlangsung vs Dimulai segera)
     bool isLiveNow = false;
     bool isUpcomingSoon = false;
     int minutesUntilStart = 0;
 
-    try {
-      final startParts = course.jamMulai.split(':');
-      final endParts = course.jamSelesai.split(':');
-      if (startParts.length == 2 && endParts.length == 2) {
-        final startDt = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(startParts[0]),
-          int.parse(startParts[1]),
-        );
-        final endDt = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(endParts[0]),
-          int.parse(endParts[1]),
-        );
+    if (isToday) {
+      try {
+        final startParts = course.jamMulai.split(':');
+        final endParts = course.jamSelesai.split(':');
+        if (startParts.length == 2 && endParts.length == 2) {
+          final startDt = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            int.parse(startParts[0]),
+            int.parse(startParts[1]),
+          );
+          final endDt = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            int.parse(endParts[0]),
+            int.parse(endParts[1]),
+          );
 
-        if (now.isAfter(startDt) && now.isBefore(endDt)) {
-          isLiveNow = true;
-        } else if (now.isBefore(startDt)) {
-          final diff = startDt.difference(now).inMinutes;
-          if (diff >= 0 && diff <= 60) {
-            isUpcomingSoon = true;
-            minutesUntilStart = diff;
+          if (now.isAfter(startDt) && now.isBefore(endDt)) {
+            isLiveNow = true;
+          } else if (now.isBefore(startDt)) {
+            final diff = startDt.difference(now).inMinutes;
+            if (diff >= 0 && diff <= 60) {
+              isUpcomingSoon = true;
+              minutesUntilStart = diff;
+            }
           }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
-    return Container(
-      width: 265,
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isLiveNow
-              ? const Color(0xFF10B981)
-              : (isUpcomingSoon ? const Color(0xFFF59E0B) : borderColor),
-          width: (isLiveNow || isUpcomingSoon) ? 1.5 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
+    final String timeBadgeLabel = isLiveNow
+        ? 'BERLANGSUNG'
+        : (isUpcomingSoon
+            ? '$minutesUntilStart MNT LAGI'
+            : (isToday
+                ? '${course.jamMulai} - ${course.jamSelesai}'
+                : '${course.hari} • ${course.jamMulai} - ${course.jamSelesai}'));
+
+    return InkWell(
+      onTap: () => widget.onNavigateTab(1), // Jadwal
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 265,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
             color: isLiveNow
-                ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+                ? const Color(0xFF10B981)
+                : (isUpcomingSoon ? const Color(0xFFF59E0B) : borderColor),
+            width: (isLiveNow || isUpcomingSoon) ? 1.5 : 1.0,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Header Waktu & Badge Live/Upcoming
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isLiveNow
-                      ? const Color(0xFFDCFCE7)
-                      : (isUpcomingSoon
-                          ? const Color(0xFFFEF3C7)
-                          : (isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE))),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isLiveNow) ...[
-                      Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsets.only(right: 5),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF16A34A),
-                          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: isLiveNow
+                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Header Waktu & Badge Live/Upcoming
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isLiveNow
+                        ? const Color(0xFFDCFCE7)
+                        : (isUpcomingSoon
+                            ? const Color(0xFFFEF3C7)
+                            : (isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE))),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isLiveNow) ...[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.only(right: 5),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF16A34A),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                      Text(
+                        timeBadgeLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: isLiveNow
+                              ? const Color(0xFF15803D)
+                              : (isUpcomingSoon
+                                  ? const Color(0xFFB45309)
+                                  : AppColors.primary),
                         ),
                       ),
                     ],
-                    Text(
-                      isLiveNow
-                          ? 'BERLANGSUNG'
-                          : (isUpcomingSoon
-                              ? '$minutesUntilStart MNT LAGI'
-                              : '${course.jamMulai} - ${course.jamSelesai}'),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: isLiveNow
-                            ? const Color(0xFF15803D)
-                            : (isUpcomingSoon
-                                ? const Color(0xFFB45309)
-                                : AppColors.primary),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    course.ruangan.isNotEmpty ? course.ruangan : 'Lab A',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: textSub,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Detail Kuliah
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  course.nama,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: textMain,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${course.dosen} • ${course.sks} SKS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: textSub,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+
+            // Aksi Cepat Bawah: WA Dosen 1-Tap & Virtual Link
+            Row(
+              children: [
+                if (course.dosenWa != null && course.dosenWa!.trim().isNotEmpty) ...[
+                  InkWell(
+                    onTap: () => _openWhatsAppDosen(course.dosenWa!, course.dosen),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.chat_bubble_outline_rounded, size: 12, color: Color(0xFF16A34A)),
+                          SizedBox(width: 4),
+                          Text(
+                            'WA Dosen',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  course.ruangan.isNotEmpty ? course.ruangan : 'Lab A',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: textSub,
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          // Detail Kuliah
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                course.nama,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: textMain,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${course.dosen} • ${course.sks} SKS',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: textSub,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-
-          // Aksi Cepat Bawah: WA Dosen 1-Tap & Virtual Link
-          Row(
-            children: [
-              if (course.dosenWa != null && course.dosenWa!.trim().isNotEmpty) ...[
-                InkWell(
-                  onTap: () => _openWhatsAppDosen(course.dosenWa!, course.dosen),
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF25D366).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.chat_bubble_outline_rounded, size: 12, color: Color(0xFF16A34A)),
-                        SizedBox(width: 4),
-                        Text(
-                          'WA Dosen',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF15803D),
+                  const SizedBox(width: 6),
+                ],
+                if (course.linkVirtual != null && course.linkVirtual!.trim().isNotEmpty) ...[
+                  InkWell(
+                    onTap: () => _openVirtualClass(course.linkVirtual!),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.videocam_rounded, size: 12, color: Color(0xFF0284C7)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Zoom/Meet',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0369A1),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              if (course.linkVirtual != null && course.linkVirtual!.trim().isNotEmpty) ...[
+                ],
+                const Spacer(),
                 InkWell(
-                  onTap: () => _openVirtualClass(course.linkVirtual!),
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.videocam_rounded, size: 12, color: Color(0xFF0284C7)),
-                        SizedBox(width: 4),
-                        Text(
-                          'Zoom/Meet',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0369A1),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  onTap: () => widget.onNavigateTab(1), // Jadwal
+                  child: Icon(Icons.arrow_forward_rounded, size: 15, color: textSub),
                 ),
               ],
-              const Spacer(),
-              InkWell(
-                onTap: () => widget.onNavigateTab(1), // Jadwal
-                child: Icon(Icons.arrow_forward_rounded, size: 15, color: textSub),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
-
-
 
   Widget _buildFreeDayHorizontalCard(bool isDark) {
     final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
@@ -1478,7 +1613,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         children: [
           CircleAvatar(
             backgroundColor: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
-            child: const Icon(Icons.beach_access_rounded, color: AppColors.primary, size: 20),
+            child: const Icon(Icons.event_available_rounded, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1487,7 +1622,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Tidak Ada Kuliah 🎉',
+                  'Belum Ada Jadwal Kuliah',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
@@ -1496,7 +1631,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Istirahat atau kerjakan tugas.',
+                  'Semua agenda kelas saat ini sedang kosong.',
                   style: TextStyle(fontSize: 11, color: textSub),
                 ),
               ],

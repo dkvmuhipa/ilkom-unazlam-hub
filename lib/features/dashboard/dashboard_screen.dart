@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/course_schedule_service.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/scale_button.dart';
@@ -1728,16 +1729,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 c.hari.toLowerCase() == todayName.toLowerCase(),
                           )
                           .toList();
-                      final c = todayCourses.isNotEmpty
-                          ? todayCourses.first
-                          : null;
+                      final nextDayInfo = CourseScheduleService.getNextActiveDayInfo(DummyData.courses);
+                      final nextCourse = nextDayInfo?.courses.isNotEmpty == true ? nextDayInfo!.courses.first : null;
+                      final c = todayCourses.isNotEmpty ? todayCourses.first : nextCourse;
 
                       if (c == null) {
                         return const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tidak Ada Perkuliahan Hari Ini',
+                              'Tidak Ada Perkuliahan Terdaftar',
                               style: TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
@@ -1851,6 +1852,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .where((c) => c.hari.toLowerCase() == todayDayName.toLowerCase())
         .toList();
     final todayCourse = todayCourses.isNotEmpty ? todayCourses.first : null;
+    final nextDayInfo = CourseScheduleService.getNextActiveDayInfo(DummyData.courses);
+    final nextCourse = nextDayInfo?.courses.isNotEmpty == true ? nextDayInfo!.courses.first : null;
+    final displayCourse = todayCourse ?? nextCourse;
+    final isUpcoming = todayCourse == null && nextCourse != null;
 
     final hasUpcoming = nearestAssignment != null;
     final totalAttendanceSessions = _realAttendanceLogs.length;
@@ -1873,24 +1878,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             clipBehavior: Clip.none,
             onPageChanged: (index) => setState(() => _currentHeroPage = index),
             children: [
-              // Slide 0: Kuliah Hari Ini (matching Screen 3)
+              // Slide 0: Kuliah Hari Ini / Kuliah Mendatang
               _buildHeroCard(
                 gradientColors: const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                 shadowColor: const Color(0xFF4F46E5),
                 watermarkIcon: Icons.school_rounded,
-                badgeDotColor: todayCourse != null
+                badgeDotColor: displayCourse != null
                     ? const Color(0xFF34D399)
                     : const Color(0xFF9CA3AF),
-                badgeText: 'KULIAH HARI INI',
-                tagText: todayDayName,
-                title: todayCourse?.nama ?? 'Tidak Ada Kuliah Hari Ini',
+                badgeText: isUpcoming ? 'KULIAH BERIKUTNYA' : 'KULIAH HARI INI',
+                tagText: isUpcoming ? (nextDayInfo?.dayLabel ?? displayCourse?.hari ?? '') : todayDayName,
+                title: displayCourse?.nama ?? 'Tidak Ada Kuliah Terdaftar',
                 line1Icon: Icons.access_time_filled_rounded,
-                line1Text: todayCourse != null
-                    ? '${todayCourse.jamMulai} - ${todayCourse.jamSelesai} WITA'
+                line1Text: displayCourse != null
+                    ? (isUpcoming
+                        ? '${displayCourse.hari} • ${displayCourse.jamMulai} - ${displayCourse.jamSelesai} WITA'
+                        : '${displayCourse.jamMulai} - ${displayCourse.jamSelesai} WITA')
                     : 'Tidak ada sesi perkuliahan terjadwal',
                 line2Icon: Icons.location_on_rounded,
-                line2Text: todayCourse != null
-                    ? '${todayCourse.ruangan} • ${todayCourse.dosen}'
+                line2Text: displayCourse != null
+                    ? '${displayCourse.ruangan} • ${displayCourse.dosen}'
                     : 'Manfaatkan waktu untuk belajar mandiri',
                 actionLabel: 'Buka Jadwal',
                 onTapArrow: () => widget.onNavigateTab(1),
