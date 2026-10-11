@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/safe_launcher.dart';
 import '../../core/services/course_schedule_service.dart';
 import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
@@ -11,6 +12,24 @@ class ScheduleScreen extends StatefulWidget {
   final bool canManage;
   final VoidCallback? onBack;
   const ScheduleScreen({super.key, this.canManage = true, this.onBack});
+
+  static void showCourseDetail(
+    BuildContext context,
+    Course c, {
+    bool canManage = false,
+    VoidCallback? onCourseUpdated,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CourseDetailSheet(
+        course: c,
+        canManage: canManage,
+        onCourseUpdated: onCourseUpdated,
+      ),
+    );
+  }
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -207,236 +226,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showEditCourseDialog(Course c) {
-    final nameCtrl = TextEditingController(text: c.nama);
-    final codeCtrl = TextEditingController(text: c.kode);
-    final sksCtrl = TextEditingController(text: c.sks.toString());
-    final dosenCtrl = TextEditingController(text: c.dosen);
-    final dosenWaCtrl = TextEditingController(text: c.dosenWa ?? '');
-    final roomCtrl = TextEditingController(text: c.ruangan);
-    final startCtrl = TextEditingController(text: c.jamMulai);
-    final endCtrl = TextEditingController(text: c.jamSelesai);
-    String selectedDay = c.hari;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dialogBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: dialogBg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Edit Mata Kuliah', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: 380,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Nama Mata Kuliah *',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: codeCtrl,
-                          decoration: InputDecoration(
-                            labelText: 'Kode MK',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        width: 90,
-                        child: TextField(
-                          controller: sksCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'SKS',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedDay,
-                    decoration: InputDecoration(
-                      labelText: 'Hari Perkuliahan',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setDialogState(() => selectedDay = val);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: startCtrl,
-                          decoration: InputDecoration(
-                            labelText: 'Jam Mulai',
-                            hintText: '08:00',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: endCtrl,
-                          decoration: InputDecoration(
-                            labelText: 'Jam Selesai',
-                            hintText: '09:40',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: roomCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Ruangan',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: dosenCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Dosen Pengampu',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: dosenWaCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'WhatsApp Dosen (Opsional)',
-                      hintText: '08xxxxxxxxxx',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                final updatedCourse = Course(
-                  id: c.id,
-                  kode: codeCtrl.text.trim().isEmpty ? c.kode : codeCtrl.text.trim(),
-                  nama: name,
-                  sks: int.tryParse(sksCtrl.text.trim()) ?? c.sks,
-                  semester: c.semester,
-                  dosen: dosenCtrl.text.trim().isEmpty ? c.dosen : dosenCtrl.text.trim(),
-                  dosenWa: dosenWaCtrl.text.trim().isEmpty ? null : dosenWaCtrl.text.trim(),
-                  hari: selectedDay,
-                  jamMulai: startCtrl.text.trim().isEmpty ? c.jamMulai : startCtrl.text.trim(),
-                  jamSelesai: endCtrl.text.trim().isEmpty ? c.jamSelesai : endCtrl.text.trim(),
-                  ruangan: roomCtrl.text.trim().isEmpty ? c.ruangan : roomCtrl.text.trim(),
-                );
-                setState(() {
-                  final idxDummy = DummyData.courses.indexWhere((x) => x.id == c.id);
-                  if (idxDummy != -1) {
-                    DummyData.courses[idxDummy] = updatedCourse;
-                  }
-                  final idxCurrent = _courses.indexWhere((x) => x.id == c.id);
-                  if (idxCurrent != -1) {
-                    _courses[idxCurrent] = updatedCourse;
-                  }
-                  _selectedDay = selectedDay;
-                });
-                SupabaseRepository.updateCourse(updatedCourse);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Jadwal mata kuliah berhasil diperbarui!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Simpan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDeleteCourse(Course c, {VoidCallback? onSuccess}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dialogBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: dialogBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Hapus Mata Kuliah?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('Apakah Anda yakin ingin menghapus "${c.nama}" dari jadwal perkuliahan?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                DummyData.courses.removeWhere((x) => x.id == c.id);
-                _courses.removeWhere((x) => x.id == c.id);
-              });
-              SupabaseRepository.deleteCourse(c.id);
-              Navigator.pop(ctx);
-              onSuccess?.call();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Mata kuliah berhasil dihapus dari jadwal.'),
-                  backgroundColor: Color(0xFFEF4444),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Hapus'),
-          ),
-        ],
       ),
     );
   }
@@ -1304,7 +1093,283 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showCourseDetailModal(Course c) {
-    // Find materials associated with this course
+    ScheduleScreen.showCourseDetail(
+      context,
+      c,
+      canManage: widget.canManage,
+      onCourseUpdated: () {
+        setState(() {
+          _courses = List.from(DummyData.courses);
+        });
+        _fetchCourses();
+      },
+    );
+  }
+}
+
+class _CourseDetailSheet extends StatefulWidget {
+  final Course course;
+  final bool canManage;
+  final VoidCallback? onCourseUpdated;
+
+  const _CourseDetailSheet({
+    required this.course,
+    this.canManage = false,
+    this.onCourseUpdated,
+  });
+
+  @override
+  State<_CourseDetailSheet> createState() => _CourseDetailSheetState();
+}
+
+class _CourseDetailSheetState extends State<_CourseDetailSheet> {
+  late Course _course;
+
+  @override
+  void initState() {
+    super.initState();
+    _course = widget.course;
+  }
+
+  Future<void> _openWhatsAppDosen(String phone, String lecturerName) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final internationalPhone = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
+    final message = Uri.encodeComponent('Halo Bapak/Ibu $lecturerName, saya mahasiswa dari S1 Ilmu Komunikasi UNAZLAM...');
+    final url = 'https://wa.me/$internationalPhone?text=$message';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _showEditCourseDialog(Course c) {
+    final nameCtrl = TextEditingController(text: c.nama);
+    final codeCtrl = TextEditingController(text: c.kode);
+    final sksCtrl = TextEditingController(text: c.sks.toString());
+    final dosenCtrl = TextEditingController(text: c.dosen);
+    final dosenWaCtrl = TextEditingController(text: c.dosenWa ?? '');
+    final roomCtrl = TextEditingController(text: c.ruangan);
+    final startCtrl = TextEditingController(text: c.jamMulai);
+    final endCtrl = TextEditingController(text: c.jamSelesai);
+    String selectedDay = c.hari;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: dialogBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Edit Mata Kuliah', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Mata Kuliah *',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: codeCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Kode MK',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: sksCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'SKS',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedDay,
+                    decoration: InputDecoration(
+                      labelText: 'Hari Perkuliahan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedDay = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: startCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Mulai',
+                            hintText: '08:00',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: endCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Jam Selesai',
+                            hintText: '09:40',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: roomCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Ruangan',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Dosen Pengampu',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: dosenWaCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'WhatsApp Dosen (Opsional)',
+                      hintText: '08xxxxxxxxxx',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final updatedCourse = Course(
+                  id: c.id,
+                  kode: codeCtrl.text.trim().isEmpty ? 'MK ILKOM' : codeCtrl.text.trim(),
+                  nama: name,
+                  sks: int.tryParse(sksCtrl.text.trim()) ?? c.sks,
+                  semester: c.semester,
+                  dosen: dosenCtrl.text.trim().isEmpty ? 'Dosen Pengampu' : dosenCtrl.text.trim(),
+                  dosenWa: dosenWaCtrl.text.trim().isEmpty ? null : dosenWaCtrl.text.trim(),
+                  hari: selectedDay,
+                  jamMulai: startCtrl.text.trim().isEmpty ? '08:00' : startCtrl.text.trim(),
+                  jamSelesai: endCtrl.text.trim().isEmpty ? '09:40' : endCtrl.text.trim(),
+                  ruangan: roomCtrl.text.trim().isEmpty ? 'Ruang A2' : roomCtrl.text.trim(),
+                );
+                final idx = DummyData.courses.indexWhere((x) => x.id == c.id);
+                if (idx != -1) {
+                  DummyData.courses[idx] = updatedCourse;
+                }
+                setState(() {
+                  _course = updatedCourse;
+                });
+                SupabaseRepository.updateCourse(updatedCourse);
+                widget.onCourseUpdated?.call();
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Jadwal mata kuliah berhasil diperbarui!'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteCourse(Course c, {VoidCallback? onSuccess}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dialogBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Mata Kuliah?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Apakah Anda yakin ingin menghapus "${c.nama}" dari jadwal perkuliahan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              DummyData.courses.removeWhere((x) => x.id == c.id);
+              SupabaseRepository.deleteCourse(c.id);
+              widget.onCourseUpdated?.call();
+              Navigator.pop(ctx);
+              onSuccess?.call();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Mata kuliah berhasil dihapus dari jadwal.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _course;
     final cleanCourseName = c.nama.replaceAll('*', '').trim().toLowerCase();
     final relatedResources = DummyData.resources.where((r) {
       final rName = r.courseName.replaceAll('*', '').trim().toLowerCase();
@@ -1318,360 +1383,349 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF111827);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
+          ),
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF261D4C) : const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          c.kode.isNotEmpty ? c.kode : 'MK ILKOM',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF26223D) : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${c.sks} SKS • Semester ${c.semester}',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: textSub,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.canManage) ...[
-                        IconButton(
-                          icon: Icon(Icons.edit_outlined, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 20),
-                          tooltip: 'Edit Mata Kuliah',
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _showEditCourseDialog(c);
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
-                          tooltip: 'Hapus Mata Kuliah',
-                          onPressed: () {
-                            _confirmDeleteCourse(c, onSuccess: () => Navigator.pop(ctx));
-                          },
-                        ),
-                      ],
-                      IconButton(
-                        icon: Icon(Icons.close_rounded, color: textSub, size: 22),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: borderColor),
-
-            // Body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    // Course Title
-                    Text(
-                      c.nama,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: textMain,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Schedule Info Card
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: subCardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: borderColor),
+                        color: isDark ? const Color(0xFF261D4C) : const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2E2248) : const Color(0xFFEDE9FE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(Icons.access_time_rounded, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 18),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Waktu Perkuliahan', style: TextStyle(fontSize: 11, color: textSub)),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${c.hari}, ${c.jamMulai} - ${c.jamSelesai} WITA',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Divider(height: 1, color: borderColor),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF332A1B) : const Color(0xFFFEF3C7),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.meeting_room_outlined, color: Color(0xFFD97706), size: 18),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Ruang Kuliah', style: TextStyle(fontSize: 11, color: textSub)),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"} • Gedung FISIP UNAZLAM',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      child: Text(
+                        c.kode.isNotEmpty ? c.kode : 'MK ILKOM',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Lecturer Card
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: subCardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: borderColor),
+                        color: isDark ? const Color(0xFF26223D) : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: isDark ? const Color(0xFF132A20) : const Color(0xFFDCFCE7),
-                            child: Icon(Icons.person_rounded, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Dosen Pengampu', style: TextStyle(fontSize: 11, color: textSub)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  c.dosen,
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
-                            ElevatedButton.icon(
-                              onPressed: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
-                              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-                              label: const Text('WA Dosen', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF16A34A),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                elevation: 0,
-                              ),
-                            ),
-                        ],
+                      child: Text(
+                        '${c.sks} SKS • Semester ${c.semester}',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: textSub,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.canManage) ...[
+                      IconButton(
+                        icon: Icon(Icons.edit_outlined, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 20),
+                        tooltip: 'Edit Mata Kuliah',
+                        onPressed: () {
+                          _showEditCourseDialog(c);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                        tooltip: 'Hapus Mata Kuliah',
+                        onPressed: () {
+                          _confirmDeleteCourse(c, onSuccess: () => Navigator.pop(context));
+                        },
+                      ),
+                    ],
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, color: textSub, size: 22),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: borderColor),
 
-                    // Materi & Dokumen Perkuliahan Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Body
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Course Title
+                  Text(
+                    c.nama,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: textMain,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Schedule Info Card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: subCardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Column(
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.folder_open_rounded, size: 18, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF)),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Materi & Dokumen Kuliah',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: textMain,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2E2248) : const Color(0xFFEDE9FE),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.access_time_rounded, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Waktu Perkuliahan', style: TextStyle(fontSize: 11, color: textSub)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${c.hari}, ${c.jamMulai} - ${c.jamSelesai} WITA',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF261D4C) : const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${relatedResources.length} Berkas',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF)),
-                          ),
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: borderColor),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF332A1B) : const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.meeting_room_outlined, color: Color(0xFFD97706), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Ruang Kuliah', style: TextStyle(fontSize: 11, color: textSub)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"} • Gedung FISIP UNAZLAM',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 16),
 
-                    if (relatedResources.isEmpty)
+                  // Lecturer Card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: subCardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: isDark ? const Color(0xFF132A20) : const Color(0xFFDCFCE7),
+                          child: Icon(Icons.person_rounded, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Dosen Pengampu', style: TextStyle(fontSize: 11, color: textSub)),
+                              const SizedBox(height: 2),
+                              Text(
+                                c.dosen,
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
+                            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+                            label: const Text('WA Dosen', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Materi & Dokumen Perkuliahan Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.folder_open_rounded, size: 18, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Materi & Dokumen Kuliah',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: textMain,
+                            ),
+                          ),
+                        ],
+                      ),
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF261D4C) : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${relatedResources.length} Berkas',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (relatedResources.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: subCardBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.library_books_outlined, color: textSub, size: 28),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Belum ada modul khusus yang diunggah untuk mata kuliah ini.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: textSub),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...relatedResources.map((res) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: subCardBg,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: borderColor),
                         ),
-                        child: Column(
+                        child: Row(
                           children: [
-                            Icon(Icons.library_books_outlined, color: textSub, size: 28),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Belum ada modul khusus yang diunggah untuk mata kuliah ini.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, color: textSub),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2E2248) : const Color(0xFFEDE9FE),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.description_rounded, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    res.judul,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textMain),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${res.jenis} • Pertemuan Ke-${res.pertemuanKe ?? 1}',
+                                    style: TextStyle(fontSize: 11, color: textSub),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => safeLaunchUrl(res.linkUrl),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E40AF),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                elevation: 0,
+                              ),
+                              child: const Text('Buka', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                             ),
                           ],
                         ),
-                      )
-                    else
-                      ...relatedResources.map((res) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: subCardBg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: borderColor),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2E2248) : const Color(0xFFEDE9FE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(Icons.description_rounded, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF1E40AF), size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      res.judul,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textMain),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${res.jenis} • Pertemuan Ke-${res.pertemuanKe ?? 1}',
-                                      style: TextStyle(fontSize: 11, color: textSub),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final uri = Uri.parse(res.linkUrl);
-                                  if (await canLaunchUrl(uri)) {
-                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E40AF),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  elevation: 0,
-                                ),
-                                child: const Text('Buka', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                  ],
-                ),
+                      );
+                    }),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

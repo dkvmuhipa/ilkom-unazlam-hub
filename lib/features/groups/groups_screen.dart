@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
 import '../../models/models.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/safe_launcher.dart';
 
 class GroupTaskProgress {
   final String title;
@@ -107,10 +107,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> _openDrive(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await safeLaunchUrl(url);
   }
 
   void _showCreateGroupDialog() {

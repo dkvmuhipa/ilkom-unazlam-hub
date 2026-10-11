@@ -562,18 +562,28 @@ class SupabaseRepository {
       }
 
       try {
-        await client
+        final res = await client
             .from('assignments')
             .update(payload)
-            .eq('id', assignment.id);
+            .eq('id', assignment.id)
+            .select('id');
+        if ((res as List).isEmpty) {
+          debugPrint('Peringatan: 0 baris diperbarui di Supabase untuk assignment ${assignment.id}');
+          return false;
+        }
       } catch (updateErr) {
         // Fallback jika kolom course_name belum ada di skema
         final fallbackPayload = Map<String, dynamic>.from(payload)
           ..remove('course_name');
-        await client
+        final resFallback = await client
             .from('assignments')
             .update(fallbackPayload)
-            .eq('id', assignment.id);
+            .eq('id', assignment.id)
+            .select('id');
+        if ((resFallback as List).isEmpty) {
+          debugPrint('Peringatan: 0 baris diperbarui di Supabase (fallback) untuk assignment ${assignment.id}');
+          return false;
+        }
       }
 
       // Perbarui objek di memori lokal agar UI sinkron
@@ -869,11 +879,17 @@ class SupabaseRepository {
         debugPrint('Catatan student_assignments delete info: $saErr');
       }
 
-      // 2. Hapus dari tabel assignments
-      await client
+      // 2. Hapus dari tabel assignments dengan verifikasi hasil select
+      final deleted = await client
           .from('assignments')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .select('id');
+
+      if ((deleted as List).isEmpty) {
+        debugPrint('Peringatan: 0 baris dihapus dari Supabase untuk tugas ID: $id (kemungkinan ditolak RLS policy)');
+        return false;
+      }
 
       // 3. Hapus dari memori lokal
       DummyData.assignments.removeWhere((a) => a.id == id);
@@ -1113,8 +1129,134 @@ class SupabaseRepository {
   }
 
   // ====================================================================
-  // 6. CATATAN PRESENSI (ATTENDANCE LOGS)
+  // 6. CATATAN PRESENSI & SESI KELAS (ATTENDANCE & SESSIONS)
   // ====================================================================
+  static Future<Map<String, dynamic>?> createAttendanceSession({
+    required String courseName,
+    required int pertemuanKe,
+    required String token,
+    String? pinCode,
+    required DateTime expiresAt,
+    String? createdBy,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+
+    try {
+      // 1. Nonaktifkan sesi aktif sebelumnya agar tidak tumpang tindih
+      try {
+        await client
+            .from('attendance_sessions')
+            .update({'is_active': false})
+            .eq('is_active', true);
+      } catch (_) {}
+
+      // 2. Cari course_id jika nama mata kuliah cocok dengan master courses
+      String? resolvedCourseId;
+      final matchedCourse = DummyData.courses.where(
+        (c) => c.nama.trim().toLowerCase() == courseName.trim().toLowerCase(),
+      ).firstOrNull;
+      if (matchedCourse != null && matchedCourse.id.length == 36) {
+        resolvedCourseId = matchedCourse.id;
+      }
+
+      final numericPart = token.replaceAll(RegExp(r'\D'), '');
+      final effectivePin = pinCode ??
+          (numericPart.length >= 4
+              ? numericPart.substring(numericPart.length - 4)
+              : (token.length >= 4 ? token.substring(token.length - 4) : '1234'));
+
+      final payload = <String, dynamic>{
+        'course_name': courseName,
+        'pertemuan_ke': pertemuanKe,
+        'token': token,
+        'pin_code': effectivePin,
+        'expires_at': expiresAt.toIso8601String(),
+        'is_active': true,
+        'created_by': createdBy,
+      };
+      if (resolvedCourseId != null) {
+        payload['course_id'] = resolvedCourseId;
+      }
+
+      final res = await client
+          .from('attendance_sessions')
+          .insert(payload)
+          .select()
+          .single();
+
+      return Map<String, dynamic>.from(res);
+    } catch (e) {
+      debugPrint('Error create attendance session di Supabase: $e');
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getActiveAttendanceSession() async {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+
+    try {
+      final nowIso = DateTime.now().toIso8601String();
+      final res = await client
+          .from('attendance_sessions')
+          .select()
+          .eq('is_active', true)
+          .gt('expires_at', nowIso)
+          .order('created_at', ascending: false)
+          .limit(1);
+
+      if ((res as List).isEmpty) return null;
+
+      final sessionData = Map<String, dynamic>.from(res.first);
+
+      // Ambil daftar NIM mahasiswa yang sudah hadir pada sesi ini dari attendance_logs
+      try {
+        final logs = await client
+            .from('attendance_logs')
+            .select('student_nim')
+            .eq('pertemuan_ke', sessionData['pertemuan_ke'])
+            .eq('status', 'hadir');
+
+        final attendedNims = (logs as List)
+            .map((row) => row['student_nim']?.toString() ?? '')
+            .where((nim) => nim.isNotEmpty)
+            .toSet()
+            .toList();
+
+        sessionData['attended_nims'] = attendedNims;
+      } catch (_) {}
+
+      return sessionData;
+    } catch (e) {
+      debugPrint('Error get active attendance session: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> closeAttendanceSession({String? sessionId}) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      if (sessionId != null && sessionId.isNotEmpty) {
+        await client
+            .from('attendance_sessions')
+            .update({'is_active': false})
+            .eq('id', sessionId);
+      } else {
+        await client
+            .from('attendance_sessions')
+            .update({'is_active': false})
+            .eq('is_active', true);
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error close attendance session: $e');
+      return false;
+    }
+  }
+
   static Future<bool> logAttendance({
     required String courseId,
     required String studentNim,
@@ -1126,27 +1268,55 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      // Resolve UUID if courseId is course name or short code
-      String resolvedCourseId = courseId;
-      final matchedCourse = DummyData.courses.firstWhere(
-        (c) =>
-            c.id == courseId || c.nama.toLowerCase() == courseId.toLowerCase(),
-        orElse: () => DummyData.courses.first,
-      );
-      if (resolvedCourseId.length != 36) {
-        resolvedCourseId = matchedCourse.id;
+      // Resolve UUID jika courseId adalah nama mata kuliah
+      String? resolvedCourseId;
+      if (courseId.length == 36) {
+        resolvedCourseId = courseId;
+      } else {
+        final matchedCourse = DummyData.courses.where(
+          (c) =>
+              c.id == courseId ||
+              c.nama.trim().toLowerCase() == courseId.trim().toLowerCase(),
+        ).firstOrNull;
+        if (matchedCourse != null && matchedCourse.id.length == 36) {
+          resolvedCourseId = matchedCourse.id;
+        }
       }
 
-      final normalizedStatus = status
-          .toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
+      final normalizedStatus = status.toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
 
-      await client.from('attendance_logs').insert({
-        'course_id': resolvedCourseId,
+      // Cek apakah mahasiswa ini sudah tercatat presensi pada pertemuan ini untuk mencegah duplikasi
+      try {
+        var dupQuery = client
+            .from('attendance_logs')
+            .select('id')
+            .eq('student_nim', studentNim)
+            .eq('pertemuan_ke', pertemuanKe);
+        if (resolvedCourseId != null) {
+          dupQuery = dupQuery.eq('course_id', resolvedCourseId);
+        }
+        final existing = await dupQuery.limit(1);
+        if ((existing as List).isNotEmpty) {
+          final logId = existing.first['id'];
+          await client.from('attendance_logs').update({
+            'status': normalizedStatus,
+            'catatan': catatan,
+          }).eq('id', logId);
+          return true;
+        }
+      } catch (_) {}
+
+      final payload = <String, dynamic>{
         'student_nim': studentNim,
         'pertemuan_ke': pertemuanKe,
         'status': normalizedStatus,
         'catatan': catatan,
-      });
+      };
+      if (resolvedCourseId != null) {
+        payload['course_id'] = resolvedCourseId;
+      }
+
+      await client.from('attendance_logs').insert(payload);
       return true;
     } catch (e) {
       debugPrint('Error log attendance ke Supabase: $e');

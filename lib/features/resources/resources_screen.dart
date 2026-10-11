@@ -5,8 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../models/models.dart';
-
-import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/safe_launcher.dart';
 
 class ResourcesScreen extends StatefulWidget {
   final bool canManage;
@@ -286,10 +285,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   }
 
   Future<void> _openResource(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await safeLaunchUrl(url);
   }
 
   IconData _getIconForType(String type) {

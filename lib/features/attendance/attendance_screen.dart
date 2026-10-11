@@ -24,24 +24,48 @@ class AttendanceHistoryItem {
 }
 
 class ActiveAttendanceSession {
+  final String? id;
   final String courseName;
   final int pertemuanKe;
   final String token;
+  final String pinCode;
   final DateTime startTime;
   final DateTime expiresAt;
   final Set<String> attendedNims;
 
   ActiveAttendanceSession({
+    this.id,
     required this.courseName,
     required this.pertemuanKe,
     required this.token,
+    String? pinCode,
     required this.startTime,
     required this.expiresAt,
     Set<String>? attendedNims,
-  }) : attendedNims = attendedNims ?? {};
+  })  : pinCode = pinCode ??
+            (token.replaceAll(RegExp(r'\D'), '').length >= 4
+                ? token.replaceAll(RegExp(r'\D'), '').substring(token.replaceAll(RegExp(r'\D'), '').length - 4)
+                : (token.length >= 4 ? token.substring(token.length - 4) : '1234')),
+        attendedNims = attendedNims ?? {};
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
   int get remainingSeconds => expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 9999);
+
+  static ActiveAttendanceSession fromMap(Map<String, dynamic> map) {
+    final start = DateTime.tryParse(map['start_time']?.toString() ?? '') ?? DateTime.now();
+    final expires = DateTime.tryParse(map['expires_at']?.toString() ?? '') ?? DateTime.now().add(const Duration(minutes: 15));
+    final attended = (map['attended_nims'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
+    return ActiveAttendanceSession(
+      id: map['id']?.toString(),
+      courseName: map['course_name']?.toString() ?? '',
+      pertemuanKe: (map['pertemuan_ke'] as num?)?.toInt() ?? 1,
+      token: map['token']?.toString() ?? '',
+      pinCode: map['pin_code']?.toString(),
+      startTime: start,
+      expiresAt: expires,
+      attendedNims: attended,
+    );
+  }
 }
 
 class AttendanceScreen extends StatefulWidget {
@@ -59,7 +83,29 @@ class AttendanceScreen extends StatefulWidget {
   // Global Class-Wide Session state
   static ActiveAttendanceSession? currentSession;
 
-  static void showActiveQrModal(BuildContext context, {ActiveAttendanceSession? session}) {
+  static Future<ActiveAttendanceSession?> syncActiveSessionFromCloud() async {
+    try {
+      final data = await SupabaseRepository.getActiveAttendanceSession();
+      if (data != null) {
+        final session = ActiveAttendanceSession.fromMap(data);
+        currentSession = session;
+        return session;
+      } else {
+        if (currentSession != null && currentSession!.isExpired) {
+          currentSession = null;
+        }
+        return null;
+      }
+    } catch (_) {
+      return currentSession;
+    }
+  }
+
+  static void showActiveQrModal(
+    BuildContext context, {
+    ActiveAttendanceSession? session,
+    VoidCallback? onClosed,
+  }) {
     final active = session ?? currentSession;
     if (active == null || active.isExpired) return;
 
@@ -153,9 +199,9 @@ class AttendanceScreen extends StatefulWidget {
                       const Icon(Icons.vpn_key_rounded, size: 16, color: Color(0xFF1E40AF)),
                       const SizedBox(width: 8),
                       SelectableText(
-                        'TOKEN: ${active.token}',
+                        'TOKEN: ${active.token}   •   PIN: ${active.pinCode}',
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF1E40AF),
                           letterSpacing: 0.5,
@@ -212,7 +258,9 @@ class AttendanceScreen extends StatefulWidget {
           );
         },
       ),
-    );
+    ).then((_) {
+      onClosed?.call();
+    });
   }
 
   static void showStudentScanner(
@@ -268,16 +316,20 @@ class AttendanceScreen extends StatefulWidget {
 
             final activeNim = userNim;
 
-            // 2. Validasi Token jika diberikan (trim & case-insensitive)
-            final cleanTokenInput = tokenToVerify.trim().toUpperCase();
+            // 2. Validasi Token atau PIN jika diberikan (trim & case-insensitive)
+            final cleanInput = tokenToVerify.trim().toUpperCase();
             final cleanSessionToken = targetSession.token.trim().toUpperCase();
-            if (cleanTokenInput.isEmpty || cleanTokenInput != cleanSessionToken) {
+            final cleanPin = targetSession.pinCode.trim().toUpperCase();
+            final bool isValidCode = cleanInput.isNotEmpty &&
+                (cleanInput == cleanSessionToken || cleanInput == cleanPin);
+
+            if (!isValidCode) {
               setModalState(() {
-                scanStatusMessage = 'Token tidak cocok dengan sesi aktif.';
+                scanStatusMessage = 'Token atau PIN tidak cocok dengan sesi aktif.';
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
+                  content: Text('Kode token atau PIN salah. Periksa kembali token dari pengurus kelas.'),
                   backgroundColor: Color(0xFFEF4444),
                 ),
               );
@@ -508,8 +560,8 @@ class AttendanceScreen extends StatefulWidget {
                   controller: tokenController,
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    labelText: 'Atau Masukkan Kode Token Sesi',
-                    hintText: 'Contoh: MK-9481',
+                    labelText: 'Atau Masukkan Kode Token / PIN (4 Digit)',
+                    hintText: 'Contoh: PKN-0821 atau PIN 4 Digit',
                     labelStyle: const TextStyle(fontSize: 12),
                     prefixIcon: const Icon(Icons.vpn_key_rounded, size: 18),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -579,6 +631,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void initState() {
     super.initState();
+    AttendanceScreen.syncActiveSessionFromCloud().then((_) {
+      if (mounted) {
+        setState(() {});
+        _startTimerIfNeeded();
+      }
+    });
     _loadRealAttendanceData();
     _startTimerIfNeeded();
   }
@@ -1076,12 +1134,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ElevatedButton.icon(
                   onPressed: () {
                     final now = DateTime.now();
+                    final expiresAt = now.add(const Duration(minutes: 15));
                     final newSession = ActiveAttendanceSession(
                       courseName: selectedCourse,
                       pertemuanKe: pertemuan,
                       token: token,
                       startTime: now,
-                      expiresAt: now.add(const Duration(minutes: 15)),
+                      expiresAt: expiresAt,
                     );
 
                     setState(() {
@@ -1089,10 +1148,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       _startTimerIfNeeded();
                     });
 
+                    // Simpan sesi presensi ke cloud Supabase agar realtime ke seluruh kelas
+                    SupabaseRepository.createAttendanceSession(
+                      courseName: selectedCourse,
+                      pertemuanKe: pertemuan,
+                      token: token,
+                      pinCode: newSession.pinCode,
+                      expiresAt: expiresAt,
+                      createdBy: widget.userNim,
+                    ).then((created) {
+                      if (created != null && created['id'] != null && mounted) {
+                        setState(() {
+                          currentSession = ActiveAttendanceSession.fromMap(created);
+                        });
+                      }
+                    });
+
                     // Broadcast class announcement so every classmate sees it in Notifications & Announcements
                     SupabaseRepository.createAnnouncement(
                       judul: 'Presensi Dibuka: $selectedCourse Pertemuan $pertemuan',
-                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas dan berlaku selama 15 menit. Silakan scan QR di kelas atau minta token langsung kepada pengurus.',
+                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas dan berlaku selama 15 menit. Silakan scan QR di kelas atau masukkan Token "$token" / PIN "${newSession.pinCode}" langsung di aplikasi.',
                       kategori: 'Kelas',
                       isPinned: true,
                       authorName: 'Pengurus Kelas (Ketua)',
@@ -1219,21 +1294,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ],
         ),
         actions: [
-          // QR Trigger Button
-          IconButton(
-            icon: Icon(
-              widget.canManageClassAttendance ? Icons.qr_code_2_rounded : Icons.qr_code_scanner_rounded,
-              color: const Color(0xFF1E40AF),
-              size: 22,
+          // Prominent Buka QR / Scan QR Action Button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (widget.canManageClassAttendance) {
+                  _showGenerateQrModal(context);
+                } else {
+                  _showScanQrModal(context);
+                }
+              },
+              icon: Icon(
+                widget.canManageClassAttendance ? Icons.qr_code_2_rounded : Icons.qr_code_scanner_rounded,
+                size: 16,
+              ),
+              label: Text(
+                widget.canManageClassAttendance ? 'Buka QR' : 'Scan QR',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
-            tooltip: widget.canManageClassAttendance ? 'Buka QR Presensi Sesi' : 'Scan QR Absensi',
-            onPressed: () {
-              if (widget.canManageClassAttendance) {
-                _showGenerateQrModal(context);
-              } else {
-                _showScanQrModal(context);
-              }
-            },
           ),
           // Export Button (Personal vs Class)
           IconButton(
@@ -1281,13 +1368,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
         ],
       ),
-      floatingActionButton: (widget.canManageClassAttendance && _activeTab == 1)
+      floatingActionButton: widget.canManageClassAttendance
           ? FloatingActionButton.extended(
-              onPressed: _showClassAttendanceModal,
+              onPressed: () => _showGenerateQrModal(context),
               backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.playlist_add_check_rounded, size: 20),
-              label: const Text('Input Presensi Pertemuan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+              label: const Text(
+                'Buka Presensi QR',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
             )
           : null,
       body: SingleChildScrollView(
@@ -1407,6 +1497,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ],
                 ),
               ),
+            ],
+
+            // ==========================================
+            // KETUA KELAS / DOSEN: HERO CARD BUKA PRESENSI QR
+            // ==========================================
+            if (widget.canManageClassAttendance && (currentSession == null || currentSession!.isExpired)) ...[
+              _buildStartAttendanceHeroCard(context, isDark),
+              const SizedBox(height: 16),
             ],
 
             // ==========================================
@@ -1577,10 +1675,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             if (widget.canManageClassAttendance) ...[
                               TextButton.icon(
                                 onPressed: () {
+                                  final activeId = currentSession?.id;
                                   setState(() {
                                     currentSession = null;
                                     _countdownTimer?.cancel();
                                   });
+                                  SupabaseRepository.closeAttendanceSession(sessionId: activeId);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text('Sesi presensi telah ditutup oleh pengurus kelas.'),
@@ -1687,6 +1787,125 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStartAttendanceHeroCard(BuildContext context, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [const Color(0xFF1E40AF), const Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.stars_rounded, size: 14, color: Color(0xFFFBBF24)),
+                    SizedBox(width: 5),
+                    Text(
+                      'PENGURUS KELAS / DOSEN',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.qr_code_2_rounded, size: 28, color: Colors.white70),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Buka Sesi Presensi Kuliah',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Generate QR Code dinamis dan kode PIN 4 digit untuk presensi mahasiswa di kelas hari ini secara realtime.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.85),
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showGenerateQrModal(context),
+                  icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                  label: const Text(
+                    'Buka Presensi QR',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1E40AF),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: _showClassAttendanceModal,
+                icon: const Icon(Icons.fact_check_outlined, size: 16),
+                label: const Text(
+                  'Input Manual',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

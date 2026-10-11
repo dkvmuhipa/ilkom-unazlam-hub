@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/safe_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/assignment_file_picker.dart';
@@ -238,6 +238,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     String selectedCourse = DummyData.courses.first.nama;
     String kategori = 'Individu';
     DateTime selectedDeadline = DateTime.now().add(const Duration(days: 7));
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
@@ -286,8 +287,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null)
+                      if (val != null) {
                         setDialogState(() => selectedCourse = val);
+                      }
                     },
                   ),
                   const SizedBox(height: 12),
@@ -325,8 +327,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                               )
                               .toList(),
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setDialogState(() => kategori = val);
+                            }
                           },
                         ),
                       ),
@@ -408,57 +411,62 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final judul = titleController.text.trim();
-                if (judul.isEmpty) return;
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final judul = titleController.text.trim();
+                      if (judul.isEmpty) return;
 
-                final course = DummyData.courses.firstWhere(
-                  (c) => c.nama == selectedCourse,
-                  orElse: () => DummyData.courses.first,
-                );
+                      setDialogState(() => isSubmitting = true);
 
-                final newAssignment = Assignment(
-                  id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
-                  courseId: course.id,
-                  courseName: course.nama,
-                  judul: judul,
-                  deskripsi: descController.text.trim(),
-                  kategori: kategori,
-                  deadline: selectedDeadline,
-                  linkPengumpulan: linkController.text.trim().isNotEmpty
-                      ? linkController.text.trim()
-                      : null,
-                  status: 'belum',
-                );
-                final messenger = ScaffoldMessenger.of(context);
+                      final course = DummyData.courses.firstWhere(
+                        (c) => c.nama == selectedCourse,
+                        orElse: () => DummyData.courses.first,
+                      );
 
-                final saved = await SupabaseRepository.createAssignment(
-                  courseId: course.id,
-                  courseName: course.nama,
-                  judul: judul,
-                  deskripsi: descController.text.trim(),
-                  kategori: kategori,
-                  deadline: selectedDeadline,
-                  linkPengumpulan: newAssignment.linkPengumpulan,
-                );
-                if (!saved) {
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Tugas gagal disimpan ke server.'),
-                    ),
-                  );
-                  return;
-                }
-                if (mounted) setState(() {});
-                if (ctx.mounted) Navigator.pop(ctx);
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Tugas "$judul" berhasil ditambahkan!'),
-                    backgroundColor: const Color(0xFF10B981),
-                  ),
-                );
-              },
+                      final newAssignment = Assignment(
+                        id: 'asg_${DateTime.now().millisecondsSinceEpoch}',
+                        courseId: course.id,
+                        courseName: course.nama,
+                        judul: judul,
+                        deskripsi: descController.text.trim(),
+                        kategori: kategori,
+                        deadline: selectedDeadline,
+                        linkPengumpulan: linkController.text.trim().isNotEmpty
+                            ? linkController.text.trim()
+                            : null,
+                        status: 'belum',
+                      );
+                      final messenger = ScaffoldMessenger.of(context);
+
+                      final saved = await SupabaseRepository.createAssignment(
+                        courseId: course.id,
+                        courseName: course.nama,
+                        judul: judul,
+                        deskripsi: descController.text.trim(),
+                        kategori: kategori,
+                        deadline: selectedDeadline,
+                        linkPengumpulan: newAssignment.linkPengumpulan,
+                      );
+                      if (!saved) {
+                        setDialogState(() => isSubmitting = false);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Tugas gagal disimpan ke server.'),
+                          ),
+                        );
+                        return;
+                      }
+                      if (mounted) setState(() {});
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Tugas "$judul" berhasil ditambahkan!'),
+                          backgroundColor: const Color(0xFF10B981),
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
@@ -466,7 +474,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Simpan Tugas'),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Simpan Tugas'),
             ),
           ],
         ),
@@ -958,12 +975,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                       ),
                                       if (a.linkPengumpulan != null && a.linkPengumpulan!.isNotEmpty)
                                         InkWell(
-                                          onTap: () async {
-                                            final uri = Uri.tryParse(a.linkPengumpulan!);
-                                            if (uri != null && await canLaunchUrl(uri)) {
-                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                            }
-                                          },
+                                          onTap: () => safeLaunchUrl(a.linkPengumpulan!),
                                           borderRadius: BorderRadius.circular(8),
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
@@ -1272,10 +1284,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
       final target = parsed?.hasScheme == true
           ? url
           : await SupabaseRepository.createAssignmentSubmissionSignedUrl(url);
-      final uri = Uri.parse(target);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      await safeLaunchUrl(target);
     } catch (error) {
       debugPrint('Gagal membuka berkas pengumpulan: $error');
       if (mounted)
@@ -1776,6 +1785,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
     String selectedCourse = a.courseName;
     String kategori = a.kategori;
     DateTime selectedDeadline = a.deadline;
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
@@ -1824,8 +1834,9 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                         )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null)
+                      if (val != null) {
                         setDialogState(() => selectedCourse = val);
+                      }
                     },
                   ),
                   const SizedBox(height: 12),
@@ -1862,8 +1873,9 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                               )
                               .toList(),
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setDialogState(() => kategori = val);
+                            }
                           },
                         ),
                       ),
@@ -1942,78 +1954,83 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
               ),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final judul = titleController.text.trim();
-                if (judul.isEmpty) return;
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final judul = titleController.text.trim();
+                      if (judul.isEmpty) return;
 
-                final course = DummyData.courses.where(
-                  (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase(),
-                ).firstOrNull ?? DummyData.courses.first;
+                      setDialogState(() => isSubmitting = true);
 
-                String resolvedCourseId = course.id;
-                if (resolvedCourseId.length != 36) {
-                  final matchUuid = DummyData.courses.where(
-                    (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase() && c.id.length == 36,
-                  ).firstOrNull;
-                  if (matchUuid != null) {
-                    resolvedCourseId = matchUuid.id;
-                  }
-                }
+                      final course = DummyData.courses.where(
+                        (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase(),
+                      ).firstOrNull ?? DummyData.courses.first;
 
-                final oldValues = (
-                  a.judul,
-                  a.courseName,
-                  a.courseId,
-                  a.kategori,
-                  a.deadline,
-                  a.deskripsi,
-                  a.linkPengumpulan,
-                );
-                setState(() {
-                  a.judul = judul;
-                  a.courseName = course.nama;
-                  a.courseId = resolvedCourseId;
-                  a.kategori = kategori;
-                  a.deadline = selectedDeadline;
-                  a.deskripsi = descController.text.trim();
-                  a.linkPengumpulan = linkController.text.trim().isNotEmpty
-                      ? linkController.text.trim()
-                      : null;
-                });
-                final saved = await SupabaseRepository.updateAssignment(a);
-                if (!saved) {
-                  setState(() {
-                    a.judul = oldValues.$1;
-                    a.courseName = oldValues.$2;
-                    a.courseId = oldValues.$3;
-                    a.kategori = oldValues.$4;
-                    a.deadline = oldValues.$5;
-                    a.deskripsi = oldValues.$6;
-                    a.linkPengumpulan = oldValues.$7;
-                  });
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Perubahan tugas gagal disimpan.'),
-                        backgroundColor: Color(0xFFEF4444),
-                      ),
-                    );
-                  }
-                  return;
-                }
+                      String resolvedCourseId = course.id;
+                      if (resolvedCourseId.length != 36) {
+                        final matchUuid = DummyData.courses.where(
+                          (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase() && c.id.length == 36,
+                        ).firstOrNull;
+                        if (matchUuid != null) {
+                          resolvedCourseId = matchUuid.id;
+                        }
+                      }
 
-                if (ctx.mounted) Navigator.pop(ctx);
-                widget.onStatusChanged?.call();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tugas berhasil diperbarui!'),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                }
-              },
+                      final oldValues = (
+                        a.judul,
+                        a.courseName,
+                        a.courseId,
+                        a.kategori,
+                        a.deadline,
+                        a.deskripsi,
+                        a.linkPengumpulan,
+                      );
+                      setState(() {
+                        a.judul = judul;
+                        a.courseName = course.nama;
+                        a.courseId = resolvedCourseId;
+                        a.kategori = kategori;
+                        a.deadline = selectedDeadline;
+                        a.deskripsi = descController.text.trim();
+                        a.linkPengumpulan = linkController.text.trim().isNotEmpty
+                            ? linkController.text.trim()
+                            : null;
+                      });
+                      final saved = await SupabaseRepository.updateAssignment(a);
+                      if (!saved) {
+                        setState(() {
+                          a.judul = oldValues.$1;
+                          a.courseName = oldValues.$2;
+                          a.courseId = oldValues.$3;
+                          a.kategori = oldValues.$4;
+                          a.deadline = oldValues.$5;
+                          a.deskripsi = oldValues.$6;
+                          a.linkPengumpulan = oldValues.$7;
+                        });
+                        setDialogState(() => isSubmitting = false);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Perubahan tugas gagal disimpan.'),
+                              backgroundColor: Color(0xFFEF4444),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      widget.onStatusChanged?.call();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tugas berhasil diperbarui!'),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
@@ -2021,7 +2038,16 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Simpan Perubahan'),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Simpan Perubahan'),
             ),
           ],
         ),
@@ -2030,63 +2056,87 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
   }
 
   void _confirmDelete() {
+    bool isDeleting = false;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Hapus Tugas?',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus tugas "${widget.assignment.judul}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Batal',
-              style: TextStyle(color: Color(0xFF6B7280)),
-            ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444), size: 22),
+              SizedBox(width: 8),
+              Text(
+                'Hapus Tugas?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-              final saved = await SupabaseRepository.deleteAssignment(
-                widget.assignment.id,
-              );
-              if (!saved) {
-                if (ctx.mounted) Navigator.pop(ctx);
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Tugas gagal dihapus dari server.'),
-                    backgroundColor: Color(0xFFEF4444),
-                  ),
-                );
-                return;
-              }
-              if (ctx.mounted) Navigator.pop(ctx); // pop confirm dialog
-              nav.pop(); // pop detail sheet
-              widget.onStatusChanged?.call();
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('Tugas berhasil dihapus.'),
-                  backgroundColor: Color(0xFF10B981),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus tugas "${widget.assignment.judul}"? Tindakan ini tidak dapat dibatalkan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             ),
-            child: const Text('Hapus'),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: isDeleting
+                  ? null
+                  : () async {
+                      setDialogState(() => isDeleting = true);
+                      final messenger = ScaffoldMessenger.of(context);
+                      final nav = Navigator.of(context);
+                      final saved = await SupabaseRepository.deleteAssignment(
+                        widget.assignment.id,
+                      );
+                      if (!saved) {
+                        setDialogState(() => isDeleting = false);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Tugas gagal dihapus dari server. Pastikan policy izin (RLS) Supabase mengizinkan penghapusan.',
+                            ),
+                            backgroundColor: Color(0xFFEF4444),
+                          ),
+                        );
+                        return;
+                      }
+                      if (ctx.mounted) Navigator.pop(ctx); // pop confirm dialog
+                      nav.pop(); // pop detail sheet
+                      widget.onStatusChanged?.call();
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Tugas berhasil dihapus.'),
+                          backgroundColor: Color(0xFF10B981),
+                        ),
+                      );
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Hapus'),
+            ),
+          ],
+        ),
       ),
     );
   }
