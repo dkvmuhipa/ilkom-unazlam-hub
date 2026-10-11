@@ -316,6 +316,8 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+GRANT SELECT ON TABLE public.courses TO anon, authenticated;
+CREATE POLICY courses_anon_read ON public.courses FOR SELECT TO anon USING (true);
 CREATE POLICY active_student_read ON public.courses FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY assignments_read ON public.assignments FOR SELECT TO authenticated
@@ -336,6 +338,8 @@ CREATE POLICY agenda_read ON public.agenda_items FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY resources_read ON public.resources FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
+GRANT SELECT ON TABLE public.students TO anon, authenticated;
+CREATE POLICY students_anon_read ON public.students FOR SELECT TO anon USING (is_aktif = true);
 CREATE POLICY students_read_self_or_officer ON public.students FOR SELECT TO authenticated
   USING (auth_user_id = (SELECT auth.uid()) OR public.has_class_role(ARRAY['ADMIN']));
 CREATE POLICY attendance_read_self_or_officer ON public.attendance_logs FOR SELECT TO authenticated

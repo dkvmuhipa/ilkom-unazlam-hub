@@ -62,10 +62,13 @@ class SupabaseRepository {
         );
       }).toList();
 
-      DummyData.courses
-        ..clear()
-        ..addAll(list);
-      return list;
+      if (list.isNotEmpty) {
+        DummyData.courses
+          ..clear()
+          ..addAll(list);
+        return list;
+      }
+      return DummyData.courses;
     } catch (e) {
       debugPrint('Error fetch courses dari Supabase: $e');
       return DummyData.courses;
