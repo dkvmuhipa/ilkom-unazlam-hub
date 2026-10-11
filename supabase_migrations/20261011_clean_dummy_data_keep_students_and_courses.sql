@@ -1,18 +1,17 @@
 -- ====================================================================
 -- MIGRATION: 20261011_clean_dummy_data_keep_students_and_courses.sql
 -- DESKRIPSI:
--- 1. Menghapus seluruh data dummy (Tugas, Pengumuman, Transaksi Kas,
---    Presensi/Absensi, Agenda, Materi/Modul, Polling, Audit Logs).
--- 2. Mempertahankan & memastikan data Mahasiswa (students) dan Jadwal Kuliah (courses)
---    lengkap serta terdaftar resmi.
--- 3. Memberikan izin SELECT pada courses dan students untuk anon & authenticated
+-- 1. Menghapus data testing / sampel sementara (Tugas Sampel, Pengumuman Sampel,
+--    Transaksi Kas Sampel, Presensi/Absensi Sampel, Agenda, Modul Sampel, Polling).
+-- 2. MEMPERTAHANKAN DATA REAL: 24 Data Mahasiswa & 8 Jadwal Kuliah Resmi FISIP UNAZLAM.
+-- 3. Memberikan hak akses SELECT pada courses dan students untuk anon & authenticated
 --    agar tidak terjadi error 401 / Unauthorized saat memuat data aplikasi.
 -- ====================================================================
 
 BEGIN;
 
 -- ====================================================================
--- 1. BERSIHKAN SELURUH DATA DUMMY
+-- 1. BERSIHKAN DATA TESTING / SAMPEL SEMENTARA
 -- ====================================================================
 
 -- Hapus data dari tabel-tabel utama yang berisi data dummy

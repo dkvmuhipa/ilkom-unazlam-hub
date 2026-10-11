@@ -1,6 +1,14 @@
+/// ====================================================================
+/// MASTER DATA RESMI FISIP UNAZLAM
+/// ====================================================================
+/// File ini menyimpan Data Real Mahasiswa dan Jadwal Kuliah resmi
+/// Program Studi Ilmu Komunikasi Universitas Nahdlatul Ulama.
+/// Bukan data dummy / testing.
+/// ====================================================================
 import '../../models/models.dart';
 
-class DummyData {
+class MasterData {
+  /// Data Real Jadwal Perkuliahan Resmi Semester 1
   static final List<Course> courses = [
     Course(
       id: 'c1',
@@ -372,3 +380,6 @@ class DummyData {
 
   static final List<StudioEquipment> studioEquipments = [];
 }
+
+/// Alias kompatibilitas
+typedef DummyData = MasterData;
