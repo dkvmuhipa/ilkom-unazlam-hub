@@ -817,7 +817,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           LayoutBuilder(
             builder: (context, constraints) => GridView.count(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics>,
+              physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: constraints.maxWidth < 360 ? 2 : 4,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
