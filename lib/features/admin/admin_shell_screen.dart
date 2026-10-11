@@ -688,13 +688,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Text(
-                            'Firebase Cloud Messaging (FCM v1)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: -0.2,
+                          const Expanded(
+                            child: Text(
+                              'Firebase Cloud Messaging (FCM v1)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: -0.2,
+                              ),
                             ),
                           ),
                         ],
@@ -702,6 +706,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       const SizedBox(height: 2),
                       Text(
                         '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF94A3B8),
@@ -710,6 +716,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: _showBroadcastAnnouncementDialog,
                   icon: const Icon(Icons.send_rounded, size: 13),
