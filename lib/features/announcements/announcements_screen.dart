@@ -231,7 +231,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF5B3DE8)
+                              ? const Color(0xFF1E40AF)
                               : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -313,7 +313,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                                   decoration: BoxDecoration(
                                     color: isYellow
                                         ? const Color(0xFFFEF3C7)
-                                        : const Color(0xFFF3F0FF),
+                                        : const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(
@@ -322,7 +322,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                                         : Icons.description_outlined,
                                     color: isYellow
                                         ? const Color(0xFFB45309)
-                                        : const Color(0xFF5B3DE8),
+                                        : const Color(0xFF1E40AF),
                                     size: 24,
                                   ),
                                 ),
@@ -395,7 +395,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       floatingActionButton: widget.canPost
           ? FloatingActionButton(
               onPressed: _showAddAnnouncementDialog,
-              backgroundColor: const Color(0xFF5B3DE8),
+              backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
               tooltip: 'Buat Pengumuman',
               child: const Icon(Icons.add_rounded),
@@ -767,7 +767,7 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                       IconButton(
                         icon: const Icon(
                           Icons.edit_outlined,
-                          color: Color(0xFF5B3DE8),
+                          color: Color(0xFF1E40AF),
                           size: 20,
                         ),
                         tooltip: 'Edit Pengumuman',
@@ -829,7 +829,7 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          backgroundColor: const Color(0xFF5B3DE8)
+                          backgroundColor: const Color(0xFF1E40AF)
                               .withValues(alpha: 0.15),
                           child: Text(
                             announcement.authorName.isNotEmpty
@@ -837,7 +837,7 @@ class _AnnouncementDetailSheet extends StatelessWidget {
                                 : 'U',
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF5B3DE8),
+                              color: Color(0xFF1E40AF),
                             ),
                           ),
                         ),

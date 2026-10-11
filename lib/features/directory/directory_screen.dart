@@ -50,7 +50,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     if (jabatan.contains('Bendahara')) return const Color(0xFFDCFCE7);
     if (jabatan == 'Sekretaris') return const Color(0xFFEDE9FE);
     final colors = [
-      const Color(0xFFF3F0FF),
+      const Color(0xFFEFF6FF),
       const Color(0xFFE0F2FE),
       const Color(0xFFFEE2E2),
       const Color(0xFFECFDF5),
@@ -65,7 +65,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     if (jabatan.contains('Bendahara')) return const Color(0xFF16A34A);
     if (jabatan == 'Sekretaris') return const Color(0xFF6D28D9);
     final colors = [
-      const Color(0xFF5B3DE8),
+      const Color(0xFF1E40AF),
       const Color(0xFF0284C7),
       const Color(0xFFDC2626),
       const Color(0xFF059669),
@@ -335,8 +335,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF5B3DE8),
-                      side: const BorderSide(color: Color(0xFF5B3DE8)),
+                      foregroundColor: const Color(0xFF1E40AF),
+                      side: const BorderSide(color: Color(0xFF1E40AF)),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -463,7 +463,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B3DE8),
+                backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -736,12 +736,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F3FF),
+                      color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.qr_code_2_rounded,
-                      color: Color(0xFF5B3DE8),
+                      color: Color(0xFF1E40AF),
                       size: 24,
                     ),
                   ),
@@ -839,7 +839,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF5B3DE8),
+                              color: Color(0xFF1E40AF),
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -1039,12 +1039,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F0FF),
+                      color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.analytics_rounded,
-                      color: Color(0xFF5B3DE8),
+                      color: Color(0xFF1E40AF),
                       size: 22,
                     ),
                   ),
@@ -1113,8 +1113,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                           child: _buildLaporanStatCard(
                             'Saldo Kas Bersih',
                             _formatRupiah(saldo),
-                            const Color(0xFF5B3DE8),
-                            const Color(0xFFF3F0FF),
+                            const Color(0xFF1E40AF),
+                            const Color(0xFFEFF6FF),
                             Icons.account_balance_wallet_rounded,
                           ),
                         ),
@@ -1174,7 +1174,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                               (a, b) => a > b ? a : b,
                             );
                             const colors = [
-                              Color(0xFF5B3DE8),
+                              Color(0xFF1E40AF),
                               Color(0xFF0284C7),
                               Color(0xFFF59E0B),
                               Color(0xFF10B981),
@@ -1225,7 +1225,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5B3DE8),
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
                         minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
@@ -1469,7 +1469,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF5B3DE8),
+                    color: Color(0xFF1E40AF),
                   ),
                 ),
                 IconButton(
@@ -1739,14 +1739,14 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF3B1F8E), Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                        colors: [Color(0xFF3B1F8E), Color(0xFF1E40AF), Color(0xFF755BF7)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5B3DE8).withValues(alpha: 0.35),
+                          color: const Color(0xFF1E40AF).withValues(alpha: 0.35),
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
@@ -1947,7 +1947,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF5B3DE8),
+                                  foregroundColor: const Color(0xFF1E40AF),
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 10,
                                   ),
@@ -2036,7 +2036,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                       Icons.receipt_long_rounded,
                                       size: 15,
                                       color: _activeTab == 'transaksi'
-                                          ? const Color(0xFF5B3DE8)
+                                          ? const Color(0xFF1E40AF)
                                           : const Color(0xFF6B7280),
                                     ),
                                     const SizedBox(width: 6),
@@ -2046,7 +2046,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w800,
                                         color: _activeTab == 'transaksi'
-                                            ? const Color(0xFF5B3DE8)
+                                            ? const Color(0xFF1E40AF)
                                             : const Color(0xFF6B7280),
                                       ),
                                     ),
@@ -2087,7 +2087,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                       Icons.groups_rounded,
                                       size: 15,
                                       color: _activeTab == 'iuran'
-                                          ? const Color(0xFF5B3DE8)
+                                          ? const Color(0xFF1E40AF)
                                           : const Color(0xFF6B7280),
                                     ),
                                     const SizedBox(width: 6),
@@ -2097,7 +2097,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w800,
                                         color: _activeTab == 'iuran'
-                                            ? const Color(0xFF5B3DE8)
+                                            ? const Color(0xFF1E40AF)
                                             : const Color(0xFF6B7280),
                                       ),
                                     ),
@@ -2196,7 +2196,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                       size: 14,
                                       color: cat == 'Semua Kategori'
                                           ? const Color(0xFF6B7280)
-                                          : const Color(0xFF5B3DE8),
+                                          : const Color(0xFF1E40AF),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -2412,7 +2412,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                               Icon(
                                 Icons.edit_outlined,
                                 size: 16,
-                                color: Color(0xFF5B3DE8),
+                                color: Color(0xFF1E40AF),
                               ),
                               SizedBox(width: 8),
                               Text('Edit Transaksi', style: TextStyle(fontSize: 12.5)),

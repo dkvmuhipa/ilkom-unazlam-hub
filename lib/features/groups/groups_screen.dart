@@ -129,7 +129,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(Icons.groups_rounded, color: Color(0xFF5B3DE8), size: 22),
+              Icon(Icons.groups_rounded, color: Color(0xFF1E40AF), size: 22),
               SizedBox(width: 8),
               Text('Bentuk Kelompok Tugas', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             ],
@@ -195,7 +195,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                             selectedMembers = shuffled.take(4).toList();
                           });
                         },
-                        child: const Text('Acak Anggota', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                        child: const Text('Acak Anggota', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                       ),
                     ],
                   ),
@@ -217,7 +217,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           title: Text(student.nama, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           subtitle: Text('NIM: ${student.nim}', style: const TextStyle(fontSize: 10)),
                           value: isPicked,
-                          activeColor: const Color(0xFF5B3DE8),
+                          activeColor: const Color(0xFF1E40AF),
                           onChanged: (val) {
                             setDialogState(() {
                               if (val == true) {
@@ -272,7 +272,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B3DE8),
+                backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -313,10 +313,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
               padding: const EdgeInsets.only(right: 12),
               child: TextButton.icon(
                 onPressed: _showCreateGroupDialog,
-                icon: const Icon(Icons.group_add_rounded, size: 18, color: Color(0xFF5B3DE8)),
-                label: const Text('Tambah Tim', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                icon: const Icon(Icons.group_add_rounded, size: 18, color: Color(0xFF1E40AF)),
+                label: const Text('Tambah Tim', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                 style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.08),
+                  backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.08),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
@@ -326,7 +326,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       floatingActionButton: widget.canManage
           ? FloatingActionButton.extended(
               onPressed: _showCreateGroupDialog,
-              backgroundColor: const Color(0xFF5B3DE8),
+              backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.group_add_rounded),
               label: const Text('Tambah Kelompok', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -365,10 +365,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F0FF),
+                        color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.groups_rounded, color: Color(0xFF5B3DE8), size: 22),
+                      child: const Icon(Icons.groups_rounded, color: Color(0xFF1E40AF), size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -409,7 +409,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Progress Tugas Tim:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
-                    Text('$doneTasks/$totalTasks Selesai (${(pct * 100).toInt()}%)', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8))),
+                    Text('$doneTasks/$totalTasks Selesai (${(pct * 100).toInt()}%)', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF1E40AF))),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -420,7 +420,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     minHeight: 7,
                     backgroundColor: const Color(0xFFE5E7EB),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      pct == 1.0 ? const Color(0xFF10B981) : const Color(0xFF5B3DE8),
+                      pct == 1.0 ? const Color(0xFF10B981) : const Color(0xFF1E40AF),
                     ),
                   ),
                 ),
@@ -460,7 +460,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                     }
                                     Navigator.pop(ctx);
                                   },
-                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8), foregroundColor: Colors.white),
+                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E40AF), foregroundColor: Colors.white),
                                   child: const Text('Tambah'),
                                 ),
                               ],
@@ -469,7 +469,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         },
                         child: const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          child: Text('+ Tambah Sub-Tugas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8))),
+                          child: Text('+ Tambah Sub-Tugas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                         ),
                       ),
                   ],
@@ -529,8 +529,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         children: [
                           CircleAvatar(
                             radius: 10,
-                            backgroundColor: const Color(0xFF5B3DE8).withValues(alpha: 0.12),
-                            child: Text(m.nama[0], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8))),
+                            backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                            child: Text(m.nama[0], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF1E40AF))),
                           ),
                           const SizedBox(width: 6),
                           Text(m.nama.split(' ').first, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
@@ -549,8 +549,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       icon: const Icon(Icons.folder_shared_outlined, size: 16),
                       label: const Text('Buka Folder Google Drive Tugas'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF5B3DE8),
-                        side: const BorderSide(color: Color(0xFF5B3DE8)),
+                        foregroundColor: const Color(0xFF1E40AF),
+                        side: const BorderSide(color: Color(0xFF1E40AF)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),

@@ -120,7 +120,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                     children: [
                       const Icon(
                         Icons.verified_user_rounded,
-                        color: Color(0xFF5B3DE8),
+                        color: Color(0xFF1E40AF),
                         size: 46,
                       ),
                       const SizedBox(height: 18),
@@ -174,7 +174,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5B3DE8),
+                            backgroundColor: const Color(0xFF1E40AF),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),

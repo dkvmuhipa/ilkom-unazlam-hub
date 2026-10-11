@@ -150,13 +150,13 @@ ${widget.studentName}
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F0FF),
+                color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFDDD6FE)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.description_outlined, color: Color(0xFF5B3DE8), size: 24),
+                  Icon(Icons.description_outlined, color: Color(0xFF1E40AF), size: 24),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -194,7 +194,7 @@ ${widget.studentName}
                         });
                       }
                     },
-                    selectedColor: const Color(0xFF5B3DE8),
+                    selectedColor: const Color(0xFF1E40AF),
                     labelStyle: TextStyle(
                       color: isSel ? Colors.white : const Color(0xFF374151),
                       fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
@@ -299,8 +299,8 @@ ${widget.studentName}
                     icon: const Icon(Icons.copy_rounded, size: 18),
                     label: const Text('Salin Teks'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF5B3DE8),
-                      side: const BorderSide(color: Color(0xFF5B3DE8)),
+                      foregroundColor: const Color(0xFF1E40AF),
+                      side: const BorderSide(color: Color(0xFF1E40AF)),
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),

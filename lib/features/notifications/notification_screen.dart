@@ -324,7 +324,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF5B3DE8),
+                  color: Color(0xFF1E40AF),
                 ),
               ),
             ),
@@ -359,7 +359,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF5B3DE8)
+                                  ? const Color(0xFF1E40AF)
                                   : const Color(0xFFF3F4F6),
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -427,7 +427,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                   )
                 : RefreshIndicator(
-                    color: const Color(0xFF5B3DE8),
+                    color: const Color(0xFF1E40AF),
                     onRefresh: _loadNotifications,
                     child: ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -473,7 +473,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           decoration: BoxDecoration(
                             color: notif.isRead
                                 ? Colors.white
-                                : const Color(0xFFF5F3FF),
+                                : const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: notif.isRead
@@ -548,7 +548,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                               width: 8,
                                               height: 8,
                                               decoration: const BoxDecoration(
-                                                color: Color(0xFF5B3DE8),
+                                                color: Color(0xFF1E40AF),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),

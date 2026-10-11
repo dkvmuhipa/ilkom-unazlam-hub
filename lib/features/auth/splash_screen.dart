@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.12),
+                        color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
@@ -60,10 +60,10 @@ class _SplashScreenState extends State<SplashScreen> {
                       'assets/images/logo.jpg',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFF3F0FF),
+                        color: const Color(0xFFEFF6FF),
                         child: const Icon(
                           Icons.school_rounded,
-                          color: Color(0xFF5B3DE8),
+                          color: Color(0xFF1E40AF),
                           size: 64,
                         ),
                       ),
@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF5B3DE8),
+                    color: Color(0xFF1E40AF),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -156,7 +156,7 @@ class _SplashWavesPainter extends CustomPainter {
     // 2. Royal Purple front curved ribbon
     final purplePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+        colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))

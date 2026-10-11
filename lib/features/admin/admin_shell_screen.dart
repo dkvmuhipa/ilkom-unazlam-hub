@@ -452,7 +452,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Ilmu Komunikasi â€¢ UNAZLAM',
+                      'Ilmu Komunikasi • UNAZLAM',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -918,7 +918,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Tahun Akademik 2026/2027 Ganjil aktif â€¢ Database Supabase',
+                        'Tahun Akademik 2026/2027 Ganjil aktif • Database Supabase',
                         style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
                       ),
                     ],
@@ -1523,7 +1523,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${cls.prodi} â€¢ Semester ${cls.semester} â€¢ ${cls.academicYear} â€¢ $studentCount mahasiswa',
+                                    '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear} • $studentCount mahasiswa',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
@@ -1640,7 +1640,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
                       ),
                       Text(
-                        '${cls.prodi} â€¢ Semester ${cls.semester} â€¢ ${cls.academicYear}',
+                        '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear}',
                         style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                       ),
                     ],
@@ -1792,7 +1792,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF111827))),
-                          Text('NIM ${s.nim} â€¢ ${s.jabatan}', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                          Text('NIM ${s.nim} • ${s.jabatan}', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
                         ],
                       ),
                     ),
@@ -2160,7 +2160,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'NIM ${s.nim} â€¢ Semester ${s.semester} â€¢ ${s.peminatan.isNotEmpty ? s.peminatan : "Ilmu Komunikasi"}',
+                                    'NIM ${s.nim} • Semester ${s.semester} • ${s.peminatan.isNotEmpty ? s.peminatan : "Ilmu Komunikasi"}',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w500,
@@ -2475,7 +2475,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF111827)),
                                 ),
                                 Text(
-                                  '${s.prodi} â€¢ Semester ${s.semester}',
+                                  '${s.prodi} • Semester ${s.semester}',
                                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
                                 ),
                               ],
@@ -2533,7 +2533,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF1F2937)),
                                     ),
                                     Text(
-                                      '${course.dosen} â€¢ ${course.sks} SKS',
+                                      '${course.dosen} • ${course.sks} SKS',
                                       style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280)),
                                     ),
                                   ],
@@ -3228,7 +3228,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${c.kode} â€¢ ${c.sks} SKS â€¢ ${c.dosen}',
+                                    '${c.kode} • ${c.sks} SKS • ${c.dosen}',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
@@ -3335,7 +3335,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
                       ),
                       Text(
-                        '${c.kode} â€¢ ${c.sks} SKS â€¢ Semester 1',
+                        '${c.kode} • ${c.sks} SKS • Semester 1',
                         style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                       ),
                     ],
@@ -3947,7 +3947,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.email}\nNIM: ${account.nim} â€¢ ${account.jabatan}',
+                  '${account.email}\nNIM: ${account.nim} • ${account.jabatan}',
                   style: const TextStyle(
                     fontSize: 11,
                     height: 1.4,
@@ -4135,7 +4135,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: CircleAvatar(backgroundColor: color.withValues(alpha: .12), child: Icon(switch (action) { 'CREATE' => Icons.add_rounded, 'DELETE' => Icons.delete_outline_rounded, 'EXPORT' => Icons.download_rounded, _ => Icons.edit_outlined }, color: color, size: 19)),
         title: Text(row['description']?.toString() ?? 'Aktivitas admin', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
-        subtitle: Padding(padding: const EdgeInsets.only(top: 5), child: Text('${row['user_name'] ?? 'Admin'} â€¢ ${row['user_identifier'] ?? '-'}\n${row['target_module'] ?? 'LAINNYA'} â€¢ $dateLabel', style: const TextStyle(height: 1.45, fontSize: 11, color: Color(0xFF6B7280)))),
+        subtitle: Padding(padding: const EdgeInsets.only(top: 5), child: Text('${row['user_name'] ?? 'Admin'} • ${row['user_identifier'] ?? '-'}\n${row['target_module'] ?? 'LAINNYA'} • $dateLabel', style: const TextStyle(height: 1.45, fontSize: 11, color: Color(0xFF6B7280)))),
         trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(20)), child: Text(action, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800))),
         onTap: () => _showAuditDetails(row),
       ));
@@ -4254,7 +4254,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             ),
             const SizedBox(height: 4),
             const Text(
-              'â€¢ Firebase Cloud Messaging (FCM v1) Terintegrasi\nâ€¢ Supabase Database Webhook & Edge Function Aktif\nâ€¢ Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
+              '• Firebase Cloud Messaging (FCM v1) Terintegrasi\n• Supabase Database Webhook & Edge Function Aktif\n• Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
               style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF4B5563)),
             ),
           ],
@@ -4576,7 +4576,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                'NIM ${s.nim} â€¢ Semester ${s.semester}',
+                                'NIM ${s.nim} • Semester ${s.semester}',
                                 style: const TextStyle(
                                   fontSize: 10.5,
                                   color: Color(0xFF6B7280),

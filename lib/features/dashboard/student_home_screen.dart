@@ -526,7 +526,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Text(
                       attendancePercent == null
                           ? 'Belum Ada Presensi'
-                          : '$hadirCount Hadir â€¢ $attendancePercent%',
+                          : '$hadirCount Hadir • $attendancePercent%',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -731,7 +731,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Presensi Aktif â€¢ ${session.courseName}',
+                  'Presensi Aktif • ${session.courseName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -957,7 +957,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       statusLabel = '$inDays hari lagi';
     }
 
-    final formattedDeadline = DateFormat('EEE, d MMM yyyy â€¢ HH:mm', 'id_ID').format(due);
+    final formattedDeadline = DateFormat('EEE, d MMM yyyy • HH:mm', 'id_ID').format(due);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1407,7 +1407,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                '${course.dosen} â€¢ ${course.sks} SKS',
+                '${course.dosen} • ${course.sks} SKS',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

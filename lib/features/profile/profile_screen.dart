@@ -179,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 gradient: const LinearGradient(
                   colors: [
                     Color(0xFF3B1E94),
-                    Color(0xFF5B3DE8),
+                    Color(0xFF1E40AF),
                     Color(0xFF7A5DF5),
                   ],
                   begin: Alignment.topLeft,
@@ -188,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                    color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       child: Text(
                                         initials,
                                         style: const TextStyle(
-                                          color: Color(0xFF5B3DE8),
+                                          color: Color(0xFF1E40AF),
                                           fontSize: 28,
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -403,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     child: Row(
                       children: [
-                        Icon(Icons.lock_reset_rounded, color: Color(0xFF5B3DE8), size: 20),
+                        Icon(Icons.lock_reset_rounded, color: Color(0xFF1E40AF), size: 20),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -437,14 +437,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                      colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                        color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -569,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F0FF),
+                  color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: const Color(0xFFE0E7FF)),
                 ),
@@ -577,7 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Icon(
                       Icons.school_outlined,
-                      color: Color(0xFF5B3DE8),
+                      color: Color(0xFF1E40AF),
                       size: 24,
                     ),
                     SizedBox(width: 12),
@@ -590,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF5B3DE8),
+                              color: Color(0xFF1E40AF),
                             ),
                           ),
                           SizedBox(height: 2),
@@ -670,7 +670,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             : 'Non-aktif (Light Mode)',
                         trailing: Switch.adaptive(
                           value: isDark,
-                          activeColor: const Color(0xFF5B3DE8),
+                          activeColor: const Color(0xFF1E40AF),
                           onChanged: (_) => ThemeScope.notifier.toggleTheme(),
                         ),
                         onTap: () => ThemeScope.notifier.toggleTheme(),
@@ -685,7 +685,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuItem(
                     icon: Icons.tune_rounded,
                     iconColor: const Color(0xFF8B5CF6),
-                    iconBg: const Color(0xFFF5F3FF),
+                    iconBg: const Color(0xFFEFF6FF),
                     title: 'Pengaturan Tampilan',
                     subtitle: 'Pilih Light, Dark, atau Ikuti Sistem',
                     onTap: () {
@@ -874,7 +874,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F0FF),
+                color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppColors.primary, size: 20),
@@ -908,10 +908,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F3FF),
+            color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 18, color: const Color(0xFF5B3DE8)),
+          child: Icon(icon, size: 18, color: const Color(0xFF1E40AF)),
         ),
         const SizedBox(width: 14),
         Expanded(

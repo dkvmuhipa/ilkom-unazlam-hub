@@ -102,7 +102,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
       case 'Anggota':
         return const Color(0xFFEC4899);
       default:
-        return const Color(0xFF5B3DE8);
+        return const Color(0xFF1E40AF);
     }
   }
 
@@ -161,7 +161,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
-                          color: isSel ? const Color(0xFF5B3DE8) : const Color(0xFFF3F4F6),
+                          color: isSel ? const Color(0xFF1E40AF) : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Text(

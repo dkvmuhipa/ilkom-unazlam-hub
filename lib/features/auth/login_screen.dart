@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.lock_reset_rounded, color: Color(0xFF5B3DE8), size: 24),
+            Icon(Icons.lock_reset_rounded, color: Color(0xFF1E40AF), size: 24),
             SizedBox(width: 10),
             Text(
               'Lupa Password?',
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 icon: const Icon(Icons.send_rounded, size: 16),
                 label: const Text('Kirim tautan'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5B3DE8),
+                  backgroundColor: const Color(0xFF1E40AF),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5B3DE8)
+                          color: const Color(0xFF1E40AF)
                               .withValues(alpha: 0.12),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
@@ -230,10 +230,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         'assets/images/logo.jpg',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFFF3F0FF),
+                          color: const Color(0xFFEFF6FF),
                           child: const Icon(
                             Icons.school_rounded,
-                            color: Color(0xFF5B3DE8),
+                            color: Color(0xFF1E40AF),
                             size: 48,
                           ),
                         ),
@@ -248,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF5B3DE8),
+                      color: Color(0xFF1E40AF),
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -377,7 +377,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF5B3DE8),
+                            color: Color(0xFF1E40AF),
                           ),
                         ),
                       ),
@@ -392,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5B3DE8),
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(

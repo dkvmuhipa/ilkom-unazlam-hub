@@ -186,7 +186,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B3DE8),
+                backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -369,7 +369,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B3DE8),
+                backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -493,7 +493,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       floatingActionButton: widget.canManage
           ? FloatingActionButton.extended(
               onPressed: _showAddCourseDialog,
-              backgroundColor: const Color(0xFF5B3DE8),
+              backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded, size: 20),
               label: const Text('Tambah Jadwal', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
@@ -561,7 +561,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             decoration: BoxDecoration(
                               gradient: isSelected
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF5B3DE8), Color(0xFF755BF7)],
+                                      colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     )
@@ -571,7 +571,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.3),
+                                        color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 3),
                                       ),
@@ -626,7 +626,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const Icon(
                   Icons.event_note_rounded,
                   size: 15,
-                  color: Color(0xFF5B3DE8),
+                  color: Color(0xFF1E40AF),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -651,7 +651,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF5B3DE8),
+                      color: Color(0xFF1E40AF),
                     ),
                   ),
                 ),
@@ -679,13 +679,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(20),
                                         decoration: const BoxDecoration(
-                                          color: Color(0xFFF5F3FF),
+                                          color: Color(0xFFEFF6FF),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
                                           Icons.event_available_rounded,
                                           size: 46,
-                                          color: Color(0xFF5B3DE8),
+                                          color: Color(0xFF1E40AF),
                                         ),
                                       ),
                                       const SizedBox(height: 16),
@@ -733,7 +733,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Color _getCourseAccentColor(String courseName) {
     final colors = [
-      const Color(0xFF5B3DE8), // Royal Purple
+      const Color(0xFF1E40AF), // Royal Purple
       const Color(0xFF0284C7), // Sky Blue
       const Color(0xFF0D9488), // Teal
       const Color(0xFFD97706), // Amber
@@ -1162,7 +1162,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F0FF),
+                          color: const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -1170,7 +1170,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF5B3DE8),
+                            color: Color(0xFF1E40AF),
                           ),
                         ),
                       ),
@@ -1197,7 +1197,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     children: [
                       if (widget.canManage) ...[
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: Color(0xFF5B3DE8), size: 20),
+                          icon: const Icon(Icons.edit_outlined, color: Color(0xFF1E40AF), size: 20),
                           tooltip: 'Edit Mata Kuliah',
                           onPressed: () {
                             Navigator.pop(ctx);
@@ -1259,7 +1259,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   color: const Color(0xFFEDE9FE),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(Icons.access_time_rounded, color: Color(0xFF5B3DE8), size: 18),
+                                child: const Icon(Icons.access_time_rounded, color: Color(0xFF1E40AF), size: 18),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -1364,7 +1364,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFF5B3DE8)),
+                            Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFF1E40AF)),
                             SizedBox(width: 8),
                             Text(
                               'Materi & Dokumen Kuliah',
@@ -1379,12 +1379,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF3F0FF),
+                            color: const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${relatedResources.length} Berkas',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF)),
                           ),
                         ),
                       ],
@@ -1430,7 +1430,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   color: const Color(0xFFEDE9FE),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(Icons.description_rounded, color: Color(0xFF5B3DE8), size: 20),
+                                child: const Icon(Icons.description_rounded, color: Color(0xFF1E40AF), size: 20),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -1459,7 +1459,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF5B3DE8),
+                                  backgroundColor: const Color(0xFF1E40AF),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

@@ -162,7 +162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 strokeWidth: 10,
                                 backgroundColor: const Color(0xFFE5E7EB),
                                 valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF5B3DE8),
+                                  Color(0xFF1E40AF),
                                 ),
                                 strokeCap: StrokeCap.round,
                               ),
@@ -548,7 +548,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3F0FF),
+                                color: const Color(0xFFEFF6FF),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -563,7 +563,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         ? Icons.description_outlined
                                         : Icons.school_outlined,
                                     size: 12,
-                                    color: const Color(0xFF5B3DE8),
+                                    color: const Color(0xFF1E40AF),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -577,7 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF5B3DE8),
+                                      color: Color(0xFF1E40AF),
                                     ),
                                   ),
                                 ],
@@ -938,8 +938,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildQuickMenuItem(
                     icon: Icons.qr_code_scanner_rounded,
                     label: 'Presensi QR',
-                    color: const Color(0xFF5B3DE8),
-                    bgColor: const Color(0xFFF3F0FF),
+                    color: const Color(0xFF1E40AF),
+                    bgColor: const Color(0xFFEFF6FF),
                     onTap: () => widget.onNavigateTab(5),
                   ),
                   _buildQuickMenuItem(
@@ -982,7 +982,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     border: Border.all(color: const Color(0xFFEDE9FE)),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B3DE8).withValues(alpha: 0.04),
+                        color: const Color(0xFF1E40AF).withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -999,7 +999,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Icon(
                                 Icons.admin_panel_settings_outlined,
                                 size: 16,
-                                color: Color(0xFF5B3DE8),
+                                color: Color(0xFF1E40AF),
                               ),
                               SizedBox(width: 6),
                               Text(
@@ -1025,7 +1025,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Icon(
                                     Icons.donut_large_rounded,
                                     size: 13,
-                                    color: Color(0xFF5B3DE8),
+                                    color: Color(0xFF1E40AF),
                                   ),
                                   SizedBox(width: 4),
                                   Text(
@@ -1033,7 +1033,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF5B3DE8),
+                                      color: Color(0xFF1E40AF),
                                     ),
                                   ),
                                 ],
@@ -1049,8 +1049,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             child: _buildKetuaChip(
                               icon: Icons.campaign_rounded,
                               label: 'Pengumuman',
-                              color: const Color(0xFF5B3DE8),
-                              bgColor: const Color(0xFFF3F0FF),
+                              color: const Color(0xFF1E40AF),
+                              bgColor: const Color(0xFFEFF6FF),
                               onTap: () => widget.onNavigateTab(7),
                             ),
                           ),
@@ -1123,7 +1123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF5B3DE8),
+                          color: Color(0xFF1E40AF),
                         ),
                       ),
                     ),
@@ -1165,7 +1165,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         decoration: BoxDecoration(
                           color: latestAnnouncement != null
                               ? const Color(0xFFFEF3C7)
-                              : const Color(0xFFF3F0FF),
+                              : const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
@@ -1174,7 +1174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               : Icons.info_outline_rounded,
                           color: latestAnnouncement != null
                               ? const Color(0xFFB45309)
-                              : const Color(0xFF5B3DE8),
+                              : const Color(0xFF1E40AF),
                           size: 24,
                         ),
                       ),
@@ -1960,7 +1960,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 5,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF5B3DE8)
+                    ? const Color(0xFF1E40AF)
                     : const Color(0xFFD1D5DB),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -2425,7 +2425,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF5B3DE8),
+                  color: Color(0xFF1E40AF),
                 ),
               ),
             ),
