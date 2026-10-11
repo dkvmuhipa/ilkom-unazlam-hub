@@ -15,12 +15,10 @@ enum SoftPillVariant {
   rose, // Batal / Bahaya / Terlambat
   navy, // Info / Peran / Modul
   slate, // Netral / Nonaktif / Arsip
-  violet, // Akademik / Jadwal / Agenda
-  indigo, // Kelas / Kursus / Utama
-  teal, // Keuangan / Kas / Arsip
-  orange, // Notifikasi / Perhatian
-  sky, // Mahasiswa / Peserta / Direktori
-  pink, // Deadline / Tugas Mendesak
+  violet, // Analitik / Polling / Unggulan
+  cyan, // Berkas / Materi / Download
+  indigo, // Master Data / Akademik
+  fuchsia, // Spesial / Event / Sorotan
 }
 
 class SoftPillBadge extends StatelessWidget {
@@ -59,20 +57,14 @@ class SoftPillBadge extends StatelessWidget {
   factory SoftPillBadge.violet({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
       SoftPillBadge(label: label, variant: SoftPillVariant.violet, icon: icon, showDot: showDot, fontSize: fontSize);
 
+  factory SoftPillBadge.cyan({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.cyan, icon: icon, showDot: showDot, fontSize: fontSize);
+
   factory SoftPillBadge.indigo({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
       SoftPillBadge(label: label, variant: SoftPillVariant.indigo, icon: icon, showDot: showDot, fontSize: fontSize);
 
-  factory SoftPillBadge.teal({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
-      SoftPillBadge(label: label, variant: SoftPillVariant.teal, icon: icon, showDot: showDot, fontSize: fontSize);
-
-  factory SoftPillBadge.orange({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
-      SoftPillBadge(label: label, variant: SoftPillVariant.orange, icon: icon, showDot: showDot, fontSize: fontSize);
-
-  factory SoftPillBadge.sky({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
-      SoftPillBadge(label: label, variant: SoftPillVariant.sky, icon: icon, showDot: showDot, fontSize: fontSize);
-
-  factory SoftPillBadge.pink({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
-      SoftPillBadge(label: label, variant: SoftPillVariant.pink, icon: icon, showDot: showDot, fontSize: fontSize);
+  factory SoftPillBadge.fuchsia({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.fuchsia, icon: icon, showDot: showDot, fontSize: fontSize);
 
   @override
   Widget build(BuildContext context) {
@@ -82,24 +74,24 @@ class SoftPillBadge extends StatelessWidget {
 
     switch (variant) {
       case SoftPillVariant.emerald:
-        bg = AppColors.emeraldSoft; // #D1FAE5
-        text = AppColors.emeraldText; // #065F46
-        border = AppColors.emeraldBorder; // #A7F3D0
+        bg = AppColors.emeraldSoft;
+        text = AppColors.emeraldText;
+        border = AppColors.emeraldBorder;
         break;
       case SoftPillVariant.amber:
-        bg = AppColors.amberSoft; // #FEF3C7
-        text = AppColors.amberText; // #92400E
-        border = AppColors.amberBorder; // #FDE68A
+        bg = AppColors.amberSoft;
+        text = AppColors.amberText;
+        border = AppColors.amberBorder;
         break;
       case SoftPillVariant.rose:
-        bg = AppColors.roseSoft; // #FFE4E6
-        text = AppColors.roseText; // #9F1239
-        border = AppColors.roseBorder; // #FECDD3
+        bg = AppColors.roseSoft;
+        text = AppColors.roseText;
+        border = AppColors.roseBorder;
         break;
       case SoftPillVariant.navy:
-        bg = AppColors.primarySoft; // #EFF6FF
-        text = AppColors.primary; // #1E40AF
-        border = AppColors.primaryBorder; // #BFDBFE
+        bg = AppColors.primarySoft;
+        text = AppColors.primary;
+        border = AppColors.primaryBorder;
         break;
       case SoftPillVariant.slate:
         bg = const Color(0xFFF1F5F9);
@@ -107,34 +99,24 @@ class SoftPillBadge extends StatelessWidget {
         border = const Color(0xFFE2E8F0);
         break;
       case SoftPillVariant.violet:
-        bg = AppColors.violetSoft; // #F5F3FF
-        text = AppColors.violetText; // #6D28D9
-        border = AppColors.violetBorder; // #DDD6FE
+        bg = AppColors.violetSoft;
+        text = AppColors.violetText;
+        border = AppColors.violetBorder;
+        break;
+      case SoftPillVariant.cyan:
+        bg = AppColors.cyanSoft;
+        text = AppColors.cyanText;
+        border = AppColors.cyanBorder;
         break;
       case SoftPillVariant.indigo:
-        bg = AppColors.indigoSoft; // #EEF2FF
-        text = AppColors.indigoText; // #3730A3
-        border = AppColors.indigoBorder; // #C7D2FE
+        bg = AppColors.indigoSoft;
+        text = AppColors.indigoText;
+        border = AppColors.indigoBorder;
         break;
-      case SoftPillVariant.teal:
-        bg = AppColors.tealSoft; // #F0FDFA
-        text = AppColors.tealText; // #0F766E
-        border = AppColors.tealBorder; // #99F6E4
-        break;
-      case SoftPillVariant.orange:
-        bg = AppColors.orangeSoft; // #FFF7ED
-        text = AppColors.orangeText; // #C2410C
-        border = AppColors.orangeBorder; // #FED7AA
-        break;
-      case SoftPillVariant.sky:
-        bg = AppColors.skySoft; // #E0F2FE
-        text = AppColors.sky; // #0284C7
-        border = const Color(0xFFBAE6FD); // #BAE6FD
-        break;
-      case SoftPillVariant.pink:
-        bg = AppColors.pinkSoft; // #FDF2F8
-        text = AppColors.pinkText; // #BE185D
-        border = AppColors.pinkBorder; // #FBCFE8
+      case SoftPillVariant.fuchsia:
+        bg = AppColors.fuchsiaSoft;
+        text = AppColors.fuchsiaText;
+        border = AppColors.fuchsiaBorder;
         break;
     }
 
@@ -173,6 +155,123 @@ class SoftPillBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// 1B. COLORFUL SQUIRCLE ICON BOX (SaaS Glow & Pastel Tint)
+// ============================================================================
+
+class ColorfulIconBox extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color? backgroundColor;
+  final double size;
+  final double iconSize;
+  final double borderRadius;
+  final bool hasGlow;
+
+  const ColorfulIconBox({
+    super.key,
+    required this.icon,
+    required this.color,
+    this.backgroundColor,
+    this.size = 40,
+    this.iconSize = 20,
+    double? radius,
+    double borderRadius = 12,
+    this.hasGlow = true,
+  }) : borderRadius = radius ?? borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
+        boxShadow: hasGlow ? AppColors.coloredGlow(color, opacity: 0.16, blur: 8) : null,
+      ),
+      child: Center(
+        child: Icon(icon, color: color, size: iconSize),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// 1C. DETERMINISTIC COLORFUL SAAS AVATAR (8 Pastels Palette)
+// ============================================================================
+
+class SaaSAvatar extends StatelessWidget {
+  final String name;
+  final double size;
+  final double fontSize;
+  final double borderRadius;
+
+  const SaaSAvatar({
+    super.key,
+    required this.name,
+    this.size = 38,
+    this.fontSize = 13,
+    double? radius,
+    double borderRadius = 12,
+  }) : borderRadius = radius ?? borderRadius;
+
+  static const List<Map<String, Color>> _palette = [
+    {'bg': Color(0xFFEFF6FF), 'text': Color(0xFF1E40AF), 'border': Color(0xFFBFDBFE)}, // Royal Blue
+    {'bg': Color(0xFFECFDF5), 'text': Color(0xFF065F46), 'border': Color(0xFFA7F3D0)}, // Emerald
+    {'bg': Color(0xFFFFFBEB), 'text': Color(0xFF92400E), 'border': Color(0xFFFDE68A)}, // Amber
+    {'bg': Color(0xFFF5F3FF), 'text': Color(0xFF6D28D9), 'border': Color(0xFFDDD6FE)}, // Violet
+    {'bg': Color(0xFFECFEFF), 'text': Color(0xFF0E7490), 'border': Color(0xFFA5F3FC)}, // Cyan
+    {'bg': Color(0xFFFFF1F2), 'text': Color(0xFF9F1239), 'border': Color(0xFFFECDD3)}, // Rose
+    {'bg': Color(0xFFEEF2FF), 'text': Color(0xFF3730A3), 'border': Color(0xFFC7D2FE)}, // Indigo
+    {'bg': Color(0xFFF0FDFA), 'text': Color(0xFF0F766E), 'border': Color(0xFF99F6E4)}, // Teal
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanName = name.trim();
+    final initials = cleanName.isEmpty
+        ? '?'
+        : cleanName
+            .split(' ')
+            .where((p) => p.isNotEmpty)
+            .take(2)
+            .map((p) => p[0].toUpperCase())
+            .join();
+
+    final hash = cleanName.codeUnits.fold<int>(0, (prev, elem) => prev + elem);
+    final theme = _palette[hash % _palette.length];
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: theme['bg'],
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: theme['border']!, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: theme['text']!.withValues(alpha: 0.10),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: GoogleFonts.plusJakartaSans(
+          color: theme['text'],
+          fontWeight: FontWeight.w900,
+          fontSize: fontSize,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }

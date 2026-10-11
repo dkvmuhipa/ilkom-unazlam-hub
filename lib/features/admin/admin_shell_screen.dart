@@ -276,47 +276,33 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   children: [
                     if (isWide)
                       NavigationRail(
-                        backgroundColor: Colors.white,
-                        indicatorColor: AppColors.primarySoft,
                         selectedIndex: _navBarIndex,
                         onDestinationSelected: _handleBottomNav,
                         labelType: NavigationRailLabelType.all,
-                        selectedIconTheme: const IconThemeData(color: AppColors.primary, size: 24),
-                        unselectedIconTheme: const IconThemeData(color: Color(0xFF64748B), size: 22),
-                        selectedLabelTextStyle: GoogleFonts.plusJakartaSans(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                        unselectedLabelTextStyle: GoogleFonts.plusJakartaSans(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11.5,
-                        ),
                         destinations: const [
                           NavigationRailDestination(
                             icon: Icon(Icons.dashboard_outlined),
-                            selectedIcon: Icon(Icons.dashboard_rounded, color: AppColors.primary),
+                            selectedIcon: Icon(Icons.dashboard_rounded),
                             label: Text('Beranda'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.folder_outlined),
-                            selectedIcon: Icon(Icons.folder_rounded, color: Color(0xFF0284C7)),
+                            selectedIcon: Icon(Icons.folder_rounded),
                             label: Text('Data'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.school_outlined),
-                            selectedIcon: Icon(Icons.school_rounded, color: Color(0xFF7C3AED)),
+                            selectedIcon: Icon(Icons.school_rounded),
                             label: Text('Akademik'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.insert_chart_outlined_rounded),
-                            selectedIcon: Icon(Icons.insert_chart_rounded, color: Color(0xFFE11D48)),
+                            selectedIcon: Icon(Icons.insert_chart_rounded),
                             label: Text('Laporan'),
                           ),
                           NavigationRailDestination(
                             icon: Icon(Icons.person_outline_rounded),
-                            selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF0D9488)),
+                            selectedIcon: Icon(Icons.person_rounded),
                             label: Text('Pengaturan'),
                           ),
                         ],
@@ -334,45 +320,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
-      ),
-      child: NavigationBar(
-        backgroundColor: Colors.white,
-        indicatorColor: AppColors.primarySoft,
-        elevation: 0,
-        selectedIndex: _navBarIndex,
-        onDestinationSelected: _handleBottomNav,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.dashboard_rounded, color: AppColors.primary),
-            label: 'Beranda',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.folder_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.folder_rounded, color: Color(0xFF0284C7)),
-            label: 'Data',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.school_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.school_rounded, color: Color(0xFF7C3AED)),
-            label: 'Akademik',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insert_chart_outlined_rounded, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.insert_chart_rounded, color: Color(0xFFE11D48)),
-            label: 'Laporan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF0D9488)),
-            label: 'Pengaturan',
-          ),
-        ],
-      ),
+    return NavigationBar(
+      selectedIndex: _navBarIndex,
+      onDestinationSelected: _handleBottomNav,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard_rounded),
+          label: 'Beranda',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.folder_outlined),
+          selectedIcon: Icon(Icons.folder_rounded),
+          label: 'Data',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.school_outlined),
+          selectedIcon: Icon(Icons.school_rounded),
+          label: 'Akademik',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.insert_chart_outlined_rounded),
+          selectedIcon: Icon(Icons.insert_chart_rounded),
+          label: 'Laporan',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline_rounded),
+          selectedIcon: Icon(Icons.person_rounded),
+          label: 'Pengaturan',
+        ),
+      ],
     );
   }
 
@@ -433,11 +410,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -445,10 +422,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           Container(
                             width: 6,
                             height: 6,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
-                              boxShadow: AppColors.glow(AppColors.primary, alpha: 0.5, blur: 4),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -457,7 +433,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
+                              color: Color(0xFF334155),
                               letterSpacing: 0.6,
                             ),
                           ),
@@ -537,10 +513,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         vertical: 7,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
-                        boxShadow: AppColors.glow(const Color(0xFF2563EB), alpha: 0.12, blur: 4),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -548,7 +530,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           Icon(
                             Icons.visibility_outlined,
                             size: 14,
-                            color: Color(0xFF2563EB),
+                            color: AppColors.primary,
                           ),
                           SizedBox(width: 5),
                           Text(
@@ -556,7 +538,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1D4ED8),
+                              color: Color(0xFF0F172A),
                             ),
                           ),
                         ],
@@ -610,7 +592,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 20),
 
-          // 4 Stat Cards in 2x2 Grid (Clean Tech SaaS)
+          // 4 Stat Cards in 2x2 Grid (Modern Clean SaaS)
           Row(
             children: [
               Expanded(
@@ -619,6 +601,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   label: 'Kelas Aktif',
                   icon: Icons.meeting_room_outlined,
                   color: AppColors.primary,
+                  badgeText: 'FISIP',
+                  badgeVariant: SoftPillVariant.blue,
                   onTap: () => _navigateTo('kelas'),
                 ),
               ),
@@ -628,7 +612,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   count: '$activeStudentsCount',
                   label: 'Mahasiswa',
                   icon: Icons.people_outline_rounded,
-                  color: const Color(0xFF0284C7),
+                  color: AppColors.cyan,
+                  badgeText: 'Aktif 100%',
+                  badgeVariant: SoftPillVariant.cyan,
                   onTap: () => _navigateTo('mahasiswa'),
                 ),
               ),
@@ -642,7 +628,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   count: '${_lecturers.length}',
                   label: 'Dosen Pengajar',
                   icon: Icons.badge_outlined,
-                  color: const Color(0xFF10B981),
+                  color: AppColors.emerald,
+                  badgeText: 'Dosen FISIP',
+                  badgeVariant: SoftPillVariant.emerald,
                   onTap: () => _navigateTo('dosen'),
                 ),
               ),
@@ -652,7 +640,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   count: '${_courses.length}',
                   label: 'Mata Kuliah',
                   icon: Icons.menu_book_rounded,
-                  color: const Color(0xFFF59E0B),
+                  color: AppColors.amber,
+                  badgeText: 'Ganjil 26/27',
+                  badgeVariant: SoftPillVariant.amber,
                   onTap: () => _navigateTo('matakuliah'),
                 ),
               ),
@@ -660,16 +650,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Banner Integrasi FCM Push Notification (Vibrant Dark Gradient Console)
+          // Banner Integrasi FCM Push Notification (Modern Dark Console with Indigo Gradient)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
-              gradient: AppColors.darkHeroGradient,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF312E81).withValues(alpha: 0.6)),
+              border: Border.all(color: const Color(0xFF312E81)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.18),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
@@ -678,17 +672,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(9),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1B4B),
+                    color: const Color(0xFF312E81).withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
-                    boxShadow: AppColors.glow(const Color(0xFF818CF8), alpha: 0.35, blur: 10),
                   ),
                   child: const Icon(
                     Icons.cell_tower_rounded,
                     color: Color(0xFFA5B4FC),
-                    size: 20,
+                    size: 19,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -699,12 +692,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       Row(
                         children: [
                           Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
                               shape: BoxShape.circle,
-                              boxShadow: AppColors.glow(const Color(0xFF10B981), alpha: 0.6, blur: 6),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -736,7 +728,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: _showBroadcastAnnouncementDialog,
                   icon: const Icon(Icons.send_rounded, size: 13),
@@ -744,11 +736,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                     minimumSize: Size.zero,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                    elevation: 2,
-                    shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -806,7 +796,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   icon: Icons.campaign_rounded,
                   label: 'Pengumuman',
                   subtitle: 'Kirim Push',
-                  color: const Color(0xFFE11D48),
+                  color: AppColors.primary,
                   onTap: _showBroadcastAnnouncementDialog,
                 ),
               ),
@@ -816,7 +806,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   icon: Icons.post_add_rounded,
                   label: 'Tugas Baru',
                   subtitle: 'Rilis & Notif',
-                  color: const Color(0xFF0284C7),
+                  color: AppColors.cyan,
                   onTap: _showCreateAssignmentDialog,
                 ),
               ),
@@ -826,7 +816,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   icon: Icons.person_add_rounded,
                   label: 'Mahasiswa',
                   subtitle: 'Undang Akun',
-                  color: const Color(0xFF10B981),
+                  color: AppColors.emerald,
                   onTap: _showCreateStudentAccountDialog,
                 ),
               ),
@@ -907,17 +897,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.18)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.04),
-                  blurRadius: 8,
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
-                ),
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
                 ),
               ],
             ),
@@ -926,14 +911,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDFA),
+                    color: const Color(0xFFEEF2FF),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF99F6E4)),
-                    boxShadow: AppColors.glow(const Color(0xFF0D9488), alpha: 0.2, blur: 6),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
                   child: const Icon(
                     Icons.verified_user_rounded,
-                    color: Color(0xFF0D9488),
+                    color: AppColors.primary,
                     size: 20,
                   ),
                 ),
@@ -959,7 +943,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ],
                   ),
                 ),
-                SoftPillBadge.teal(label: 'v2.5.0'),
               ],
             ),
           ),
@@ -974,16 +957,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    String? badgeText,
+    SoftPillVariant badgeVariant = SoftPillVariant.blue,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.16), width: 1.2),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.06),
@@ -1003,30 +988,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: color.withValues(alpha: 0.22)),
-                    boxShadow: AppColors.glow(color, alpha: 0.22, blur: 8),
-                  ),
-                  child: Icon(icon, color: color, size: 19),
+                ColorfulIconBox(
+                  icon: icon,
+                  color: color,
+                  size: 38,
+                  iconSize: 19,
+                  radius: 11,
                 ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
+                if (badgeText != null)
+                  SoftPillBadge(
+                    label: badgeText,
+                    variant: badgeVariant,
+                    fontSize: 10,
+                  )
+                else
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Icon(
+                      Icons.arrow_outward_rounded,
+                      color: color,
+                      size: 13,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.arrow_outward_rounded,
-                    color: color,
-                    size: 13,
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -1069,10 +1058,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.16)),
+          border: Border.all(color: color.withValues(alpha: 0.18), width: 1.1),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.05),
+              color: color.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1086,15 +1075,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: color.withValues(alpha: 0.22)),
-                boxShadow: AppColors.glow(color, alpha: 0.2, blur: 6),
-              ),
-              child: Icon(icon, color: color, size: 17),
+            ColorfulIconBox(
+              icon: icon,
+              color: color,
+              size: 32,
+              iconSize: 16,
+              radius: 9,
             ),
             const SizedBox(height: 10),
             Text(
@@ -1111,10 +1097,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1433,26 +1419,26 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required VoidCallback onTap,
   }) {
     final accentColor = switch (title.replaceAll('\n', ' ')) {
-      'Kelas' => const Color(0xFF4F46E5),        // Indigo
-      'Mahasiswa' => const Color(0xFF0284C7),    // Sky
-      'Dosen' => const Color(0xFF10B981),        // Emerald
-      'Mata Kuliah' => const Color(0xFFF59E0B),  // Amber
-      'Tahun Akademik' => const Color(0xFF7C3AED), // Violet
-      'Manajemen Akun' => const Color(0xFF0D9488), // Teal
-      'Laporan' => const Color(0xFFE11D48),      // Rose
-      _ => const Color(0xFF475569),              // Slate
+      'Kelas' => AppColors.primary,
+      'Mahasiswa' => AppColors.cyan,
+      'Dosen' => AppColors.emerald,
+      'Mata Kuliah' => AppColors.amber,
+      'Tahun Akademik' => AppColors.violet,
+      'Manajemen Akun' => AppColors.teal,
+      'Laporan' => AppColors.rose,
+      _ => const Color(0xFF64748B),
     };
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: accentColor.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: accentColor.withValues(alpha: 0.05),
+              color: accentColor.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1467,19 +1453,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: accentColor.withValues(alpha: 0.22),
-                  width: 0.8,
-                ),
-                boxShadow: AppColors.glow(accentColor, alpha: 0.2, blur: 7),
-              ),
-              child: Icon(icon, color: accentColor, size: 20),
+            ColorfulIconBox(
+              icon: icon,
+              color: accentColor,
+              size: 40,
+              iconSize: 20,
+              radius: 11,
             ),
             const SizedBox(height: 7),
             Text(
@@ -1558,17 +1537,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppColors.primarySoft,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.groups_rounded,
-                                color: AppColors.primary,
-                                size: 22,
-                              ),
+                            ColorfulIconBox(
+                              icon: Icons.groups_rounded,
+                              color: AppColors.primary,
+                              size: 44,
+                              iconSize: 22,
+                              radius: 13,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -2184,17 +2158,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         borderRadius: BorderRadius.circular(20),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: color.withValues(alpha: 0.12),
-                              child: Text(
-                                initials,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: color,
-                                ),
-                              ),
+                            SaaSAvatar(
+                              name: s.nama,
+                              size: 42,
+                              radius: 12,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -2900,17 +2867,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0F2FE),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Color(0xFF0284C7),
-                                size: 22,
-                              ),
+                            SaaSAvatar(
+                              name: d.nama,
+                              size: 44,
+                              radius: 13,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -3263,17 +3223,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.description_outlined,
-                                color: color,
-                                size: 22,
-                              ),
+                            ColorfulIconBox(
+                              icon: Icons.menu_book_rounded,
+                              color: color,
+                              size: 44,
+                              iconSize: 22,
+                              radius: 13,
                             ),
                             const SizedBox(width: 14),
                             Expanded(

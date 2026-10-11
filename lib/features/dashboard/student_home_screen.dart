@@ -241,9 +241,31 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ],
         ),
-        SoftPillBadge.indigo(
-          label: 'Semester ${student.semester}',
-          icon: Icons.school_rounded,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.school_rounded, size: 13, color: AppColors.primary),
+              const SizedBox(width: 5),
+              Text(
+                'Semester ${student.semester}',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -253,14 +275,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // 2. TOP BAR: COMMAND SEARCH BAR + NOTIF + AVATAR
   // ==========================================
   Widget _buildTopBar(BuildContext context, StudentProfile student, bool isDark) {
-    final initials = student.nama
-        .trim()
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .take(2)
-        .map((w) => w[0].toUpperCase())
-        .join();
-
     final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E2C3D) : const Color(0xFFE2E8F0);
 
@@ -401,36 +415,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         const SizedBox(width: 8),
 
-        // Avatar Profil Mahasiswa (Sleek High-Contrast Squircle)
+        // Avatar Profil Mahasiswa (Modern SaaS Colorful Squircle)
         InkWell(
           onTap: () => widget.onNavigateTab(4), // Profil
           borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFF0F172A),
-              border: Border.all(color: borderColor),
-              boxShadow: [
-                ...AppColors.glow(AppColors.primary, alpha: 0.22, blur: 8),
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.08),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-                letterSpacing: 0.5,
-              ),
-            ),
+          child: SaaSAvatar(
+            name: student.nama,
+            size: 44,
+            radius: 12,
           ),
         ),
       ],
@@ -586,8 +578,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   child: _buildGojekActionItem(
                     icon: Icons.qr_code_scanner_rounded,
                     label: 'Absen',
-                    color: const Color(0xFF0284C7),
-                    bgColor: isDark ? const Color(0xFF1E2E42) : const Color(0xFFE0F2FE),
+                    color: AppColors.cyan,
                     textColor: textMain,
                     onTap: () {
                       if (AttendanceScreen.currentSession != null &&
@@ -607,8 +598,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   child: _buildGojekActionItem(
                     icon: Icons.account_balance_wallet_rounded,
                     label: 'Kas',
-                    color: const Color(0xFF0D9488),
-                    bgColor: isDark ? const Color(0xFF1A3533) : const Color(0xFFCCFBF1),
+                    color: AppColors.teal,
                     textColor: textMain,
                     onTap: () => widget.onNavigateTab(8), // Kas Kelas
                   ),
@@ -618,7 +608,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     icon: Icons.school_rounded,
                     label: 'KHS',
                     color: AppColors.primary,
-                    bgColor: isDark ? const Color(0xFF262244) : const Color(0xFFEDE9FE),
                     textColor: textMain,
                     onTap: () => widget.onNavigateTab(15), // KHS & Transkrip Nilai (Tab 15)
                   ),
@@ -627,8 +616,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   child: _buildGojekActionItem(
                     icon: Icons.checklist_rounded,
                     label: 'Tugas',
-                    color: const Color(0xFFE11D48),
-                    bgColor: isDark ? const Color(0xFF381D26) : const Color(0xFFFFE4E6),
+                    color: AppColors.rose,
                     textColor: textMain,
                     onTap: () => widget.onNavigateTab(2), // Tugas
                   ),
@@ -645,35 +633,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     required IconData icon,
     required String label,
     required Color color,
-    required Color bgColor,
     required Color textColor,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 35,
-              height: 35,
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withValues(alpha: 0.22), width: 0.8),
-                boxShadow: AppColors.glow(color, alpha: isDark ? 0.22 : 0.16, blur: 5),
-              ),
-              child: Icon(icon, color: color, size: 17),
+            ColorfulIconBox(
+              icon: icon,
+              color: color,
+              size: 36,
+              iconSize: 18,
+              radius: 10,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w700,
                 color: textColor,
                 letterSpacing: -0.1,
@@ -766,49 +748,49 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       _ServiceItem(
         title: 'Jadwal',
         icon: Icons.calendar_month_rounded,
-        color: const Color(0xFF2563EB),
+        color: AppColors.primary,
         bgColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
         tabIndex: 1,
       ),
       _ServiceItem(
         title: 'Materi Kuliah',
         icon: Icons.menu_book_rounded,
-        color: const Color(0xFF0284C7),
+        color: AppColors.cyan,
         bgColor: isDark ? const Color(0xFF162D3D) : const Color(0xFFE0F2FE),
         tabIndex: 10, // Gudang Materi & E-Book
       ),
       _ServiceItem(
         title: 'Agenda Kelas',
         icon: Icons.event_note_rounded,
-        color: const Color(0xFF059669),
+        color: AppColors.emerald,
         bgColor: isDark ? const Color(0xFF152F24) : const Color(0xFFECFDF5),
         tabIndex: 6, // Agenda Kelas
       ),
       _ServiceItem(
         title: 'Kelompok',
         icon: Icons.group_work_rounded,
-        color: const Color(0xFF0D9488),
+        color: AppColors.teal,
         bgColor: isDark ? const Color(0xFF163230) : const Color(0xFFF0FDFA),
         tabIndex: 9, // Kelompok Praktikum
       ),
       _ServiceItem(
         title: 'Voting',
         icon: Icons.how_to_vote_rounded,
-        color: const Color(0xFF7C3AED),
+        color: AppColors.violet,
         bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
         tabIndex: 12, // Voting & Polling
       ),
       _ServiceItem(
         title: 'Pengumuman',
         icon: Icons.campaign_rounded,
-        color: const Color(0xFFDC2626),
+        color: AppColors.rose,
         bgColor: isDark ? const Color(0xFF341E1E) : const Color(0xFFFEF2F2),
         tabIndex: 7, // Pengumuman
       ),
       _ServiceItem(
         title: 'Teman Kelas',
         icon: Icons.groups_rounded,
-        color: const Color(0xFFD97706),
+        color: AppColors.amber,
         bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
         tabIndex: 3, // Direktori Kelas
       ),
@@ -862,24 +844,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             widget.onNavigateTab(item.tabIndex);
           }
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: item.bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: item.color.withValues(alpha: 0.20), width: 0.8),
-                  boxShadow: AppColors.glow(item.color, alpha: isDark ? 0.24 : 0.16, blur: 7),
-                ),
-                child: Icon(item.icon, color: item.color, size: 21),
+              ColorfulIconBox(
+                icon: item.icon,
+                color: item.color,
+                size: 46,
+                iconSize: 22,
+                radius: 14,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 7),
               Text(
                 item.title,
                 textAlign: TextAlign.center,
@@ -958,9 +936,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                SoftPillBadge.violet(
-                  label: '${_pendingAssignments.length} Tugas Aktif',
-                  fontSize: 10.5,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF26223D) : const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${_pendingAssignments.length} Tugas Aktif',
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1885,11 +1874,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 24),
+              ColorfulIconBox(
+                icon: icon,
+                color: color,
+                size: 48,
+                iconSize: 24,
+                radius: 15,
               ),
               const SizedBox(height: 6),
               Text(
