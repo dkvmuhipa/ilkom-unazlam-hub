@@ -102,10 +102,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi â˜€ï¸';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang ðŸŒ¤ï¸';
-    if (hour >= 15 && hour < 18) return 'Selamat Sore ðŸŒ‡';
-    return 'Selamat Malam ðŸŒ™';
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi ☀️';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang 🌤️';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore 🌇';
+    return 'Selamat Malam 🌙';
   }
 
   String _formatCurrency(int amount) {
@@ -222,7 +222,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${_getGreeting()}, $firstName ðŸ‘‹',
+              '${_getGreeting()}, $firstName 👋',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -341,7 +341,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       ),
                       child: Text(
-                        'âŒ˜K',
+                        'Ctrl K',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -742,7 +742,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 Text(
                   attended
-                      ? 'Kamu sudah terdata hadir ðŸŽ‰'
+                      ? 'Kamu sudah terdata hadir 🎉'
                       : 'Sisa waktu ${session.remainingSeconds ~/ 60} menit',
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF059669), fontWeight: FontWeight.w600),
                 ),
@@ -1527,7 +1527,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Tidak Ada Kuliah ðŸŽ‰',
+                  'Tidak Ada Kuliah 🎉',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,

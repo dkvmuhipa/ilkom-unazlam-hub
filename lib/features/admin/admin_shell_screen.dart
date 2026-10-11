@@ -4315,7 +4315,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             _buildProfileInfoRow('Kelas Terdaftar', '${_classes.length} Kelas'),
             _buildProfileInfoRow('Dosen Pengampu', '${_lecturers.length} Dosen'),
             _buildProfileInfoRow('Mata Kuliah', '${_courses.length} MK'),
-            _buildProfileInfoRow('Basis Data', SupabaseService.client != null ? 'Supabase Connected ðŸŸ¢' : 'Offline / Standalone ðŸŸ¡'),
+            _buildProfileInfoRow('Basis Data', SupabaseService.client != null ? 'Supabase Connected 🟢' : 'Offline / Standalone 🟡'),
             _buildProfileInfoRow('Versi Rilis', 'v2.5.0 Production'),
           ],
         ),
