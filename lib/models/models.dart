@@ -294,6 +294,26 @@ class TreasuryTransaction {
     required this.tanggal,
     required this.pencatat,
   });
+
+  TreasuryTransaction copyWith({
+    String? id,
+    String? judul,
+    int? nominal,
+    bool? isPemasukan,
+    String? kategori,
+    DateTime? tanggal,
+    String? pencatat,
+  }) {
+    return TreasuryTransaction(
+      id: id ?? this.id,
+      judul: judul ?? this.judul,
+      nominal: nominal ?? this.nominal,
+      isPemasukan: isPemasukan ?? this.isPemasukan,
+      kategori: kategori ?? this.kategori,
+      tanggal: tanggal ?? this.tanggal,
+      pencatat: pencatat ?? this.pencatat,
+    );
+  }
 }
 
 class StudioEquipment {
