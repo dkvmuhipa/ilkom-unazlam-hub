@@ -568,11 +568,10 @@ class SupabaseRepository {
     if (client == null) return DummyData.students;
     try {
       final students = await getClassDirectoryStrict();
-      if (students.isNotEmpty) {
+      if (students.isNotEmpty && !identical(DummyData.students, students)) {
         DummyData.students
           ..clear()
           ..addAll(students);
-        return students;
       }
       return DummyData.students;
     } catch (e) {
@@ -583,42 +582,15 @@ class SupabaseRepository {
 
   static Future<List<StudentProfile>> getClassDirectoryStrict() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.students;
+    if (client == null) return List<StudentProfile>.from(DummyData.students);
 
+    List<StudentProfile> result = [];
+
+    // 1. Coba RPC get_class_directory
     try {
       final rows = await client.rpc('get_class_directory');
-      final list = (rows as List)
-          .map(
-            (row) => StudentProfile(
-              id: row['id']?.toString() ?? '',
-              nim: row['nim']?.toString() ?? '',
-              nama: row['nama']?.toString() ?? '',
-              email: row['email']?.toString() ?? '',
-              noWa: row['no_wa']?.toString() ?? '',
-              peminatan: row['peminatan']?.toString() ?? '',
-              prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
-              semester: (row['semester'] as num?)?.toInt() ?? 1,
-              kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
-              role: row['role']?.toString() ?? 'MAHASISWA',
-              jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
-              isAktif: row['is_aktif'] as bool? ?? true,
-              instagram: row['instagram']?.toString(),
-              linkedin: row['linkedin']?.toString(),
-            ),
-          )
-          .toList();
-      if (list.isNotEmpty) return list;
-    } catch (e) {
-      debugPrint('Warning: get_class_directory RPC gagal ($e), mencoba query langsung tabel students.');
-      try {
-        final rows = await client
-            .from('students')
-            .select(
-              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
-            )
-            .eq('is_aktif', true)
-            .order('nama');
-        final list = (rows as List)
+      if (rows is List && rows.isNotEmpty) {
+        result = rows
             .map(
               (row) => StudentProfile(
                 id: row['id']?.toString() ?? '',
@@ -638,11 +610,53 @@ class SupabaseRepository {
               ),
             )
             .toList();
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('Warning: get_class_directory RPC gagal ($e).');
     }
 
-    return DummyData.students;
+    // 2. Jika RPC mengembalikan kosong atau gagal, query langsung tabel students
+    if (result.isEmpty) {
+      try {
+        final rows = await client
+            .from('students')
+            .select(
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+            )
+            .eq('is_aktif', true)
+            .order('nama');
+        if (rows.isNotEmpty) {
+          result = rows
+              .map(
+                (row) => StudentProfile(
+                  id: row['id']?.toString() ?? '',
+                  nim: row['nim']?.toString() ?? '',
+                  nama: row['nama']?.toString() ?? '',
+                  email: row['email']?.toString() ?? '',
+                  noWa: row['no_wa']?.toString() ?? '',
+                  peminatan: row['peminatan']?.toString() ?? '',
+                  prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+                  semester: (row['semester'] as num?)?.toInt() ?? 1,
+                  kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+                  role: row['role']?.toString() ?? 'MAHASISWA',
+                  jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+                  isAktif: row['is_aktif'] as bool? ?? true,
+                  instagram: row['instagram']?.toString(),
+                  linkedin: row['linkedin']?.toString(),
+                ),
+              )
+              .toList();
+        }
+      } catch (e) {
+        debugPrint('Warning: query langsung tabel students gagal ($e).');
+      }
+    }
+
+    if (result.isNotEmpty) {
+      return result;
+    }
+
+    return List<StudentProfile>.from(DummyData.students);
   }
 
   static Future<Map<String, String>> getPersonalAssignmentStatuses(

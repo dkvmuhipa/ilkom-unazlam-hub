@@ -350,10 +350,22 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     }
   }
 
-  StudentProfile get _currentUser => DummyData.students.firstWhere(
-    (student) => student.nim == _activeNim,
-    orElse: () => DummyData.students.first,
-  );
+  StudentProfile get _currentUser {
+    final matched = DummyData.students
+        .where((student) => student.nim == _activeNim)
+        .firstOrNull;
+    if (matched != null) return matched;
+    if (DummyData.students.isNotEmpty) return DummyData.students.first;
+    return StudentProfile(
+      id: 's15',
+      nim: _activeNim.isNotEmpty ? _activeNim : '260250023',
+      nama: widget.userName ?? 'NUR FARIDA',
+      email: '260250023@student.unazlam.ac.id',
+      noWa: '081241000115',
+      role: 'MAHASISWA',
+      jabatan: 'Ketua Kelas',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
