@@ -1944,10 +1944,19 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                 final judul = titleController.text.trim();
                 if (judul.isEmpty) return;
 
-                final course = DummyData.courses.firstWhere(
-                  (c) => c.nama == selectedCourse,
-                  orElse: () => DummyData.courses.first,
-                );
+                final course = DummyData.courses.where(
+                  (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase(),
+                ).firstOrNull ?? DummyData.courses.first;
+
+                String resolvedCourseId = course.id;
+                if (resolvedCourseId.length != 36) {
+                  final matchUuid = DummyData.courses.where(
+                    (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase() && c.id.length == 36,
+                  ).firstOrNull;
+                  if (matchUuid != null) {
+                    resolvedCourseId = matchUuid.id;
+                  }
+                }
 
                 final oldValues = (
                   a.judul,
@@ -1961,7 +1970,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                 setState(() {
                   a.judul = judul;
                   a.courseName = course.nama;
-                  a.courseId = course.id;
+                  a.courseId = resolvedCourseId;
                   a.kategori = kategori;
                   a.deadline = selectedDeadline;
                   a.deskripsi = descController.text.trim();
@@ -1985,20 +1994,23 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Perubahan tugas gagal disimpan.'),
+                        backgroundColor: Color(0xFFEF4444),
                       ),
                     );
                   }
                   return;
                 }
 
-                Navigator.pop(ctx);
+                if (ctx.mounted) Navigator.pop(ctx);
                 widget.onStatusChanged?.call();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Tugas berhasil diperbarui!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Tugas berhasil diperbarui!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
@@ -2038,27 +2050,28 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
           ),
           ElevatedButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(context);
               final saved = await SupabaseRepository.deleteAssignment(
                 widget.assignment.id,
               );
               if (!saved) {
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tugas gagal dihapus dari server.'),
-                    ),
-                  );
-                }
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Tugas gagal dihapus dari server.'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
                 return;
               }
-              Navigator.pop(ctx); // pop confirm dialog
-              Navigator.pop(context); // pop detail sheet
+              if (ctx.mounted) Navigator.pop(ctx); // pop confirm dialog
+              nav.pop(); // pop detail sheet
               widget.onStatusChanged?.call();
-              ScaffoldMessenger.of(context).showSnackBar(
+              messenger.showSnackBar(
                 const SnackBar(
                   content: Text('Tugas berhasil dihapus.'),
-                  backgroundColor: Color(0xFFEF4444),
+                  backgroundColor: Color(0xFF10B981),
                 ),
               );
             },

@@ -514,20 +514,85 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client
-          .from('assignments')
-          .update({
-            'judul': assignment.judul,
-            'course_id': assignment.courseId,
-            'course_name': assignment.courseName,
-            'deskripsi': assignment.deskripsi,
-            'kategori': assignment.kategori,
-            'deadline': assignment.deadline.toIso8601String(),
-            'link_pengumpulan': assignment.linkPengumpulan,
-          })
-          .eq('id', assignment.id)
-          .select('id')
-          .single();
+      // 1. Selesaikan course_id ke UUID resmi di Supabase jika tersedia
+      String? resolvedCourseId;
+      if (assignment.courseId.isNotEmpty && assignment.courseId.length == 36) {
+        resolvedCourseId = assignment.courseId;
+      } else {
+        final match = DummyData.courses.where(
+          (c) =>
+              c.nama.trim().toLowerCase() ==
+                  assignment.courseName.trim().toLowerCase() ||
+              c.id == assignment.courseId,
+        ).firstOrNull;
+        if (match != null && match.id.length == 36) {
+          resolvedCourseId = match.id;
+        } else {
+          // Cari dari Supabase tabel courses berdasarkan nama mata kuliah
+          try {
+            final cleanName = assignment.courseName
+                .replaceAll('*', '')
+                .replaceAll(RegExp(r'\s+'), ' ')
+                .trim();
+            final coursesRes = await client
+                .from('courses')
+                .select('id, nama_mk')
+                .limit(20);
+            for (final row in coursesRes as List) {
+              final rowName = (row['nama_mk'] ?? '').toString().trim();
+              if (rowName.toLowerCase().contains(cleanName.toLowerCase()) ||
+                  cleanName.toLowerCase().contains(rowName.toLowerCase())) {
+                resolvedCourseId = row['id']?.toString();
+                break;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      final payload = <String, dynamic>{
+        'judul': assignment.judul,
+        'course_name': assignment.courseName,
+        'deskripsi': assignment.deskripsi,
+        'kategori': assignment.kategori,
+        'deadline': assignment.deadline.toIso8601String(),
+        'link_pengumpulan': assignment.linkPengumpulan,
+      };
+
+      if (resolvedCourseId != null && resolvedCourseId.length == 36) {
+        payload['course_id'] = resolvedCourseId;
+      }
+
+      try {
+        await client
+            .from('assignments')
+            .update(payload)
+            .eq('id', assignment.id);
+      } catch (updateErr) {
+        // Fallback jika kolom course_name belum ada di skema
+        final fallbackPayload = Map<String, dynamic>.from(payload)
+          ..remove('course_name');
+        await client
+            .from('assignments')
+            .update(fallbackPayload)
+            .eq('id', assignment.id);
+      }
+
+      // Perbarui objek di memori lokal agar UI sinkron
+      final idx = DummyData.assignments.indexWhere((a) => a.id == assignment.id);
+      if (idx != -1) {
+        DummyData.assignments[idx] = Assignment(
+          id: assignment.id,
+          courseId: resolvedCourseId ?? assignment.courseId,
+          courseName: assignment.courseName,
+          judul: assignment.judul,
+          deskripsi: assignment.deskripsi,
+          kategori: assignment.kategori,
+          deadline: assignment.deadline,
+          linkPengumpulan: assignment.linkPengumpulan,
+          status: DummyData.assignments[idx].status,
+        );
+      }
       return true;
     } catch (e) {
       debugPrint('Error update assignment di Supabase: $e');
@@ -796,12 +861,23 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
+      // 1. Hapus catatan student_assignments terkait terlebih dahulu agar tidak terkunci foreign key
+      try {
+        await client
+            .from('student_assignments')
+            .delete()
+            .eq('assignment_id', id);
+      } catch (saErr) {
+        debugPrint('Catatan student_assignments delete info: $saErr');
+      }
+
+      // 2. Hapus dari tabel assignments
       await client
           .from('assignments')
           .delete()
-          .eq('id', id)
-          .select('id')
-          .single();
+          .eq('id', id);
+
+      // 3. Hapus dari memori lokal
       DummyData.assignments.removeWhere((a) => a.id == id);
       return true;
     } catch (e) {
