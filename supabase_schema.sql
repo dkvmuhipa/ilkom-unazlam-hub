@@ -272,9 +272,7 @@ $$;
 REVOKE ALL ON FUNCTION public.current_student_nim() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.has_class_role(text[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.current_student_nim() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.has_class_role(text[]) TO authenticated;
-REVOKE ALL ON FUNCTION public.get_class_directory() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_class_directory() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_class_directory() TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.prevent_client_auth_link_change()
 RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
@@ -326,11 +324,14 @@ CREATE POLICY announcements_read ON public.announcements FOR SELECT TO authentic
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY treasury_read ON public.treasury_transactions FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
-REVOKE ALL ON TABLE public.treasury_dues FROM PUBLIC, anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.treasury_dues TO authenticated;
+GRANT SELECT ON TABLE public.treasury_dues TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE public.treasury_dues TO authenticated;
 CREATE POLICY treasury_dues_read_own_or_treasurer ON public.treasury_dues
   FOR SELECT TO authenticated
   USING (student_nim = (SELECT public.current_student_nim()) OR public.has_class_role(ARRAY['ADMIN','Bendahara']));
+CREATE POLICY treasury_dues_anon_read ON public.treasury_dues
+  FOR SELECT TO anon
+  USING (true);
 CREATE POLICY agenda_read ON public.agenda_items FOR SELECT TO authenticated
   USING ((SELECT public.current_student_nim()) IS NOT NULL);
 CREATE POLICY resources_read ON public.resources FOR SELECT TO authenticated

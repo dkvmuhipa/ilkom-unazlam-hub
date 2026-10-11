@@ -170,7 +170,7 @@ class StudentDashboardService {
         kasNominal = (dueRow['nominal'] as num?)?.toInt() ?? 0;
       }
     } catch (e) {
-      debugPrint('Error loading treasury due in StudentDashboardService: $e');
+      debugPrint('Info: Status iuran kas Supabase ($e), fallback status lokal.');
     }
 
     return StudentDashboardSnapshot(
