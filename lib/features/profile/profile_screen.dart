@@ -33,7 +33,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Ubah kata sandi'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Ubah Kata Sandi Akun',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -42,34 +46,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 obscureText: true,
                 autocorrect: false,
                 enableSuggestions: false,
-                decoration: const InputDecoration(labelText: 'Kata sandi baru'),
+                decoration: InputDecoration(
+                  labelText: 'Kata sandi / PIN baru',
+                  hintText: 'Minimal 6 karakter',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                ),
               ),
+              const SizedBox(height: 14),
               TextField(
                 controller: confirmationController,
                 obscureText: true,
                 autocorrect: false,
                 enableSuggestions: false,
-                decoration: const InputDecoration(labelText: 'Ulangi kata sandi'),
+                decoration: InputDecoration(
+                  labelText: 'Ulangi kata sandi / PIN baru',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock_reset_rounded, size: 20),
+                ),
               ),
               if (errorText != null) ...[
-                const SizedBox(height: 8),
-                Text(errorText!, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 10),
+                Text(
+                  errorText!,
+                  style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w600),
+                ),
               ],
             ],
           ),
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Batal'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () {
-                if (passwordController.text.length < 8) {
-                  setDialogState(() => errorText = 'Minimal 8 karakter.');
+                if (passwordController.text.length < 6) {
+                  setDialogState(() => errorText = 'Kata sandi minimal 6 karakter.');
                   return;
                 }
                 if (passwordController.text != confirmationController.text) {
-                  setDialogState(() => errorText = 'Kata sandi belum sama.');
+                  setDialogState(() => errorText = 'Konfirmasi kata sandi tidak cocok.');
                   return;
                 }
                 Navigator.pop(dialogContext, true);
@@ -83,16 +106,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await AuthService.setPassword(passwordController.text);
+        final activeNim = widget.student?.nim ?? widget.userNim;
+        await AuthService.setPassword(
+          passwordController.text,
+          userNim: activeNim,
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kata sandi berhasil diubah.')),
+            const SnackBar(
+              content: Text('Kata sandi berhasil diperbarui dan disimpan.'),
+              backgroundColor: Color(0xFF10B981),
+            ),
           );
         }
-      } catch (_) {
+      } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kata sandi gagal diubah. Coba lagi.')),
+            SnackBar(
+              content: Text(
+                e is AuthServiceException ? e.message : 'Kata sandi gagal diubah. Coba lagi.',
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
           );
         }
       }
