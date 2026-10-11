@@ -15,6 +15,12 @@ enum SoftPillVariant {
   rose, // Batal / Bahaya / Terlambat
   navy, // Info / Peran / Modul
   slate, // Netral / Nonaktif / Arsip
+  violet, // Akademik / Jadwal / Agenda
+  indigo, // Kelas / Kursus / Utama
+  teal, // Keuangan / Kas / Arsip
+  orange, // Notifikasi / Perhatian
+  sky, // Mahasiswa / Peserta / Direktori
+  pink, // Deadline / Tugas Mendesak
 }
 
 class SoftPillBadge extends StatelessWidget {
@@ -50,6 +56,24 @@ class SoftPillBadge extends StatelessWidget {
   factory SoftPillBadge.neutral({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
       SoftPillBadge(label: label, variant: SoftPillVariant.slate, icon: icon, showDot: showDot, fontSize: fontSize);
 
+  factory SoftPillBadge.violet({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.violet, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.indigo({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.indigo, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.teal({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.teal, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.orange({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.orange, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.sky({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.sky, icon: icon, showDot: showDot, fontSize: fontSize);
+
+  factory SoftPillBadge.pink({required String label, IconData? icon, bool showDot = false, double fontSize = 11.5}) =>
+      SoftPillBadge(label: label, variant: SoftPillVariant.pink, icon: icon, showDot: showDot, fontSize: fontSize);
+
   @override
   Widget build(BuildContext context) {
     Color bg;
@@ -81,6 +105,36 @@ class SoftPillBadge extends StatelessWidget {
         bg = const Color(0xFFF1F5F9);
         text = const Color(0xFF334155);
         border = const Color(0xFFE2E8F0);
+        break;
+      case SoftPillVariant.violet:
+        bg = AppColors.violetSoft; // #F5F3FF
+        text = AppColors.violetText; // #6D28D9
+        border = AppColors.violetBorder; // #DDD6FE
+        break;
+      case SoftPillVariant.indigo:
+        bg = AppColors.indigoSoft; // #EEF2FF
+        text = AppColors.indigoText; // #3730A3
+        border = AppColors.indigoBorder; // #C7D2FE
+        break;
+      case SoftPillVariant.teal:
+        bg = AppColors.tealSoft; // #F0FDFA
+        text = AppColors.tealText; // #0F766E
+        border = AppColors.tealBorder; // #99F6E4
+        break;
+      case SoftPillVariant.orange:
+        bg = AppColors.orangeSoft; // #FFF7ED
+        text = AppColors.orangeText; // #C2410C
+        border = AppColors.orangeBorder; // #FED7AA
+        break;
+      case SoftPillVariant.sky:
+        bg = AppColors.skySoft; // #E0F2FE
+        text = AppColors.sky; // #0284C7
+        border = const Color(0xFFBAE6FD); // #BAE6FD
+        break;
+      case SoftPillVariant.pink:
+        bg = AppColors.pinkSoft; // #FDF2F8
+        text = AppColors.pinkText; // #BE185D
+        border = AppColors.pinkBorder; // #FBCFE8
         break;
     }
 

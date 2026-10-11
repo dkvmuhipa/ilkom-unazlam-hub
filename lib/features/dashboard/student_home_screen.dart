@@ -241,31 +241,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.school_rounded, size: 13, color: AppColors.primary),
-              const SizedBox(width: 5),
-              Text(
-                'Semester ${student.semester}',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
+        SoftPillBadge.indigo(
+          label: 'Semester ${student.semester}',
+          icon: Icons.school_rounded,
         ),
       ],
     );
@@ -435,6 +413,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               color: const Color(0xFF0F172A),
               border: Border.all(color: borderColor),
               boxShadow: [
+                ...AppColors.glow(AppColors.primary, alpha: 0.22, blur: 8),
                 BoxShadow(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.08),
                   blurRadius: 6,
@@ -670,6 +649,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     required Color textColor,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -679,12 +659,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 35,
+              height: 35,
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: color.withValues(alpha: 0.18), width: 0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withValues(alpha: 0.22), width: 0.8),
+                boxShadow: AppColors.glow(color, alpha: isDark ? 0.22 : 0.16, blur: 5),
               ),
               child: Icon(icon, color: color, size: 17),
             ),
@@ -893,7 +874,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 decoration: BoxDecoration(
                   color: item.bgColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: item.color.withValues(alpha: 0.16), width: 0.8),
+                  border: Border.all(color: item.color.withValues(alpha: 0.20), width: 0.8),
+                  boxShadow: AppColors.glow(item.color, alpha: isDark ? 0.24 : 0.16, blur: 7),
                 ),
                 child: Icon(item.icon, color: item.color, size: 21),
               ),
@@ -976,20 +958,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF26223D) : const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${_pendingAssignments.length} Tugas Aktif',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF7C3AED),
-                    ),
-                  ),
+                SoftPillBadge.violet(
+                  label: '${_pendingAssignments.length} Tugas Aktif',
+                  fontSize: 10.5,
                 ),
               ],
             ),
