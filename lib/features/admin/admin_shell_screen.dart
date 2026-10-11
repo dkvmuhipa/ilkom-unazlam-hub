@@ -1356,92 +1356,107 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
               // Class List
               ..._classes.where((cls) => '${cls.nama} ${cls.prodi} ${cls.academicYear}'.toLowerCase().contains(_classSearchQuery.toLowerCase())).map((cls) {
+                final studentCount = (_managedAccounts.isNotEmpty ? _managedAccounts : DummyData.students)
+                    .where((s) => !s.isAdmin && (s.kelas.toLowerCase() == cls.nama.toLowerCase() || s.semester == cls.semester))
+                    .length;
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F0FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.groups_rounded,
-                          color: Color(0xFF5B3DE8),
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showClassDetail(cls),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
                           children: [
-                            Text(
-                              cls.nama,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF111827),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F0FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.groups_rounded,
+                                color: Color(0xFF5B3DE8),
+                                size: 22,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear} • ${cls.jumlahMahasiswa} mahasiswa',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B7280),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cls.nama,
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF111827),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear} • $studentCount mahasiswa',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: Color(0xFF9CA3AF),
+                                size: 20,
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'detail') {
+                                  _showClassDetail(cls);
+                                } else if (val == 'hapus' && cls.id != null) {
+                                  if (await _confirmDelete('Hapus kelas ${cls.nama}?')) {
+                                    try {
+                                      await AdminAcademicService.deleteClass(cls.id!);
+                                      _recordAudit(action: 'DELETE', module: 'KELAS', description: 'Menghapus kelas ${cls.nama}, semester ${cls.semester}.', metadata: {'class_id': cls.id});
+                                      await _loadAcademicData();
+                                    }
+                                    catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                                  }
+                                } else if (val == 'edit') {
+                                  _showClassDialog(existing: cls);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'detail',
+                                  child: Text('Detail Kelas'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Data'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'hapus',
+                                  child: Text(
+                                    'Hapus Kelas',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      PopupMenuButton<String>(
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Color(0xFF9CA3AF),
-                          size: 20,
-                        ),
-                        onSelected: (val) async {
-                          if (val == 'hapus' && cls.id != null) {
-                            if (await _confirmDelete('Hapus kelas ${cls.nama}?')) {
-                              try {
-                                await AdminAcademicService.deleteClass(cls.id!);
-                                _recordAudit(action: 'DELETE', module: 'KELAS', description: 'Menghapus kelas ${cls.nama}, semester ${cls.semester}.', metadata: {'class_id': cls.id});
-                                await _loadAcademicData();
-                              }
-                              catch (error) { _showAdminMessage(error.toString(), isError: true); }
-                            }
-                          } else if (val == 'edit') {
-                            _showClassDialog(existing: cls);
-                          }
-                        },
-                        itemBuilder: (ctx) => [
-                          const PopupMenuItem(
-                            value: 'detail',
-                            child: Text('Detail Kelas'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit Data'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'hapus',
-                            child: Text(
-                              'Hapus Kelas',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 );
               }),
@@ -1449,6 +1464,231 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showClassDetail(ClassItem cls) {
+    final classStudents = (_managedAccounts.isNotEmpty ? _managedAccounts : DummyData.students)
+        .where((s) => !s.isAdmin && (s.kelas.toLowerCase() == cls.nama.toLowerCase() || s.semester == cls.semester))
+        .toList();
+    final classCourses = (_courses.isNotEmpty ? _courses : DummyData.courses);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F0FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.groups_rounded, color: Color(0xFF5B3DE8), size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cls.nama,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
+                      ),
+                      Text(
+                        '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear}',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Kapasitas', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        const SizedBox(height: 2),
+                        Text('${cls.kapasitas} Kursi', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Mahasiswa Aktif', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        const SizedBox(height: 2),
+                        Text('${classStudents.length} Mahasiswa', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Mata Kuliah', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        const SizedBox(height: 2),
+                        Text('${classCourses.length} MK', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8))),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      final csv = ExportService.exportAttendanceCsv(cls.nama);
+                      ExportService.showExportSheet(
+                        context,
+                        title: 'Presensi ${cls.nama}',
+                        fileName: 'presensi_${cls.nama.replaceAll(' ', '_')}.csv',
+                        content: csv,
+                        subtitle: 'Daftar Presensi Kelas',
+                      );
+                    },
+                    icon: const Icon(Icons.download_rounded, size: 16),
+                    label: const Text('Ekspor Presensi', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showClassDialog(existing: cls);
+                    },
+                    icon: const Icon(Icons.edit_rounded, size: 16),
+                    label: const Text('Edit Kelas', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5B3DE8),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Mahasiswa Terdaftar (${classStudents.length})',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF111827)),
+            ),
+            const SizedBox(height: 10),
+            if (classStudents.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('Belum ada mahasiswa yang terdaftar di kelas ini.', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+              )
+            else
+              ...classStudents.map((s) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: const Color(0xFFF3F0FF),
+                      child: Text(
+                        _getInitials(s.nama),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s.nama, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF111827))),
+                          Text('NIM ${s.nim} • ${s.jabatan}', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9CA3AF)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _navigateTo('detail_mahasiswa', student: s);
+                      },
+                    ),
+                  ],
+                ),
+              )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1830,17 +2070,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                 color: Color(0xFF9CA3AF),
                                 size: 20,
                               ),
-                              onSelected: (val) {
+                              onSelected: (val) async {
                                 if (val == 'detail') {
                                   _navigateTo('detail_mahasiswa', student: s);
+                                } else if (val == 'edit') {
+                                  await _editManagedAccount(s);
+                                  if (mounted) setState(() {});
                                 } else if (val == 'toggle') {
-                                  _setManagedAccountActive(s, !s.isAktif);
+                                  await _setManagedAccountActive(s, !s.isAktif);
+                                  if (mounted) setState(() {});
                                 }
                               },
                               itemBuilder: (ctx) => [
                                 const PopupMenuItem(
                                   value: 'detail',
                                   child: Text('Lihat Detail'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Profil'),
                                 ),
                                 PopupMenuItem(
                                   value: 'toggle',
@@ -1887,10 +2135,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         ),
       ],
     );
-  }
-
-  void _showTambahMahasiswaDialog() {
-    _showCreateStudentAccountDialog();
   }
 
   // ==========================================
@@ -2092,6 +2336,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ),
                 ),
               ] else if (_detailTab == 1) ...[
+                // Tab Kelas & Mata Kuliah Mahasiswa
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -2099,36 +2344,106 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Kelas yang Diikuti',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13.5,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F0FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.class_outlined, color: Color(0xFF5B3DE8), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.kelas,
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF111827)),
+                                ),
+                                Text(
+                                  '${s.prodi} • Semester ${s.semester}',
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                            ),
+                            child: Text(
+                              '${_courses.isNotEmpty ? _courses.length : DummyData.courses.length} MK Terdaftar',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 10),
-                      Text(
-                        '• ILKOM Semester 1 (Pagi) - Angkatan 2026',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4B5563),
-                        ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Daftar Mata Kuliah Semester Ini:',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF374151)),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        '• Beban SKS: 20 SKS Paket Semester 1',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4B5563),
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      ...(_courses.isNotEmpty ? _courses : DummyData.courses).map((course) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEDE9FE),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  course.kode,
+                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF5B3DE8)),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      course.nama,
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF1F2937)),
+                                    ),
+                                    Text(
+                                      '${course.dosen} • ${course.sks} SKS',
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${course.sks} SKS',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
               ] else ...[
+                // Tab Riwayat & KHS Mahasiswa
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -2136,31 +2451,118 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Riwayat Aktivitas',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13.5,
+                      const Text(
+                        'Ringkasan Kehadiran & Akademik',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF111827)),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFA7F3D0)),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Tingkat Kehadiran', style: TextStyle(fontSize: 10.5, color: Color(0xFF065F46))),
+                                  SizedBox(height: 4),
+                                  Text('92%', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
+                                  Text('Kategori: Sangat Baik', style: TextStyle(fontSize: 9.5, color: Color(0xFF047857), fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFBBF7D0)),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Iuran Kas Kelas', style: TextStyle(fontSize: 10.5, color: Color(0xFF166534))),
+                                  SizedBox(height: 4),
+                                  Text('Lunas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF16A34A))),
+                                  Text('Bulan Oktober 2026', style: TextStyle(fontSize: 9.5, color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Aksi Rekap Mahasiswa:',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF374151)),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          final csv = ExportService.exportPersonalAttendanceCsv(
+                            studentNim: s.nim,
+                            studentName: s.nama,
+                            history: [],
+                          );
+                          ExportService.showExportSheet(
+                            context,
+                            title: 'Presensi ${s.nama}',
+                            fileName: 'presensi_${s.nim}.csv',
+                            content: csv,
+                            subtitle: 'Rekap Presensi Individual',
+                          );
+                        },
+                        icon: const Icon(Icons.checklist_rtl_rounded, size: 16),
+                        label: const Text('Ekspor Rekap Presensi Mahasiswa'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF5B3DE8),
+                          side: const BorderSide(color: Color(0xFF5B3DE8)),
+                          minimumSize: const Size.fromHeight(40),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Text(
-                        '• Terdaftar pada KRS Semester 1 Ganjil 2026',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4B5563),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '• Presensi Kehadiran: 90% (Tertib)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF10B981),
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          final now = DateTime.now();
+                          final dummyGrades = [
+                            StudentCourseGrade(id: '1', studentNim: s.nim, courseId: 'c1', courseCode: 'IK101', courseName: 'Pengantar Ilmu Komunikasi', sks: 3, semester: 1, academicYear: '2026/2027', letterGrade: 'A', numericScore: 88, updatedAt: now),
+                            StudentCourseGrade(id: '2', studentNim: s.nim, courseId: 'c2', courseCode: 'IK102', courseName: 'Teori Komunikasi', sks: 3, semester: 1, academicYear: '2026/2027', letterGrade: 'A-', numericScore: 82, updatedAt: now),
+                            StudentCourseGrade(id: '3', studentNim: s.nim, courseId: 'c3', courseCode: 'IK103', courseName: 'Komunikasi Antarpribadi', sks: 3, semester: 1, academicYear: '2026/2027', letterGrade: 'B+', numericScore: 78, updatedAt: now),
+                            StudentCourseGrade(id: '4', studentNim: s.nim, courseId: 'c4', courseCode: 'IK104', courseName: 'Dasar-Dasar Jurnalistik', sks: 3, semester: 1, academicYear: '2026/2027', letterGrade: 'A', numericScore: 90, updatedAt: now),
+                          ];
+                          final csv = ExportService.exportKhsCsv(
+                            student: s,
+                            grades: dummyGrades,
+                            gpa: 3.75,
+                            totalSks: 12,
+                          );
+                          ExportService.showExportSheet(
+                            context,
+                            title: 'KHS ${s.nama}',
+                            fileName: 'khs_${s.nim}.csv',
+                            content: csv,
+                            subtitle: 'Kartu Hasil Studi (KHS)',
+                          );
+                        },
+                        icon: const Icon(Icons.school_outlined, size: 16),
+                        label: const Text('Ekspor Kartu Hasil Studi (KHS)'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0284C7),
+                          side: const BorderSide(color: Color(0xFF0284C7)),
+                          minimumSize: const Size.fromHeight(40),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ],
@@ -2174,14 +2576,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Form edit profil untuk ${s.nama} dibuka',
-                            ),
-                          ),
-                        );
+                      onPressed: () async {
+                        await _editManagedAccount(s);
+                        if (mounted) setState(() {});
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF5B3DE8),
@@ -2191,38 +2588,41 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
-                        'Edit',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Edit Profil', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        setState(() => s.isAktif = !s.isAktif);
-                        SupabaseRepository.toggleStudentStatus(
-                          s.nim,
-                          s.isAktif,
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Status mahasiswa ${s.nama} diubah!'),
-                          ),
-                        );
+                      onPressed: () async {
+                        await _setManagedAccountActive(s, !s.isAktif);
+                        if (mounted) setState(() {});
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFEF4444),
-                        side: const BorderSide(color: Color(0xFFEF4444)),
+                        foregroundColor: s.isAktif ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                        side: BorderSide(color: s.isAktif ? const Color(0xFFEF4444) : const Color(0xFF10B981)),
                         minimumSize: const Size.fromHeight(46),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: Text(
-                        s.isAktif ? 'Nonaktifkan' : 'Aktifkan',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(s.isAktif ? Icons.block_rounded : Icons.check_circle_outline_rounded, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            s.isAktif ? 'Nonaktifkan' : 'Aktifkan Akun',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -2316,88 +2716,99 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ...filtered.map((d) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2FE),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Color(0xFF0284C7),
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showLecturerDetail(d),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
                           children: [
-                            Text(
-                              d.nama,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF111827),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.person_rounded,
+                                color: Color(0xFF0284C7),
+                                size: 22,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              d.mataKuliah,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B7280),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    d.nama,
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF111827),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    d.mataKuliah,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: Color(0xFF9CA3AF),
+                                size: 20,
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'detail') {
+                                  _showLecturerDetail(d);
+                                } else if (val == 'hapus' && await _confirmDelete('Hapus data dosen ${d.nama}?')) {
+                                  try {
+                                    await AdminAcademicService.deleteLecturer(d.id);
+                                    _recordAudit(action: 'DELETE', module: 'DOSEN', description: 'Menghapus data dosen ${d.nama}.', metadata: {'lecturer_id': d.id});
+                                    await _loadAcademicData();
+                                  }
+                                  catch (error) { _showAdminMessage(error.toString(), isError: true); }
+                                } else if (val == 'edit') {
+                                  _showLecturerDialog(existing: d);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'detail',
+                                  child: Text('Detail Dosen'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Data'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'hapus',
+                                  child: Text(
+                                    'Hapus Dosen',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      PopupMenuButton<String>(
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Color(0xFF9CA3AF),
-                          size: 20,
-                        ),
-                        onSelected: (val) async {
-                          if (val == 'hapus' && await _confirmDelete('Hapus data dosen ${d.nama}?')) {
-                            try {
-                              await AdminAcademicService.deleteLecturer(d.id);
-                              _recordAudit(action: 'DELETE', module: 'DOSEN', description: 'Menghapus data dosen ${d.nama}.', metadata: {'lecturer_id': d.id});
-                              await _loadAcademicData();
-                            }
-                            catch (error) { _showAdminMessage(error.toString(), isError: true); }
-                          } else if (val == 'edit') {
-                            _showLecturerDialog(existing: d);
-                          }
-                        },
-                        itemBuilder: (ctx) => [
-                          const PopupMenuItem(
-                            value: 'detail',
-                            child: Text('Detail Dosen'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit Data'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'hapus',
-                            child: Text(
-                              'Hapus Dosen',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 );
               }),
@@ -2405,6 +2816,151 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showLecturerDetail(LecturerItem d) {
+    final taughtCourses = (_courses.isNotEmpty ? _courses : DummyData.courses).where((c) {
+      return c.dosen.toLowerCase().contains(d.nama.toLowerCase()) ||
+          d.mataKuliah.toLowerCase().contains(c.nama.toLowerCase());
+    }).toList();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFFE0F2FE),
+                  child: const Icon(Icons.person_rounded, color: Color(0xFF0284C7), size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.nama,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
+                      ),
+                      Text(
+                        d.email.isNotEmpty ? d.email : 'Email belum diatur',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Mata Kuliah Utama Diampu:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+                  const SizedBox(height: 4),
+                  Text(d.mataKuliah, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                ],
+              ),
+            ),
+            if (taughtCourses.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text('Mata Kuliah Terkait dalam Jadwal:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+              const SizedBox(height: 6),
+              ...taughtCourses.map((c) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF059669)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('${c.kode} - ${c.nama} (${c.sks} SKS)', style: const TextStyle(fontSize: 11.5, color: Color(0xFF374151))),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showLecturerDialog(existing: d);
+                    },
+                    icon: const Icon(Icons.edit_rounded, size: 16),
+                    label: const Text('Edit Profil'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF5B3DE8),
+                      side: const BorderSide(color: Color(0xFF5B3DE8)),
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      if (await _confirmDelete('Hapus data dosen ${d.nama}?')) {
+                        try {
+                          await AdminAcademicService.deleteLecturer(d.id);
+                          _recordAudit(action: 'DELETE', module: 'DOSEN', description: 'Menghapus dosen ${d.nama}.', metadata: {'lecturer_id': d.id});
+                          await _loadAcademicData();
+                          _showAdminMessage('Data dosen berhasil dihapus.');
+                        } catch (error) {
+                          _showAdminMessage(error.toString(), isError: true);
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    label: const Text('Hapus Dosen'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFDC2626)),
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2523,89 +3079,100 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.description_outlined,
-                          color: color,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showCourseDetail(c),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
                           children: [
-                            Text(
-                              c.nama,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF111827),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.description_outlined,
+                                color: color,
+                                size: 22,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${c.kode} • Semester 1',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B7280),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    c.nama,
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF111827),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${c.kode} • ${c.sks} SKS • ${c.dosen}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: Color(0xFF9CA3AF),
+                                size: 20,
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'detail') {
+                                  _showCourseDetail(c);
+                                } else if (val == 'hapus' && await _confirmDelete('Hapus mata kuliah ${c.nama}?')) {
+                                  final ok = await SupabaseRepository.deleteCourse(c.id);
+                                  if (ok) {
+                                    _recordAudit(action: 'DELETE', module: 'MATA_KULIAH', description: 'Menghapus mata kuliah ${c.nama} (${c.kode}).', metadata: {'course_id': c.id});
+                                    await _loadAcademicData();
+                                    _showAdminMessage('Mata kuliah dihapus.');
+                                  }
+                                  else { _showAdminMessage('Mata kuliah gagal dihapus.', isError: true); }
+                                } else if (val == 'edit') {
+                                  _showTambahMataKuliahDialog(existing: c);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'detail',
+                                  child: Text('Detail Mata Kuliah'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Data'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'hapus',
+                                  child: Text(
+                                    'Hapus',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      PopupMenuButton<String>(
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Color(0xFF9CA3AF),
-                          size: 20,
-                        ),
-                        onSelected: (val) async {
-                          if (val == 'hapus' && await _confirmDelete('Hapus mata kuliah ${c.nama}?')) {
-                            final ok = await SupabaseRepository.deleteCourse(c.id);
-                            if (ok) {
-                              _recordAudit(action: 'DELETE', module: 'MATA_KULIAH', description: 'Menghapus mata kuliah ${c.nama} (${c.kode}).', metadata: {'course_id': c.id});
-                              await _loadAcademicData();
-                              _showAdminMessage('Mata kuliah dihapus.');
-                            }
-                            else { _showAdminMessage('Mata kuliah gagal dihapus.', isError: true); }
-                          } else if (val == 'edit') {
-                            _showTambahMataKuliahDialog(existing: c);
-                          }
-                        },
-                        itemBuilder: (ctx) => [
-                          const PopupMenuItem(
-                            value: 'detail',
-                            child: Text('Detail Mata Kuliah'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit Data'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'hapus',
-                            child: Text(
-                              'Hapus',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 );
               }),
@@ -2613,6 +3180,157 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showCourseDetail(Course c) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.menu_book_rounded, color: Color(0xFF5B3DE8), size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        c.nama,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
+                      ),
+                      Text(
+                        '${c.kode} • ${c.sks} SKS • Semester 1',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 16, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 8),
+                      const Text('Dosen Pengampu:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
+                      const Spacer(),
+                      Expanded(
+                        child: Text(c.dosen, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 8),
+                      const Text('Jadwal:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
+                      const Spacer(),
+                      Text('${c.hari}, ${c.jamMulai} - ${c.jamSelesai}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.meeting_room_outlined, size: 16, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 8),
+                      const Text('Ruangan:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
+                      const Spacer(),
+                      Text(c.ruangan, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      final csv = ExportService.exportAttendanceCsv(c.nama);
+                      ExportService.showExportSheet(
+                        context,
+                        title: 'Presensi ${c.nama}',
+                        fileName: 'presensi_${c.kode}.csv',
+                        content: csv,
+                        subtitle: 'Rekap Presensi Mata Kuliah',
+                      );
+                    },
+                    icon: const Icon(Icons.download_rounded, size: 16),
+                    label: const Text('Ekspor Presensi'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showTambahMataKuliahDialog(existing: c);
+                    },
+                    icon: const Icon(Icons.edit_rounded, size: 16),
+                    label: const Text('Edit Matkul'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5B3DE8),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2862,6 +3580,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
     setState(() => _accountFilter = 'Mahasiswa');
     await _loadManagedAccounts();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Undangan akun dikirim ke ${profile.email}.'),
@@ -2892,6 +3611,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           (item) => item.nim == account.nim,
         );
         if (index >= 0) _managedAccounts[index] = updated;
+        if (_selectedStudent?.nim == updated.nim) _selectedStudent = updated;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -3236,13 +3956,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               _buildSettingCard(
                 icon: Icons.notifications_none_rounded,
                 title: 'Notifikasi',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pengaturan notifikasi push aktif'),
-                    ),
-                  );
-                },
+                onTap: _showNotificationSettingsDialog,
               ),
               _buildSettingCard(
                 icon: Icons.info_outline_rounded,
@@ -3399,7 +4113,83 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
+  void _showNotificationSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active_outlined, color: Color(0xFF5B3DE8), size: 22),
+            SizedBox(width: 10),
+            Text('Pengaturan Notifikasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F0FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE9D5FF)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.token_rounded, color: Color(0xFF5B3DE8), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '$_registeredTokensCount token FCM aktif terdaftar dari instalasi mahasiswa.',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF5B3DE8)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Status Layanan:',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '• Firebase Cloud Messaging (FCM v1) Terintegrasi\n• Supabase Database Webhook & Edge Function Aktif\n• Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
+              style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF4B5563)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showBroadcastAnnouncementDialog();
+            },
+            icon: const Icon(Icons.campaign_outlined, size: 16),
+            label: const Text('Kirim Pengumuman'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B3DE8),
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAppProfileDialog() {
+    final activeYear = _academicYears.firstWhere(
+      (y) => y.isAktif,
+      orElse: () => AcademicYearItem(tahun: '2026/2027', isAktif: true),
+    ).tahun;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -3409,29 +4199,27 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           'Profil Aplikasi',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Nama Aplikasi: ILKOM UNAZLAM Hub',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            const Text(
+              'ILKOM UNAZLAM Hub',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF111827)),
             ),
-            SizedBox(height: 6),
-            Text(
-              'Target: Mahasiswa & Pengurus Kelas',
-              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+            const SizedBox(height: 4),
+            const Text(
+              'Platform Manajemen Kelas & Akademik Terpadu',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
             ),
-            SizedBox(height: 4),
-            Text(
-              'Semester: 1 (Ganjil 2026/2027)',
-              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Versi: 2.4.0 (RBAC Production Ready)',
-              style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
-            ),
+            const Divider(height: 20),
+            _buildProfileInfoRow('Target Pengguna', 'Mahasiswa & Pengurus Kelas'),
+            _buildProfileInfoRow('Tahun Akademik', activeYear),
+            _buildProfileInfoRow('Kelas Terdaftar', '${_classes.length} Kelas'),
+            _buildProfileInfoRow('Dosen Pengampu', '${_lecturers.length} Dosen'),
+            _buildProfileInfoRow('Mata Kuliah', '${_courses.length} MK'),
+            _buildProfileInfoRow('Basis Data', SupabaseService.client != null ? 'Supabase Connected 🟢' : 'Offline / Standalone 🟡'),
+            _buildProfileInfoRow('Versi Rilis', 'v2.5.0 Production'),
           ],
         ),
         actions: [
@@ -3442,6 +4230,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 11.5, color: Color(0xFF111827), fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -3534,10 +4340,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // ==========================================
   // EXTRA: ROLE & PERMISSION MATRIX
   // ==========================================
+  String _roleFilter = 'Semua';
+  String _roleSearchQuery = '';
+
   Widget _buildRolePermission() {
-    final students = DummyData.students
-        .where((s) => s.role != 'ADMIN')
-        .toList();
+    final sourceStudents = _managedAccounts.isNotEmpty
+        ? _managedAccounts.where((s) => !s.isAdmin).toList()
+        : DummyData.students.where((s) => s.role != 'ADMIN').toList();
+
+    final filtered = sourceStudents.where((s) {
+      if (_roleFilter != 'Semua' && s.jabatan != _roleFilter) return false;
+      if (_roleSearchQuery.isNotEmpty) {
+        final q = _roleSearchQuery.toLowerCase();
+        return s.nama.toLowerCase().contains(q) || s.nim.contains(q);
+      }
+      return true;
+    }).toList();
+
+    final roleFilters = ['Semua', 'Ketua Kelas', 'Wakil Ketua', 'Bendahara', 'Sekretaris', 'Mahasiswa'];
 
     return Column(
       children: [
@@ -3560,14 +4380,14 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 child: const Row(
                   children: [
                     Icon(
-                      Icons.info_outline,
+                      Icons.shield_outlined,
                       color: Color(0xFF5B3DE8),
-                      size: 20,
+                      size: 22,
                     ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Role Sistem adalah MAHASISWA. Atur Jabatan Struktural untuk memberikan wewenang operasional kelas.',
+                        'Role Sistem adalah MAHASISWA. Atur Jabatan Struktural untuk memberikan wewenang operasional kelas (Presensi, Pengumuman, Agenda, Kas).',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF5B3DE8),
@@ -3578,107 +4398,174 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              ...students.map((s) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: const Color(0xFFF3F0FF),
-                        child: Text(
-                          _getInitials(s.nama),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF5B3DE8),
-                          ),
-                        ),
+              // Search Box
+              _buildSearchBox(
+                hintText: 'Cari nama atau NIM mahasiswa...',
+                onChanged: (val) => setState(() => _roleSearchQuery = val),
+              ),
+              const SizedBox(height: 12),
+
+              // Filter Chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: roleFilters.map((f) {
+                    final isSel = _roleFilter == f;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(f),
+                        selected: isSel,
+                        selectedColor: const Color(0xFFEDE9FE),
+                        onSelected: (_) => setState(() => _roleFilter = f),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              s.nama,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF111827),
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              if (filtered.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 36),
+                  child: Center(
+                    child: Text(
+                      'Tidak ada mahasiswa yang cocok dengan filter.',
+                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12.5),
+                    ),
+                  ),
+                )
+              else
+                ...filtered.map((s) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: const Color(0xFFF3F0FF),
+                          child: Text(
+                            _getInitials(s.nama),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF5B3DE8),
                             ),
-                            Text(
-                              'NIM ${s.nim}',
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                s.nama,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF111827),
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
+                              Text(
+                                'NIM ${s.nim} • Semester ${s.semester}',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: DropdownButton<String>(
+                            value: s.jabatan,
+                            underline: const SizedBox(),
+                            isDense: true,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF5B3DE8),
                             ),
-                          ],
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Ketua Kelas',
+                                child: Text('Ketua Kelas'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Wakil Ketua',
+                                child: Text('Wakil Ketua'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Bendahara',
+                                child: Text('Bendahara'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Sekretaris',
+                                child: Text('Sekretaris'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Mahasiswa',
+                                child: Text('Mahasiswa'),
+                              ),
+                            ],
+                            onChanged: (val) async {
+                              if (val != null && val != s.jabatan) {
+                                final previous = s.jabatan;
+                                final ok = await SupabaseRepository.updateStudentJabatan(s.nim, val);
+                                if (!mounted) return;
+                                if (ok) {
+                                  setState(() {
+                                    s.jabatan = val;
+                                    final idx = _managedAccounts.indexWhere((m) => m.nim == s.nim);
+                                    if (idx >= 0) _managedAccounts[idx].jabatan = val;
+                                    if (_selectedStudent?.nim == s.nim) _selectedStudent?.jabatan = val;
+                                  });
+                                  _recordAudit(
+                                    action: 'UPDATE',
+                                    module: 'ROLE',
+                                    description: 'Mengubah jabatan ${s.nama} (${s.nim}) dari $previous menjadi $val.',
+                                    metadata: {'nim': s.nim, 'from': previous, 'to': val},
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Jabatan ${s.nama} berhasil diubah menjadi $val.'),
+                                      backgroundColor: const Color(0xFF059669),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Gagal menyimpan jabatan. Coba lagi.'),
+                                      backgroundColor: Color(0xFFB91C1C),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      DropdownButton<String>(
-                        value: s.jabatan,
-                        underline: const SizedBox(),
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF5B3DE8),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Ketua Kelas',
-                            child: Text('Ketua Kelas'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Wakil Ketua',
-                            child: Text('Wakil Ketua'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Bendahara',
-                            child: Text('Bendahara'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Sekretaris',
-                            child: Text('Sekretaris'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Mahasiswa',
-                            child: Text('Mahasiswa'),
-                          ),
-                        ],
-                        onChanged: (val) async {
-                          if (val != null && val != s.jabatan) {
-                            final previous = s.jabatan;
-                            final ok = await SupabaseRepository.updateStudentJabatan(s.nim, val);
-                            if (!mounted) return;
-                            if (ok) {
-                              setState(() => s.jabatan = val);
-                              _recordAudit(action: 'UPDATE', module: 'ROLE', description: 'Mengubah jabatan ${s.nama} (${s.nim}) dari $previous menjadi $val.', metadata: {'nim': s.nim, 'from': previous, 'to': val});
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Jabatan ${s.nama} diubah menjadi $val')));
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan jabatan. Coba lagi.'), backgroundColor: Color(0xFFB91C1C)));
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              }),
+                      ],
+                    ),
+                  );
+                }),
             ],
           ),
         ),
@@ -3711,34 +4598,112 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               }
               final report = snapshot.data!;
               return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            children: [
-              _buildReportCard(
-                title: 'Rekap Presensi Seluruh Kelas',
-                subtitle: report['attendance']!,
-                icon: Icons.checklist_rounded,
-                color: const Color(0xFF10B981),
-              ),
-              _buildReportCard(
-                title: 'Laporan Keuangan Kas Kelas',
-                subtitle: report['treasury']!,
-                icon: Icons.account_balance_wallet_outlined,
-                color: const Color(0xFF5B3DE8),
-              ),
-              _buildReportCard(
-                title: 'Distribusi Tugas Mahasiswa',
-                subtitle: report['assignments']!,
-                icon: Icons.assignment_outlined,
-                color: const Color(0xFFF59E0B),
-              ),
-              _buildReportCard(
-                title: 'Akun Mahasiswa Aktif',
-                subtitle: report['students']!,
-                icon: Icons.inventory_2_outlined,
-                color: const Color(0xFF0284C7),
-              ),
-            ],
-          );
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F0FF),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE9D5FF)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Color(0xFF5B3DE8), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Ketuk laporan untuk melihat pratinjau data dan mengekspor berkas dalam format CSV / Excel.',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFF5B3DE8), fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildReportCard(
+                    title: 'Rekap Presensi Seluruh Kelas',
+                    subtitle: report['attendance']!,
+                    icon: Icons.checklist_rounded,
+                    color: const Color(0xFF10B981),
+                    onDownload: () {
+                      final csv = ExportService.exportAttendanceCsv('Semua Mata Kuliah');
+                      ExportService.showExportSheet(
+                        context,
+                        title: 'Rekap Presensi Mahasiswa',
+                        fileName: 'rekap_presensi_semua_kelas.csv',
+                        content: csv,
+                        subtitle: 'Daftar Presensi Seluruh Kelas',
+                      );
+                    },
+                  ),
+                  _buildReportCard(
+                    title: 'Laporan Keuangan Kas Kelas',
+                    subtitle: report['treasury']!,
+                    icon: Icons.account_balance_wallet_outlined,
+                    color: const Color(0xFF5B3DE8),
+                    onDownload: () async {
+                      List<TreasuryTransaction> txs = DummyData.treasuryTransactions;
+                      try {
+                        final live = await SupabaseRepository.getTreasuryTransactions();
+                        if (live.isNotEmpty) txs = live;
+                      } catch (_) {}
+                      if (!mounted) return;
+                      final csv = ExportService.exportTreasuryCsv(transactions: txs);
+                      if (context.mounted) {
+                        ExportService.showExportSheet(
+                          context,
+                          title: 'Laporan Kas Kelas',
+                          fileName: 'laporan_kas_kelas_${DateTime.now().year}.csv',
+                          content: csv,
+                          subtitle: 'Rekap Transaksi & Saldo Kas Kelas',
+                        );
+                      }
+                    },
+                  ),
+                  _buildReportCard(
+                    title: 'Distribusi Tugas Mahasiswa',
+                    subtitle: report['assignments']!,
+                    icon: Icons.assignment_outlined,
+                    color: const Color(0xFFF59E0B),
+                    onDownload: () async {
+                      List<Assignment> asgs = DummyData.assignments;
+                      try {
+                        final live = await SupabaseRepository.getAssignments();
+                        if (live.isNotEmpty) asgs = live;
+                      } catch (_) {}
+                      if (!mounted) return;
+                      final csv = ExportService.exportAssignmentsCsv(assignments: asgs);
+                      if (context.mounted) {
+                        ExportService.showExportSheet(
+                          context,
+                          title: 'Distribusi Tugas Kuliah',
+                          fileName: 'rekap_distribusi_tugas.csv',
+                          content: csv,
+                          subtitle: 'Daftar Tugas dan Tenggat Pengumpulan',
+                        );
+                      }
+                    },
+                  ),
+                  _buildReportCard(
+                    title: 'Akun Mahasiswa Aktif',
+                    subtitle: report['students']!,
+                    icon: Icons.inventory_2_outlined,
+                    color: const Color(0xFF0284C7),
+                    onDownload: () {
+                      final students = _managedAccounts.isNotEmpty ? _managedAccounts : DummyData.students;
+                      final csv = ExportService.exportStudentsCsv(students: students);
+                      ExportService.showExportSheet(
+                        context,
+                        title: 'Daftar Akun Mahasiswa Terdaftar',
+                        fileName: 'data_mahasiswa_aktif.csv',
+                        content: csv,
+                        subtitle: 'Master Data Profil Mahasiswa',
+                      );
+                    },
+                  ),
+                ],
+              );
             },
           ),
         ),
@@ -3751,55 +4716,82 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required String subtitle,
     required IconData icon,
     required Color color,
+    required VoidCallback onDownload,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onDownload,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13.5,
-                    color: Color(0xFF111827),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF6B7280),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.file_download_outlined, color: color, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        'CSV',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.file_download_outlined,
-            color: Color(0xFF9CA3AF),
-            size: 22,
-          ),
-        ],
+        ),
       ),
     );
   }

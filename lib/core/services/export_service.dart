@@ -131,6 +131,44 @@ class ExportService {
     return buffer.toString();
   }
 
+  /// Export Rekap Data Mahasiswa to CSV Format
+  static String exportStudentsCsv({
+    required List<StudentProfile> students,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln(
+      'No,NIM,Nama Mahasiswa,Program Studi,Semester,Kelas,Jabatan,Email,No WA,Status',
+    );
+
+    for (int i = 0; i < students.length; i++) {
+      final s = students[i];
+      final status = s.isAktif ? 'Aktif' : 'Nonaktif';
+      buffer.writeln(
+        '${i + 1},"${s.nim}","${s.nama}","${s.prodi}",${s.semester},"${s.kelas}","${s.jabatan}","${s.email}","${s.noWa}","$status"',
+      );
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export Rekap Distribusi Tugas Mahasiswa to CSV Format
+  static String exportAssignmentsCsv({
+    required List<Assignment> assignments,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('No,Mata Kuliah,Judul Tugas,Kategori,Tenggat Waktu,Status');
+
+    for (int i = 0; i < assignments.length; i++) {
+      final a = assignments[i];
+      final deadlineStr = DateFormat('yyyy-MM-dd HH:mm').format(a.deadline);
+      buffer.writeln(
+        '${i + 1},"${a.courseName}","${a.judul}","${a.kategori}","$deadlineStr","${a.status}"',
+      );
+    }
+
+    return buffer.toString();
+  }
+
   /// Show Export & Download Sheet
   static void showExportSheet(
     BuildContext context, {
