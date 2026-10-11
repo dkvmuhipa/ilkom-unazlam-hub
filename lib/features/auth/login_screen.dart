@@ -208,12 +208,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _quickFillAndLogin(String identifier, String defaultPassword) {
-    _nimController.text = identifier;
-    _passwordController.text = defaultPassword;
-    _handleLogin();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -392,86 +386,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 28),
-
-                    // Divider & Uji Coba Cepat (Role & Jabatan)
-                    Row(
-                      children: [
-                        const Expanded(child: Divider(color: AppColors.borderMedium)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'AKSES CEPAT PENGUJIAN',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.0,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ),
-                        const Expanded(child: Divider(color: AppColors.borderMedium)),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Chips Akses Cepat dengan SoftPillBadge
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        InkWell(
-                          onTap: () => _quickFillAndLogin('admin', '123456'),
-                          borderRadius: BorderRadius.circular(999),
-                          child: SoftPillBadge.danger(
-                            label: 'Admin Sistem',
-                            icon: Icons.admin_panel_settings_rounded,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _quickFillAndLogin('260250023', '123456'),
-                          borderRadius: BorderRadius.circular(999),
-                          child: SoftPillBadge.warning(
-                            label: 'Ketua Kelas',
-                            icon: Icons.person_rounded,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _quickFillAndLogin('260250020', '123456'),
-                          borderRadius: BorderRadius.circular(999),
-                          child: SoftPillBadge.success(
-                            label: 'Bendahara',
-                            icon: Icons.account_balance_wallet_rounded,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _quickFillAndLogin('260250008', '123456'),
-                          borderRadius: BorderRadius.circular(999),
-                          child: SoftPillBadge.info(
-                            label: 'Sekretaris',
-                            icon: Icons.assignment_turned_in_rounded,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _quickFillAndLogin('260250001', '123456'),
-                          borderRadius: BorderRadius.circular(999),
-                          child: SoftPillBadge.neutral(
-                            label: 'Mahasiswa',
-                            icon: Icons.school_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 24),
                     Text(
-                      'Pilih peran di atas untuk langsung masuk atau gunakan NIM akun Anda.',
+                      'Portal Akademik Resmi • UNAZLAM Hub',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         color: AppColors.textMuted,
-                        height: 1.4,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
