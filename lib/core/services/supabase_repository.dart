@@ -352,10 +352,18 @@ class SupabaseRepository {
           .order('deadline');
 
       final list = (response as List).map((row) {
+        String cName = row['course_name']?.toString() ?? '';
+        final cId = row['course_id']?.toString() ?? '';
+        if (cName.isEmpty && cId.isNotEmpty) {
+          final matched = DummyData.courses.where((c) => c.id == cId).firstOrNull;
+          if (matched != null) cName = matched.nama;
+        }
+        if (cName.isEmpty) cName = 'Mata Kuliah';
+
         return Assignment(
           id: row['id']?.toString() ?? '',
-          courseId: row['course_id']?.toString() ?? '',
-          courseName: row['course_name'] ?? 'Mata Kuliah',
+          courseId: cId,
+          courseName: cName,
           judul: row['judul'] ?? '',
           deskripsi: row['deskripsi'] ?? '',
           kategori: row['kategori'] ?? 'Individu',
@@ -390,10 +398,18 @@ class SupabaseRepository {
         .select()
         .order('deadline');
     final assignments = (response as List).map((row) {
+      String cName = row['course_name']?.toString() ?? '';
+      final cId = row['course_id']?.toString() ?? '';
+      if (cName.isEmpty && cId.isNotEmpty) {
+        final matched = DummyData.courses.where((c) => c.id == cId).firstOrNull;
+        if (matched != null) cName = matched.nama;
+      }
+      if (cName.isEmpty) cName = 'Mata Kuliah';
+
       return Assignment(
         id: row['id']?.toString() ?? '',
-        courseId: row['course_id']?.toString() ?? '',
-        courseName: row['course_name']?.toString() ?? 'Mata Kuliah',
+        courseId: cId,
+        courseName: cName,
         judul: row['judul']?.toString() ?? '',
         deskripsi: row['deskripsi']?.toString() ?? '',
         kategori: row['kategori']?.toString() ?? 'Individu',
@@ -423,6 +439,21 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) return false;
     try {
+      // Selesaikan course_id ke UUID resmi di Supabase jika tersedia
+      String? resolvedCourseId;
+      if (courseId.isNotEmpty && courseId.length == 36) {
+        resolvedCourseId = courseId;
+      } else {
+        final match = DummyData.courses.where(
+          (c) =>
+              c.nama.toLowerCase() == courseName.toLowerCase() ||
+              c.id == courseId,
+        ).firstOrNull;
+        if (match != null && match.id.length == 36) {
+          resolvedCourseId = match.id;
+        }
+      }
+
       final payload = <String, dynamic>{
         'course_name': courseName,
         'judul': judul,
@@ -432,21 +463,36 @@ class SupabaseRepository {
         'link_pengumpulan': linkPengumpulan,
         'status': 'belum',
       };
-      // course_id on Supabase references courses(id) which may be UUID or nullable
-      if (courseId.isNotEmpty && !courseId.startsWith('c')) {
+      if (resolvedCourseId != null) {
+        payload['course_id'] = resolvedCourseId;
+      } else if (courseId.isNotEmpty && !courseId.startsWith('c')) {
         payload['course_id'] = courseId;
       }
 
-      final res = await client
-          .from('assignments')
-          .insert(payload)
-          .select('id')
-          .single();
+      dynamic res;
+      try {
+        res = await client
+            .from('assignments')
+            .insert(payload)
+            .select('id')
+            .single();
+      } catch (insertErr) {
+        // Fallback jika skema di Supabase belum memiliki kolom course_name/status
+        final fallbackPayload = Map<String, dynamic>.from(payload)
+          ..remove('course_name')
+          ..remove('status');
+        res = await client
+            .from('assignments')
+            .insert(fallbackPayload)
+            .select('id')
+            .single();
+      }
+
       final assignedId = res['id']?.toString() ?? '';
 
       final newAssignment = Assignment(
         id: assignedId,
-        courseId: courseId,
+        courseId: resolvedCourseId ?? courseId,
         courseName: courseName,
         judul: judul,
         deskripsi: deskripsi,
