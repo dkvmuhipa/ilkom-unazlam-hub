@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/widgets/saas_components.dart';
 import '../../models/models.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -79,86 +82,93 @@ class _LoginScreenState extends State<LoginScreen> {
     final emailController = TextEditingController(
       text: _nimController.text.contains('@') ? _nimController.text.trim() : '',
     );
-    final email = await showDialog<String>(
+    final email = await showGlassModal<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.lock_reset_rounded, color: Color(0xFF1E40AF), size: 24),
-            SizedBox(width: 10),
-            Text(
-              'Lupa Password?',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Masukkan email akun yang terdaftar. Tautan untuk membuat kata sandi baru akan dikirim ke email tersebut. NIM hanya digunakan untuk login.',
-              style: TextStyle(
-                fontSize: 12.5,
-                color: Color(0xFF4B5563),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              autofocus: true,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (value) => Navigator.pop(ctx, value.trim()),
-              decoration: InputDecoration(
-                labelText: 'Email pemulihan',
-                prefixIcon: Icon(Icons.alternate_email_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
+      maxWidth: 480,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const GlassModalHeader(
+            title: 'Lupa Kata Sandi?',
+            subtitle:
+                'Masukkan email akun yang terdaftar untuk menerima tautan pemulihan.',
+            icon: Icons.lock_reset_rounded,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SaaSInputField(
+                  label: 'Email Pemulihan',
+                  controller: emailController,
+                  hintText: 'nama@student.unazlam.ac.id',
+                  prefixIcon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
                 ),
-              ),
-            ),
-          ],
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Batal'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.pop(ctx, emailController.text.trim()),
-                icon: const Icon(Icons.send_rounded, size: 16),
-                label: const Text('Kirim tautan'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E40AF),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 12),
+                Text(
+                  'Tautan untuk membuat kata sandi baru akan dikirim ke email tersebut. NIM mahasiswa hanya digunakan untuk login harian.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: AppColors.textSub,
+                    height: 1.45,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSub,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    'Batal',
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      Navigator.pop(ctx, emailController.text.trim()),
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: Text(
+                    'Kirim Tautan',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
 
-    // Schedule dispose after dialog route pop animation completes to avoid
-    // 'A TextEditingController was used after being disposed' during pop transition.
+    // Schedule dispose after dialog route pop animation completes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       emailController.dispose();
     });
@@ -185,7 +195,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            error is AuthServiceException ? error.message : 'Tautan reset gagal dikirim. Periksa koneksi dan konfigurasi URL Auth Supabase.',
+            error is AuthServiceException
+                ? error.message
+                : 'Tautan reset gagal dikirim. Periksa koneksi dan konfigurasi URL Auth Supabase.',
           ),
           backgroundColor: const Color(0xFFDC2626),
           duration: const Duration(seconds: 5),
@@ -196,235 +208,274 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _quickFillAndLogin(String identifier, String defaultPassword) {
+    _nimController.text = identifier;
+    _passwordController.text = defaultPassword;
+    _handleLogin();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo ILMU KOMUNIKASI UNAZLAM (Screen 2)
-                  Container(
-                    width: 95,
-                    height: 95,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF1E40AF)
-                              .withValues(alpha: 0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.asset(
-                        'assets/images/logo.jpg',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFFEFF6FF),
-                          child: const Icon(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: SaaSCard(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Modern Clean Brand Header
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.primaryBorder, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/images/logo.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
                             Icons.school_rounded,
-                            color: Color(0xFF1E40AF),
-                            size: 48,
+                            color: AppColors.primary,
+                            size: 44,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 18),
 
-                  // Brand Text
-                  const Text(
-                    'ILMU KOMUNIKASI',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E40AF),
-                      letterSpacing: 0.4,
+                    // Typography: Bold tegas & tracking-tight
+                    Text(
+                      'ILMU KOMUNIKASI',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                        letterSpacing: 0.8,
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'UNAZLAM',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFFF59E0B),
-                      letterSpacing: 2.5,
+                    Text(
+                      'UNAZLAM HUB',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.secondary,
+                        letterSpacing: 3.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 20),
 
-                  // Heading matching Screen 2 in user mockup
-                  const Text(
-                    'Masuk ke Akun Anda',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
+                    Text(
+                      'Masuk ke Akun Anda',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.6,
+                        color: AppColors.textMain,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Ilmu Komunikasi • UNAZLAM',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF6B7280),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Portal Manajemen Akademik & Kelas FISIP',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSub,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 28),
 
-                  // Form accepts student NIM or account email.
-                  Container(
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
-                    ),
-                    child: TextField(
+                    // Input NIM / Email dengan SaaSInputField
+                    SaaSInputField(
+                      label: 'NIM atau Email Akun',
                       controller: _nimController,
+                      hintText: 'admin atau NIM mahasiswa',
+                      prefixIcon: Icons.badge_outlined,
                       keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        hintText: 'NIM atau email akun',
-                        hintStyle: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.person_outline_rounded,
-                          color: Color(0xFF6B7280),
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
-                  // Form Input Password (Screen 2)
-                  Container(
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
-                    ),
-                    child: TextField(
+                    // Input Password
+                    SaaSInputField(
+                      label: 'Kata Sandi',
                       controller: _passwordController,
+                      hintText: '••••••••',
+                      prefixIcon: Icons.lock_outline_rounded,
                       obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _handleLogin(),
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline_rounded,
-                          color: Color(0xFF6B7280),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.textMuted,
                           size: 20,
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: const Color(0xFF9CA3AF),
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                  // Password recovery
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox.shrink(),
-                      TextButton(
+                    // Lupa Password link
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
                         onPressed: _showForgotPasswordDialog,
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
-                          'Lupa password?',
-                          style: TextStyle(
-                            fontSize: 12,
+                        child: Text(
+                          'Lupa kata sandi?',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E40AF),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Button "Masuk" (Screen 2)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E40AF),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text(
-                              'Masuk',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
 
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Gunakan email dan kata sandi akun mahasiswa yang telah diaktifkan.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-                  ),
-                ],
+                    // Tombol Masuk Royal Navy Blue rounded-2xl
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                'Masuk',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Divider & Uji Coba Cepat (Role & Jabatan)
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: AppColors.borderMedium)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'AKSES CEPAT PENGUJIAN',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider(color: AppColors.borderMedium)),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Chips Akses Cepat dengan SoftPillBadge
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () => _quickFillAndLogin('admin', '123456'),
+                          borderRadius: BorderRadius.circular(999),
+                          child: SoftPillBadge.danger(
+                            label: 'Admin Sistem',
+                            icon: Icons.admin_panel_settings_rounded,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _quickFillAndLogin('260250023', '123456'),
+                          borderRadius: BorderRadius.circular(999),
+                          child: SoftPillBadge.warning(
+                            label: 'Ketua Kelas',
+                            icon: Icons.person_rounded,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _quickFillAndLogin('260250020', '123456'),
+                          borderRadius: BorderRadius.circular(999),
+                          child: SoftPillBadge.success(
+                            label: 'Bendahara',
+                            icon: Icons.account_balance_wallet_rounded,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _quickFillAndLogin('260250008', '123456'),
+                          borderRadius: BorderRadius.circular(999),
+                          child: SoftPillBadge.info(
+                            label: 'Sekretaris',
+                            icon: Icons.assignment_turned_in_rounded,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _quickFillAndLogin('260250001', '123456'),
+                          borderRadius: BorderRadius.circular(999),
+                          child: SoftPillBadge.neutral(
+                            label: 'Mahasiswa',
+                            icon: Icons.school_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+                    Text(
+                      'Pilih peran di atas untuk langsung masuk atau gunakan NIM akun Anda.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

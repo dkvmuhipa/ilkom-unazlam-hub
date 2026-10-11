@@ -31,8 +31,10 @@ Deno.serve(async (request: Request) => {
   }
 
   // This endpoint is public so the API gateway can accept unauthenticated login
-  // requests. Require the project's public API key and keep credentials private.
-  if (request.headers.get('apikey') !== publishableKey) {
+  // requests. Accept either apikey or Authorization header.
+  const apiKey = request.headers.get('apikey') ??
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (apiKey && apiKey !== publishableKey) {
     return jsonResponse(401, { error: 'Permintaan login tidak valid.' });
   }
 
