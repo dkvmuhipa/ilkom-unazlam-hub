@@ -296,36 +296,41 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Input NIM / Email dengan SaaSInputField
-                    SaaSInputField(
-                      label: 'NIM atau Email Akun',
-                      controller: _nimController,
-                      hintText: 'admin atau NIM mahasiswa',
-                      prefixIcon: Icons.badge_outlined,
-                      keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Input Password
-                    SaaSInputField(
-                      label: 'Kata Sandi',
-                      controller: _passwordController,
-                      hintText: '••••••••',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscurePassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textMuted,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    // Input NIM / Email & Password dengan AutofillGroup
+                    AutofillGroup(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SaaSInputField(
+                            label: 'NIM atau Email Akun',
+                            controller: _nimController,
+                            hintText: 'admin atau NIM mahasiswa',
+                            prefixIcon: Icons.badge_outlined,
+                            keyboardType: TextInputType.text,
+                          ),
+                          const SizedBox(height: 16),
+                          SaaSInputField(
+                            label: 'Kata Sandi',
+                            controller: _passwordController,
+                            hintText: '••••••••',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.textMuted,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 10),

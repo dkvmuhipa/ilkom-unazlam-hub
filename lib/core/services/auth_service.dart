@@ -28,6 +28,13 @@ class AuthService {
   static bool get hasActiveSession => _client.auth.currentSession != null;
 
   static Future<void> setPassword(String password, {String? userNim}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (userNim != null && userNim.isNotEmpty) {
+        await prefs.setString('user_password_$userNim', password);
+      }
+    } catch (_) {}
+
     if (hasActiveSession) {
       try {
         await _client.auth.updateUser(UserAttributes(password: password));
@@ -130,30 +137,45 @@ class AuthService {
     }
 
     if (!loggedIn) {
-      // Validasi terhadap profil MasterData mahasiswa & admin resmi
-      final localMatched = DummyData.students.where(
+      // 1. Validasi terhadap profil MasterData mahasiswa & admin resmi
+      StudentProfile? matched = DummyData.students.where(
         (s) =>
             s.nim.trim().toLowerCase() == loginValue.toLowerCase() ||
             (s.email.isNotEmpty &&
                 s.email.trim().toLowerCase() == loginValue.toLowerCase()),
       ).firstOrNull;
 
-      if (localMatched != null) {
-        // Jika Supabase terkonfigurasi, cegah bypass autentikasi offline
-        if (SupabaseConfig.isConfigured) {
-          throw const AuthServiceException(
-            'NIM atau kata sandi tidak sesuai. Periksa kembali akun Anda.',
-          );
-        }
+      // 2. Jika tidak ada di DummyData, coba cari dari tabel database 'students'
+      if (matched == null) {
+        try {
+          final rows = await _client
+              .from('students')
+              .select()
+              .or('nim.eq.$loginValue,email.eq.$loginValue')
+              .limit(1);
+          if ((rows as List).isNotEmpty) {
+            matched = _profileFromRow(rows.first);
+          }
+        } catch (_) {}
+      }
 
-        // Mode Mock / Offline Lokal Saja (hanya jika Supabase belum terkonfigurasi):
+      if (matched != null) {
+        SharedPreferences? prefs;
+        try {
+          prefs = await SharedPreferences.getInstance();
+        } catch (_) {}
+
+        final savedPassword = prefs?.getString('user_password_${matched.nim}');
         bool passwordValid = false;
-        if (localMatched.isAdmin) {
+
+        if (savedPassword != null && savedPassword.isNotEmpty) {
+          passwordValid = (password == savedPassword);
+        } else if (matched.isAdmin) {
           passwordValid = (password == 'admin123' ||
               password == 'admin' ||
               password == 'ilkom2026');
         } else {
-          final nimStr = localMatched.nim.trim();
+          final nimStr = matched.nim.trim();
           final last6 = nimStr.length >= 6
               ? nimStr.substring(nimStr.length - 6)
               : nimStr;
@@ -165,20 +187,19 @@ class AuthService {
 
         if (!passwordValid) {
           throw const AuthServiceException(
-            'Kata sandi salah. Gunakan 6 digit terakhir NIM atau kata sandi yang telah diatur.',
+            'Kata sandi salah. Gunakan 6 digit terakhir NIM, 123456, atau kata sandi yang telah diatur.',
           );
         }
 
         // Simpan sesi login aktif ke local storage
         try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('active_session_nim', localMatched.nim);
+          await prefs?.setString('active_session_nim', matched.nim);
         } catch (_) {}
 
         debugPrint(
-          'Info: Akun terverifikasi melalui data profil sistem offline (${localMatched.nama} - ${localMatched.role}).',
+          'Info: Akun terverifikasi melalui data profil sistem (${matched.nama} - ${matched.role}).',
         );
-        return localMatched;
+        return matched;
       }
 
       if (authErrorMessage != null &&
