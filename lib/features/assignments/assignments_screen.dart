@@ -430,6 +430,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       : null,
                   status: 'belum',
                 );
+                final messenger = ScaffoldMessenger.of(context);
 
                 final saved = await SupabaseRepository.createAssignment(
                   courseId: course.id,
@@ -442,18 +443,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                 );
                 if (!saved) {
                   if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tugas gagal disimpan ke server.'),
-                      ),
-                    );
-                  }
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Tugas gagal disimpan ke server.'),
+                    ),
+                  );
                   return;
                 }
                 if (mounted) setState(() {});
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
+                if (ctx.mounted) Navigator.pop(ctx);
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text('Tugas "$judul" berhasil ditambahkan!'),
                     backgroundColor: const Color(0xFF10B981),
@@ -1625,7 +1624,7 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                               final file = await pickAssignmentFile();
                               if (file == null || !ctx.mounted) return;
                               if (file.bytes.lengthInBytes > 20 * 1024 * 1024) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                ScaffoldMessenger.of(ctx).showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                       'Ukuran berkas maksimal 20 MB.',
@@ -1637,14 +1636,15 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                               setDialogState(() => selectedFile = file);
                             } catch (error) {
                               debugPrint('Gagal memilih berkas tugas: $error');
-                              if (mounted)
-                                ScaffoldMessenger.of(context).showSnackBar(
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                       'Berkas tidak dapat dibaca. Coba pilih berkas lain.',
                                     ),
                                   ),
                                 );
+                              }
                             }
                           },
                     icon: const Icon(Icons.attach_file_rounded, size: 18),
@@ -1722,16 +1722,18 @@ class _AssignmentDetailSheetState extends State<_AssignmentDetailSheet> {
                               );
                         } catch (error) {
                           debugPrint('Gagal mengunggah berkas tugas: $error');
-                          if (mounted)
+                          if (mounted) {
                             setState(() => _isSavingSubmission = false);
-                          if (ctx.mounted)
-                            ScaffoldMessenger.of(context).showSnackBar(
+                          }
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
                               const SnackBar(
                                 content: Text(
                                   'Berkas gagal diunggah. Pastikan migrasi penilaian sudah diterapkan.',
                                 ),
                               ),
                             );
+                          }
                           return;
                         }
                       }

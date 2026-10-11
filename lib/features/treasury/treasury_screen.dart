@@ -355,11 +355,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     tanggal: DateTime.now(),
                     pencatat: widget.userName,
                   );
+                  final messenger = ScaffoldMessenger.of(context);
                   final saved =
                       await SupabaseRepository.createTreasuryTransaction(newTx);
                   if (!ctx.mounted) return;
                   if (!saved) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(
                         content: Text(
                           'Transaksi gagal disimpan. Periksa koneksi dan izin bendahara.',
@@ -368,9 +369,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     );
                     return;
                   }
-                  setState(() => _transactions.insert(0, newTx));
+                  if (mounted) {
+                    setState(() => _transactions.insert(0, newTx));
+                  }
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Transaksi kas berhasil dicatat!'),
                       backgroundColor: Color(0xFF10B981),
@@ -585,25 +588,28 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     tanggal: t.tanggal,
                     pencatat: t.pencatat,
                   );
+                  final messenger = ScaffoldMessenger.of(context);
                   final saved =
                       await SupabaseRepository.updateTreasuryTransaction(
                         updatedTx,
                       );
                   if (!ctx.mounted) return;
                   if (!saved) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(
                         content: Text('Perubahan transaksi gagal disimpan.'),
                       ),
                     );
                     return;
                   }
-                  setState(() {
-                    final idx = _transactions.indexWhere((x) => x.id == t.id);
-                    if (idx != -1) _transactions[idx] = updatedTx;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      final idx = _transactions.indexWhere((x) => x.id == t.id);
+                      if (idx != -1) _transactions[idx] = updatedTx;
+                    });
+                  }
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Transaksi kas berhasil diperbarui!'),
                       backgroundColor: Color(0xFF10B981),
@@ -646,18 +652,21 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               final deleted =
                   await SupabaseRepository.deleteTreasuryTransaction(t.id);
               if (!ctx.mounted) return;
               if (!deleted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Transaksi gagal dihapus.')),
                 );
                 return;
               }
-              setState(() => _transactions.removeWhere((x) => x.id == t.id));
+              if (mounted) {
+                setState(() => _transactions.removeWhere((x) => x.id == t.id));
+              }
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
+              messenger.showSnackBar(
                 const SnackBar(
                   content: Text('Transaksi berhasil dihapus.'),
                   backgroundColor: Color(0xFFEF4444),

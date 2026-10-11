@@ -2136,8 +2136,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   itemCount: students.length,
                   itemBuilder: (ctx, i) {
                     final s = students[i];
-                    final initials = _getInitials(s.nama);
-                    final color = _getAvatarColor(i);
                     final rowBg = i.isEven ? Colors.white : const Color(0xFFF8FAFC);
 
                     return Container(
@@ -5094,17 +5092,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     return name.isNotEmpty ? name[0].toUpperCase() : 'M';
   }
 
-  Color _getAvatarColor(int index) {
-    const colors = [
-      Color(0xFFF59E0B), // Yellow/Orange (NF)
-      Color(0xFF0284C7), // Blue (AR)
-      Color(0xFF8B5CF6), // Purple (AN)
-      Color(0xFF1E3A8A), // Dark blue (MR)
-      Color(0xFFEC4899), // Pink (SN)
-      Color(0xFFD97706), // Orange (DH)
-    ];
-    return colors[index % colors.length];
-  }
 
   Color _getCourseColor(int index) {
     const colors = [

@@ -705,7 +705,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             : 'Non-aktif (Light Mode)',
                         trailing: Switch.adaptive(
                           value: isDark,
-                          activeColor: const Color(0xFF1E40AF),
+                          activeTrackColor: const Color(0xFF1E40AF),
                           onChanged: (_) => ThemeScope.notifier.toggleTheme(),
                         ),
                         onTap: () => ThemeScope.notifier.toggleTheme(),
