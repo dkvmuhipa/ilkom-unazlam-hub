@@ -240,25 +240,26 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ],
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF26223D) : const Color(0xFFEDE9FE),
-            borderRadius: BorderRadius.circular(10),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isDark ? const Color(0xFF3F356B) : const Color(0xFFDDD6FE),
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.school_rounded, size: 13, color: Color(0xFF7C3AED)),
-              const SizedBox(width: 4),
+              const Icon(Icons.school_rounded, size: 13, color: Color(0xFF5B3DE8)),
+              const SizedBox(width: 5),
               Text(
-                'Smt ${student.semester}',
-                style: const TextStyle(
+                'Semester ${student.semester}',
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF7C3AED),
+                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -269,7 +270,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   // ==========================================
-  // 2. TOP BAR: SEARCH BAR + NOTIF + AVATAR
+  // 2. TOP BAR: COMMAND SEARCH BAR + NOTIF + AVATAR
   // ==========================================
   Widget _buildTopBar(BuildContext context, StudentProfile student, bool isDark) {
     final initials = student.nama
@@ -285,25 +286,25 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
     return Row(
       children: [
-        // Search Bar (Gojek Style rounded pill)
+        // Search Bar (Linear / Raycast Style crisp command bar)
         Expanded(
           child: Material(
             color: cardBg,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(12),
             elevation: 0,
             child: InkWell(
               onTap: () => UniversalSearchModal.show(context, onNavigateTab: widget.onNavigateTab),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 46,
+                height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                      blurRadius: 10,
+                      color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -313,7 +314,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Icon(
                       Icons.search_rounded,
                       color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      size: 21,
+                      size: 19,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -328,27 +329,52 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF262E3D) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Text(
+                        '⌘K',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
 
-        // Tombol Notifikasi
+        // Tombol Notifikasi (Sleek Squircle)
         Material(
           color: cardBg,
-          borderRadius: BorderRadius.circular(23),
+          borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: () => widget.onNavigateTab(11), // Notifikasi
-            borderRadius: BorderRadius.circular(23),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -360,16 +386,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         : Icons.notifications_none_rounded,
                     color: _unreadNotificationCount > 0
                         ? const Color(0xFF5B3DE8)
-                        : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B)),
-                    size: 22,
+                        : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155)),
+                    size: 20,
                   ),
                   if (_unreadNotificationCount > 0)
                     Positioned(
-                      right: 6,
-                      top: 6,
+                      right: 7,
+                      top: 7,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
@@ -380,7 +406,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             _unreadNotificationCount > 9 ? '9+' : '$_unreadNotificationCount',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9,
+                              fontSize: 8.5,
                               fontWeight: FontWeight.w900,
                               height: 1.0,
                             ),
@@ -395,24 +421,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         const SizedBox(width: 8),
 
-        // Avatar Profil Mahasiswa
+        // Avatar Profil Mahasiswa (Sleek High-Contrast Squircle)
         InkWell(
           onTap: () => widget.onNavigateTab(4), // Profil
-          borderRadius: BorderRadius.circular(23),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5B3DE8), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF0F172A),
+              border: Border.all(color: borderColor),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF5B3DE8).withValues(alpha: 0.25),
-                  blurRadius: 8,
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -423,7 +446,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
-                fontSize: 15,
+                fontSize: 14,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -452,13 +476,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5B3DE8).withValues(alpha: isDark ? 0.12 : 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -469,7 +493,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             flex: 5,
             child: InkWell(
               onTap: () => widget.onNavigateTab(5), // Presensi
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                 child: Column(
@@ -480,7 +504,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                           decoration: BoxDecoration(
                             color: attendancePercent == null
                                 ? (isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9))
@@ -488,6 +512,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                     ? const Color(0xFFDCFCE7)
                                     : const Color(0xFFFEF3C7)),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: attendancePercent == null
+                                  ? borderColor
+                                  : (isEligible
+                                      ? const Color(0xFF86EFAC)
+                                      : const Color(0xFFFDE68A)),
+                              width: 0.8,
+                            ),
                           ),
                           child: Text(
                             attendancePercent == null
@@ -504,7 +536,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 5),
                         if (attendancePercent != null) ...[
                           Container(
                             width: 5,
@@ -514,7 +546,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               color: isEligible ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                             ),
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: 4),
                           Text(
                             '$attendancePercent%',
                             style: TextStyle(
@@ -534,7 +566,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ? 'Belum Ada Presensi'
                           : '$hadirCount Hadir • $attendancePercent%',
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                         color: textMain,
                         letterSpacing: -0.3,
@@ -567,11 +599,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           Expanded(
                             child: Text(
                               _isKasLunas == true
-                                  ? 'Kas Bulan Ini: Lunas'
+                                  ? 'Kas: Lunas'
                                   : (_isKasLunas == false
-                                      ? 'Kas: Belum Bayar (${_formatCurrency(_kasNominal)})'
+                                      ? 'Kas: ${_formatCurrency(_kasNominal)}'
                                       : (_currentPeriodLabel.isNotEmpty
-                                          ? 'Iuran Kas: $_currentPeriodLabel'
+                                          ? 'Iuran: $_currentPeriodLabel'
                                           : 'Cek status iuran kas')),
                               style: TextStyle(
                                 fontSize: 10,
@@ -597,13 +629,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
           // Divider Tipis
           Container(
-            height: 44,
+            height: 42,
             width: 1,
             color: borderColor,
             margin: const EdgeInsets.symmetric(horizontal: 4),
           ),
 
-          // Sisi Kanan: 4 Aksi Cepat Ikonis (Gojek Style: Absen, Kas, KHS, Tugas)
+          // Sisi Kanan: 4 Aksi Cepat Ikonis (Absen, Kas, KHS, Tugas)
           Expanded(
             flex: 7,
             child: Row(
@@ -617,7 +649,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     bgColor: isDark ? const Color(0xFF1E2E42) : const Color(0xFFE0F2FE),
                     textColor: textMain,
                     onTap: () {
-                      // Jika ada sesi aktif, langsung buka scanner kamera 1-tap!
                       if (AttendanceScreen.currentSession != null &&
                           !AttendanceScreen.currentSession!.isExpired) {
                         AttendanceScreen.showStudentScanner(
@@ -679,18 +710,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: color.withValues(alpha: 0.18), width: 0.8),
               ),
               child: Icon(icon, color: color, size: 17),
             ),
@@ -701,6 +733,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: textColor,
+                letterSpacing: -0.1,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -849,12 +882,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
-            blurRadius: 10,
+            color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -865,7 +898,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: services.take(4).map((item) => _buildServiceIcon(context, item, isDark)).toList(),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: services.skip(4).take(4).map((item) => _buildServiceIcon(context, item, isDark)).toList(),
@@ -886,20 +919,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             widget.onNavigateTab(item.tabIndex);
           }
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: item.bgColor,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: item.color.withValues(alpha: 0.16), width: 0.8),
                 ),
-                child: Icon(item.icon, color: item.color, size: 24),
+                child: Icon(item.icon, color: item.color, size: 21),
               ),
               const SizedBox(height: 6),
               Text(
@@ -909,8 +943,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
+                  letterSpacing: -0.1,
                 ),
               ),
             ],
@@ -1021,16 +1056,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: cardBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: (isOverdue || isUrgent) ? accentColor.withValues(alpha: 0.5) : borderColor,
               width: (isOverdue || isUrgent) ? 1.5 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
-                color: accentColor.withValues(alpha: isDark ? 0.12 : 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
+                color: (isOverdue || isUrgent)
+                    ? accentColor.withValues(alpha: isDark ? 0.12 : 0.06)
+                    : const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -1306,7 +1343,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isLiveNow
               ? const Color(0xFF10B981)
@@ -1505,8 +1542,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -1542,7 +1586,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   // ==========================================
-  // 7. BANNER PENGUMUMAN (ALA BANNER GOJEK)
+  // 7. BANNER PENGUMUMAN (CLEAN TECH MINIMAL)
   // ==========================================
   Widget _buildAnnouncementBanner(BuildContext context, bool isDark) {
     final item = _announcement;
@@ -1555,12 +1599,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
-            blurRadius: 10,
+            color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],

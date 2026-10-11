@@ -392,113 +392,149 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final activeStudentsCount = sourceStudents.where((s) => s.isAktif).length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Greeting + Notification Bell + Sync + Mode Siswa
+          // Header: Clean Tech Console Bar + Right Action Tools
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Selamat Datang,',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B7280),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF5B3DE8),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'KONSOL ADMINISTRATOR',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF334155),
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const Row(
-                      children: [
-                        Text(
-                          'Admin',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF111827),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pusat Kendali Akademik',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          'Ilmu Komunikasi • UNAZLAM',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Ilmu Komunikasi • UNAZLAM',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Tombol Sinkronisasi Data Master
-                  InkWell(
-                    onTap: _isRefreshing ? null : _refreshAllAdminData,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: _isRefreshing
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Color(0xFF5B3DE8),
-                              ),
-                            )
-                          : const Icon(
-                              Icons.sync_rounded,
-                              color: Color(0xFF5B3DE8),
-                              size: 20,
+                  Tooltip(
+                    message: 'Sinkronisasi Seluruh Data',
+                    child: InkWell(
+                      onTap: _isRefreshing ? null : _refreshAllAdminData,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
                             ),
+                          ],
+                        ),
+                        child: _isRefreshing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF5B3DE8),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.sync_rounded,
+                                color: Color(0xFF334155),
+                                size: 18,
+                              ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   // Mode Mahasiswa Preview Button
                   InkWell(
                     onTap: widget.onSwitchToStudentView,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 6,
+                        vertical: 7,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F0FF),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE9D5FF)),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.visibility_outlined,
                             size: 14,
                             color: Color(0xFF5B3DE8),
                           ),
-                          SizedBox(width: 4),
+                          SizedBox(width: 5),
                           Text(
-                            'Siswa',
+                            'Mode Siswa',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF5B3DE8),
+                              color: Color(0xFF0F172A),
                             ),
                           ),
                         ],
@@ -507,42 +543,52 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ),
                   const SizedBox(width: 8),
                   // Bell Notification Icon
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none_rounded,
-                          color: Color(0xFF5B3DE8),
-                          size: 20,
-                        ),
-                      ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEF4444),
-                            shape: BoxShape.circle,
+                  Tooltip(
+                    message: 'Notifikasi Sistem',
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Color(0xFF334155),
+                            size: 18,
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          right: 7,
+                          top: 7,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
-          // 4 Stat Cards in 2x2 Grid (Screen 3)
+          // 4 Stat Cards in 2x2 Grid (Clean Tech SaaS)
           Row(
             children: [
               Expanded(
@@ -554,7 +600,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   onTap: () => _navigateTo('kelas'),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
                   count: '$activeStudentsCount',
@@ -566,19 +612,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildStatCard(
                   count: '${_lecturers.length}',
-                  label: 'Dosen',
+                  label: 'Dosen Pengajar',
                   icon: Icons.badge_outlined,
                   color: const Color(0xFF10B981),
                   onTap: () => _navigateTo('dosen'),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
                   count: '${_courses.length}',
@@ -590,28 +636,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          // Banner Integrasi FCM Push Notification
+          // Banner Integrasi FCM Push Notification (High-Contrast Slate Console)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F3FF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDDD6FE)),
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF1E293B)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: const Color(0xFF334155)),
                   ),
                   child: const Icon(
-                    Icons.send_to_mobile_rounded,
-                    color: Color(0xFF7C3AED),
-                    size: 20,
+                    Icons.cell_tower_rounded,
+                    color: Color(0xFF818CF8),
+                    size: 19,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -619,33 +673,50 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Notifikasi Push Firebase (FCM v1)',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF4C1D95),
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Firebase Cloud Messaging (FCM v1)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$_registeredTokensCount HP mahasiswa terdaftar & siap menerima broadcast push otomatis.',
+                        '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF6D28D9),
+                          color: Color(0xFF94A3B8),
                         ),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Kirim Pengumuman Push Cepat',
-                  icon: const Icon(
-                    Icons.campaign_rounded,
-                    color: Color(0xFF7C3AED),
-                    size: 22,
-                  ),
+                FilledButton.icon(
                   onPressed: _showBroadcastAnnouncementDialog,
+                  icon: const Icon(Icons.send_rounded, size: 13),
+                  label: const Text('Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B3DE8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ],
             ),
@@ -659,26 +730,33 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               const Text(
                 'Aksi Cepat Terintegrasi',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.3,
                 ),
               ),
               InkWell(
                 onTap: _showQuickExportModal,
                 borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.download_rounded, size: 14, color: Color(0xFF5B3DE8)),
+                      Icon(Icons.download_rounded, size: 13, color: Color(0xFF5B3DE8)),
                       SizedBox(width: 4),
                       Text(
                         'Ekspor Data',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF5B3DE8),
+                          color: Color(0xFF0F172A),
                         ),
                       ),
                     ],
@@ -695,7 +773,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   icon: Icons.campaign_rounded,
                   label: 'Pengumuman',
                   subtitle: 'Kirim Push',
-                  color: const Color(0xFF8B5CF6),
+                  color: const Color(0xFF5B3DE8),
                   onTap: _showBroadcastAnnouncementDialog,
                 ),
               ),
@@ -705,7 +783,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   icon: Icons.post_add_rounded,
                   label: 'Tugas Baru',
                   subtitle: 'Rilis & Notif',
-                  color: const Color(0xFF0EA5E9),
+                  color: const Color(0xFF0284C7),
                   onTap: _showCreateAssignmentDialog,
                 ),
               ),
@@ -723,24 +801,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 22),
 
-          // Section "Menu Utama" (Screen 3)
+          // Section "Menu Utama" (Clean Tech SaaS Grid)
           const Text(
-            'Menu Utama',
+            'Menu Utama Modul',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14.5,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
+              color: Color(0xFF0F172A),
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // 8 Grid Menu Tiles (Screen 3)
           LayoutBuilder(
             builder: (context, constraints) => GridView.count(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics>,
               crossAxisCount: constraints.maxWidth < 360 ? 2 : 4,
-              mainAxisSpacing: 16,
+              mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               mainAxisExtent: 96,
               children: [
@@ -787,38 +866,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Banner Info Sistem
+          // Banner Info Sistem (Clean Tech Console Card)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5B3DE8), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF5B3DE8).withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
                   child: const Icon(
-                    Icons.security_rounded,
-                    color: Colors.white,
-                    size: 24,
+                    Icons.verified_user_rounded,
+                    color: Color(0xFF5B3DE8),
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -827,17 +904,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Pusat Kendali Administrator',
+                        'Pusat Kendali Terintegrasi',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF0F172A),
                           fontWeight: FontWeight.w800,
-                          fontSize: 13.5,
+                          fontSize: 13,
+                          letterSpacing: -0.2,
                         ),
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Tahun Akademik 2026/2027 Ganjil aktif.',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                        'Tahun Akademik 2026/2027 Ganjil aktif • Database Supabase',
+                        style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
                       ),
                     ],
                   ),
@@ -859,18 +937,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.055),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.07),
-              blurRadius: 16,
-              offset: const Offset(0, 5),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -878,36 +956,42 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: color.withValues(alpha: 0.16)),
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(icon, color: color, size: 18),
                 ),
-                const Spacer(),
-                Icon(Icons.arrow_outward_rounded, color: color, size: 17),
+                const Icon(
+                  Icons.arrow_outward_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 15,
+                ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Text(
               count,
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF111827),
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.6,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
+                color: Color(0xFF64748B),
               ),
             ),
           ],
@@ -925,36 +1009,53 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.22)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.09),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withValues(alpha: 0.18)),
               ),
-              child: Icon(icon, color: Colors.white, size: 16),
+              child: Icon(icon, color: color, size: 16),
             ),
             const SizedBox(height: 10),
             Text(
               label,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.2,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1271,49 +1372,64 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
-    final color = switch (title.replaceAll('\n', ' ')) {
-      'Kelas' => const Color(0xFF3989D8),
-      'Mahasiswa' => const Color(0xFF159D9A),
-      'Dosen' => const Color(0xFFE96C78),
-      'Mata Kuliah' => const Color(0xFFF0A52B),
-      'Tahun Akademik' => const Color(0xFF7258D8),
-      'Manajemen Akun' => const Color(0xFF269A6C),
-      'Laporan' => const Color(0xFFDF7A36),
-      _ => const Color(0xFF6574C9),
+    final accentColor = switch (title.replaceAll('\n', ' ')) {
+      'Kelas' => const Color(0xFF5B3DE8),
+      'Mahasiswa' => const Color(0xFF0284C7),
+      'Dosen' => const Color(0xFF10B981),
+      'Mata Kuliah' => const Color(0xFFF59E0B),
+      'Tahun Akademik' => const Color(0xFF8B5CF6),
+      'Manajemen Akun' => const Color(0xFF0D9488),
+      'Laporan' => const Color(0xFFE11D48),
+      _ => const Color(0xFF64748B),
     };
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: color.withValues(alpha: 0.22),
-                width: 0.8,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.16),
+                  width: 0.8,
+                ),
+              ),
+              child: Icon(icon, color: accentColor, size: 20),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+                height: 1.15,
+                letterSpacing: -0.2,
               ),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: const TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF374151),
-              height: 1.15,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -4806,14 +4922,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     VoidCallback? onBack,
   }) {
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
           IconButton(
             icon: const Icon(
               Icons.arrow_back_rounded,
-              color: Color(0xFF111827),
+              color: Color(0xFF0F172A),
+              size: 20,
             ),
             onPressed: onBack ?? () => _navigateTo('dashboard'),
           ),
@@ -4822,21 +4942,22 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             child: Text(
               title,
               style: const TextStyle(
-                fontSize: 17,
+                fontSize: 16.5,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
             ),
           ),
           if (showSearch)
             IconButton(
-              icon: const Icon(Icons.search_rounded, color: Color(0xFF111827)),
+              icon: const Icon(Icons.search_rounded, color: Color(0xFF0F172A), size: 20),
               onPressed: onSearch ?? () {},
             ),
           if (!showSearch && onSearch != null)
             IconButton(
               tooltip: 'Muat ulang',
-              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF111827)),
+              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A), size: 20),
               onPressed: onSearch,
             ),
         ],
