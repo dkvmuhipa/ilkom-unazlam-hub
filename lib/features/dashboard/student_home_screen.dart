@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/app_colors.dart';
+import '../../core/widgets/saas_components.dart';
 import '../../core/services/student_dashboard_service.dart';
 import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
@@ -100,10 +102,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi ☀️';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang 🌤️';
-    if (hour >= 15 && hour < 18) return 'Selamat Sore 🌇';
-    return 'Selamat Malam 🌙';
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi â˜€ï¸';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang ðŸŒ¤ï¸';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore ðŸŒ‡';
+    return 'Selamat Malam ðŸŒ™';
   }
 
   String _formatCurrency(int amount) {
@@ -148,7 +150,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       backgroundColor: bgColor,
       body: SafeArea(
         child: RefreshIndicator(
-          color: const Color(0xFF5B3DE8),
+          color: AppColors.primary,
           onRefresh: _loadDashboard,
           child: _isLoading
               ? _buildShimmerLoading(context, isDark)
@@ -220,7 +222,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${_getGreeting()}, $firstName 👋',
+              '${_getGreeting()}, $firstName ðŸ‘‹',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -251,7 +253,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.school_rounded, size: 13, color: Color(0xFF5B3DE8)),
+              const Icon(Icons.school_rounded, size: 13, color: AppColors.primary),
               const SizedBox(width: 5),
               Text(
                 'Semester ${student.semester}',
@@ -339,7 +341,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       ),
                       child: Text(
-                        '⌘K',
+                        'âŒ˜K',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -385,7 +387,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ? Icons.notifications_active_rounded
                         : Icons.notifications_none_rounded,
                     color: _unreadNotificationCount > 0
-                        ? const Color(0xFF5B3DE8)
+                        ? AppColors.primary
                         : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155)),
                     size: 20,
                   ),
@@ -476,7 +478,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -503,59 +505,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     // Baris 1: Status Presensi UAS & Kehadiran
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: attendancePercent == null
-                                ? (isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9))
-                                : (isEligible
-                                    ? const Color(0xFFDCFCE7)
-                                    : const Color(0xFFFEF3C7)),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: attendancePercent == null
-                                  ? borderColor
-                                  : (isEligible
-                                      ? const Color(0xFF86EFAC)
-                                      : const Color(0xFFFDE68A)),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            attendancePercent == null
-                                ? 'Presensi Baru'
-                                : (isEligible ? 'UAS Aman' : 'Pantau Presensi'),
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: attendancePercent == null
-                                  ? textSub
-                                  : (isEligible
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFFB45309)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        if (attendancePercent != null) ...[
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isEligible ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$attendancePercent%',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: isEligible ? const Color(0xFF059669) : const Color(0xFFD97706),
-                            ),
-                          ),
-                        ],
+                        attendancePercent == null
+                            ? SoftPillBadge.neutral(label: 'Presensi Baru', fontSize: 10)
+                            : (isEligible
+                                ? SoftPillBadge.success(
+                                    label: 'UAS Aman $attendancePercent%',
+                                    fontSize: 10,
+                                    showDot: true,
+                                  )
+                                : SoftPillBadge.warning(
+                                    label: 'Pantau Presensi $attendancePercent%',
+                                    fontSize: 10,
+                                    showDot: true,
+                                  )),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -564,7 +526,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Text(
                       attendancePercent == null
                           ? 'Belum Ada Presensi'
-                          : '$hadirCount Hadir • $attendancePercent%',
+                          : '$hadirCount Hadir â€¢ $attendancePercent%',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -676,7 +638,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   child: _buildGojekActionItem(
                     icon: Icons.school_rounded,
                     label: 'KHS',
-                    color: const Color(0xFF5B3DE8),
+                    color: AppColors.primary,
                     bgColor: isDark ? const Color(0xFF262244) : const Color(0xFFEDE9FE),
                     textColor: textMain,
                     onTap: () => widget.onNavigateTab(15), // KHS & Transkrip Nilai (Tab 15)
@@ -769,7 +731,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Presensi Aktif • ${session.courseName}',
+                  'Presensi Aktif â€¢ ${session.courseName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -780,7 +742,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 Text(
                   attended
-                      ? 'Kamu sudah terdata hadir 🎉'
+                      ? 'Kamu sudah terdata hadir ðŸŽ‰'
                       : 'Sisa waktu ${session.remainingSeconds ~/ 60} menit',
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF059669), fontWeight: FontWeight.w600),
                 ),
@@ -852,7 +814,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         title: 'Voting',
         icon: Icons.how_to_vote_rounded,
         color: const Color(0xFF7C3AED),
-        bgColor: isDark ? const Color(0xFF2B2144) : const Color(0xFFF5F3FF),
+        bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
         tabIndex: 12, // Voting & Polling
       ),
       _ServiceItem(
@@ -882,7 +844,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -995,7 +957,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       statusLabel = '$inDays hari lagi';
     }
 
-    final formattedDeadline = DateFormat('EEE, d MMM yyyy • HH:mm', 'id_ID').format(due);
+    final formattedDeadline = DateFormat('EEE, d MMM yyyy â€¢ HH:mm', 'id_ID').format(due);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1041,7 +1003,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF5B3DE8),
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -1056,7 +1018,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: cardBg,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: (isOverdue || isUrgent) ? accentColor.withValues(alpha: 0.5) : borderColor,
               width: (isOverdue || isUrgent) ? 1.5 : 1.0,
@@ -1180,7 +1142,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5B3DE8),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Row(
@@ -1264,7 +1226,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF5B3DE8),
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -1343,7 +1305,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isLiveNow
               ? const Color(0xFF10B981)
@@ -1405,7 +1367,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             ? const Color(0xFF15803D)
                             : (isUpcomingSoon
                                 ? const Color(0xFFB45309)
-                                : const Color(0xFF5B3DE8)),
+                                : AppColors.primary),
                       ),
                     ),
                   ],
@@ -1445,7 +1407,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                '${course.dosen} • ${course.sks} SKS',
+                '${course.dosen} â€¢ ${course.sks} SKS',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -1542,7 +1504,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -1556,7 +1518,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         children: [
           CircleAvatar(
             backgroundColor: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
-            child: const Icon(Icons.beach_access_rounded, color: Color(0xFF5B3DE8), size: 20),
+            child: const Icon(Icons.beach_access_rounded, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1565,7 +1527,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Tidak Ada Kuliah 🎉',
+                  'Tidak Ada Kuliah ðŸŽ‰',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
@@ -1599,7 +1561,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -1651,7 +1613,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF5B3DE8),
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -1691,7 +1653,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF332014) : const Color(0xFFFFF4E5),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isDark ? const Color(0xFF54341F) : const Color(0xFFFFD59E),
           ),
@@ -1896,7 +1858,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     icon: Icons.school_rounded,
                     label: 'KHS Nilai',
                     color: const Color(0xFF7C3AED),
-                    bgColor: isDark ? const Color(0xFF2B2144) : const Color(0xFFF5F3FF),
+                    bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
                     textColor: textMain,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -1906,7 +1868,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   _buildModalMenuItem(
                     icon: Icons.person_outline_rounded,
                     label: 'Profil Saya',
-                    color: const Color(0xFF5B3DE8),
+                    color: AppColors.primary,
                     bgColor: isDark ? const Color(0xFF262244) : const Color(0xFFEDE9FE),
                     textColor: textMain,
                     onTap: () {
