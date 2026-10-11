@@ -8,7 +8,8 @@ import '../../models/models.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final bool canManage;
-  const ScheduleScreen({super.key, this.canManage = true});
+  final VoidCallback? onBack;
+  const ScheduleScreen({super.key, this.canManage = true, this.onBack});
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -502,6 +503,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Jadwal Kuliah',
           style: TextStyle(

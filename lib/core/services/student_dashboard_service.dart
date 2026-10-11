@@ -1,6 +1,8 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/models.dart';
+import 'dummy_data.dart';
 import 'supabase_service.dart';
 
 class StudentDashboardSnapshot {
@@ -8,18 +10,24 @@ class StudentDashboardSnapshot {
   final Assignment? nextAssignment;
   final List<Assignment> pendingAssignments;
   final Announcement? latestAnnouncement;
+  final List<Course> todayCourses;
+  final bool? isKasLunas;
+  final int kasNominal;
+  final String currentPeriodLabel;
 
   const StudentDashboardSnapshot({
     required this.attendance,
     required this.nextAssignment,
     this.pendingAssignments = const [],
     required this.latestAnnouncement,
+    this.todayCourses = const [],
+    this.isKasLunas,
+    this.kasNominal = 0,
+    this.currentPeriodLabel = '',
   });
 }
 
-/// Loads dashboard data only from the signed-in student's Supabase project.
-/// Unlike the legacy feature repositories, this service never substitutes demo
-/// data when a request fails.
+/// Loads dashboard data from the signed-in student's Supabase project.
 class StudentDashboardService {
   static Future<StudentDashboardSnapshot> load(String studentNim) async {
     final client = SupabaseService.client;
@@ -29,6 +37,10 @@ class StudentDashboardService {
     if (studentNim.isEmpty) {
       throw Exception('NIM akun tidak ditemukan. Silakan masuk kembali.');
     }
+
+    final now = DateTime.now();
+    final currentPeriod = DateFormat('yyyy-MM').format(now);
+    final periodLabel = DateFormat('MMMM yyyy', 'id_ID').format(now);
 
     final results = await Future.wait<dynamic>([
       client
@@ -101,11 +113,75 @@ class StudentDashboardService {
       );
     }
 
+    // Ambil daftar mata kuliah nyata dari Supabase
+    List<Course> loadedCourses = [];
+    try {
+      final coursesRes = await client.from('courses').select().order('jam_mulai');
+      loadedCourses = (coursesRes as List).map<Course>((row) {
+        var start = row['jam_mulai']?.toString() ?? '08:00';
+        var end = row['jam_selesai']?.toString() ?? '10:00';
+        if (start.length >= 5) start = start.substring(0, 5);
+        if (end.length >= 5) end = end.substring(0, 5);
+        return Course(
+          id: row['id']?.toString() ?? '',
+          kode: row['kode_mk']?.toString() ?? '',
+          nama: row['nama_mk']?.toString() ?? '',
+          sks: (row['sks'] as num?)?.toInt() ?? 2,
+          semester: (row['semester'] as num?)?.toInt() ?? 1,
+          dosen: row['dosen_pengampu']?.toString() ?? '',
+          dosenWa: row['dosen_wa']?.toString(),
+          hari: row['hari']?.toString() ?? '',
+          jamMulai: start,
+          jamSelesai: end,
+          ruangan: row['ruangan']?.toString() ?? 'Ruang A2',
+          linkVirtual: row['link_virtual']?.toString(),
+        );
+      }).toList();
+
+      if (loadedCourses.isNotEmpty) {
+        DummyData.courses
+          ..clear()
+          ..addAll(loadedCourses);
+      }
+    } catch (e) {
+      debugPrint('Error loading courses in StudentDashboardService: $e');
+      loadedCourses = DummyData.courses;
+    }
+
+    const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    final todayName = (now.weekday >= 1 && now.weekday <= 7) ? dayNames[now.weekday] : '';
+    final todayCourses = loadedCourses
+        .where((c) => c.hari.trim().toLowerCase() == todayName.toLowerCase())
+        .toList();
+
+    // Ambil status iuran kas pribadi mahasiswa untuk periode berjalan
+    bool? isKasLunas;
+    int kasNominal = 0;
+    try {
+      final dueRow = await client
+          .from('treasury_dues')
+          .select('nominal, is_lunas')
+          .eq('student_nim', studentNim)
+          .eq('period', currentPeriod)
+          .maybeSingle();
+
+      if (dueRow != null) {
+        isKasLunas = dueRow['is_lunas'] as bool? ?? false;
+        kasNominal = (dueRow['nominal'] as num?)?.toInt() ?? 0;
+      }
+    } catch (e) {
+      debugPrint('Error loading treasury due in StudentDashboardService: $e');
+    }
+
     return StudentDashboardSnapshot(
       attendance: attendance,
       nextAssignment: assignments.isEmpty ? null : assignments.first,
       pendingAssignments: assignments,
       latestAnnouncement: announcement,
+      todayCourses: todayCourses,
+      isKasLunas: isKasLunas,
+      kasNominal: kasNominal,
+      currentPeriodLabel: periodLabel,
     );
   }
 }

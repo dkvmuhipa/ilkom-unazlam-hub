@@ -10,12 +10,14 @@ class AcademicGradesScreen extends StatefulWidget {
   final String studentNim;
   final bool canManage;
   final StudentProfile? student;
+  final VoidCallback? onBack;
 
   const AcademicGradesScreen({
     super.key,
     required this.studentNim,
     this.canManage = false,
     this.student,
+    this.onBack,
   });
 
   @override
@@ -379,6 +381,17 @@ class _AcademicGradesScreenState extends State<AcademicGradesScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Kembali',
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else {
+              Navigator.maybePop(context);
+            }
+          },
+        ),
         title: const Text('Transkrip Nilai & IPK'),
         actions: [
           IconButton(

@@ -3,3 +3,7 @@ verify_jwt = true
 
 [functions.student-login]
 verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+

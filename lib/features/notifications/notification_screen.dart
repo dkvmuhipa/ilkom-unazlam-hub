@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/dummy_data.dart';
@@ -44,13 +45,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
   String _selectedFilter = 'Semua';
 
   List<ClassNotificationItem> _notifications = [];
+  final Set<String> _readIds = {};
+  final Set<String> _dismissedIds = {};
   bool _isLoading = true;
   String? _loadError;
+
+  String get _storageKeyPrefix => 'notif_${widget.studentNim}_';
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _loadStoredPreferences().then((_) => _loadNotifications());
+  }
+
+  Future<void> _loadStoredPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedRead = prefs.getStringList('${_storageKeyPrefix}read_ids') ?? [];
+      final storedDismissed = prefs.getStringList('${_storageKeyPrefix}dismissed_ids') ?? [];
+      _readIds.addAll(storedRead);
+      _dismissedIds.addAll(storedDismissed);
+    } catch (e) {
+      debugPrint('Error loading notif prefs: $e');
+    }
+  }
+
+  Future<void> _persistPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('${_storageKeyPrefix}read_ids', _readIds.toList());
+      await prefs.setStringList('${_storageKeyPrefix}dismissed_ids', _dismissedIds.toList());
+    } catch (e) {
+      debugPrint('Error saving notif prefs: $e');
+    }
   }
 
   Future<void> _loadNotifications() async {
@@ -141,17 +168,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       }
 
+      // Terapkan status tersimpan: buang yang di-dismiss, tandai yang sudah dibaca
+      final activeRows = rows
+          .where((item) => !_dismissedIds.contains(item.id))
+          .map((item) {
+            if (_readIds.contains(item.id)) {
+              item.isRead = true;
+            }
+            return item;
+          })
+          .toList();
+
       if (!mounted) return;
       setState(() {
-        _notifications = rows;
+        _notifications = activeRows;
         _isLoading = false;
       });
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loadError = 'Notifikasi gagal dimuat dari Supabase.';
           _isLoading = false;
         });
+      }
       debugPrint('Gagal memuat notifikasi: $error');
     }
   }
@@ -207,9 +246,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     final filtered = _notifications.where((n) {
       if (_selectedFilter == 'Belum Dibaca') return !n.isRead;
-      if (_selectedFilter == 'Tugas & Deadline')
+      if (_selectedFilter == 'Tugas & Deadline') {
         return n.category == 'deadline';
-      if (_selectedFilter == 'Pengumuman') return n.category == 'announcement';
+      }
+      if (_selectedFilter == 'Pengumuman') {
+        return n.category == 'announcement';
+      }
       return true;
     }).toList();
 
@@ -266,8 +308,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 setState(() {
                   for (var n in _notifications) {
                     n.isRead = true;
+                    _readIds.add(n.id);
                   }
                 });
+                _persistPreferences();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Semua notifikasi ditandai telah dibaca'),
@@ -382,12 +426,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    itemCount: filtered.length,
+                : RefreshIndicator(
+                    color: const Color(0xFF5B3DE8),
+                    onRefresh: _loadNotifications,
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      itemCount: filtered.length,
                     itemBuilder: (context, i) {
                       final notif = filtered[i];
                       final catColor = _getCategoryColor(notif.category);
@@ -410,10 +458,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                         onDismissed: (_) {
                           setState(
-                            () => _notifications.removeWhere(
-                              (n) => n.id == notif.id,
-                            ),
+                            () {
+                              _notifications.removeWhere(
+                                (n) => n.id == notif.id,
+                              );
+                              _dismissedIds.add(notif.id);
+                            },
                           );
+                          _persistPreferences();
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
@@ -439,7 +491,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                           child: InkWell(
                             onTap: () {
-                              setState(() => notif.isRead = true);
+                              setState(() {
+                                notif.isRead = true;
+                                _readIds.add(notif.id);
+                              });
+                              _persistPreferences();
                               if (notif.category == 'deadline') {
                                 widget.onNavigateTab?.call(2); // Tugas
                               } else if (notif.category == 'announcement') {
@@ -526,6 +582,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       );
                     },
                   ),
+                ),
           ),
         ],
       ),

@@ -11,6 +11,7 @@ import 'core/services/supabase_service.dart';
 import 'core/services/supabase_repository.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/auth_callback_url.dart';
+import 'core/services/fcm_service.dart';
 import 'features/dashboard/student_home_screen.dart';
 import 'features/schedule/schedule_screen.dart';
 import 'features/assignments/assignments_screen.dart';
@@ -51,6 +52,9 @@ void main() async {
 
   // Inisialisasi Supabase
   await SupabaseService.initialize();
+
+  // Inisialisasi Firebase Cloud Messaging (FCM)
+  await FcmService.initialize();
 
   String? authCallbackError;
   final tokenHash = authCallback.tokenHash;
@@ -203,6 +207,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
         _userName = profile.nama;
         _isAdminMode = profile.isAdmin;
       });
+      unawaited(FcmService.syncDeviceToken(profile.nim));
     }
   }
 
@@ -223,6 +228,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isLoggedIn = true;
       _isAdminMode = profile.isAdmin;
     });
+    unawaited(FcmService.syncDeviceToken(profile.nim));
   }
 
   Future<void> _onLogout() async {
@@ -380,21 +386,25 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       ScheduleScreen(
         key: ValueKey('schedule_${currentUser.nim}'),
         canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+        onBack: _goBack,
       ), // 1: Jadwal
       AssignmentsScreen(
         key: ValueKey('assignments_${currentUser.nim}'),
         canManage: currentUser.canManageAssignments,
         userNim: currentUser.nim,
+        onBack: _goBack,
       ), // 2: Tugas
       DirectoryScreen(
         key: ValueKey('directory_${currentUser.nim}'),
         canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
+        onBack: _goBack,
       ), // 3: Kelas (Anggota)
       ProfileScreen(
         key: ValueKey('profile_${currentUser.nim}'),
         onNavigateTab: _navigateToIndex,
         userNim: currentUser.nim,
         student: currentUser,
+        onBack: _goBack,
       ), // 4: Profil Saya
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
@@ -447,6 +457,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         studentNim: currentUser.nim,
         canManage: currentUser.isAdmin,
         student: currentUser,
+        onBack: _goBack,
       ), // 15: Transkrip Nilai & IPK
     ];
 
@@ -545,9 +556,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   }
 
   Widget _buildDesktopSidebar(StudentProfile student) {
+    final theme = Theme.of(context);
     return Container(
       width: 238,
-      color: Colors.white,
+      color: theme.colorScheme.surface,
       child: Column(
         children: [
           Padding(
@@ -851,7 +863,6 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   // Screen 12: Sidebar Menu Drawer
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: Colors.white,
       child: SafeArea(
         child: Column(
           children: [

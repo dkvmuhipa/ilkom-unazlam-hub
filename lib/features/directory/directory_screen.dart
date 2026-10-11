@@ -8,7 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 class DirectoryScreen extends StatefulWidget {
   final bool canManage;
-  const DirectoryScreen({super.key, this.canManage = false});
+  final VoidCallback? onBack;
+  const DirectoryScreen({super.key, this.canManage = false, this.onBack});
 
   @override
   State<DirectoryScreen> createState() => _DirectoryScreenState();
@@ -101,6 +102,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Anggota Kelas',
           style: TextStyle(

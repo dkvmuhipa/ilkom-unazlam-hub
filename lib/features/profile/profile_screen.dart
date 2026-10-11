@@ -8,12 +8,14 @@ class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
   final String? userNim;
   final StudentProfile? student;
+  final VoidCallback? onBack;
 
   const ProfileScreen({
     super.key,
     this.onNavigateTab,
     this.userNim,
     this.student,
+    this.onBack,
   });
 
   @override
@@ -132,32 +134,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? 'Sekretaris Kelas ILKOM 2026'
                           : 'Mahasiswa ILKOM 2026')));
 
-    final roleBadgeBg = student.isAdmin
-        ? const Color(0xFFFEE2E2)
-        : (student.isKetuaKelas
-              ? const Color(0xFFFEF3C7)
-              : (student.isBendahara
-                    ? const Color(0xFFDCFCE7)
-                    : (student.isSekretaris
-                          ? const Color(0xFFEDE9FE)
-                          : const Color(0xFFF3F0FF))));
 
-    final roleBadgeColor = student.isAdmin
-        ? const Color(0xFFDC2626)
-        : (student.isKetuaKelas
-              ? const Color(0xFFB45309)
-              : (student.isBendahara
-                    ? const Color(0xFF16A34A)
-                    : (student.isSekretaris
-                          ? const Color(0xFF6D28D9)
-                          : AppColors.primary)));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Profil Saya',
           style: TextStyle(
@@ -174,12 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               size: 22,
             ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Pengaturan aplikasi'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              _showThemeSettingsDialog();
             },
           ),
           const SizedBox(width: 8),

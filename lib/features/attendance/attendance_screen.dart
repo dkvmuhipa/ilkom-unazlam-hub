@@ -215,6 +215,352 @@ class AttendanceScreen extends StatefulWidget {
     );
   }
 
+  static void showStudentScanner(
+    BuildContext context, {
+    required String userNim,
+    VoidCallback? onSuccess,
+  }) {
+    final tokenController = TextEditingController();
+    final session = currentSession;
+
+    String selectedCourse = (session != null && !session.isExpired)
+        ? session.courseName
+        : (DummyData.courses.isNotEmpty ? DummyData.courses.first.nama : 'Mata Kuliah');
+
+    String? scanStatusMessage;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final liveSession = currentSession;
+          final bool hasLiveSession = (liveSession != null && !liveSession.isExpired);
+          final bool isLiveForSelectedCourse = hasLiveSession && liveSession.courseName == selectedCourse;
+
+          void executeVerification(String tokenToVerify) {
+            final targetSession = currentSession;
+
+            // 1. Validasi sesi aktif
+            if (targetSession == null || targetSession.isExpired) {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Tidak ada sesi presensi aktif atau sesi telah berakhir! Silakan minta dosen/ketua kelas membuka sesi.'),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Color(0xFFEF4444),
+                  duration: Duration(seconds: 4),
+                ),
+              );
+              return;
+            }
+
+            final activeNim = userNim;
+
+            // 2. Validasi Token jika diberikan (trim & case-insensitive)
+            final cleanTokenInput = tokenToVerify.trim().toUpperCase();
+            final cleanSessionToken = targetSession.token.trim().toUpperCase();
+            if (cleanTokenInput.isEmpty || cleanTokenInput != cleanSessionToken) {
+              setModalState(() {
+                scanStatusMessage = 'Token tidak cocok dengan sesi aktif.';
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
+                  backgroundColor: Color(0xFFEF4444),
+                ),
+              );
+              return;
+            }
+
+            // 3. Validasi duplikasi presensi
+            if (targetSession.attendedNims.contains(activeNim)) {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('NIM $activeNim sudah tercatat hadir untuk sesi ${targetSession.courseName} ini!'),
+                  backgroundColor: const Color(0xFFF59E0B),
+                ),
+              );
+              return;
+            }
+
+            Navigator.pop(ctx);
+
+            // Simpan ke sesi aktif & Supabase
+            targetSession.attendedNims.add(activeNim);
+            SupabaseRepository.logAttendance(
+              courseId: targetSession.courseName,
+              studentNim: activeNim,
+              pertemuanKe: targetSession.pertemuanKe,
+              status: 'Hadir',
+              catatan: tokenToVerify.isNotEmpty ? 'Presensi Token: $tokenToVerify' : 'Presensi Scanner QR',
+            ).then((_) {
+              onSuccess?.call();
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text('Presensi Hadir untuk "${targetSession.courseName}" berhasil diverifikasi! 🎉'),
+                    ),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF10B981),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+
+          final m = (liveSession?.remainingSeconds ?? 0) ~/ 60;
+          final s = (liveSession?.remainingSeconds ?? 0) % 60;
+          final timerStr = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Scan / Verifikasi QR Presensi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                          SizedBox(height: 2),
+                          Text('Pindai QR dosen/ketua kelas atau masukkan token sesi', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCourse,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mata Kuliah',
+                    labelStyle: const TextStyle(fontSize: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                  items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() {
+                        selectedCourse = val;
+                        scanStatusMessage = null;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                if (hasLiveSession) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isLiveForSelectedCourse ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isLiveForSelectedCourse ? const Color(0xFF86EFAC) : const Color(0xFFFDE68A),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isLiveForSelectedCourse ? Icons.sensors_rounded : Icons.info_outline_rounded,
+                          size: 16,
+                          color: isLiveForSelectedCourse ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isLiveForSelectedCourse
+                                ? 'Sesi Aktif: Token "${liveSession.token}" ($timerStr)'
+                                : 'Sesi aktif kelas saat ini: ${liveSession.courseName}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isLiveForSelectedCourse ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                            ),
+                          ),
+                        ),
+                        if (isLiveForSelectedCourse)
+                          InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                tokenController.text = liveSession.token;
+                                scanStatusMessage = 'Token otomatis terisi dari sesi aktif!';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF16A34A),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Isi Token',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                Container(
+                  width: double.infinity,
+                  height: 190,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (!kIsWeb)
+                        MobileScanner(
+                          fit: BoxFit.cover,
+                          onDetect: (capture) {
+                            final List<Barcode> barcodes = capture.barcodes;
+                            for (final barcode in barcodes) {
+                              final rawVal = barcode.rawValue;
+                              if (rawVal != null && rawVal.isNotEmpty) {
+                                executeVerification(rawVal);
+                                break;
+                              }
+                            }
+                          },
+                        )
+                      else
+                        const Center(
+                          child: Text('Web Preview Mode (Gunakan input token manual di bawah)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        ),
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFF5B3DE8), width: 2.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.qr_code_scanner_rounded, size: 13, color: Colors.white70),
+                              SizedBox(width: 5),
+                              Text(
+                                'Arahkan kamera ke QR Code',
+                                style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: tokenController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: 'Atau Masukkan Kode Token Sesi',
+                    hintText: 'Contoh: MK-9481',
+                    labelStyle: const TextStyle(fontSize: 12),
+                    prefixIcon: const Icon(Icons.vpn_key_rounded, size: 18),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+
+                if (scanStatusMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    scanStatusMessage!,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF5B3DE8)),
+                  ),
+                ],
+
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    final token = tokenController.text.trim();
+                    if (token.isEmpty) {
+                      if (hasLiveSession) {
+                        executeVerification(liveSession.token);
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Silakan klik jendela kamera untuk scan QR atau masukkan kode token sesi!'),
+                          backgroundColor: Color(0xFFEF4444),
+                        ),
+                      );
+                      return;
+                    }
+                    executeVerification(token);
+                  },
+                  icon: const Icon(Icons.verified_rounded, size: 18),
+                  label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B3DE8),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
@@ -797,383 +1143,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _showScanQrModal(BuildContext context) {
-    final tokenController = TextEditingController();
-    final session = currentSession;
-    
-    // Auto-select course if there is an active session
-    String selectedCourse = (session != null && !session.isExpired)
-        ? session.courseName
-        : DummyData.courses.first.nama;
-
-    String? scanStatusMessage;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final liveSession = currentSession;
-          final bool hasLiveSession = (liveSession != null && !liveSession.isExpired);
-          final bool isLiveForSelectedCourse = hasLiveSession && liveSession.courseName == selectedCourse;
-
-          void executeVerification(String tokenToVerify) {
-            final targetSession = currentSession;
-
-            // 1. Validasi sesi aktif
-            if (targetSession == null || targetSession.isExpired) {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Row(
-                    children: [
-                      Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Tidak ada sesi presensi aktif atau sesi 15 menit telah berakhir/kadaluwarsa! Silakan minta dosen/ketua kelas membuka sesi.'),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: Color(0xFFEF4444),
-                  duration: Duration(seconds: 4),
-                ),
-              );
-              return;
-            }
-
-            final activeNim = widget.userNim ?? '';
-
-            // 2. Validasi Token jika diberikan (trim & case-insensitive)
-            final cleanTokenInput = tokenToVerify.trim().toUpperCase();
-            final cleanSessionToken = targetSession.token.trim().toUpperCase();
-            if (cleanTokenInput.isEmpty || cleanTokenInput != cleanSessionToken) {
-              setModalState(() {
-                scanStatusMessage = 'Token tidak cocok dengan sesi aktif.';
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Kode token salah. Periksa kembali token dari pengurus kelas.'),
-                  backgroundColor: const Color(0xFFEF4444),
-                ),
-              );
-              return;
-            }
-
-            // 3. Validasi duplikasi presensi
-            if (targetSession.attendedNims.contains(activeNim)) {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('NIM $activeNim sudah tercatat hadir untuk sesi ${targetSession.courseName} ini!'),
-                  backgroundColor: const Color(0xFFF59E0B),
-                ),
-              );
-              return;
-            }
-
-            Navigator.pop(ctx);
-
-            // Simpan ke sesi aktif & Supabase
-            targetSession.attendedNims.add(activeNim);
-            SupabaseRepository.logAttendance(
-              courseId: targetSession.courseName,
-              studentNim: activeNim,
-              pertemuanKe: targetSession.pertemuanKe,
-              status: 'Hadir',
-              catatan: tokenToVerify.isNotEmpty ? 'Presensi Token: $tokenToVerify' : 'Presensi Scanner QR',
-            ).then((_) {
-              _loadRealAttendanceData();
-            });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('Presensi Hadir untuk "${targetSession.courseName}" berhasil diverifikasi! 🎉'),
-                    ),
-                  ],
-                ),
-                backgroundColor: const Color(0xFF10B981),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-
-          return Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Scan / Verifikasi QR Presensi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                          SizedBox(height: 2),
-                          Text('Pindai QR dosen/ketua kelas atau masukkan token sesi', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Mata Kuliah Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCourse,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Mata Kuliah',
-                    labelStyle: const TextStyle(fontSize: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  ),
-                  items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setModalState(() {
-                        selectedCourse = val;
-                        scanStatusMessage = null;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 10),
-
-                // Live Session Status Banner / Auto-fill Helper
-                if (hasLiveSession) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isLiveForSelectedCourse ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isLiveForSelectedCourse ? const Color(0xFF86EFAC) : const Color(0xFFFDE68A),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isLiveForSelectedCourse ? Icons.sensors_rounded : Icons.info_outline_rounded,
-                          size: 16,
-                          color: isLiveForSelectedCourse ? const Color(0xFF16A34A) : const Color(0xFFD97706),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            isLiveForSelectedCourse
-                                ? 'Sesi Aktif: Token "${liveSession.token}" (${_formatTimer(liveSession.remainingSeconds)})'
-                                : 'Sesi aktif kelas saat ini: ${liveSession.courseName}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isLiveForSelectedCourse ? const Color(0xFF15803D) : const Color(0xFFB45309),
-                            ),
-                          ),
-                        ),
-                        if (isLiveForSelectedCourse)
-                          InkWell(
-                            onTap: () {
-                              setModalState(() {
-                                tokenController.text = liveSession.token;
-                                scanStatusMessage = 'Token otomatis terisi dari sesi aktif!';
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF16A34A),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                'Isi Token',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Interactive Camera Scanner Viewfinder (Real Camera via MobileScanner)
-                Container(
-                  width: double.infinity,
-                  height: 190,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Active Hardware Camera Stream on Mobile/Device
-                      if (!kIsWeb)
-                        MobileScanner(
-                          fit: BoxFit.cover,
-                          onDetect: (capture) {
-                            final List<Barcode> barcodes = capture.barcodes;
-                            for (final barcode in barcodes) {
-                              final rawVal = barcode.rawValue;
-                              if (rawVal != null && rawVal.isNotEmpty) {
-                                executeVerification(rawVal);
-                                break;
-                              }
-                            }
-                          },
-                        )
-                      else ...[
-                        // Web / Desktop Fallback Interactive Viewfinder
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Text(
-                              'Pemindaian kamera tidak tersedia di platform ini. Masukkan token yang diberikan pengurus.',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      // Viewfinder Overlay Box & Target Reticle
-                      IgnorePointer(
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(0xFF10B981),
-                              width: 2.5,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-
-                      // Scanning Animation Bar / Status Overlays
-                      Positioned(
-                        bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF10B981),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                !kIsWeb
-                                    ? 'Kamera Device Aktif • Arahkan ke QR'
-                                    : 'Arahkan kamera ke QR Code',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                if (scanStatusMessage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    scanStatusMessage!,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF5B3DE8)),
-                  ),
-                ],
-
-                const SizedBox(height: 14),
-
-                // Manual Token Input Option
-                TextField(
-                  controller: tokenController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: 'Atau Masukkan Kode Token Sesi',
-                    hintText: hasLiveSession ? liveSession.token : 'Contoh: ILKOM-PENDIDIKAN-P1',
-                    prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
-                    suffixIcon: tokenController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => setModalState(() => tokenController.clear()),
-                          )
-                        : null,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
-                  onChanged: (_) => setModalState(() {}),
-                ),
-                const SizedBox(height: 16),
-
-                // Submit Verification Button
-                ElevatedButton.icon(
-                  onPressed: () {
-                          final token = tokenController.text.trim();
-                          if (token.isEmpty) {
-                            // Coba auto-scan dari sesi aktif jika ada
-                            if (hasLiveSession) {
-                              executeVerification(liveSession.token);
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Silakan klik jendela kamera untuk scan QR atau masukkan kode token sesi!'),
-                                backgroundColor: Color(0xFFEF4444),
-                              ),
-                            );
-                            return;
-                          }
-                          executeVerification(token);
-                        },
-                  icon: const Icon(Icons.verified_rounded, size: 18),
-                  label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5B3DE8),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+    AttendanceScreen.showStudentScanner(
+      context,
+      userNim: widget.userNim ?? '',
+      onSuccess: () => _loadRealAttendanceData(),
     );
   }
 
@@ -1209,13 +1182,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         backgroundColor: theme.cardColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: widget.onBack != null
-            ? IconButton(
-                icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF111827)),
-                tooltip: 'Kembali',
-                onPressed: widget.onBack,
-              )
-            : null,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF111827)),
+          tooltip: 'Kembali',
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else {
+              Navigator.maybePop(context);
+            }
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2368,15 +2345,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      courseLogs.isNotEmpty ? '${courseLogs.length} Sesi Terlaksana' : 'P1 Belum Dimulai',
+                      courseLogs.isNotEmpty ? '${courseLogs.length}/16 Sesi Terlaksana' : 'P1 Belum Dimulai',
                       style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
                     ),
                     Text(
-                      'Target Minimal 12/16 Pertemuan (75%)',
-                      style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
-                    ),
-                    Text(
-                      'P16 (UAS)',
+                      'Target Min. 12 Sesi (75%)',
                       style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
                     ),
                   ],

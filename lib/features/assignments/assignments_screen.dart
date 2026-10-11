@@ -15,7 +15,8 @@ import '../../models/models.dart';
 class AssignmentsScreen extends StatefulWidget {
   final bool canManage;
   final String? userNim;
-  const AssignmentsScreen({super.key, this.canManage = true, this.userNim});
+  final VoidCallback? onBack;
+  const AssignmentsScreen({super.key, this.canManage = true, this.userNim, this.onBack});
 
   static void showAssignmentDetail(
     BuildContext context,
@@ -517,6 +518,13 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                tooltip: 'Kembali',
+                onPressed: widget.onBack,
+              )
+            : null,
         title: const Text(
           'Tugas Kelas',
           style: TextStyle(

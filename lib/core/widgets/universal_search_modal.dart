@@ -92,10 +92,11 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
       {'title': 'Jadwal Kuliah Semester 1', 'desc': 'Daftar mata kuliah, ruangan, & kontak dosen', 'tab': 1, 'badge': 'Jadwal', 'icon': Icons.calendar_today_rounded},
       {'title': 'Tugas & Deadline Kuliah', 'desc': 'Manajemen tugas aktif, deadline, & kirim tugas', 'tab': 2, 'badge': 'Tugas', 'icon': Icons.assignment_outlined},
       {'title': 'Kas & Keuangan Kelas', 'desc': 'Laporan saldo transparan & status iuran mahasiswa', 'tab': 8, 'badge': 'Kas', 'icon': Icons.account_balance_wallet_outlined},
-      {'title': 'Gudang Materi & Silabus', 'desc': 'Kumpulan slide kuliah, RPS, e-book, dan modul', 'tab': 6, 'badge': 'Materi', 'icon': Icons.menu_book_rounded},
+      {'title': 'Gudang Materi & Silabus', 'desc': 'Kumpulan slide kuliah, RPS, e-book, dan modul', 'tab': 10, 'badge': 'Materi', 'icon': Icons.menu_book_rounded},
+      {'title': 'Transkrip Nilai & KHS', 'desc': 'Cek perolehan nilai, IPK, dan ekspor KHS resmi', 'tab': 15, 'badge': 'Nilai', 'icon': Icons.school_outlined},
       {'title': 'Voting & Musyawarah Kelas', 'desc': 'Polling musyawarah kesepakatan jadwal dan makrab', 'tab': 12, 'badge': 'Voting', 'icon': Icons.how_to_vote_rounded},
       {'title': 'Pengumuman Kelas', 'desc': 'Pemberitahuan resmi dari Komti dan dosen', 'tab': 7, 'badge': 'Info', 'icon': Icons.campaign_rounded},
-      {'title': 'Surat Akademik Resmi', 'desc': 'Generator surat izin kuliah dan dispensasi', 'tab': 11, 'badge': 'Surat', 'icon': Icons.description_outlined},
+      {'title': 'Surat Akademik Resmi', 'desc': 'Generator surat izin kuliah dan dispensasi', 'tab': 13, 'badge': 'Surat', 'icon': Icons.description_outlined},
     ];
 
     final matchedActions = q.isEmpty
@@ -280,7 +281,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
                                   isDark: isDark,
                                   onTap: () {
                                     Navigator.pop(context);
-                                    widget.onNavigateTab(6); // Materi
+                                    widget.onNavigateTab(10); // Gudang Materi
                                   },
                                 )),
                             const SizedBox(height: 12),

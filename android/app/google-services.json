@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180107237233",
+    "project_id": "ilkom-unazlam-hub",
+    "storage_bucket": "ilkom-unazlam-hub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180107237233:android:941a5c7d012a7ff97148d0",
+        "android_client_info": {
+          "package_name": "com.gellonatech.class_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBipo3QMMVzn4nuB56uqneTYnhj20gF9fc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

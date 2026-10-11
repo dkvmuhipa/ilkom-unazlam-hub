@@ -50,6 +50,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   late List<Course> _courses;
   late List<LecturerItem> _lecturers;
 
+  int _registeredTokensCount = 0;
+  bool _isRefreshing = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,21 +62,84 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     _lecturers = [];
     _reportFuture = _loadReportSnapshot();
     unawaited(_loadAcademicData());
+    unawaited(_loadManagedAccounts());
+    unawaited(_loadPushTokensCount());
+  }
+
+  Future<void> _loadPushTokensCount() async {
+    try {
+      final client = SupabaseService.client;
+      if (client != null) {
+        final res = await client.from('user_push_tokens').select('id');
+        if (mounted) {
+          setState(() {
+            _registeredTokensCount = (res as List).length;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _refreshAllAdminData() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+      _reportFuture = _loadReportSnapshot();
+    });
+    try {
+      await Future.wait([
+        _loadAcademicData(),
+        _loadManagedAccounts(),
+        _loadPushTokensCount(),
+      ]);
+      if (mounted) {
+        _showAdminMessage('Seluruh modul dan data admin berhasil disinkronkan!');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showAdminMessage('Sinkronisasi selesai dengan beberapa data offline.', isError: false);
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
   }
 
   Future<Map<String, String>> _loadReportSnapshot() async {
     final client = SupabaseService.client;
-    if (client == null) throw Exception('Supabase belum terhubung.');
-    final results = await Future.wait([
-      client.from('attendance_logs').select('status'),
-      client.from('treasury_transactions').select('nominal,is_pemasukan'),
-      client.from('assignments').select('id'),
-      client.from('students').select('nim').eq('is_aktif', true).neq('role', 'ADMIN'),
-    ]);
-    final attendance = List<Map<String, dynamic>>.from(results[0] as List);
-    final cash = List<Map<String, dynamic>>.from(results[1] as List);
-    final assignments = List<dynamic>.from(results[2] as List);
-    final students = List<dynamic>.from(results[3] as List);
+    if (client == null) {
+      return {
+        'attendance': 'Belum terhubung ke Supabase',
+        'treasury': 'Rp 0',
+        'assignments': '0 tugas tercatat',
+        'students': '${DummyData.students.length} akun mahasiswa',
+      };
+    }
+
+    List<Map<String, dynamic>> attendance = [];
+    List<Map<String, dynamic>> cash = [];
+    List<dynamic> assignments = [];
+    List<dynamic> students = [];
+
+    try {
+      final res = await client.from('attendance_logs').select('status');
+      attendance = List<Map<String, dynamic>>.from(res as List);
+    } catch (_) {}
+
+    try {
+      final res = await client.from('treasury_transactions').select('nominal,is_pemasukan');
+      cash = List<Map<String, dynamic>>.from(res as List);
+    } catch (_) {}
+
+    try {
+      final res = await client.from('assignments').select('id');
+      assignments = List<dynamic>.from(res as List);
+    } catch (_) {}
+
+    try {
+      final res = await client.from('students').select('nim').eq('is_aktif', true).neq('role', 'ADMIN');
+      students = List<dynamic>.from(res as List);
+    } catch (_) {}
+
     final present = attendance.where((row) => (row['status']?.toString().toLowerCase() ?? '') == 'hadir').length;
     final attendanceRate = attendance.isEmpty ? null : (present * 100 / attendance.length).round();
     final balance = cash.fold<int>(0, (sum, row) {
@@ -81,11 +147,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       return sum + (row['is_pemasukan'] == true ? amount : -amount);
     });
     final formattedBalance = balance.abs().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+
     return {
-      'attendance': attendanceRate == null ? 'Belum ada data presensi' : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
+      'attendance': attendanceRate == null ? 'Kehadiran: Belum ada sesi' : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
       'treasury': 'Saldo dari ${cash.length} transaksi: Rp ${balance < 0 ? '-' : ''}$formattedBalance',
-      'assignments': '${assignments.length} tugas tercatat di database',
-      'students': '${students.length} akun mahasiswa aktif',
+      'assignments': '${assignments.length} tugas aktif tercatat',
+      'students': '${students.isNotEmpty ? students.length : _managedAccounts.where((s) => s.isAktif).length} akun mahasiswa aktif',
     };
   }
 
@@ -319,16 +386,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // SCREEN 3: DASHBOARD ADMIN
   // ==========================================
   Widget _buildDashboard() {
-    final activeStudentsCount = DummyData.students
-        .where((s) => s.role != 'ADMIN')
-        .length;
+    final sourceStudents = _managedAccounts.isNotEmpty
+        ? _managedAccounts.where((s) => !s.isAdmin).toList()
+        : DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    final activeStudentsCount = sourceStudents.where((s) => s.isAktif).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Greeting + Notification Bell + Mode Mahasiswa
+          // Header: Greeting + Notification Bell + Sync + Mode Siswa
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,6 +443,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
               Row(
                 children: [
+                  // Tombol Sinkronisasi Data Master
+                  InkWell(
+                    onTap: _isRefreshing ? null : _refreshAllAdminData,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: _isRefreshing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF5B3DE8),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.sync_rounded,
+                              color: Color(0xFF5B3DE8),
+                              size: 20,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   // Mode Mahasiswa Preview Button
                   InkWell(
                     onTap: widget.onSwitchToStudentView,
@@ -423,7 +519,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         child: const Icon(
                           Icons.notifications_none_rounded,
                           color: Color(0xFF5B3DE8),
-                          size: 22,
+                          size: 20,
                         ),
                       ),
                       Positioned(
@@ -444,7 +540,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // 4 Stat Cards in 2x2 Grid (Screen 3)
           Row(
@@ -494,7 +590,138 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 14),
+
+          // Banner Integrasi FCM Push Notification
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F3FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFDDD6FE)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.send_to_mobile_rounded,
+                    color: Color(0xFF7C3AED),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Notifikasi Push Firebase (FCM v1)',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF4C1D95),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_registeredTokensCount HP mahasiswa terdaftar & siap menerima broadcast push otomatis.',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF6D28D9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Kirim Pengumuman Push Cepat',
+                  icon: const Icon(
+                    Icons.campaign_rounded,
+                    color: Color(0xFF7C3AED),
+                    size: 22,
+                  ),
+                  onPressed: _showBroadcastAnnouncementDialog,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+
+          // Section "Aksi Cepat Admin"
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Aksi Cepat Terintegrasi',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              InkWell(
+                onTap: _showQuickExportModal,
+                borderRadius: BorderRadius.circular(8),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.download_rounded, size: 14, color: Color(0xFF5B3DE8)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Ekspor Data',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF5B3DE8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionButton(
+                  icon: Icons.campaign_rounded,
+                  label: 'Pengumuman',
+                  subtitle: 'Kirim Push',
+                  color: const Color(0xFF8B5CF6),
+                  onTap: _showBroadcastAnnouncementDialog,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildQuickActionButton(
+                  icon: Icons.post_add_rounded,
+                  label: 'Tugas Baru',
+                  subtitle: 'Rilis & Notif',
+                  color: const Color(0xFF0EA5E9),
+                  onTap: _showCreateAssignmentDialog,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildQuickActionButton(
+                  icon: Icons.person_add_rounded,
+                  label: 'Mahasiswa',
+                  subtitle: 'Undang Akun',
+                  color: const Color(0xFF10B981),
+                  onTap: _showCreateStudentAccountDialog,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
 
           // Section "Menu Utama" (Screen 3)
           const Text(
@@ -682,6 +909,356 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF6B7280),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.22)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white, size: 16),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBroadcastAnnouncementDialog() {
+    final titleCtrl = TextEditingController();
+    final bodyCtrl = TextEditingController();
+    String category = 'Penting';
+    bool isPinned = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.campaign_rounded, color: Color(0xFF5B3DE8), size: 24),
+              SizedBox(width: 10),
+              Text('Broadcast Pengumuman', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFormLabel('Judul Pengumuman'),
+                _buildFormField(controller: titleCtrl, hintText: 'Contoh: Perubahan Jadwal Kuliah & Ujian'),
+                const SizedBox(height: 12),
+                _buildFormLabel('Kategori'),
+                _buildDropdownField<String>(
+                  value: category,
+                  items: const ['Penting', 'Akademik', 'Info Fakultas', 'Jadwal Kuliah', 'Tugas'],
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => category = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildFormLabel('Isi Pengumuman'),
+                TextField(
+                  controller: bodyCtrl,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Tuliskan informasi akademik resmi untuk mahasiswa...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Sematkan di Atas (Pin)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  value: isPinned,
+                  onChanged: (v) => setDialogState(() => isPinned = v),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F0FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.notifications_active_rounded, color: Color(0xFF5B3DE8), size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pesan ini akan otomatis disebarkan melalui Notifikasi Push FCM ke HP seluruh mahasiswa.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF5B3DE8), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            FilledButton.icon(
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: const Text('Terbitkan & Push'),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF5B3DE8)),
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty || bodyCtrl.text.trim().isEmpty) {
+                  _showAdminMessage('Judul dan isi pengumuman harus diisi.', isError: true);
+                  return;
+                }
+                Navigator.pop(ctx);
+                final ok = await SupabaseRepository.createAnnouncement(
+                  judul: titleCtrl.text.trim(),
+                  isi: bodyCtrl.text.trim(),
+                  kategori: category,
+                  isPinned: isPinned,
+                  authorName: 'Admin Akademik',
+                );
+                if (ok) {
+                  _recordAudit(
+                    action: 'CREATE',
+                    module: 'PENGUMUMAN',
+                    description: 'Menerbitkan pengumuman "${titleCtrl.text.trim()}" dan mengirim broadcast push.',
+                  );
+                  _showAdminMessage('Pengumuman resmi diterbitkan & broadcast push dikirimkan!');
+                  await _refreshAllAdminData();
+                } else {
+                  _showAdminMessage('Pengumuman gagal diterbitkan.', isError: true);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCreateAssignmentDialog() {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final linkCtrl = TextEditingController();
+    String selectedCourseId = _courses.isNotEmpty ? _courses.first.id : '';
+    String selectedCourseName = _courses.isNotEmpty ? _courses.first.nama : 'Perkuliahan Umum';
+    DateTime deadline = DateTime.now().add(const Duration(days: 7));
+    String category = 'Individu';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.post_add_rounded, color: Color(0xFF0EA5E9), size: 24),
+              SizedBox(width: 10),
+              Text('Rilis Tugas Baru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFormLabel('Judul Tugas'),
+                _buildFormField(controller: titleCtrl, hintText: 'Contoh: Analisis Kasus Komunikasi Massa'),
+                const SizedBox(height: 12),
+                _buildFormLabel('Mata Kuliah'),
+                if (_courses.isNotEmpty)
+                  DropdownButtonFormField<String>(
+                    value: selectedCourseId.isNotEmpty ? selectedCourseId : _courses.first.id,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    items: _courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nama, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() {
+                          selectedCourseId = val;
+                          selectedCourseName = _courses.firstWhere((c) => c.id == val, orElse: () => _courses.first).nama;
+                        });
+                      }
+                    },
+                  )
+                else
+                  _buildFormField(controller: TextEditingController(text: 'Belum ada mata kuliah terdaftar'), hintText: ''),
+                const SizedBox(height: 12),
+                _buildFormLabel('Deskripsi & Petunjuk'),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Rincian tugas, format pengumpulan, bobot penilaian...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildFormLabel('Link / Tautan Pengumpulan (Opsional)'),
+                _buildFormField(controller: linkCtrl, hintText: 'https://forms.gle/... atau Classroom'),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Tenggat Waktu:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    TextButton.icon(
+                      icon: const Icon(Icons.calendar_today_rounded, size: 14),
+                      label: Text('${deadline.day}/${deadline.month}/${deadline.year} 23:59'),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: deadline,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            deadline = DateTime(picked.year, picked.month, picked.day, 23, 59);
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            FilledButton.icon(
+              icon: const Icon(Icons.publish_rounded, size: 16),
+              label: const Text('Rilis Tugas & Notif'),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0EA5E9)),
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty) {
+                  _showAdminMessage('Judul tugas harus diisi.', isError: true);
+                  return;
+                }
+                Navigator.pop(ctx);
+                final ok = await SupabaseRepository.createAssignment(
+                  courseId: selectedCourseId,
+                  courseName: selectedCourseName,
+                  judul: titleCtrl.text.trim(),
+                  deskripsi: descCtrl.text.trim(),
+                  kategori: category,
+                  deadline: deadline,
+                  linkPengumpulan: linkCtrl.text.trim().isNotEmpty ? linkCtrl.text.trim() : null,
+                );
+                if (ok) {
+                  _recordAudit(
+                    action: 'CREATE',
+                    module: 'TUGAS',
+                    description: 'Merilis tugas "${titleCtrl.text.trim()}" untuk $selectedCourseName.',
+                  );
+                  _showAdminMessage('Tugas baru berhasil dirilis & notifikasi push dikirimkan!');
+                  await _refreshAllAdminData();
+                } else {
+                  _showAdminMessage('Gagal merilis tugas.', isError: true);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQuickExportModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Ekspor Rekapitulasi Data', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text('Pilih laporan yang ingin diunduh dalam format berkas CSV/Excel:', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+            const SizedBox(height: 16),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+              leading: const Icon(Icons.fact_check_rounded, color: Color(0xFF10B981)),
+              title: const Text('Rekapitulasi Presensi Perkuliahan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              subtitle: const Text('Riwayat kehadiran, izin, sakit per mahasiswa', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _navigateTo('laporan');
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+              leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF5B3DE8)),
+              title: const Text('Laporan Kas & Keuangan Kelas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              subtitle: const Text('Seluruh arus kas masuk, pengeluaran & saldo', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _navigateTo('laporan');
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+              leading: const Icon(Icons.people_alt_rounded, color: Color(0xFF0EA5E9)),
+              title: const Text('Data Seluruh Akun Mahasiswa', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              subtitle: const Text('NIM, nama lengkap, kontak & status aktif', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _navigateTo('manajemen_akun');
+              },
             ),
           ],
         ),
@@ -1072,8 +1649,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   String _studentSearchQuery = '';
 
   Widget _buildDataMahasiswa() {
-    final students = DummyData.students
-        .where((s) => s.role != 'ADMIN')
+    final sourceStudents = _managedAccounts.isNotEmpty
+        ? _managedAccounts.where((s) => !s.isAdmin).toList()
+        : DummyData.students.where((s) => s.role != 'ADMIN').toList();
+
+    final students = sourceStudents
         .where((s) {
           if (_studentFilter == 'Aktif') return s.isAktif;
           if (_studentFilter == 'Nonaktif') return !s.isAktif;
@@ -1254,14 +1834,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                                 if (val == 'detail') {
                                   _navigateTo('detail_mahasiswa', student: s);
                                 } else if (val == 'toggle') {
-                                  setState(() => s.isAktif = !s.isAktif);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Akun ${s.nama} diubah jadi ${s.isAktif ? "Aktif" : "Nonaktif"}',
-                                      ),
-                                    ),
-                                  );
+                                  _setManagedAccountActive(s, !s.isAktif);
                                 }
                               },
                               itemBuilder: (ctx) => [
@@ -1288,8 +1861,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               // Button "+ Tambah Mahasiswa" (Screen 6)
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: ElevatedButton(
-                  onPressed: _showTambahMahasiswaDialog,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.person_add_rounded, size: 18),
+                  onPressed: _showCreateStudentAccountDialog,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5B3DE8),
                     foregroundColor: Colors.white,
@@ -1299,8 +1873,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    '+ Tambah Mahasiswa',
+                  label: const Text(
+                    '+ Tambah & Undang Mahasiswa',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13.5,
@@ -1316,74 +1890,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }
 
   void _showTambahMahasiswaDialog() {
-    final namaCtrl = TextEditingController();
-    final nimCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Tambah Mahasiswa Baru',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildFormField(controller: namaCtrl, hintText: 'Nama Lengkap'),
-            const SizedBox(height: 10),
-            _buildFormField(
-              controller: nimCtrl,
-              hintText: 'NIM (9 Digit)',
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (namaCtrl.text.isNotEmpty && nimCtrl.text.isNotEmpty) {
-                setState(() {
-                  DummyData.students.add(
-                    StudentProfile(
-                      id: 'm_${DateTime.now().millisecondsSinceEpoch}',
-                      nama: namaCtrl.text.trim(),
-                      nim: nimCtrl.text.trim(),
-                      email: '${nimCtrl.text.trim()}@unazlam.ac.id',
-                      noWa: '+62 821-xxxx-xxxx',
-                      peminatan: 'Public Relations',
-                      prodi: 'Ilmu Komunikasi',
-                      semester: 1,
-                      kelas: 'Ilmu Komunikasi',
-                      role: 'MAHASISWA',
-                      jabatan: 'Mahasiswa',
-                      isAktif: true,
-                    ),
-                  );
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Mahasiswa berhasil ditambahkan!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5B3DE8),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
-    );
+    _showCreateStudentAccountDialog();
   }
 
   // ==========================================
