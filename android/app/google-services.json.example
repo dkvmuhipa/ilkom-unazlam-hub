@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "180107237233",
+    "project_number": "YOUR_PROJECT_NUMBER",
     "project_id": "ilkom-unazlam-hub",
     "storage_bucket": "ilkom-unazlam-hub.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:180107237233:android:941a5c7d012a7ff97148d0",
+        "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:YOUR_APP_ID",
         "android_client_info": {
           "package_name": "com.gellonatech.class_manager"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBipo3QMMVzn4nuB56uqneTYnhj20gF9fc"
+          "current_key": "YOUR_GOOGLE_API_KEY_HERE"
         }
       ],
       "services": {
