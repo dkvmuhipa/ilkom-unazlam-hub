@@ -162,11 +162,14 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
     super.initState();
     _isAuthSetupFlow = widget.initialAuthFlow != null;
     _authSetupFlowType = widget.initialAuthFlow;
-    if (!_isAuthSetupFlow) _restoreAuthSession();
+    if (!_isAuthSetupFlow) {
+      _restoreAuthSession();
+    }
     _authStateSubscription = SupabaseService.client?.auth.onAuthStateChange
         .listen((state) {
-          if (state.event != AuthChangeEvent.passwordRecovery || !mounted)
+          if (state.event != AuthChangeEvent.passwordRecovery || !mounted) {
             return;
+          }
           setState(() {
             _authSetupFlowType = 'recovery';
             _isAuthSetupFlow = true;
@@ -417,6 +420,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         userNim: currentUser.nim,
         student: currentUser,
         onBack: _goBack,
+        onLogout: widget.onLogout,
       ), // 4: Profil Saya
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
