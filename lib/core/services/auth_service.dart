@@ -28,13 +28,6 @@ class AuthService {
   static bool get hasActiveSession => _client.auth.currentSession != null;
 
   static Future<void> setPassword(String password, {String? userNim}) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (userNim != null && userNim.isNotEmpty) {
-        await prefs.setString('user_password_$userNim', password);
-      }
-    } catch (_) {}
-
     if (hasActiveSession) {
       try {
         await _client.auth.updateUser(UserAttributes(password: password));
@@ -137,69 +130,45 @@ class AuthService {
     }
 
     if (!loggedIn) {
-      // 1. Validasi terhadap profil MasterData mahasiswa & admin resmi
-      StudentProfile? matched = DummyData.students.where(
-        (s) =>
-            s.nim.trim().toLowerCase() == loginValue.toLowerCase() ||
-            (s.email.isNotEmpty &&
-                s.email.trim().toLowerCase() == loginValue.toLowerCase()),
-      ).firstOrNull;
+      // Izinkan fallback profil offline HANYA jika Supabase belum dikonfigurasi (Mode Offline Dev)
+      if (!SupabaseConfig.isConfigured) {
+        StudentProfile? matched = DummyData.students.where(
+          (s) =>
+              s.nim.trim().toLowerCase() == loginValue.toLowerCase() ||
+              (s.email.isNotEmpty &&
+                  s.email.trim().toLowerCase() == loginValue.toLowerCase()),
+        ).firstOrNull;
 
-      // 2. Jika tidak ada di DummyData, coba cari dari tabel database 'students'
-      if (matched == null) {
-        try {
-          final rows = await _client
-              .from('students')
-              .select()
-              .or('nim.eq.$loginValue,email.eq.$loginValue')
-              .limit(1);
-          if ((rows as List).isNotEmpty) {
-            matched = _profileFromRow(rows.first);
-          }
-        } catch (_) {}
-      }
+        if (matched != null) {
+          SharedPreferences? prefs;
+          try {
+            prefs = await SharedPreferences.getInstance();
+          } catch (_) {}
 
-      if (matched != null) {
-        SharedPreferences? prefs;
-        try {
-          prefs = await SharedPreferences.getInstance();
-        } catch (_) {}
-
-        final savedPassword = prefs?.getString('user_password_${matched.nim}');
-        bool passwordValid = false;
-
-        if (savedPassword != null && savedPassword.isNotEmpty) {
-          passwordValid = (password == savedPassword);
-        } else if (matched.isAdmin) {
-          passwordValid = (password == 'admin123' ||
-              password == 'admin' ||
-              password == 'ilkom2026');
-        } else {
           final nimStr = matched.nim.trim();
           final last6 = nimStr.length >= 6
               ? nimStr.substring(nimStr.length - 6)
               : nimStr;
-          passwordValid = (password == last6 ||
+          final bool passwordValid = (password == last6 ||
               password == nimStr ||
-              password == '123456' ||
-              password == 'ilkom2026');
-        }
+              password == '123456');
 
-        if (!passwordValid) {
-          throw const AuthServiceException(
-            'Kata sandi salah. Gunakan 6 digit terakhir NIM, 123456, atau kata sandi yang telah diatur.',
+          if (!passwordValid) {
+            throw const AuthServiceException(
+              'Kata sandi salah. Gunakan 6 digit terakhir NIM atau 123456.',
+            );
+          }
+
+          // Simpan sesi login aktif ke local storage
+          try {
+            await prefs?.setString('active_session_nim', matched.nim);
+          } catch (_) {}
+
+          debugPrint(
+            'Info: Akun terverifikasi melalui data profil sistem offline (${matched.nama} - ${matched.role}).',
           );
+          return matched;
         }
-
-        // Simpan sesi login aktif ke local storage
-        try {
-          await prefs?.setString('active_session_nim', matched.nim);
-        } catch (_) {}
-
-        debugPrint(
-          'Info: Akun terverifikasi melalui data profil sistem (${matched.nama} - ${matched.role}).',
-        );
-        return matched;
       }
 
       if (authErrorMessage != null &&

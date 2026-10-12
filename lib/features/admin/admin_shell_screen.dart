@@ -1222,7 +1222,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      titleCtrl.dispose();
+      bodyCtrl.dispose();
+    });
   }
 
   void _showCreateAssignmentDialog() {
@@ -1274,7 +1277,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     },
                   )
                 else
-                  _buildFormField(controller: TextEditingController(text: 'Belum ada mata kuliah terdaftar'), hintText: ''),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text('Belum ada mata kuliah terdaftar', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ),
                 const SizedBox(height: 12),
                 _buildFormLabel('Deskripsi & Petunjuk'),
                 TextField(
@@ -1352,7 +1363,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      titleCtrl.dispose();
+      descCtrl.dispose();
+      linkCtrl.dispose();
+    });
   }
 
   void _showQuickExportModal() {

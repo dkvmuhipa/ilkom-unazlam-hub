@@ -355,15 +355,15 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         .where((student) => student.nim == _activeNim)
         .firstOrNull;
     if (matched != null) return matched;
-    if (DummyData.students.isNotEmpty) return DummyData.students.first;
+    final effectiveNim = _activeNim.isNotEmpty ? _activeNim : '260250001';
     return StudentProfile(
-      id: 's15',
-      nim: _activeNim.isNotEmpty ? _activeNim : '260250023',
-      nama: widget.userName ?? 'NUR FARIDA',
-      email: '260250023@student.unazlam.ac.id',
-      noWa: '081241000115',
+      id: effectiveNim,
+      nim: effectiveNim,
+      nama: widget.userName ?? 'Mahasiswa ILKOM',
+      email: '$effectiveNim@student.unazlam.ac.id',
+      noWa: '',
       role: 'MAHASISWA',
-      jabatan: 'Ketua Kelas',
+      jabatan: 'Mahasiswa',
     );
   }
 

@@ -391,7 +391,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ),
         ),
       ),
-    );
+    ).whenComplete(() {
+      titleController.dispose();
+      amountController.dispose();
+    });
   }
 
   void _showEditTransactionModal(TreasuryTransaction t) {
@@ -627,7 +630,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ),
         ),
       ),
-    );
+    ).whenComplete(() {
+      titleController.dispose();
+      amountController.dispose();
+    });
   }
 
   void _confirmDeleteTransaction(TreasuryTransaction t) {

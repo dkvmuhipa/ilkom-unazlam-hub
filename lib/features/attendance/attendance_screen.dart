@@ -452,7 +452,7 @@ class AttendanceScreen extends StatefulWidget {
                         Expanded(
                           child: Text(
                             isLiveForSelectedCourse
-                                ? 'Sesi Aktif: Token "${liveSession.token}" ($timerStr)'
+                                ? 'Sesi Presensi Aktif: ${liveSession.courseName} ($timerStr)'
                                 : 'Sesi aktif kelas saat ini: ${liveSession.courseName}',
                             style: TextStyle(
                               fontSize: 11,
@@ -461,27 +461,6 @@ class AttendanceScreen extends StatefulWidget {
                             ),
                           ),
                         ),
-                        if (isLiveForSelectedCourse)
-                          InkWell(
-                            onTap: () {
-                              setModalState(() {
-                                tokenController.text = liveSession.token;
-                                scanStatusMessage = 'Token otomatis terisi dari sesi aktif!';
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF16A34A),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                'Isi Token',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -582,13 +561,9 @@ class AttendanceScreen extends StatefulWidget {
                   onPressed: () {
                     final token = tokenController.text.trim();
                     if (token.isEmpty) {
-                      if (hasLiveSession) {
-                        executeVerification(liveSession.token);
-                        return;
-                      }
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Silakan klik jendela kamera untuk scan QR atau masukkan kode token sesi!'),
+                          content: Text('Silakan scan QR dosen atau masukkan kode token sesi presensi!'),
                           backgroundColor: Color(0xFFEF4444),
                         ),
                       );
@@ -610,7 +585,9 @@ class AttendanceScreen extends StatefulWidget {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      tokenController.dispose();
+    });
   }
 
   @override

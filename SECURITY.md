@@ -21,9 +21,9 @@ However, **critical vulnerabilities were identified in the PostgreSQL Row Level 
 
 | OWASP Category | Vulnerability Description | Severity | Status |
 | :--- | :--- | :--- | :--- |
-| **A01: Broken Access Control** | Overly permissive RLS (`USING (true) WITH CHECK (true)`) on `assignments` and `student_assignments` | 🔴 Critical | **Requires Fix** |
-| **A01: Broken Access Control** | Overly permissive RLS (`FOR ALL TO anon`) on `attendance_sessions` and `attendance_logs` | 🔴 Critical | **Requires Fix** |
-| **A01: Broken Access Control** | Public access (`FOR SELECT TO anon USING (true)`) to `student_course_grades` (KHS) and `treasury_dues` | 🔴 Critical | **Requires Fix** |
+| **A01: Broken Access Control** | Overly permissive RLS (`USING (true) WITH CHECK (true)`) on `assignments` and `student_assignments` | 🟢 Resolved | **Fixed in 20261012 Migration** |
+| **A01: Broken Access Control** | Overly permissive RLS (`FOR ALL TO anon`) on `attendance_sessions` and `attendance_logs` | 🟢 Resolved | **Fixed in 20261012 Migration** |
+| **A01: Broken Access Control** | Public access (`FOR SELECT TO anon USING (true)`) to `student_course_grades` (KHS) and `treasury_dues` | 🟢 Resolved | **Fixed in 20261012 Migration** |
 | **A02: Cryptographic Failures** | Plaintext password storage in client `SharedPreferences` (`user_password_$userNim`) | 🟡 Warning | **Requires Fix** |
 | **A02: Cryptographic Failures** | Hardcoded offline fallback credentials (`admin123`, `ilkom2026`, `123456`) in `auth_service.dart` | 🟡 Warning | **Requires Fix** |
 | **A03: Injection** | SQL Injection via client queries | 🟢 Passed | **Secure** |

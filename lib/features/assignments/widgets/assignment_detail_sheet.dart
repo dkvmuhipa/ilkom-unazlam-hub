@@ -538,7 +538,21 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         : () async {
                             try {
                               final file = await pickAssignmentFile();
-                              if (file == null || !ctx.mounted) return;
+                              if (file == null) {
+                                if (!kIsWeb && ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Unggah berkas langsung didukung melalui Web. Di aplikasi mobile/desktop, cantumkan tautan Google Drive / Cloud di bawah.',
+                                      ),
+                                      backgroundColor: Color(0xFF0284C7),
+                                      duration: Duration(seconds: 4),
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+                              if (!ctx.mounted) return;
                               if (file.bytes.lengthInBytes > 20 * 1024 * 1024) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
                                   const SnackBar(

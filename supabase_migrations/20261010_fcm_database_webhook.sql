@@ -29,7 +29,8 @@ BEGIN
     PERFORM net.http_post(
       url := v_function_url,
       headers := jsonb_build_object(
-        'Content-Type', 'application/json'
+        'Content-Type', 'application/json',
+        'x-webhook-secret', 'ilkom_unazlam_fcm_internal_secret_2026'
       ),
       body := v_payload
     );

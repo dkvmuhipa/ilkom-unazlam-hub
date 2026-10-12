@@ -134,6 +134,50 @@ Deno.serve(async (request: Request) => {
     return jsonResponse(500, { error: 'Konfigurasi Supabase belum lengkap.' });
   }
 
+  // Security Check: Enforce authorization via webhook secret, service role key, or officer token
+  const publishableKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY');
+  const expectedSecret = Deno.env.get('WEBHOOK_SECRET') ?? 'ilkom_unazlam_fcm_internal_secret_2026';
+  const incomingSecret = request.headers.get('x-webhook-secret');
+  const authHeader = request.headers.get('Authorization') ?? '';
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+  let isAuthorized = false;
+  if (incomingSecret && incomingSecret === expectedSecret) {
+    isAuthorized = true;
+  } else if (bearerToken && (bearerToken === secretKey || bearerToken === expectedSecret)) {
+    isAuthorized = true;
+  } else if (bearerToken && publishableKey) {
+    try {
+      const userClient = createClient(supabaseUrl, publishableKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: userData } = await userClient.auth.getUser(bearerToken);
+      if (userData?.user) {
+        const adminClient = createClient(supabaseUrl, secretKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        const { data: profile } = await adminClient
+          .from('students')
+          .select('role, jabatan, is_aktif')
+          .eq('auth_user_id', userData.user.id)
+          .maybeSingle();
+        if (
+          profile &&
+          profile.is_aktif &&
+          ['ADMIN', 'KETUA KELAS', 'SEKRETARIS'].includes(String(profile.role ?? '').toUpperCase())
+        ) {
+          isAuthorized = true;
+        }
+      }
+    } catch (_) {
+      // Authorization failed
+    }
+  }
+
+  if (!isAuthorized) {
+    return jsonResponse(401, { error: 'Permintaan notifikasi tidak sah (Unauthorized).' });
+  }
+
   let payload: Record<string, unknown>;
   try {
     payload = await request.json();
