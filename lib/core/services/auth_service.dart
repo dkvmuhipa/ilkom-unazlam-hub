@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -293,9 +294,8 @@ class AuthService {
           debugPrint(
             'Info: Akun terverifikasi melalui data profil sistem fallback (${matched.nama} - ${matched.role}).',
           );
-          final customAvatar = prefs?.getString('custom_avatar_${matched.nim}');
-          if (customAvatar != null && customAvatar.isNotEmpty) {
-            matched.avatarUrl = customAvatar;
+          if (prefs != null) {
+            _applyCustomProfileOverrides(matched, prefs);
           }
           return matched;
         }
@@ -361,10 +361,7 @@ class AuthService {
         await prefs.setString('custom_pwd_16110376', password);
         await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
       }
-      final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
-      if (customAvatar != null && customAvatar.isNotEmpty) {
-        profile.avatarUrl = customAvatar;
-      }
+      _applyCustomProfileOverrides(profile, prefs);
     } catch (_) {}
 
     return profile;
@@ -416,10 +413,7 @@ class AuthService {
           (s) => s.nim.trim().toLowerCase() == savedNim.toLowerCase(),
         ).firstOrNull;
         if (matched != null && matched.isAktif) {
-          final customAvatar = prefs.getString('custom_avatar_${matched.nim}');
-          if (customAvatar != null && customAvatar.isNotEmpty) {
-            matched.avatarUrl = customAvatar;
-          }
+          _applyCustomProfileOverrides(matched, prefs);
           return matched;
         }
       }
@@ -488,6 +482,77 @@ class AuthService {
     } catch (e) {
       debugPrint('Info: Sinkronisasi avatar_url ke Supabase: $e');
     }
+  }
+
+  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email)
+  static Future<void> updateProfileDetails({
+    required String nim,
+    String? noWa,
+    String? peminatan,
+    String? instagram,
+    String? linkedin,
+    String? email,
+  }) async {
+    // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedStr = prefs.getString('custom_profile_$nim');
+      final Map<String, dynamic> data = savedStr != null ? jsonDecode(savedStr) : {};
+      if (noWa != null) data['no_wa'] = noWa;
+      if (peminatan != null) data['peminatan'] = peminatan;
+      if (instagram != null) data['instagram'] = instagram;
+      if (linkedin != null) data['linkedin'] = linkedin;
+      if (email != null) data['email'] = email;
+      await prefs.setString('custom_profile_$nim', jsonEncode(data));
+    } catch (_) {}
+
+    // 2. Perbarui juga di DummyData in-memory
+    try {
+      final matched = DummyData.students.where(
+        (s) => s.nim.trim().toLowerCase() == nim.trim().toLowerCase(),
+      ).firstOrNull;
+      if (matched != null) {
+        if (noWa != null) matched.noWa = noWa;
+        if (peminatan != null) matched.peminatan = peminatan;
+        if (instagram != null) matched.instagram = instagram;
+        if (linkedin != null) matched.linkedin = linkedin;
+        if (email != null) matched.email = email;
+      }
+    } catch (_) {}
+
+    // 3. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    try {
+      final updates = <String, dynamic>{
+        'no_wa': ?noWa,
+        'peminatan': ?peminatan,
+        'instagram': ?instagram,
+        'linkedin': ?linkedin,
+        'email': ?email,
+      };
+      if (updates.isNotEmpty) {
+        await _client.from('students').update(updates).eq('nim', nim);
+      }
+    } catch (e) {
+      debugPrint('Info: Sinkronisasi update profil ke Supabase: $e');
+    }
+  }
+
+  static void _applyCustomProfileOverrides(StudentProfile profile, SharedPreferences prefs) {
+    try {
+      final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
+      if (customAvatar != null && customAvatar.isNotEmpty) {
+        profile.avatarUrl = customAvatar;
+      }
+      final customDataStr = prefs.getString('custom_profile_${profile.nim}');
+      if (customDataStr != null && customDataStr.isNotEmpty) {
+        final Map<String, dynamic> data = jsonDecode(customDataStr);
+        if (data['no_wa'] != null) profile.noWa = data['no_wa'].toString();
+        if (data['peminatan'] != null) profile.peminatan = data['peminatan'].toString();
+        if (data['instagram'] != null) profile.instagram = data['instagram'].toString();
+        if (data['linkedin'] != null) profile.linkedin = data['linkedin'].toString();
+        if (data['email'] != null) profile.email = data['email'].toString();
+      }
+    } catch (_) {}
   }
 
   static Future<void> signOut() async {

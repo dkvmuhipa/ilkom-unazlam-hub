@@ -227,18 +227,18 @@ class ResourceItem {
 class StudentProfile {
   final String id;
   final String nim;
-  final String nama;
-  final String email;
-  final String noWa;
-  final String peminatan; // 'Public Relations', 'Jurnalistik', 'Advertising', 'Broadcasting'
+  String nama;
+  String email;
+  String noWa;
+  String peminatan; // 'Public Relations', 'Jurnalistik', 'Advertising', 'Broadcasting'
   final String prodi; // 'Ilmu Komunikasi'
   final int semester; // 1
   final String kelas; // 'Ilmu Komunikasi'
   final String role; // 'ADMIN' atau 'MAHASISWA'
   String jabatan; // 'Mahasiswa', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Wakil Ketua'
   bool isAktif;
-  final String? instagram;
-  final String? linkedin;
+  String? instagram;
+  String? linkedin;
   String? avatarUrl;
 
   StudentProfile({
@@ -258,6 +258,42 @@ class StudentProfile {
     this.linkedin,
     this.avatarUrl,
   });
+
+  StudentProfile copyWith({
+    String? id,
+    String? nim,
+    String? nama,
+    String? email,
+    String? noWa,
+    String? peminatan,
+    String? prodi,
+    int? semester,
+    String? kelas,
+    String? role,
+    String? jabatan,
+    bool? isAktif,
+    String? instagram,
+    String? linkedin,
+    String? avatarUrl,
+  }) {
+    return StudentProfile(
+      id: id ?? this.id,
+      nim: nim ?? this.nim,
+      nama: nama ?? this.nama,
+      email: email ?? this.email,
+      noWa: noWa ?? this.noWa,
+      peminatan: peminatan ?? this.peminatan,
+      prodi: prodi ?? this.prodi,
+      semester: semester ?? this.semester,
+      kelas: kelas ?? this.kelas,
+      role: role ?? this.role,
+      jabatan: jabatan ?? this.jabatan,
+      isAktif: isAktif ?? this.isAktif,
+      instagram: instagram ?? this.instagram,
+      linkedin: linkedin ?? this.linkedin,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+    );
+  }
 
   // Role Checks
   bool get isAdmin => role.toUpperCase() == 'ADMIN';

@@ -875,6 +875,367 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditProfileModal(BuildContext context, StudentProfile student, bool isDark) {
+    final waController = TextEditingController(text: student.noWa);
+    final emailController = TextEditingController(text: student.email);
+    final igController = TextEditingController(text: student.instagram ?? '');
+    final linkedinController = TextEditingController(text: student.linkedin ?? '');
+
+    final peminatanOptions = [
+      'Public Relations',
+      'Jurnalistik',
+      'Advertising',
+      'Broadcasting',
+    ];
+
+    String selectedPeminatan = peminatanOptions.contains(student.peminatan)
+        ? student.peminatan
+        : peminatanOptions.first;
+
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.edit_note_rounded,
+                          color: Color(0xFF1E40AF),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Ubah Data Profil',
+                        style: TextStyle(
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Perbarui nomor WhatsApp, peminatan studi, dan akun media sosial Anda.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Info Terkunci Akademik
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1A2744) : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF254B8C) : const Color(0xFFBFDBFE),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.lock_rounded, color: Color(0xFF2563EB), size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'NIM (${student.nim}), Nama Lengkap, Program Studi (S1 Ilmu Komunikasi), dan Kelas dikunci demi integritas data akademik FISIP UNAZLAM.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white70 : const Color(0xFF1E40AF),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 1. Peminatan / Konsentrasi Studi
+                  Text(
+                    'Peminatan / Konsentrasi Studi',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF38384E) : const Color(0xFFD1D5DB),
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedPeminatan,
+                        isExpanded: true,
+                        dropdownColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                        icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF1E40AF)),
+                        items: peminatanOptions.map((opt) {
+                          return DropdownMenuItem<String>(
+                            value: opt,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.stars_rounded, color: Color(0xFF1E40AF), size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  opt,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : const Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setModalState(() => selectedPeminatan = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 2. Nomor WhatsApp
+                  Text(
+                    'Nomor WhatsApp (Aktif)',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: waController,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827), fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: '081234567890',
+                      prefixIcon: const Icon(Icons.phone_android_rounded, size: 20, color: Color(0xFF10B981)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 3. Email Mahasiswa
+                  Text(
+                    'Alamat Email',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827), fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: '${student.nim}@student.unazlam.ac.id',
+                      prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20, color: Color(0xFF2563EB)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. Akun Instagram
+                  Text(
+                    'Akun Instagram',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: igController,
+                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827), fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: '@username_anda',
+                      prefixIcon: const Icon(Icons.camera_alt_outlined, size: 20, color: Color(0xFFE11D48)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 5. LinkedIn / Portofolio
+                  Text(
+                    'LinkedIn / Tautan Portofolio',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: linkedinController,
+                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827), fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'https://linkedin.com/in/... atau tautan web',
+                      prefixIcon: const Icon(Icons.link_rounded, size: 20, color: Color(0xFF0284C7)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+
+                  // Tombol Simpan
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setModalState(() => isSaving = true);
+                              final cleanWa = waController.text.trim();
+                              final cleanEmail = emailController.text.trim();
+                              final cleanIg = igController.text.trim();
+                              final cleanLinkedin = linkedinController.text.trim();
+
+                              final messenger = ScaffoldMessenger.of(context);
+                              final nav = Navigator.of(modalCtx);
+
+                              try {
+                                await AuthService.updateProfileDetails(
+                                  nim: student.nim,
+                                  noWa: cleanWa,
+                                  peminatan: selectedPeminatan,
+                                  email: cleanEmail,
+                                  instagram: cleanIg,
+                                  linkedin: cleanLinkedin,
+                                );
+
+                                if (mounted) {
+                                  setState(() {
+                                    student.noWa = cleanWa;
+                                    student.peminatan = selectedPeminatan;
+                                    student.email = cleanEmail;
+                                    student.instagram = cleanIg.isNotEmpty ? cleanIg : null;
+                                    student.linkedin = cleanLinkedin.isNotEmpty ? cleanLinkedin : null;
+                                  });
+
+                                  nav.pop();
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: const Row(
+                                        children: [
+                                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Data profil berhasil diperbarui! 🎉'),
+                                        ],
+                                      ),
+                                      backgroundColor: const Color(0xFF10B981),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setModalState(() => isSaving = false);
+                                if (mounted) {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text('Gagal menyimpan profil: $e'),
+                                      backgroundColor: const Color(0xFFEF4444),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check_circle_outline_rounded, size: 18),
+                      label: Text(isSaving ? 'Menyimpan...' : 'Simpan Perubahan Profil'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E40AF),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(modalCtx),
+                      child: Text(
+                        'Batal',
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showQrKtmModal(BuildContext context, StudentProfile student, bool isDark) {
     final parts = student.nama.trim().split(' ');
     final initials = parts.length >= 2
@@ -1809,22 +2170,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.school_outlined, color: Color(0xFF1E40AF), size: 17),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.school_outlined, color: Color(0xFF1E40AF), size: 17),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Data Akademik Resmi',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Data Akademik Resmi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: textPrimary,
+                      InkWell(
+                        onTap: () => _showEditProfileModal(context, student, isDark),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit_rounded, color: Color(0xFF1E40AF), size: 13),
+                              SizedBox(width: 4),
+                              Text(
+                                'Peminatan',
+                                style: TextStyle(
+                                  color: Color(0xFF1E40AF),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1883,22 +2275,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.contact_mail_outlined, color: Color(0xFF10B981), size: 17),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.contact_mail_outlined, color: Color(0xFF10B981), size: 17),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Kontak & Komunikasi',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Kontak & Komunikasi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: textPrimary,
+                      InkWell(
+                        onTap: () => _showEditProfileModal(context, student, isDark),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit_rounded, color: Color(0xFF059669), size: 13),
+                              SizedBox(width: 4),
+                              Text(
+                                'Ubah',
+                                style: TextStyle(
+                                  color: Color(0xFF059669),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -2156,6 +2579,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Ganti Foto Profil',
                     subtitle: 'Kamera, galeri, tautan URL atau avatar digital',
                     onTap: () => _showChangeAvatarModal(context, student, isDark),
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                  ),
+                  Divider(height: 1, indent: 60, color: dividerColor),
+                  _buildMenuItem(
+                    icon: Icons.edit_note_rounded,
+                    iconColor: const Color(0xFF0D9488),
+                    iconBg: const Color(0xFFCCFBF1),
+                    title: 'Ubah Data Kontak & Peminatan',
+                    subtitle: 'Nomor WhatsApp, Peminatan, Instagram & LinkedIn',
+                    onTap: () => _showEditProfileModal(context, student, isDark),
                     textPrimary: textPrimary,
                     textSecondary: textSecondary,
                   ),
