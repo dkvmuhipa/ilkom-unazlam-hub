@@ -207,13 +207,12 @@ class AuthService {
 
       if (matched == null) {
         try {
-          final sRow = await _client
-              .from('students')
-              .select(
-                'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
-              )
-              .or('nim.eq.$loginValue,email.eq.$loginValue')
-              .maybeSingle();
+          final query = _client.from('students').select(
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+          );
+          final sRow = loginValue.contains('@')
+              ? await query.eq('email', loginValue).maybeSingle()
+              : await query.eq('nim', loginValue).maybeSingle();
           if (sRow != null) {
             matched = _profileFromRow(sRow);
           }
