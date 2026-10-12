@@ -56,6 +56,52 @@ class AuthService {
       throw const AuthServiceException(
         'Sesi autentikasi tidak ditemukan atau telah kedaluwarsa. Silakan minta tautan baru dari admin.',
       );
+    } else {
+      // Jika akun masuk melalui fallback kampus tanpa sesi Supabase Auth aktif (belum ada di auth.users),
+      // daftarkan secara otomatis ke Supabase Auth cloud agar password baru tersinkronisasi di server.
+      try {
+        String? targetEmail;
+        final matched = DummyData.students.where(
+          (s) => s.nim.trim().toLowerCase() == userNim.toLowerCase(),
+        ).firstOrNull;
+        if (matched != null && matched.email.contains('@')) {
+          targetEmail = matched.email.trim();
+        }
+
+        if (targetEmail == null) {
+          try {
+            final sRow = await _client
+                .from('students')
+                .select('email')
+                .eq('nim', userNim)
+                .maybeSingle();
+            if (sRow != null && sRow['email'] != null) {
+              targetEmail = (sRow['email'] as String).trim();
+            }
+          } catch (_) {}
+        }
+
+        targetEmail ??= '$userNim@student.unazlam.ac.id';
+
+        final signUpRes = await _client.auth.signUp(
+          email: targetEmail,
+          password: password,
+        );
+
+        if (signUpRes.user != null) {
+          debugPrint(
+            'Info: Akun fallback berhasil didaftarkan ke Supabase Auth cloud (${signUpRes.user!.email}).',
+          );
+          try {
+            await _client
+                .from('students')
+                .update({'auth_user_id': signUpRes.user!.id})
+                .eq('nim', userNim);
+          } catch (_) {}
+        }
+      } catch (e) {
+        debugPrint('Info: Upaya sinkronisasi pendaftaran Supabase Auth cloud ($e).');
+      }
     }
 
     // Sinkronkan juga kata sandi baru ke SharedPreferences untuk fallback offline
