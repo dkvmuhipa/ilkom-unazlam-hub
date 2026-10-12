@@ -28,18 +28,33 @@ class AuthService {
   static bool get hasActiveSession => _client.auth.currentSession != null;
 
   static Future<void> setPassword(String password, {String? userNim}) async {
-    if (hasActiveSession) {
-      try {
-        await _client.auth.updateUser(UserAttributes(password: password));
-      } on AuthException catch (e) {
-        if (e.message.toLowerCase().contains('same password') ||
-            e.statusCode == '422' && e.message.toLowerCase().contains('different')) {
-          throw const AuthServiceException(
-            'Kata sandi baru tidak boleh sama dengan kata sandi lama.',
-          );
-        }
-        throw AuthServiceException(e.message);
+    if (!hasActiveSession) {
+      throw const AuthServiceException(
+        'Sesi autentikasi tidak ditemukan atau telah kedaluwarsa. Silakan minta tautan baru dari admin.',
+      );
+    }
+    try {
+      await _client.auth.updateUser(UserAttributes(password: password));
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('same password') ||
+          msg.contains('different from the old') ||
+          (e.statusCode == '422' && (msg.contains('different') || msg.contains('same')))) {
+        throw const AuthServiceException(
+          'Kata sandi baru tidak boleh sama dengan kata sandi lama Anda.',
+        );
       }
+      if (msg.contains('weak') || msg.contains('character') || msg.contains('pwned') || msg.contains('length')) {
+        throw AuthServiceException(
+          'Kata sandi belum memenuhi standar keamanan: ${e.message}',
+        );
+      }
+      if (e.statusCode == '422') {
+        throw const AuthServiceException(
+          'Gagal menyimpan kata sandi. Pastikan kata sandi baru berbeda dari kata sandi lama dan memiliki minimal 8 karakter.',
+        );
+      }
+      throw AuthServiceException(e.message);
     }
   }
 

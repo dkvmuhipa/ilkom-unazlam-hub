@@ -864,7 +864,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 2,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2),
@@ -882,7 +885,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
                     const Text(
                       'Sesi Presensi',
                       style: TextStyle(
