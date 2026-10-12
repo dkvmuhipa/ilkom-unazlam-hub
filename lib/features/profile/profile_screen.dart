@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/safe_launcher.dart';
@@ -29,6 +32,37 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _showLeaderPanel = false;
+  String? _currentAvatarUrl;
+  bool _isUpdatingAvatar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedAvatar();
+  }
+
+  Future<void> _loadSavedAvatar() async {
+    final student = widget.student;
+    if (student == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('custom_avatar_${student.nim}');
+      if (saved != null && saved.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _currentAvatarUrl = saved;
+            student.avatarUrl = saved;
+          });
+        }
+      } else if (student.avatarUrl != null && student.avatarUrl!.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _currentAvatarUrl = student.avatarUrl;
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
@@ -80,7 +114,747 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget _buildAvatarImage(String? avatarUrl, String initials) {
+    if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
+      final url = avatarUrl.trim();
+      // 1. Data Base64 (Format data:image/...;base64,xxx atau base64 mentah)
+      if (url.startsWith('data:image') || (!url.startsWith('http') && !url.startsWith('assets') && url.length > 100)) {
+        try {
+          final commaIndex = url.indexOf(',');
+          final base64String = commaIndex != -1 ? url.substring(commaIndex + 1) : url;
+          final bytes = base64Decode(base64String);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(initials),
+          );
+        } catch (_) {
+          return _buildFallbackAvatar(initials);
+        }
+      }
+
+      // 2. Network Image (http / https)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return Image.network(
+          url,
+          fit: BoxFit.cover,
+          loadingBuilder: (ctx, child, progress) {
+            if (progress == null) return child;
+            return Container(
+              color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    value: progress.expectedTotalBytes != null
+                        ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                        : null,
+                  ),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(initials),
+        );
+      }
+
+      // 3. Asset Image
+      if (url.startsWith('assets/')) {
+        return Image.asset(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(initials),
+        );
+      }
+    }
+
+    // Default Logo / Inisial
+    return _buildFallbackAvatar(initials);
+  }
+
+  Widget _buildFallbackAvatar(String initials) {
+    return Image.asset(
+      'assets/images/logo.jpg',
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1E40AF), Color(0xFF4338CA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAvatarImage(StudentProfile student, ImageSource source) async {
+    Navigator.of(context, rootNavigator: true).pop(); // Tutup bottom sheet
+    setState(() => _isUpdatingAvatar = true);
+
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+
+        await AuthService.updateAvatar(
+          nim: student.nim,
+          avatarUrl: base64String,
+        );
+
+        if (mounted) {
+          setState(() {
+            _currentAvatarUrl = base64String;
+            student.avatarUrl = base64String;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Foto profil berhasil diperbarui! 🎉'),
+                ],
+              ),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memilih foto: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingAvatar = false);
+      }
+    }
+  }
+
+  Future<void> _applyAvatarPreset(StudentProfile student, String url) async {
+    Navigator.of(context, rootNavigator: true).pop(); // Tutup bottom sheet
+    setState(() => _isUpdatingAvatar = true);
+
+    try {
+      await AuthService.updateAvatar(
+        nim: student.nim,
+        avatarUrl: url,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentAvatarUrl = url;
+          student.avatarUrl = url;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Avatar profil berhasil diterapkan! ✨'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menerapkan avatar: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingAvatar = false);
+      }
+    }
+  }
+
+  Future<void> _resetToDefaultAvatar(StudentProfile student) async {
+    Navigator.of(context, rootNavigator: true).pop(); // Tutup bottom sheet
+    setState(() => _isUpdatingAvatar = true);
+
+    try {
+      await AuthService.updateAvatar(
+        nim: student.nim,
+        avatarUrl: null,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentAvatarUrl = null;
+          student.avatarUrl = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.restore_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Foto profil dikembalikan ke logo kampus resmi.'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF3B82F6),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mereset foto: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingAvatar = false);
+      }
+    }
+  }
+
+  Future<void> _showUrlAvatarDialog(BuildContext context, StudentProfile student, bool isDark) async {
+    Navigator.of(context, rootNavigator: true).pop(); // Tutup bottom sheet
+    final urlController = TextEditingController();
+    String? errorText;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.link_rounded, color: Color(0xFF1E40AF), size: 20),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Tautkan URL Foto',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tempelkan tautan URL gambar (format .jpg, .png atau tautan web HTTPS):',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: urlController,
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827)),
+                decoration: InputDecoration(
+                  hintText: 'https://images.unsplash.com/...',
+                  errorText: errorText,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.image_outlined, size: 20),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: Text(
+                'Batal',
+                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E40AF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                final url = urlController.text.trim();
+                if (url.isEmpty || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+                  setDialogState(() {
+                    errorText = 'Masukkan tautan URL yang valid (http/https).';
+                  });
+                  return;
+                }
+                Navigator.pop(dialogCtx, true);
+              },
+              child: const Text('Gunakan Foto'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && urlController.text.trim().isNotEmpty) {
+      await _applyAvatarPreset(student, urlController.text.trim());
+    }
+    urlController.dispose();
+  }
+
+  Widget _buildAvatarActionTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? const Color(0xFF383850) : const Color(0xFFE5E7EB),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChangeAvatarModal(BuildContext context, StudentProfile student, bool isDark) {
+    final parts = student.nama.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : (student.nama.length >= 2 ? student.nama.substring(0, 2).toUpperCase() : 'M');
+
+    final presets = [
+      {
+        'label': 'Mahasiswa 1',
+        'url': 'https://api.dicebear.com/7.x/micah/png?seed=Alex&backgroundColor=b6e3f4',
+      },
+      {
+        'label': 'Mahasiswi 1',
+        'url': 'https://api.dicebear.com/7.x/micah/png?seed=Sarah&backgroundColor=ffd5dc',
+      },
+      {
+        'label': 'Mahasiswa 2',
+        'url': 'https://api.dicebear.com/7.x/micah/png?seed=Felix&backgroundColor=d1d4f9',
+      },
+      {
+        'label': 'Mahasiswi 2',
+        'url': 'https://api.dicebear.com/7.x/micah/png?seed=Maya&backgroundColor=ffdfbf',
+      },
+      {
+        'label': 'Tech Avatar',
+        'url': 'https://api.dicebear.com/7.x/bottts/png?seed=${student.nim}&backgroundColor=c0aede',
+      },
+      {
+        'label': 'Mahasiswi 3',
+        'url': 'https://api.dicebear.com/7.x/lorelei/png?seed=Nabila&backgroundColor=ffd5dc',
+      },
+      {
+        'label': 'Mahasiswa 3',
+        'url': 'https://api.dicebear.com/7.x/lorelei/png?seed=Dimas&backgroundColor=b6e3f4',
+      },
+      {
+        'label': 'Fun Emoji',
+        'url': 'https://api.dicebear.com/7.x/fun-emoji/png?seed=${student.nim}&backgroundColor=ffe4e6',
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera_rounded,
+                      color: Color(0xFF1E40AF),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Ganti Foto Profil',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Sesuaikan foto identitas Anda untuk KTM Digital dan profil kelas',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Preview Foto Saat Ini
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF3B3B54) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF1E40AF), width: 2),
+                        ),
+                        child: ClipOval(
+                          child: _buildAvatarImage(_currentAvatarUrl ?? student.avatarUrl, initials),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            student.nama,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'NIM: ${student.nim}',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF1E40AF),
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _currentAvatarUrl != null
+                                ? 'Foto Kustom Terpasang ✨'
+                                : 'Menggunakan Logo Almamater',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _currentAvatarUrl != null
+                                  ? const Color(0xFF10B981)
+                                  : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Opsi 1: Kamera
+              _buildAvatarActionTile(
+                icon: Icons.camera_alt_rounded,
+                iconColor: const Color(0xFF3B82F6),
+                iconBg: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                title: 'Ambil dari Kamera',
+                subtitle: 'Gunakan kamera perangkat untuk mengambil swafoto',
+                isDark: isDark,
+                onTap: () => _pickAvatarImage(student, ImageSource.camera),
+              ),
+              const SizedBox(height: 10),
+
+              // Opsi 2: Galeri
+              _buildAvatarActionTile(
+                icon: Icons.photo_library_rounded,
+                iconColor: const Color(0xFF10B981),
+                iconBg: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.4) : const Color(0xFFECFDF5),
+                title: 'Pilih dari Galeri / Berkas',
+                subtitle: 'Pilih gambar dari album galeri ponsel atau perangkat Anda',
+                isDark: isDark,
+                onTap: () => _pickAvatarImage(student, ImageSource.gallery),
+              ),
+              const SizedBox(height: 10),
+
+              // Opsi 3: Tautkan URL Gambar
+              _buildAvatarActionTile(
+                icon: Icons.link_rounded,
+                iconColor: const Color(0xFF8B5CF6),
+                iconBg: isDark ? const Color(0xFF2E1065).withValues(alpha: 0.4) : const Color(0xFFF5F3FF),
+                title: 'Tautkan URL Gambar Web',
+                subtitle: 'Gunakan tautan URL gambar online langsung (HTTPS)',
+                isDark: isDark,
+                onTap: () => _showUrlAvatarDialog(context, student, isDark),
+              ),
+              const SizedBox(height: 20),
+
+              // Bagian Preset Avatar
+              Text(
+                'Atau Pilih Karakter Avatar Digital',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Koleksi ilustrasi profil mahasiswa siap pakai:',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              SizedBox(
+                height: 86,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: presets.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final item = presets[index];
+                    final url = item['url']!;
+                    final label = item['label']!;
+                    final isSelected = _currentAvatarUrl == url;
+
+                    return InkWell(
+                      onTap: () => _applyAvatarPreset(student, url),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: 72,
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF28283E) : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF1E40AF)
+                                : (isDark ? const Color(0xFF3B3B54) : Colors.transparent),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                              ),
+                              child: ClipOval(
+                                child: Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.face_rounded,
+                                    size: 28,
+                                    color: Color(0xFF1E40AF),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white70 : const Color(0xFF374151),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Opsi Reset jika sudah ada foto kustom
+              if (_currentAvatarUrl != null) ...[
+                _buildAvatarActionTile(
+                  icon: Icons.restore_rounded,
+                  iconColor: const Color(0xFFEF4444),
+                  iconBg: isDark ? const Color(0xFF450A0A).withValues(alpha: 0.5) : const Color(0xFFFEF2F2),
+                  title: 'Kembalikan ke Logo Default',
+                  subtitle: 'Hapus foto kustom dan kembali ke logo almamater',
+                  isDark: isDark,
+                  onTap: () => _resetToDefaultAvatar(student),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(
+                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showQrKtmModal(BuildContext context, StudentProfile student, bool isDark) {
+    final parts = student.nama.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : (student.nama.length >= 2 ? student.nama.substring(0, 2).toUpperCase() : 'M');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -152,30 +926,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 18),
 
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF28283E) : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Text(
-                    student.nama,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF111827),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF1E40AF), width: 1.5),
                     ),
-                    textAlign: TextAlign.center,
+                    child: ClipOval(
+                      child: _buildAvatarImage(_currentAvatarUrl ?? student.avatarUrl, initials),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'NIM: ${student.nim} • S1 Ilmu Komunikasi',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E40AF),
-                      fontFamily: 'monospace',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          student.nama,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'NIM: ${student.nim} • S1 Ilmu Komunikasi',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E40AF),
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -698,57 +1492,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Avatar Foto Profil
+                      // Avatar Foto Profil Interaktif (Dapat Diganti)
                       Center(
-                        child: Stack(
+                        child: Column(
                           children: [
-                            Container(
-                              width: 86,
-                              height: 86,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3.5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.25),
-                                    blurRadius: 14,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: Image.asset(
-                                  'assets/images/logo.jpg',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: Colors.white,
-                                    child: Center(
-                                      child: Text(
-                                        initials,
-                                        style: const TextStyle(
-                                          color: Color(0xFF1E40AF),
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w800,
+                            GestureDetector(
+                              onTap: () => _showChangeAvatarModal(context, student, isDark),
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 3.5),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.25),
+                                          blurRadius: 14,
+                                          offset: const Offset(0, 4),
                                         ),
+                                      ],
+                                    ),
+                                    child: ClipOval(
+                                      child: _buildAvatarImage(_currentAvatarUrl ?? student.avatarUrl, initials),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1E40AF),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.25),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.camera_alt_rounded,
+                                        color: Colors.white,
+                                        size: 15,
                                       ),
                                     ),
                                   ),
-                                ),
+                                  if (_isUpdatingAvatar)
+                                    Positioned.fill(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.black.withValues(alpha: 0.45),
+                                        ),
+                                        child: const Center(
+                                          child: SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
+                            const SizedBox(height: 6),
+                            InkWell(
+                              onTap: () => _showChangeAvatarModal(context, student, isDark),
+                              borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF10B981),
-                                  shape: BoxShape.circle,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 0.8),
                                 ),
-                                child: const Icon(
-                                  Icons.verified_rounded,
-                                  color: Colors.white,
-                                  size: 14,
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.camera_alt_rounded, color: Colors.white, size: 12),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Ganti Foto Profil',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1282,6 +2123,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
+                  _buildMenuItem(
+                    icon: Icons.camera_alt_rounded,
+                    iconColor: const Color(0xFF2563EB),
+                    iconBg: const Color(0xFFEFF6FF),
+                    title: 'Ganti Foto Profil',
+                    subtitle: 'Kamera, galeri, tautan URL atau avatar digital',
+                    onTap: () => _showChangeAvatarModal(context, student, isDark),
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                  ),
+                  Divider(height: 1, indent: 60, color: dividerColor),
                   _buildMenuItem(
                     icon: Icons.lock_reset_rounded,
                     iconColor: const Color(0xFF1E40AF),

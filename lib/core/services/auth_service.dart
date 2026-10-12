@@ -293,6 +293,10 @@ class AuthService {
           debugPrint(
             'Info: Akun terverifikasi melalui data profil sistem fallback (${matched.nama} - ${matched.role}).',
           );
+          final customAvatar = prefs?.getString('custom_avatar_${matched.nim}');
+          if (customAvatar != null && customAvatar.isNotEmpty) {
+            matched.avatarUrl = customAvatar;
+          }
           return matched;
         }
       }
@@ -357,6 +361,10 @@ class AuthService {
         await prefs.setString('custom_pwd_16110376', password);
         await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
       }
+      final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
+      if (customAvatar != null && customAvatar.isNotEmpty) {
+        profile.avatarUrl = customAvatar;
+      }
     } catch (_) {}
 
     return profile;
@@ -408,6 +416,10 @@ class AuthService {
           (s) => s.nim.trim().toLowerCase() == savedNim.toLowerCase(),
         ).firstOrNull;
         if (matched != null && matched.isAktif) {
+          final customAvatar = prefs.getString('custom_avatar_${matched.nim}');
+          if (customAvatar != null && customAvatar.isNotEmpty) {
+            matched.avatarUrl = customAvatar;
+          }
           return matched;
         }
       }
@@ -432,6 +444,7 @@ class AuthService {
       isAktif: row['is_aktif'] as bool? ?? false,
       instagram: row['instagram']?.toString(),
       linkedin: row['linkedin']?.toString(),
+      avatarUrl: row['avatar_url']?.toString(),
     );
     if (profile.nim.isEmpty || profile.nama.isEmpty || !profile.isAktif) {
       throw const AuthServiceException(
@@ -439,6 +452,42 @@ class AuthService {
       );
     }
     return profile;
+  }
+
+  /// Memperbarui foto profil mahasiswa baik di penyimpanan lokal maupun Supabase cloud
+  static Future<void> updateAvatar({
+    required String nim,
+    required String? avatarUrl,
+  }) async {
+    // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (avatarUrl == null || avatarUrl.isEmpty) {
+        await prefs.remove('custom_avatar_$nim');
+      } else {
+        await prefs.setString('custom_avatar_$nim', avatarUrl);
+      }
+    } catch (_) {}
+
+    // 2. Perbarui juga di DummyData in-memory jika ada
+    try {
+      final matched = DummyData.students.where(
+        (s) => s.nim.trim().toLowerCase() == nim.trim().toLowerCase(),
+      ).firstOrNull;
+      if (matched != null) {
+        matched.avatarUrl = avatarUrl;
+      }
+    } catch (_) {}
+
+    // 3. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    try {
+      await _client
+          .from('students')
+          .update({'avatar_url': avatarUrl})
+          .eq('nim', nim);
+    } catch (e) {
+      debugPrint('Info: Sinkronisasi avatar_url ke Supabase: $e');
+    }
   }
 
   static Future<void> signOut() async {

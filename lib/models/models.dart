@@ -239,6 +239,7 @@ class StudentProfile {
   bool isAktif;
   final String? instagram;
   final String? linkedin;
+  String? avatarUrl;
 
   StudentProfile({
     required this.id,
@@ -255,6 +256,7 @@ class StudentProfile {
     this.isAktif = true,
     this.instagram,
     this.linkedin,
+    this.avatarUrl,
   });
 
   // Role Checks
