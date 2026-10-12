@@ -187,7 +187,7 @@ class ColorfulIconBox extends StatelessWidget {
     this.iconSize = 20,
     double? radius,
     double borderRadius = 12,
-    this.hasGlow = true,
+    this.hasGlow = false,
   }) : borderRadius = radius ?? borderRadius;
 
   @override
