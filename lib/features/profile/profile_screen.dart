@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/avatar_picker.dart';
 import '../../core/services/safe_launcher.dart';
 import '../../core/theme/theme_notifier.dart';
 import '../../core/widgets/qr_widget.dart';
@@ -205,16 +207,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isUpdatingAvatar = true);
 
     try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: source,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 85,
-      );
+      Uint8List? bytes;
 
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
+      // Pada Flutter Web, gunakan langsung HTML file picker jika memilih galeri
+      // atau jika plugin method channel image_picker belum terdaftar
+      if (kIsWeb) {
+        try {
+          final picker = ImagePicker();
+          final picked = await picker.pickImage(
+            source: source,
+            maxWidth: 512,
+            maxHeight: 512,
+            imageQuality: 85,
+          );
+          if (picked != null) {
+            bytes = await picked.readAsBytes();
+          }
+        } catch (_) {
+          // Fallback instan menggunakan native HTML file input browser
+          bytes = await pickImageBytesWeb();
+        }
+      } else {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: source,
+          maxWidth: 512,
+          maxHeight: 512,
+          imageQuality: 85,
+        );
+        if (picked != null) {
+          bytes = await picked.readAsBytes();
+        }
+      }
+
+      if (bytes != null) {
         final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
         await AuthService.updateAvatar(
