@@ -173,36 +173,45 @@ class ColorfulIconBox extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color? backgroundColor;
+  final Color? iconColor;
   final double size;
   final double iconSize;
   final double borderRadius;
   final bool hasGlow;
+  final bool isFilled;
 
   const ColorfulIconBox({
     super.key,
     required this.icon,
     required this.color,
     this.backgroundColor,
+    this.iconColor,
     this.size = 40,
     this.iconSize = 20,
     double? radius,
     double borderRadius = 12,
     this.hasGlow = false,
+    this.isFilled = true,
   }) : borderRadius = radius ?? borderRadius;
 
   @override
   Widget build(BuildContext context) {
+    final bg = backgroundColor ?? (isFilled ? color : color.withValues(alpha: 0.10));
+    final icColor = iconColor ?? (isFilled ? Colors.white : color);
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? color.withValues(alpha: 0.10),
+        color: bg,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
+        border: isFilled
+            ? null
+            : Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
         boxShadow: hasGlow ? AppColors.coloredGlow(color, opacity: 0.16, blur: 8) : null,
       ),
       child: Center(
-        child: Icon(icon, color: color, size: iconSize),
+        child: Icon(icon, color: icColor, size: iconSize),
       ),
     );
   }
