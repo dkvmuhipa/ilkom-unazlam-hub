@@ -79,9 +79,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showForgotPasswordDialog() async {
-    final emailController = TextEditingController(
-      text: _nimController.text.contains('@') ? _nimController.text.trim() : '',
-    );
+    final initialEmail = _nimController.text.contains('@')
+        ? _nimController.text.trim()
+        : (_nimController.text.trim().toLowerCase() == 'admin'
+            ? 'gellonaindonesia@gmail.com'
+            : '');
+    final emailController = TextEditingController(text: initialEmail);
     final email = await showGlassModal<String>(
       context: context,
       maxWidth: 480,
@@ -103,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SaaSInputField(
                   label: 'Email Pemulihan',
                   controller: emailController,
-                  hintText: 'nama@student.unazlam.ac.id',
+                  hintText: 'nama@student.unazlam.ac.id atau email terdaftar',
                   prefixIcon: Icons.alternate_email_rounded,
                   keyboardType: TextInputType.emailAddress,
                 ),

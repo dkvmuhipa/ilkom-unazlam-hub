@@ -5,6 +5,8 @@
 /// Program Studi Ilmu Komunikasi Universitas Nahdlatul Ulama.
 /// Bukan data dummy / testing.
 /// ====================================================================
+library;
+
 import '../../models/models.dart';
 
 class MasterData {
@@ -128,10 +130,23 @@ class MasterData {
 
   static final List<StudentProfile> students = [
     StudentProfile(
+      id: '16110376',
+      nim: '16110376',
+      nama: 'ADMINISTRATOR SISTEM',
+      email: 'gellonaindonesia@gmail.com',
+      noWa: '081234567890',
+      role: 'ADMIN',
+      jabatan: 'System Administrator',
+      prodi: 'Ilmu Komunikasi',
+      semester: 1,
+      kelas: 'Fakultas FISIP UNAZLAM',
+      instagram: '@ilkom.unazlam',
+    ),
+    StudentProfile(
       id: 'adm1',
       nim: 'admin',
       nama: 'ADMINISTRATOR SISTEM',
-      email: 'admin.ilkom@unazlam.ac.id',
+      email: 'gellonaindonesia@gmail.com',
       noWa: '081234567890',
       role: 'ADMIN',
       jabatan: 'System Administrator',

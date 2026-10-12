@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
 
 class InviteAcceptScreen extends StatefulWidget {
@@ -65,13 +67,25 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       _error = null;
     });
     try {
-      if (!isInvite) await AuthService.setPassword(password);
+      final user = SupabaseService.client?.auth.currentUser;
+      final activeNim = user?.userMetadata?['nim']?.toString() ?? user?.email;
+      if (!isInvite) await AuthService.setPassword(password, userNim: activeNim);
       final profile = await AuthService.restoreSession();
       if (profile == null) {
         throw const AuthServiceException(
           'Kata sandi tersimpan, tetapi profil akun belum dapat dimuat. Silakan masuk kembali atau hubungi administrator.',
         );
       }
+      // Sinkronkan kata sandi baru ke SharedPreferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('custom_pwd_${profile.nim}', password);
+        if (profile.isAdmin) {
+          await prefs.setString('custom_pwd_admin', password);
+          await prefs.setString('custom_pwd_16110376', password);
+          await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
+        }
+      } catch (_) {}
       if (!mounted) return;
       widget.onSuccess(profile);
     } on AuthException catch (error) {
