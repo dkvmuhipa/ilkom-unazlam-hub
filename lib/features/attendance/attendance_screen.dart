@@ -1326,9 +1326,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       if (!widget.canManageClassAttendance && activeNim.isEmpty) {
         throw StateError('NIM akun tidak ditemukan. Silakan masuk kembali.');
       }
-      final rawLogs = await SupabaseRepository.getAttendanceLogsStrict(
-        studentNim: widget.canManageClassAttendance ? null : activeNim,
-      );
+      List<Map<String, dynamic>> rawLogs;
+      try {
+        rawLogs = await SupabaseRepository.getAttendanceLogsStrict(
+          studentNim: widget.canManageClassAttendance ? null : activeNim,
+        );
+      } catch (err) {
+        debugPrint('Warning: getAttendanceLogsStrict gagal ($err), mencoba getAttendanceLogs fallback');
+        rawLogs = await SupabaseRepository.getAttendanceLogs(
+          studentNim: widget.canManageClassAttendance ? null : activeNim,
+        );
+      }
       
       if (!mounted) return;
 

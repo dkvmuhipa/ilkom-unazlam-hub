@@ -57,34 +57,67 @@ class StudentDashboardService {
     final currentPeriod = DateFormat('yyyy-MM').format(now);
     final periodLabel = DateFormat('MMMM yyyy', 'id_ID').format(now);
 
-    final results = await Future.wait<dynamic>([
-      client
-          .from('attendance_logs')
-          .select('*, courses(nama_mk, kode_mk)')
-          .eq('student_nim', studentNim)
-          .order('created_at', ascending: false),
-      client.from('assignments').select().order('deadline'),
-      client
-          .from('student_assignments')
-          .select('assignment_id,status')
-          .eq('student_nim', studentNim),
-      client
-          .from('announcements')
-          .select()
-          .order('is_pinned', ascending: false)
-          .order('created_at', ascending: false)
-          .limit(1),
+    final results = await Future.wait<List<dynamic>>([
+      () async {
+        try {
+          return await client
+              .from('attendance_logs')
+              .select('*, courses(nama_mk, kode_mk)')
+              .eq('student_nim', studentNim)
+              .order('created_at', ascending: false);
+        } catch (e) {
+          debugPrint('Info: Gagal memuat attendance_logs ($e), fallback kosong.');
+          return <Map<String, dynamic>>[];
+        }
+      }(),
+      () async {
+        try {
+          return await client.from('assignments').select().order('deadline');
+        } catch (e) {
+          debugPrint('Info: Gagal memuat assignments ($e), fallback kosong.');
+          return <Map<String, dynamic>>[];
+        }
+      }(),
+      () async {
+        try {
+          return await client
+              .from('student_assignments')
+              .select('assignment_id,status')
+              .eq('student_nim', studentNim);
+        } catch (e) {
+          debugPrint('Info: Gagal memuat student_assignments ($e), fallback kosong.');
+          return <Map<String, dynamic>>[];
+        }
+      }(),
+      () async {
+        try {
+          return await client
+              .from('announcements')
+              .select()
+              .order('is_pinned', ascending: false)
+              .order('created_at', ascending: false)
+              .limit(1);
+        } catch (e) {
+          debugPrint('Info: Gagal memuat announcements ($e), fallback kosong.');
+          return <Map<String, dynamic>>[];
+        }
+      }(),
     ]);
 
-    final attendance = List<Map<String, dynamic>>.from(results[0] as List);
-    final statusRows = List<Map<String, dynamic>>.from(results[2] as List);
+    final attendance = List<Map<String, dynamic>>.from(
+      (results[0] as List?) ?? [],
+    );
+    final statusRows = List<Map<String, dynamic>>.from(
+      (results[2] as List?) ?? [],
+    );
     final statuses = {
       for (final row in statusRows)
         row['assignment_id'].toString(): row['status']?.toString() ?? 'belum',
     };
 
+    final rawAssignments = (results[1] as List?) ?? [];
     final assignments =
-        List<Map<String, dynamic>>.from(results[1] as List)
+        List<Map<String, dynamic>>.from(rawAssignments)
             .map(
               (row) => Assignment(
                 id: row['id']?.toString() ?? '',
@@ -109,7 +142,7 @@ class StudentDashboardService {
           ..sort((a, b) => a.deadline.compareTo(b.deadline));
 
     final announcementRows = List<Map<String, dynamic>>.from(
-      results[3] as List,
+      (results[3] as List?) ?? [],
     );
     Announcement? announcement;
     if (announcementRows.isNotEmpty) {

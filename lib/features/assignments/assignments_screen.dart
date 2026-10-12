@@ -61,14 +61,28 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     try {
       final nim = widget.userNim;
       final results = await Future.wait<dynamic>([
-        SupabaseRepository.getAssignmentsStrict(),
-        SupabaseRepository.getCoursesStrict(),
-        SupabaseRepository.getPersonalAssignmentStatusesStrict(nim ?? ''),
+        SupabaseRepository.getAssignmentsStrict().catchError((e) async {
+          debugPrint('Info: getAssignmentsStrict gagal ($e), mencoba getAssignments fallback.');
+          return await SupabaseRepository.getAssignments();
+        }),
+        SupabaseRepository.getCoursesStrict().catchError((e) async {
+          debugPrint('Info: getCoursesStrict gagal ($e), mencoba getCourses fallback.');
+          return await SupabaseRepository.getCourses();
+        }),
+        (nim != null && nim.isNotEmpty)
+            ? SupabaseRepository.getPersonalAssignmentStatusesStrict(nim)
+                .catchError((e) {
+                  debugPrint('Info: Status tugas perorangan ($e), default belum dikerjakan.');
+                  return <String, String>{};
+                })
+            : Future.value(<String, String>{}),
       ]);
       final courses = results[1] as List<Course>;
-      DummyData.courses
-        ..clear()
-        ..addAll(courses);
+      if (courses.isNotEmpty) {
+        DummyData.courses
+          ..clear()
+          ..addAll(courses);
+      }
 
       final cloudStatuses = results[2] as Map<String, String>;
       for (final assignment in DummyData.assignments) {

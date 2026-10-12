@@ -70,7 +70,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       });
     }
     try {
-      await AttendanceScreen.syncActiveSessionFromCloud();
+      try {
+        await AttendanceScreen.syncActiveSessionFromCloud();
+      } catch (e) {
+        debugPrint('Info: Gagal sinkronisasi sesi presensi aktif: $e');
+      }
       final snapshot = await StudentDashboardService.load(widget.student.nim);
       if (!mounted) return;
 
