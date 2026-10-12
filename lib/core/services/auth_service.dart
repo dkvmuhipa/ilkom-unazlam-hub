@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,6 +28,12 @@ class AuthService {
   }
 
   static bool get hasActiveSession => _client.auth.currentSession != null;
+
+  /// Helper untuk hashing kata sandi fallback offline menggunakan SHA-256 dan salt unik
+  static String _hashPassword(String nimOrKey, String password) {
+    final payload = '$nimOrKey:salt_ilkom_unazlam_2026:$password';
+    return sha256.convert(utf8.encode(payload)).toString();
+  }
 
   static Future<void> setPassword(String password, {String? userNim}) async {
     if (hasActiveSession) {
@@ -105,22 +112,27 @@ class AuthService {
       }
     }
 
-    // Sinkronkan juga kata sandi baru ke SharedPreferences untuk fallback offline
+    // Sinkronkan juga hash kata sandi baru ke SharedPreferences untuk fallback offline
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (userNim != null && userNim.isNotEmpty) {
-        await prefs.setString('custom_pwd_$userNim', password);
-        await prefs.setString('custom_pwd_${userNim.toLowerCase()}', password);
+      if (userNim != null && userNim.isNotEmpty && userNim.toLowerCase() != 'admin') {
+        final hash = _hashPassword(userNim, password);
+        await prefs.setString('custom_pwd_hash_$userNim', hash);
+        await prefs.setString('custom_pwd_hash_${userNim.toLowerCase()}', hash);
+        // Hapus kunci plaintext lama untuk keamanan
+        await prefs.remove('custom_pwd_$userNim');
+        await prefs.remove('custom_pwd_${userNim.toLowerCase()}');
       }
       final currEmail = _client.auth.currentUser?.email;
       if (currEmail != null && currEmail.isNotEmpty) {
-        await prefs.setString('custom_pwd_$currEmail', password);
+        final hash = _hashPassword(currEmail, password);
+        await prefs.setString('custom_pwd_hash_$currEmail', hash);
+        await prefs.remove('custom_pwd_$currEmail');
       }
-      if (currEmail == 'gellonaindonesia@gmail.com' || userNim == 'admin' || userNim == '16110376') {
-        await prefs.setString('custom_pwd_admin', password);
-        await prefs.setString('custom_pwd_16110376', password);
-        await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
-      }
+      // Hapus kunci password plaintext admin dari SharedPreferences
+      await prefs.remove('custom_pwd_admin');
+      await prefs.remove('custom_pwd_16110376');
+      await prefs.remove('custom_pwd_gellonaindonesia@gmail.com');
     } catch (_) {}
   }
 
@@ -272,6 +284,10 @@ class AuthService {
           prefs = await SharedPreferences.getInstance();
         } catch (_) {}
 
+        final hashedInput = _hashPassword(matched.nim, password);
+        final customSavedHash = prefs?.getString('custom_pwd_hash_${matched.nim}') ??
+            prefs?.getString('custom_pwd_hash_${matched.email}') ??
+            prefs?.getString('custom_pwd_hash_${loginValue.toLowerCase()}');
         final customSavedPass = prefs?.getString('custom_pwd_${matched.nim}') ??
             prefs?.getString('custom_pwd_${matched.email}') ??
             prefs?.getString('custom_pwd_${loginValue.toLowerCase()}');
@@ -279,11 +295,13 @@ class AuthService {
         final last6 = nimStr.length >= 6
             ? nimStr.substring(nimStr.length - 6)
             : nimStr;
-        final bool passwordValid = (password == customSavedPass ||
+        final bool passwordValid = (!matched.isAdmin && (
+            (customSavedHash != null && customSavedHash == hashedInput) ||
+            (customSavedPass != null && customSavedPass == password) ||
             password == last6 ||
             password == nimStr ||
-            password == '123456' ||
-            (matched.isAdmin && (password == 'admin123' || password == 'admin')));
+            password == '123456'
+        )) || (matched.isAdmin && (password == 'admin123' || password == 'admin'));
 
         if (passwordValid) {
           // Simpan sesi login aktif ke local storage
@@ -316,16 +334,24 @@ class AuthService {
     final user = _client.auth.currentUser;
     if (user == null) throw const AuthServiceException('Login gagal.');
 
-    // Ambil profil mahasiswa: cari berdasarkan auth_user_id ATAU email
+    // Ambil profil mahasiswa: cari berdasarkan auth_user_id ATAU email (parameterized)
     StudentProfile? profile;
     try {
-      final row = await _client
+      final selectCols =
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url';
+      var row = await _client
           .from('students')
-          .select(
-            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
-          )
-          .or('auth_user_id.eq.${user.id},email.eq.${user.email ?? ''}')
+          .select(selectCols)
+          .eq('auth_user_id', user.id)
           .maybeSingle();
+
+      if (row == null && user.email != null && user.email!.isNotEmpty) {
+        row = await _client
+            .from('students')
+            .select(selectCols)
+            .eq('email', user.email!)
+            .maybeSingle();
+      }
 
       if (row != null) {
         profile = _profileFromRow(row);
@@ -351,16 +377,15 @@ class AuthService {
       jabatan: 'Mahasiswa',
     );
 
-    // Simpan sesi login aktif dan sinkronkan password ke SharedPreferences
+    // Simpan sesi login aktif ke SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('active_session_nim', profile.nim);
-      await prefs.setString('custom_pwd_${profile.nim}', password);
-      if (profile.isAdmin) {
-        await prefs.setString('custom_pwd_admin', password);
-        await prefs.setString('custom_pwd_16110376', password);
-        await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
-      }
+      // Hapus kunci password plaintext dari local storage untuk perlindungan kredensial
+      await prefs.remove('custom_pwd_${profile.nim}');
+      await prefs.remove('custom_pwd_admin');
+      await prefs.remove('custom_pwd_16110376');
+      await prefs.remove('custom_pwd_gellonaindonesia@gmail.com');
       _applyCustomProfileOverrides(profile, prefs);
     } catch (_) {}
 
@@ -382,13 +407,22 @@ class AuthService {
     final user = _client.auth.currentUser;
     if (user != null) {
       try {
-        final row = await _client
+        final selectCols =
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url';
+        var row = await _client
             .from('students')
-            .select(
-              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
-            )
-            .or('auth_user_id.eq.${user.id},email.eq.${user.email ?? ''}')
+            .select(selectCols)
+            .eq('auth_user_id', user.id)
             .maybeSingle();
+
+        if (row == null && user.email != null && user.email!.isNotEmpty) {
+          row = await _client
+              .from('students')
+              .select(selectCols)
+              .eq('email', user.email!)
+              .maybeSingle();
+        }
+
         if (row != null) {
           final profile = _profileFromRow(row);
           if (profile.isAktif) return profile;

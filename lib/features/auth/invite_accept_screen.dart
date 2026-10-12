@@ -76,15 +76,13 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
           'Kata sandi tersimpan, tetapi profil akun belum dapat dimuat. Silakan masuk kembali atau hubungi administrator.',
         );
       }
-      // Sinkronkan kata sandi baru ke SharedPreferences
+      // Bersihkan kunci kata sandi plaintext lama dari SharedPreferences
       try {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('custom_pwd_${profile.nim}', password);
-        if (profile.isAdmin) {
-          await prefs.setString('custom_pwd_admin', password);
-          await prefs.setString('custom_pwd_16110376', password);
-          await prefs.setString('custom_pwd_gellonaindonesia@gmail.com', password);
-        }
+        await prefs.remove('custom_pwd_${profile.nim}');
+        await prefs.remove('custom_pwd_admin');
+        await prefs.remove('custom_pwd_16110376');
+        await prefs.remove('custom_pwd_gellonaindonesia@gmail.com');
       } catch (_) {}
       if (!mounted) return;
       widget.onSuccess(profile);
