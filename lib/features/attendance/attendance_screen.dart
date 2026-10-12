@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show Random;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/services/dummy_data.dart';
@@ -15,13 +16,18 @@ class AttendanceHistoryItem {
   final String date;
   final String courseName;
   final String status; // 'Hadir', 'Izin', 'Sakit', 'Alpa'
+  final int? pertemuanKe;
+  final String? catatan;
 
   const AttendanceHistoryItem({
     required this.date,
     required this.courseName,
     required this.status,
+    this.pertemuanKe,
+    this.catatan,
   });
 }
+
 
 class ActiveAttendanceSession {
   final String? id;
@@ -269,6 +275,7 @@ class AttendanceScreen extends StatefulWidget {
     VoidCallback? onSuccess,
   }) {
     final tokenController = TextEditingController();
+    final pinController = TextEditingController();
     final session = currentSession;
 
     String selectedCourse = (session != null && !session.isExpired)
@@ -276,19 +283,20 @@ class AttendanceScreen extends StatefulWidget {
         : (DummyData.courses.isNotEmpty ? DummyData.courses.first.nama : 'Mata Kuliah');
 
     String? scanStatusMessage;
+    int inputMode = kIsWeb ? 1 : 0; // 0: Scan Kamera QR, 1: PIN 4 Digit
+    bool useLongToken = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final liveSession = currentSession;
           final bool hasLiveSession = (liveSession != null && !liveSession.isExpired);
           final bool isLiveForSelectedCourse = hasLiveSession && liveSession.courseName == selectedCourse;
+          final theme = Theme.of(context);
+          final isDark = theme.brightness == Brightness.dark;
 
           void executeVerification(String tokenToVerify) {
             final targetSession = currentSession;
@@ -325,11 +333,11 @@ class AttendanceScreen extends StatefulWidget {
 
             if (!isValidCode) {
               setModalState(() {
-                scanStatusMessage = 'Token atau PIN tidak cocok dengan sesi aktif.';
+                scanStatusMessage = 'Kode token atau PIN tidak cocok dengan sesi aktif.';
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Kode token atau PIN salah. Periksa kembali token dari pengurus kelas.'),
+                  content: Text('Kode token atau PIN salah. Periksa kembali PIN/Token dari pengurus kelas.'),
                   backgroundColor: Color(0xFFEF4444),
                 ),
               );
@@ -383,21 +391,58 @@ class AttendanceScreen extends StatefulWidget {
           final s = (liveSession?.remainingSeconds ?? 0) % 60;
           final timerStr = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 
-          return Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
                 Row(
                   children: [
-                    const Expanded(
+                    Container(
+                      padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E40AF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Scan / Verifikasi QR Presensi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                          SizedBox(height: 2),
-                          Text('Pindai QR dosen/ketua kelas atau masukkan token sesi', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                          Text(
+                            'Presensi Kehadiran Kuliah',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pindai QR dosen atau ketik 4 digit PIN sesi',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -409,6 +454,94 @@ class AttendanceScreen extends StatefulWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
+
+                // Selector Mode: Scan Kamera vs PIN 4 Digit
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => inputMode = 0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: inputMode == 0
+                                  ? (isDark ? const Color(0xFF1E1E2E) : Colors.white)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                              boxShadow: inputMode == 0
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 15,
+                                  color: inputMode == 0 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Kamera QR',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: inputMode == 0 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => inputMode = 1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: inputMode == 1
+                                  ? (isDark ? const Color(0xFF1E1E2E) : Colors.white)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                              boxShadow: inputMode == 1
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.pin_rounded,
+                                  size: 15,
+                                  color: inputMode == 1 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'PIN 4 Digit',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: inputMode == 1 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 DropdownButtonFormField<String>(
                   initialValue: selectedCourse,
@@ -435,7 +568,9 @@ class AttendanceScreen extends StatefulWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isLiveForSelectedCourse ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                      color: isLiveForSelectedCourse
+                          ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
+                          : (isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isLiveForSelectedCourse ? const Color(0xFF86EFAC) : const Color(0xFFFDE68A),
@@ -457,7 +592,9 @@ class AttendanceScreen extends StatefulWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: isLiveForSelectedCourse ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                              color: isLiveForSelectedCourse
+                                  ? (isDark ? const Color(0xFF86EFAC) : const Color(0xFF15803D))
+                                  : (isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309)),
                             ),
                           ),
                         ),
@@ -467,117 +604,311 @@ class AttendanceScreen extends StatefulWidget {
                   const SizedBox(height: 12),
                 ],
 
-                Container(
-                  width: double.infinity,
-                  height: 190,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (!kIsWeb)
-                        MobileScanner(
-                          fit: BoxFit.cover,
-                          onDetect: (capture) {
-                            final List<Barcode> barcodes = capture.barcodes;
-                            for (final barcode in barcodes) {
-                              final rawVal = barcode.rawValue;
-                              if (rawVal != null && rawVal.isNotEmpty) {
-                                executeVerification(rawVal);
-                                break;
+                // MODE 0: SCAN KAMERA QR
+                if (inputMode == 0) ...[
+                  Container(
+                    width: double.infinity,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111827),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (!kIsWeb)
+                          MobileScanner(
+                            fit: BoxFit.cover,
+                            onDetect: (capture) {
+                              final List<Barcode> barcodes = capture.barcodes;
+                              for (final barcode in barcodes) {
+                                final rawVal = barcode.rawValue;
+                                if (rawVal != null && rawVal.isNotEmpty) {
+                                  executeVerification(rawVal);
+                                  break;
+                                }
                               }
-                            }
-                          },
-                        )
-                      else
-                        const Center(
-                          child: Text('Web Preview Mode (Gunakan input token manual di bawah)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        ),
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFF1E40AF), width: 2.5),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(20),
+                            },
+                          )
+                        else
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.pin_rounded, size: 32, color: Color(0xFF60A5FA)),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Browser Web: Gunakan Tab "PIN 4 Digit"',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Input 4 angka PIN cepat tanpa perlu akses kamera.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton(
+                                    onPressed: () => setModalState(() => inputMode = 1),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1E40AF),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    ),
+                                    child: const Text('Beralih ke PIN 4 Digit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
+                        if (!kIsWeb)
+                          Container(
+                            width: 130,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFF1E40AF), width: 2.5),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        if (!kIsWeb)
+                          Positioned(
+                            bottom: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.65),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.qr_code_scanner_rounded, size: 13, color: Colors.white70),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Arahkan kamera ke QR Code',
+                                    style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // MODE 1: PIN 4 DIGIT CEPAT (OTP BOXES)
+                if (inputMode == 1) ...[
+                  if (!useLongToken) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Masukkan 4 Digit PIN Sesi Kuliah',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 4-Digit Display Boxes
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(4, (index) {
+                              final text = pinController.text;
+                              final digit = index < text.length ? text[index] : '';
+                              final isCurrent = index == text.length;
+
+                              return Container(
+                                width: 52,
+                                height: 58,
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isCurrent
+                                        ? const Color(0xFF1E40AF)
+                                        : (digit.isNotEmpty ? const Color(0xFF60A5FA) : (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFCBD5E1))),
+                                    width: isCurrent ? 2.2 : 1.5,
+                                  ),
+                                  boxShadow: isCurrent
+                                      ? [BoxShadow(color: const Color(0xFF1E40AF).withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))]
+                                      : null,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  digit.isNotEmpty ? digit : (isCurrent ? '•' : ''),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: isCurrent ? const Color(0xFF1E40AF) : (isDark ? Colors.white : const Color(0xFF111827)),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Numeric text input for PIN
+                          TextField(
+                            controller: pinController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 4,
+                            autofocus: true,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              hintText: 'Ketik 4 angka PIN di sini',
+                              hintStyle: TextStyle(fontSize: 11.5, color: isDark ? Colors.white38 : Colors.grey.shade400),
+                              counterText: '',
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            ),
+                            onChanged: (val) {
+                              setModalState(() {
+                                scanStatusMessage = null;
+                              });
+                              if (val.trim().length == 4) {
+                                executeVerification(val.trim());
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 8),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.qr_code_scanner_rounded, size: 13, color: Colors.white70),
-                              SizedBox(width: 5),
-                              Text(
-                                'Arahkan kamera ke QR Code',
-                                style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w600),
+                              TextButton(
+                                onPressed: () {
+                                  pinController.clear();
+                                  setModalState(() {});
+                                },
+                                child: const Text('Hapus PIN', style: TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
+                              ),
+                              TextButton(
+                                onPressed: () => setModalState(() => useLongToken = true),
+                                child: const Text('Gunakan Token Huruf', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                TextField(
-                  controller: tokenController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: 'Atau Masukkan Kode Token / PIN (4 Digit)',
-                    hintText: 'Contoh: PKN-0821 atau PIN 4 Digit',
-                    labelStyle: const TextStyle(fontSize: 12),
-                    prefixIcon: const Icon(Icons.vpn_key_rounded, size: 18),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
-                ),
+                    ),
+                  ] else ...[
+                    // Long Token Input Field
+                    TextField(
+                      controller: tokenController,
+                      textCapitalization: TextCapitalization.characters,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Kode Token Sesi (Contoh: PKN-0821)',
+                        labelStyle: const TextStyle(fontSize: 12),
+                        prefixIcon: const Icon(Icons.vpn_key_rounded, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => setModalState(() => useLongToken = false),
+                        child: const Text('Kembali ke PIN 4 Digit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                      ),
+                    ),
+                  ],
+                ],
 
                 if (scanStatusMessage != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     scanStatusMessage!,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E40AF)),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
                   ),
                 ],
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
+
+                // Button Verifikasi
                 ElevatedButton.icon(
                   onPressed: () {
-                    final token = tokenController.text.trim();
-                    if (token.isEmpty) {
+                    final code = (inputMode == 1 && !useLongToken)
+                        ? pinController.text.trim()
+                        : tokenController.text.trim();
+
+                    if (code.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Silakan scan QR dosen atau masukkan kode token sesi presensi!'),
+                          content: Text('Silakan masukkan PIN 4 digit atau scan QR sesi presensi!'),
                           backgroundColor: Color(0xFFEF4444),
                         ),
                       );
                       return;
                     }
-                    executeVerification(token);
+                    executeVerification(code);
                   },
                   icon: const Icon(Icons.verified_rounded, size: 18),
-                  label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w700)),
+                  label: const Text('Verifikasi Kehadiran', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E40AF),
                     foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(46),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Berhalangan hadir kuliah? ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          AttendanceScreen.showAbsenceRequestModal(
+                            context,
+                            userNim: userNim,
+                            preselectedCourse: selectedCourse,
+                            onSuccess: onSuccess,
+                          );
+                        },
+                        child: const Text(
+                          'Ajukan Izin / Sakit di sini',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E40AF),
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -587,6 +918,370 @@ class AttendanceScreen extends StatefulWidget {
       ),
     ).whenComplete(() {
       tokenController.dispose();
+      pinController.dispose();
+    });
+  }
+
+  // =========================================================================
+  // PENGAJUAN IZIN / SAKIT MANDIRI (SELF-REPORT ABSENCE)
+  // =========================================================================
+  static void showAbsenceRequestModal(
+    BuildContext context, {
+    required String userNim,
+    String? preselectedCourse,
+    int? preselectedPertemuan,
+    VoidCallback? onSuccess,
+  }) {
+    final reasonController = TextEditingController();
+    final liveSession = currentSession;
+    String selectedCourse = preselectedCourse ??
+        ((liveSession != null && !liveSession.isExpired)
+            ? liveSession.courseName
+            : (DummyData.courses.isNotEmpty ? DummyData.courses.first.nama : 'Mata Kuliah'));
+    int selectedPertemuan = preselectedPertemuan ??
+        ((liveSession != null && !liveSession.isExpired) ? liveSession.pertemuanKe : 1);
+    String selectedStatus = 'Izin'; // 'Izin' or 'Sakit'
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final theme = Theme.of(context);
+          final isDark = theme.brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        color: selectedStatus == 'Izin' ? const Color(0xFFF59E0B) : const Color(0xFF3B82F6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        selectedStatus == 'Izin' ? Icons.assignment_late_rounded : Icons.medical_services_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pengajuan Izin / Sakit Kuliah',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Laporkan ketidakhadiran resmi ke sistem akademik kelas',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Status Selector (Izin vs Sakit)
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setModalState(() => selectedStatus = 'Izin'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: selectedStatus == 'Izin'
+                                ? (isDark ? const Color(0xFF713F12) : const Color(0xFFFEF3C7))
+                                : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selectedStatus == 'Izin' ? const Color(0xFFF59E0B) : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.watch_later_outlined,
+                                size: 16,
+                                color: selectedStatus == 'Izin' ? const Color(0xFFD97706) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Izin',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: selectedStatus == 'Izin' ? const Color(0xFFD97706) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setModalState(() => selectedStatus = 'Sakit'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: selectedStatus == 'Sakit'
+                                ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFDBEAFE))
+                                : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selectedStatus == 'Sakit' ? const Color(0xFF3B82F6) : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.healing_rounded,
+                                size: 16,
+                                color: selectedStatus == 'Sakit' ? const Color(0xFF2563EB) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Sakit',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: selectedStatus == 'Sakit' ? const Color(0xFF2563EB) : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Row: Mata Kuliah & Pertemuan
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: selectedCourse,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Mata Kuliah',
+                          labelStyle: const TextStyle(fontSize: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        items: DummyData.courses.map((c) => DropdownMenuItem(
+                          value: c.nama,
+                          child: Text(c.nama, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                        )).toList(),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedCourse = val);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 4,
+                      child: DropdownButtonFormField<int>(
+                        initialValue: selectedPertemuan,
+                        decoration: InputDecoration(
+                          labelText: 'Pertemuan',
+                          labelStyle: const TextStyle(fontSize: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        items: List.generate(16, (i) => i + 1).map((p) => DropdownMenuItem(
+                          value: p,
+                          child: Text('Ke-$p', style: const TextStyle(fontSize: 12)),
+                        )).toList(),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedPertemuan = val);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Alasan Textfield
+                TextField(
+                  controller: reasonController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Alasan / Keterangan Lengkap',
+                    hintText: selectedStatus == 'Izin'
+                        ? 'Contoh: Menghadiri kegiatan dinas kampus / keperluan keluarga mendesak...'
+                        : 'Contoh: Mengalami demam dan disarankan istirahat oleh dokter...',
+                    labelStyle: const TextStyle(fontSize: 12),
+                    hintStyle: TextStyle(fontSize: 11.5, color: isDark ? Colors.white38 : Colors.grey.shade400),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Notice Box
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 15, color: Color(0xFF1E40AF)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Data izin/sakit akan tercatat resmi dalam sistem rekapitulasi kehadiran dan dapat diverifikasi oleh Ketua Kelas atau Dosen.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                ElevatedButton.icon(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final reason = reasonController.text.trim();
+                          if (reason.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Harap tuliskan alasan ketidakhadiran Anda!'),
+                                backgroundColor: Color(0xFFEF4444),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setModalState(() => isSubmitting = true);
+                          try {
+                            await SupabaseRepository.logAttendance(
+                              courseId: selectedCourse,
+                              studentNim: userNim,
+                              pertemuanKe: selectedPertemuan,
+                              status: selectedStatus,
+                              catatan: reason,
+                            );
+
+                            final current = currentSession;
+                            if (current != null && current.courseName == selectedCourse && current.pertemuanKe == selectedPertemuan) {
+                              current.attendedNims.add(userNim);
+                            }
+
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            onSuccess?.call();
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('Pengajuan $selectedStatus untuk "$selectedCourse" berhasil dicatat! 📄'),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: selectedStatus == 'Izin' ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setModalState(() => isSubmitting = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal mengirim pengajuan: $e'),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  icon: isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.send_rounded, size: 18),
+                  label: Text(
+                    isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan $selectedStatus',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: selectedStatus == 'Izin' ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).whenComplete(() {
+      reasonController.dispose();
     });
   }
 
@@ -664,6 +1359,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             date: formattedDate,
             courseName: cName,
             status: stFormatted,
+            pertemuanKe: (l['pertemuan_ke'] as num?)?.toInt(),
+            catatan: l['catatan']?.toString(),
           );
         }).toList();
 
@@ -1202,6 +1899,501 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
+  void _showAbsenceRequestSheet(BuildContext context, {String? preselectedCourse, int? preselectedPertemuan}) {
+    AttendanceScreen.showAbsenceRequestModal(
+      context,
+      userNim: widget.userNim ?? '',
+      preselectedCourse: preselectedCourse,
+      preselectedPertemuan: preselectedPertemuan,
+      onSuccess: () => _loadRealAttendanceData(),
+    );
+  }
+
+  void _showCourseDetailModal(BuildContext context, Course course, bool isDark) {
+    final courseLogs = _history.where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase()).toList();
+    final courseHadir = courseLogs.where((h) => h.status == 'Hadir').length;
+    final courseIzin = courseLogs.where((h) => h.status == 'Izin').length;
+    final courseSakit = courseLogs.where((h) => h.status == 'Sakit').length;
+    final courseAlpa = courseLogs.where((h) => h.status == 'Alpa').length;
+    final int coursePct = courseLogs.isNotEmpty ? ((courseHadir / courseLogs.length) * 100).round() : 100;
+    final bool isCourseSafe = coursePct >= 75;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E40AF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          course.nama,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${course.kode} • ${course.sks} SKS • ${course.dosen}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    // Summary Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: isCourseSafe
+                                      ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
+                                      : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isCourseSafe ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                    width: 2,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  courseLogs.isNotEmpty ? '$coursePct%' : '100%',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    color: isCourseSafe ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: isCourseSafe
+                                                ? (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7))
+                                                : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2)),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            isCourseSafe ? 'Syarat UAS Aman' : 'Batas Kritis (<75%)',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              color: isCourseSafe ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Target kelayakan: Min. 12 dari 16 pertemuan wajib hadir',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          const Divider(height: 1),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildMiniStat('$courseHadir', 'Hadir', const Color(0xFF10B981), isDark),
+                              _buildMiniStat('$courseIzin', 'Izin', const Color(0xFFF59E0B), isDark),
+                              _buildMiniStat('$courseSakit', 'Sakit', const Color(0xFF3B82F6), isDark),
+                              _buildMiniStat('$courseAlpa', 'Alpa', const Color(0xFFEF4444), isDark),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Rincian 16 Pertemuan Kuliah',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                          ),
+                        ),
+                        Text(
+                          '${courseLogs.length} Sesi Terlaksana',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    ...List.generate(16, (index) {
+                      final pNum = index + 1;
+                      AttendanceHistoryItem? matchedLog;
+                      for (final l in courseLogs) {
+                        if (l.pertemuanKe == pNum) {
+                          matchedLog = l;
+                          break;
+                        }
+                      }
+                      if (matchedLog == null && pNum <= courseLogs.length) {
+                        matchedLog = courseLogs[courseLogs.length - pNum];
+                      }
+
+                      final bool isRecorded = matchedLog != null;
+                      final status = matchedLog?.status ?? 'Mendatang';
+                      Color stColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
+                      Color stBg = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9);
+
+                      if (status == 'Hadir') {
+                        stColor = const Color(0xFF10B981);
+                        stBg = isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5);
+                      } else if (status == 'Izin') {
+                        stColor = const Color(0xFFF59E0B);
+                        stBg = isDark ? const Color(0xFF713F12) : const Color(0xFFFFFBEB);
+                      } else if (status == 'Sakit') {
+                        stColor = const Color(0xFF3B82F6);
+                        stBg = isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF);
+                      } else if (status == 'Alpa') {
+                        stColor = const Color(0xFFEF4444);
+                        stBg = isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2);
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF222234) : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isRecorded
+                                ? (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0))
+                                : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isRecorded
+                                    ? (stColor.withValues(alpha: 0.12))
+                                    : (isDark ? const Color(0xFF2A2A3C) : const Color(0xFFF8FAFC)),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'P$pNum',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: isRecorded ? stColor : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pertemuan $pNum',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : const Color(0xFF111827),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    isRecorded
+                                        ? (matchedLog.catatan != null && matchedLog.catatan!.isNotEmpty
+                                            ? '${matchedLog.date} • ${matchedLog.catatan}'
+                                            : matchedLog.date)
+                                        : 'Belum dijadwalkan / Mendatang',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                              decoration: BoxDecoration(
+                                color: stBg,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: stColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              // Footer Action
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showAbsenceRequestSheet(context, preselectedCourse: course.nama);
+                      },
+                      icon: const Icon(Icons.assignment_turned_in_outlined, size: 16),
+                      label: const Text('Ajukan Izin / Sakit Matkul Ini', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1E40AF),
+                        side: const BorderSide(color: Color(0xFF1E40AF)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String value, String label, Color color, bool isDark) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAcademicWarningCard({
+    required List<Course> atRiskCourses,
+    required int remainingAlpa,
+    required bool isDark,
+  }) {
+    final hasSpecificCourseRisk = atRiskCourses.isNotEmpty;
+    final courseNames = atRiskCourses.map((c) => c.nama).join(', ');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF450A0A) : const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'PERINGATAN DINI KELAYAKAN UAS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFDC2626),
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hasSpecificCourseRisk
+                          ? 'Kehadiran pada mata kuliah "$courseNames" berada di bawah standar 75% atau mendekati batas alpa.'
+                          : 'Toleransi ketidakhadiran tersisa $remainingAlpa kali sesi kuliah sebelum kehilangan hak mengikuti UAS.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : const Color(0xFF7F1D1D),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2E0C0C) : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFFDC2626)),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'Sesuai panduan akademik UNAZLAM, batas minimum kehadiran UAS adalah 75% (maks 4 kali alpa).',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFDC2626),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _showAbsenceRequestSheet(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Ajukan Izin',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeNim = widget.userNim ?? '';
@@ -1675,18 +2867,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               ),
                             ] else ...[
                               if (!hasAttended)
-                                ElevatedButton.icon(
-                                  onPressed: () => _showScanQrModal(context),
-                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
-                                  label: const Text('Scan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () => _showScanQrModal(context),
+                                      icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                                      label: const Text('Presensi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF10B981),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    OutlinedButton.icon(
+                                      onPressed: () => _showAbsenceRequestSheet(
+                                        context,
+                                        preselectedCourse: session.courseName,
+                                        preselectedPertemuan: session.pertemuanKe,
+                                      ),
+                                      icon: const Icon(Icons.assignment_turned_in_outlined, size: 13),
+                                      label: const Text('Izin/Sakit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                        side: BorderSide(color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFFBBF24)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                  ],
                                 )
                               else
                                 Container(
@@ -2151,6 +3366,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final maxAlpaAllowed = 4;
     final remainingAlpa = (maxAlpaAllowed - alpaCount).clamp(0, maxAlpaAllowed);
 
+    final atRiskCourses = DummyData.courses.where((course) {
+      final logs = _history.where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase()).toList();
+      if (logs.isEmpty) return false;
+      final hadir = logs.where((h) => h.status == 'Hadir').length;
+      final pct = (hadir / logs.length) * 100;
+      final alpaInCourse = logs.where((h) => h.status == 'Alpa').length;
+      return pct < 75 || alpaInCourse >= 3;
+    }).toList();
+
+    final bool hasAcademicRisk = atRiskCourses.isNotEmpty || alpaCount >= 3 || remainingAlpa <= 1;
+
     return Column(
       children: [
         // 1. Scan QR Quick Trigger Banner (Khusus Mahasiswa)
@@ -2188,39 +3414,87 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Scan QR Presensi Kuliah',
+                      'Presensi Kuliah Mandiri',
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Pindai QR dosen/ketua kelas atau input token',
+                      'Pindai QR, masukkan PIN, atau ajukan izin/sakit',
                       style: TextStyle(fontSize: 11, color: Colors.white70),
                     ),
                   ],
                 ),
               ),
-              ScaleButton(
-                onTap: () => _showScanQrModal(context),
-                scaleDown: 0.92,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Scan QR',
-                    style: TextStyle(
-                      color: Color(0xFF1E40AF),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleButton(
+                    onTap: () => _showScanQrModal(context),
+                    scaleDown: 0.92,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.qr_code_scanner_rounded, size: 14, color: Color(0xFF1E40AF)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Presensi',
+                            style: TextStyle(
+                              color: Color(0xFF1E40AF),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  ScaleButton(
+                    onTap: () => _showAbsenceRequestSheet(context),
+                    scaleDown: 0.92,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.assignment_turned_in_outlined, size: 13, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'Izin/Sakit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
+
+        // EARLY WARNING CARD JIKA ADA RISIKO UAS
+        if (hasAcademicRisk)
+          _buildAcademicWarningCard(
+            atRiskCourses: atRiskCourses,
+            remainingAlpa: remainingAlpa,
+            isDark: isDark,
+          ),
 
         // 2. HERO ATTENDANCE CARD (Donut Progress + Safe Zone Status)
         Container(
@@ -2438,119 +3712,136 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           final int coursePct = courseLogs.isNotEmpty ? ((courseHadir / courseLogs.length) * 100).round() : 100;
           final String badgeText = courseLogs.isNotEmpty ? '$coursePct% Hadir ($courseHadir/${courseLogs.length})' : 'Belum Ada Sesi';
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showCourseDetailModal(context, course, isDark),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.menu_book_rounded, color: Color(0xFF1E40AF), size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            course.nama,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
-                            ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${course.kode} • ${course.sks} SKS • ${course.dosen}',
+                          child: const Icon(Icons.menu_book_rounded, color: Color(0xFF1E40AF), size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                course.nama,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark ? Colors.white : const Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${course.kode} • ${course.sks} SKS • ${course.dosen}',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: courseLogs.isNotEmpty
+                                ? (coursePct >= 75
+                                    ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
+                                    : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
+                                : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            badgeText,
                             style: TextStyle(
                               fontSize: 10.5,
-                              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                              fontWeight: FontWeight.w700,
+                              color: courseLogs.isNotEmpty
+                                  ? (coursePct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
+                                  : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: courseLogs.isNotEmpty
-                            ? (coursePct >= 75
-                                ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
-                                : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
-                            : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: courseLogs.isNotEmpty
-                              ? (coursePct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                              : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Pertemuan Indicator Matrix (P1 - P16) based on real sessions recorded
+                    Row(
+                      children: List.generate(16, (i) {
+                        final pNum = i + 1;
+                        final isRecorded = pNum <= courseLogs.length;
+                        final bool isHadir = isRecorded && courseLogs[courseLogs.length - pNum].status == 'Hadir';
+
+                        Color dotColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0);
+                        if (isRecorded) {
+                          dotColor = isHadir ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+                        }
+
+                        return Expanded(
+                          child: Container(
+                            height: 5,
+                            margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                            decoration: BoxDecoration(
+                              color: dotColor,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          courseLogs.isNotEmpty ? '${courseLogs.length}/16 Sesi Terlaksana' : 'P1 Belum Dimulai',
+                          style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
+                        ),
+                        Text(
+                          'Ketuk untuk detail 16 sesi ›',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Pertemuan Indicator Matrix (P1 - P16) based on real sessions recorded
-                Row(
-                  children: List.generate(16, (i) {
-                    final pNum = i + 1;
-                    // Check if session pNum has real logs in this course
-                    final isRecorded = pNum <= courseLogs.length;
-                    final bool isHadir = isRecorded && courseLogs[courseLogs.length - pNum].status == 'Hadir';
-
-                    Color dotColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0);
-                    if (isRecorded) {
-                      dotColor = isHadir ? const Color(0xFF10B981) : const Color(0xFFEF4444);
-                    }
-
-                    return Expanded(
-                      child: Container(
-                        height: 5,
-                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                        decoration: BoxDecoration(
-                          color: dotColor,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      courseLogs.isNotEmpty ? '${courseLogs.length}/16 Sesi Terlaksana' : 'P1 Belum Dimulai',
-                      style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
-                    ),
-                    Text(
-                      'Target Min. 12 Sesi (75%)',
-                      style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white60 : const Color(0xFF94A3B8)),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           );
         }),
@@ -2726,12 +4017,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _buildHistoryTile(AttendanceHistoryItem item, bool isDark) {
     final isHadir = item.status == 'Hadir';
     final isIzin = item.status == 'Izin';
-    final statusColor = isHadir ? const Color(0xFF10B981) : (isIzin ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
-    final statusBg = isHadir
-        ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
-        : (isIzin
-            ? (isDark ? const Color(0xFF713F12) : const Color(0xFFFFFBEB))
-            : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)));
+    final isSakit = item.status == 'Sakit';
+
+    Color statusColor = const Color(0xFFEF4444);
+    Color statusBg = isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2);
+
+    if (isHadir) {
+      statusColor = const Color(0xFF10B981);
+      statusBg = isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5);
+    } else if (isIzin) {
+      statusColor = const Color(0xFFF59E0B);
+      statusBg = isDark ? const Color(0xFF713F12) : const Color(0xFFFFFBEB);
+    } else if (isSakit) {
+      statusColor = const Color(0xFF3B82F6);
+      statusBg = isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -2756,13 +4056,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.date,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: isDark ? Colors.white60 : const Color(0xFF9CA3AF),
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      item.date,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: isDark ? Colors.white60 : const Color(0xFF9CA3AF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (item.pertemuanKe != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'P${item.pertemuanKe}',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -2773,9 +4095,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),
+                if (item.catatan != null && item.catatan!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'Keterangan: ${item.catatan}',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontStyle: FontStyle.italic,
+                      color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
