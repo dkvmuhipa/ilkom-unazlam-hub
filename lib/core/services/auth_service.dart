@@ -149,69 +149,63 @@ class AuthService {
     String? targetEmail;
     if (loginValue.contains('@')) {
       targetEmail = loginValue;
-    } else {
-      // 0. Khusus jika identifier adalah 'admin' atau '16110376'
-      if (loginValue.toLowerCase() == 'admin' || loginValue == '16110376') {
-        try {
-          final adminRow = await _client
-              .from('students')
-              .select('email')
-              .eq('role', 'ADMIN')
-              .not('auth_user_id', 'is', null)
-              .maybeSingle();
-          if (adminRow != null && adminRow['email'] != null) {
-            targetEmail = (adminRow['email'] as String).trim();
-          }
-        } catch (_) {}
-        targetEmail ??= 'gellonaindonesia@gmail.com';
-      }
-
-      bool isValidActiveEmail(String? em) {
-        if (em == null || !em.contains('@') || !em.contains('.')) return false;
-        final lower = em.toLowerCase().trim();
-        return !lower.endsWith('@student.unazlam.ac.id') &&
-            !lower.endsWith('@students.unazlam.ac.id');
-      }
-
-      // 1. Coba panggil RPC get_student_login_email dari database Supabase jika tersedia
-      if (targetEmail == null) {
-        try {
-          final emailFromRpc = await _client.rpc(
-            'get_student_login_email',
-            params: {'p_nim': loginValue},
-          );
-          if (emailFromRpc is String && isValidActiveEmail(emailFromRpc)) {
-            targetEmail = emailFromRpc.trim();
-          }
-        } catch (_) {}
-      }
-
-      // 1b. Cek langsung dari remote tabel students jika RPC belum mengembalikan email
-      if (targetEmail == null) {
-        try {
-          final sRow = await _client
-              .from('students')
-              .select('email')
-              .eq('nim', loginValue)
-              .maybeSingle();
-          if (sRow != null && sRow['email'] != null) {
-            final em = (sRow['email'] as String).trim();
-            if (isValidActiveEmail(em)) {
-              targetEmail = em;
-            }
-          }
-        } catch (_) {}
-      }
-
-      // 2. Fallback hanya untuk akun admin khusus
-      if (targetEmail == null) {
-        if (loginValue.toLowerCase() == 'admin') {
-          targetEmail = 'gellonaindonesia@gmail.com';
+    } else if (loginValue.toLowerCase() == 'admin' || loginValue == '16110376') {
+      // 0. Akun Administrator Sistem
+      try {
+        final adminRow = await _client
+            .from('students')
+            .select('email')
+            .eq('role', 'ADMIN')
+            .not('auth_user_id', 'is', null)
+            .maybeSingle();
+        if (adminRow != null && adminRow['email'] != null) {
+          targetEmail = (adminRow['email'] as String).trim();
         }
+      } catch (_) {}
+      targetEmail ??= 'gellonaindonesia@gmail.com';
+    } else {
+      // 1. Mahasiswa login dengan NIM:
+      // Validasi status akun dan deteksi email autentikasi dari tabel students Supabase
+      Map<String, dynamic>? studentRow;
+      try {
+        studentRow = await _client
+            .from('students')
+            .select('id, nim, nama, email, auth_user_id, is_aktif')
+            .eq('nim', loginValue)
+            .maybeSingle();
+      } catch (e) {
+        debugPrint('Gagal membaca data mahasiswa dari Supabase: $e');
+      }
+
+      if (studentRow == null) {
+        throw AuthServiceException(
+          'NIM $loginValue tidak terdaftar di sistem UNAZLAM Hub.',
+        );
+      }
+
+      final bool isAktif = studentRow['is_aktif'] as bool? ?? false;
+      if (!isAktif) {
+        throw AuthServiceException(
+          'Akun mahasiswa dengan NIM $loginValue sedang dinonaktifkan.',
+        );
+      }
+
+      final String? authUserId = studentRow['auth_user_id']?.toString();
+      final String? registeredEmail = studentRow['email']?.toString().trim();
+
+      if (authUserId == null || authUserId.isEmpty) {
+        throw AuthServiceException(
+          'Akun mahasiswa dengan NIM $loginValue belum diaktivasi. '
+          'Silakan atur kata sandi akun Anda melalui menu "Lupa kata sandi?".',
+        );
+      }
+
+      if (registeredEmail != null && registeredEmail.isNotEmpty) {
+        targetEmail = registeredEmail;
       }
     }
 
-    // Eksekusi Autentikasi
+    // Eksekusi Autentikasi Supabase Auth
     bool loggedIn = false;
     String? authErrorMessage;
 
@@ -228,29 +222,6 @@ class AuthService {
       } catch (e) {
         authErrorMessage = e.toString();
       }
-    }
-
-    // B. Coba Edge Function student-login HANYA jika email belum berhasil dideteksi dari database/profil
-    if (!loggedIn && targetEmail == null && !loginValue.contains('@')) {
-      try {
-        final response = await _client.functions.invoke(
-          'student-login',
-          headers: {
-            'apikey': SupabaseConfig.supabaseAnonKey,
-            'Authorization': 'Bearer ${SupabaseConfig.supabaseAnonKey}',
-          },
-          body: {'nim': loginValue, 'password': password},
-        );
-        final data = response.data;
-        final refreshToken = data is Map ? data['refresh_token'] : null;
-        if (response.status >= 200 &&
-            response.status < 300 &&
-            refreshToken is String &&
-            refreshToken.isNotEmpty) {
-          await _client.auth.setSession(refreshToken);
-          loggedIn = true;
-        }
-      } catch (_) {}
     }
 
     if (!loggedIn) {
