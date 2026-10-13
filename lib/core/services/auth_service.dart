@@ -281,17 +281,8 @@ class AuthService {
         final customSavedPass = prefs?.getString('custom_pwd_${matched.nim}') ??
             prefs?.getString('custom_pwd_${matched.email}') ??
             prefs?.getString('custom_pwd_${loginValue.toLowerCase()}');
-        final nimStr = matched.nim.trim();
-        final last6 = nimStr.length >= 6
-            ? nimStr.substring(nimStr.length - 6)
-            : nimStr;
-        final bool passwordValid = (!matched.isAdmin && (
-            (customSavedHash != null && customSavedHash == hashedInput) ||
-            (customSavedPass != null && customSavedPass == password) ||
-            password == last6 ||
-            password == nimStr ||
-            password == '123456'
-        )) || (matched.isAdmin && (password == 'admin123' || password == 'admin'));
+        final bool passwordValid = (customSavedHash != null && customSavedHash == hashedInput) ||
+            (customSavedPass != null && customSavedPass == password);
 
         if (passwordValid) {
           // Simpan sesi login aktif ke local storage
