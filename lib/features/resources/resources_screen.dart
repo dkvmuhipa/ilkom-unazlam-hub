@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
@@ -31,41 +32,56 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   List<Course> _courses = [];
   bool _isLoading = true;
   String? _loadError;
+  RealtimeChannel? _resourcesChannel;
 
   @override
   void initState() {
     super.initState();
     _loadResources();
+    _initRealtime();
   }
 
-  Future<void> _loadResources() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
+  void _initRealtime() {
+    _resourcesChannel = SupabaseRepository.subscribeToResources(() {
+      if (mounted) {
+        _loadResources(silent: true);
+      }
     });
+  }
+
+  Future<void> _loadResources({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
       final results = await Future.wait<dynamic>([
         SupabaseRepository.getResources(),
         SupabaseRepository.getCoursesStrict(),
       ]);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _resources = results[0] as List<ResourceItem>;
           _courses = results[1] as List<Course>;
           _isLoading = false;
         });
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loadError = 'Materi gagal dimuat dari Supabase.';
           _isLoading = false;
         });
+      }
       debugPrint('Gagal memuat materi: $error');
     }
   }
 
   @override
   void dispose() {
+    SupabaseRepository.unsubscribeChannel(_resourcesChannel);
     _searchController.dispose();
     super.dispose();
   }

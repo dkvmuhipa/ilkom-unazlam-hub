@@ -9,9 +9,12 @@ import '../../core/widgets/saas_components.dart';
 import '../../core/services/student_dashboard_service.dart';
 import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
-import '../assignments/assignments_screen.dart';
 import '../attendance/attendance_screen.dart';
 import '../schedule/schedule_screen.dart';
+import 'models/dashboard_models.dart';
+import 'widgets/home_banner_carousel.dart';
+import 'widgets/more_services_modal.dart';
+import 'widgets/urgent_assignment_spotlight.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final StudentProfile student;
@@ -46,19 +49,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _unreadNotificationCount = 0;
   bool _isLoading = true;
   String? _loadError;
-  int _heroCurrentIndex = 0;
-  late final PageController _heroPageController;
 
   @override
   void initState() {
     super.initState();
-    _heroPageController = PageController(viewportFraction: 0.94);
     _loadDashboard();
   }
 
   @override
   void dispose() {
-    _heroPageController.dispose();
     super.dispose();
   }
 
@@ -136,10 +135,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi ☀️';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang 🌤️';
-    if (hour >= 15 && hour < 18) return 'Selamat Sore 🌇';
-    return 'Selamat Malam 🌙';
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi â˜€ï¸';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang ðŸŒ¤ï¸';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore ðŸŒ‡';
+    return 'Selamat Malam ðŸŒ™';
   }
 
   String _formatCurrency(int amount) {
@@ -298,7 +297,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const Icon(Icons.school_rounded, size: 12, color: AppColors.primary),
                   const SizedBox(width: 4),
                   Text(
-                    'Semester ${student.semester} • Ganjil',
+                    'Semester ${student.semester} â€¢ Ganjil',
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -313,7 +312,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${_getGreeting()}, $firstName 👋',
+          '${_getGreeting()}, $firstName ðŸ‘‹',
           style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w900,
@@ -559,7 +558,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Text(
                       attendancePercent == null
                           ? 'Belum Ada Presensi'
-                          : '$hadirCount Hadir • $attendancePercent%',
+                          : '$hadirCount Hadir â€¢ $attendancePercent%',
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w900,
@@ -775,7 +774,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Presensi Aktif • ${session.courseName}',
+                  'Presensi Aktif â€¢ ${session.courseName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -788,7 +787,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 const SizedBox(height: 1),
                 Text(
                   attended
-                      ? 'Kamu sudah terdata hadir 🎉'
+                      ? 'Kamu sudah terdata hadir ðŸŽ‰'
                       : 'Sisa waktu ${session.remainingSeconds ~/ 60} menit',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w700),
                 ),
@@ -1092,201 +1091,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // 5B. COMPACT HERO CAROUSEL BANNER (GOJEK / TOKOPEDIA STYLE)
   // ==========================================
   Widget _buildHeroBannerCarousel(BuildContext context, bool isDark) {
-    final banners = [
-      _HeroBannerData(
-        badge: '🎯 UTS GANJIL 2026',
-        badgeBg: const Color(0xFFFDE047),
-        badgeTextColor: const Color(0xFF0F172A),
-        title: 'Persiapkan Ujian & Akses E-Book',
-        subtitle: 'Unduh modul, kisi-kisi, & bank soal semester ini.',
-        buttonLabel: 'Buka Materi',
-        gradientColors: isDark
-            ? [const Color(0xFF2E1A66), const Color(0xFF4C2CE2)]
-            : [const Color(0xFF3B1F8E), const Color(0xFF5B3DE8)],
-        icon: Icons.school_rounded,
-        tabIndex: 10, // Materi & Dokumen
-      ),
-      _HeroBannerData(
-        badge: '🏆 KOMPETISI KREATIF',
-        badgeBg: const Color(0xFF6EE7B7),
-        badgeTextColor: const Color(0xFF064E3B),
-        title: 'Lomba UI/UX & Karya Ilmiah',
-        subtitle: 'Bentuk tim praktikum dan raih prestasi untuk Ilkom.',
-        buttonLabel: 'Bentuk Tim',
-        gradientColors: isDark
-            ? [const Color(0xFF064E3B), const Color(0xFF0D9488)]
-            : [const Color(0xFF047857), const Color(0xFF10B981)],
-        icon: Icons.emoji_events_rounded,
-        tabIndex: 9, // Kelompok Praktikum
-      ),
-      _HeroBannerData(
-        badge: '💰 KAS KELAS UNAZLAM',
-        badgeBg: const Color(0xFFBAE6FD),
-        badgeTextColor: const Color(0xFF0C4A6E),
-        title: 'Transparansi Kas & Iuran Kelas',
-        subtitle: 'Laporan kas terperinci dan pembayaran instan via QRIS.',
-        buttonLabel: 'Cek Kas',
-        gradientColors: isDark
-            ? [const Color(0xFF1E293B), const Color(0xFF0284C7)]
-            : [const Color(0xFF1E3A8A), const Color(0xFF2563EB)],
-        icon: Icons.account_balance_wallet_rounded,
-        tabIndex: 8, // Kas Kelas
-      ),
-    ];
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 122,
-          child: PageView.builder(
-            controller: _heroPageController,
-            onPageChanged: (idx) => setState(() => _heroCurrentIndex = idx),
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              final b = banners[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: b.gradientColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: b.gradientColors.first.withValues(alpha: isDark ? 0.35 : 0.18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Watermark Icon di Kanan Belakang
-                    Positioned(
-                      right: -8,
-                      bottom: -15,
-                      child: Icon(
-                        b.icon,
-                        size: 92,
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Badge Kategori
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: b.badgeBg,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            b.badge,
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w900,
-                              color: b.badgeTextColor,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
-
-                        // Title & Subtitle
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              b.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              b.subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Button Aksi
-                        InkWell(
-                          onTap: () => widget.onNavigateTab(b.tabIndex),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  b.buttonLabel,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: b.gradientColors.first,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 11,
-                                  color: b.gradientColors.first,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Indicator Dots (Active: Pill 14px, Inactive: Dot 5px)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(banners.length, (index) {
-            final isActive = index == _heroCurrentIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: isActive ? 16 : 5,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.primary
-                    : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
-                borderRadius: BorderRadius.circular(5),
-              ),
-            );
-          }),
-        ),
-      ],
+    return HomeBannerCarousel(
+      isDark: isDark,
+      onNavigateTab: widget.onNavigateTab,
     );
   }
 
@@ -1294,298 +1101,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // 6. SPOTLIGHT TUGAS MENDESAK & DEADLINE (PAKET C)
   // ==========================================
   Widget _buildUrgentAssignmentSpotlightSection(BuildContext context, bool isDark) {
-    final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF2E2C3D) : const Color(0xFFE2E8F0);
-
-    // Ambil tugas dengan deadline paling dekat
-    final assignment = _pendingAssignments.first;
-    final now = DateTime.now();
-    final due = assignment.deadline;
-    final diff = due.difference(now);
-    final inDays = diff.inDays;
-    final inHours = diff.inHours;
-
-    final bool isOverdue = diff.isNegative;
-    final bool isUrgent = inHours <= 24; // H-1 atau hari H
-    final bool isWarning = inDays <= 3; // H-3
-
-    Color accentColor = const Color(0xFF0284C7); // Biru (Normal)
-    Color badgeBg = isDark ? const Color(0xFF1E2E42) : const Color(0xFFE0F2FE);
-    String statusLabel = '${inDays + 1} hari lagi';
-
-    if (isOverdue) {
-      accentColor = const Color(0xFFEF4444); // Merah
-      badgeBg = isDark ? const Color(0xFF381D26) : const Color(0xFFFEF2F2);
-      statusLabel = 'Lewat Tenggat';
-    } else if (isUrgent) {
-      accentColor = const Color(0xFFEF4444); // Merah mencolok
-      badgeBg = isDark ? const Color(0xFF381D26) : const Color(0xFFFEF2F2);
-      final hoursRemaining = inHours.clamp(0, 24);
-      statusLabel = hoursRemaining <= 0 ? 'Hari ini' : '$hoursRemaining jam lagi';
-    } else if (isWarning) {
-      accentColor = const Color(0xFFF59E0B); // Kuning/Oranye
-      badgeBg = isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB);
-      statusLabel = '$inDays hari lagi';
-    }
-
-    final formattedDeadline = DateFormat('EEE, d MMM yyyy • HH:mm', 'id_ID').format(due);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Tugas Mendesak',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: textMain,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${_pendingAssignments.length} Tugas Aktif',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF7C3AED),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            InkWell(
-              onTap: () => widget.onNavigateTab(2), // Ke Tab Tugas
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Lihat Semua',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primary),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Spotlight Card
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              AssignmentsScreen.showAssignmentDetail(
-                context,
-                assignment,
-                userNim: widget.student.nim,
-                canManage: widget.student.canManageAssignments,
-                onStatusChanged: () => _loadDashboard(),
-              );
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: (isOverdue || isUrgent) ? accentColor.withValues(alpha: 0.6) : borderColor,
-                  width: (isOverdue || isUrgent) ? 1.4 : 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isOverdue || isUrgent)
-                        ? accentColor.withValues(alpha: isDark ? 0.16 : 0.08)
-                        : const Color(0xFF0F172A).withValues(alpha: isDark ? 0.25 : 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Baris 1: Mata kuliah & Badge Countdown
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                assignment.kategori.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: textSub,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                assignment.courseName,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: textSub,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: badgeBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: accentColor.withValues(alpha: 0.2), width: 0.8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isOverdue ? Icons.error_rounded : Icons.timer_outlined,
-                              size: 13,
-                              color: accentColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              statusLabel,
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w800,
-                                color: accentColor,
-                                letterSpacing: -0.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Baris 2: Judul Tugas
-                  Text(
-                    assignment.judul,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: textMain,
-                      letterSpacing: -0.3,
-                      height: 1.25,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Baris 3: Deadline & Tombol Aksi Kumpul
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.event_outlined, size: 14, color: textSub),
-                          const SizedBox(width: 5),
-                          Text(
-                            formattedDeadline,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: textSub,
-                            ),
-                          ),
-                        ],
-                      ),
-                      InkWell(
-                        onTap: () {
-                          AssignmentsScreen.showAssignmentDetail(
-                            context,
-                            assignment,
-                            userNim: widget.student.nim,
-                            canManage: widget.student.canManageAssignments,
-                            onStatusChanged: () => _loadDashboard(),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: (isOverdue || isUrgent) ? const Color(0xFFDC2626) : AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: ((isOverdue || isUrgent) ? const Color(0xFFDC2626) : AppColors.primary).withValues(alpha: 0.25),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                assignment.status == 'dikumpulkan' || assignment.status == 'selesai' || assignment.status == 'dinilai'
-                                    ? 'Lihat Detail'
-                                    : 'Kumpul',
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: 0.1,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+    return UrgentAssignmentSpotlight(
+      assignment: _pendingAssignments.first,
+      pendingCount: _pendingAssignments.length,
+      isDark: isDark,
+      student: widget.student,
+      onNavigateTab: widget.onNavigateTab,
+      onRefresh: () => _loadDashboard(),
     );
   }
 
@@ -1699,7 +1221,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
+                    'Hari ini libur â€¢ Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -1724,7 +1246,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 _buildSchedulePillButton(
-                  title: 'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
+                  title: 'Mendatang â€¢ $_nextActiveDayName (${_upcomingCourses.length})',
                   isSelected: _scheduleViewMode == 1,
                   isDark: isDark,
                   onTap: () => setState(() => _scheduleViewMode = 1),
@@ -1856,7 +1378,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ? '$minutesUntilStart MNT LAGI'
             : (isToday
                 ? '${course.jamMulai} - ${course.jamSelesai}'
-                : '${course.hari} • ${course.jamMulai} - ${course.jamSelesai}'));
+                : '${course.hari} â€¢ ${course.jamMulai} - ${course.jamSelesai}'));
 
     return InkWell(
       onTap: () {
@@ -1997,7 +1519,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${course.dosen} • ${course.sks} SKS',
+                  '${course.dosen} â€¢ ${course.sks} SKS',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -2392,281 +1914,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // MODAL MENU LENGKAP ("LAINNYA")
   // ==========================================
   void _showMoreServicesModal(BuildContext context, bool isDark) {
-    final sheetBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
-    final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        decoration: BoxDecoration(
-          color: sheetBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Direktori Layanan Portal',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        color: textMain,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Akses cepat ke seluruh modul & fasilitas kelas',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-                InkWell(
-                  onTap: () => Navigator.pop(ctx),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF26223D) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.close_rounded, size: 18, color: textMain),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Wrap(
-              spacing: 12,
-              runSpacing: 16,
-              children: [
-                _buildModalMenuItem(
-                  icon: Icons.calendar_month_rounded,
-                  label: 'Jadwal Kuliah',
-                  color: AppColors.primary,
-                  bgColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(1); // Jadwal
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.groups_rounded,
-                  label: 'Teman Kelas',
-                  color: AppColors.amber,
-                  bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(3); // Direktori Kelas
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.payments_rounded,
-                  label: 'Kas Kelas',
-                  color: const Color(0xFF0D9488),
-                  bgColor: isDark ? const Color(0xFF163230) : const Color(0xFFF0FDFA),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(8); // Kas
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.co_present_rounded,
-                  label: 'Presensi',
-                  color: const Color(0xFF10B981),
-                  bgColor: isDark ? const Color(0xFF152F24) : const Color(0xFFECFDF5),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(5); // Presensi
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.school_rounded,
-                  label: 'KHS Nilai',
-                  color: const Color(0xFF7C3AED),
-                  bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(15); // KHS
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'Materi Kuliah',
-                  color: AppColors.cyan,
-                  bgColor: isDark ? const Color(0xFF162D3D) : const Color(0xFFE0F2FE),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(10); // Materi
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.mark_email_read_rounded,
-                  label: 'Surat Izin',
-                  color: AppColors.amber,
-                  bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(13); // Izin
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.history_rounded,
-                  label: 'Audit Log',
-                  color: const Color(0xFF6366F1),
-                  bgColor: isDark ? const Color(0xFF232244) : const Color(0xFFEEF2FF),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(14); // Audit Log
-                  },
-                ),
-                _buildModalMenuItem(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Profil Saya',
-                  color: AppColors.primary,
-                  bgColor: isDark ? const Color(0xFF262244) : const Color(0xFFEDE9FE),
-                  textColor: textMain,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onNavigateTab(4); // Profil
-                  },
-                ),
-                if (widget.student.isKetuaKelas || widget.student.isAdmin)
-                  _buildModalMenuItem(
-                    icon: Icons.admin_panel_settings_rounded,
-                    label: 'Panel Komti',
-                    color: const Color(0xFFEA580C),
-                    bgColor: isDark ? const Color(0xFF381D26) : const Color(0xFFFFF7ED),
-                    textColor: textMain,
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      widget.onNavigateTab(7); // Pengumuman / Admin
-                    },
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModalMenuItem({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required Color bgColor,
-    required Color textColor,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: 76,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ColorfulIconBox(
-                icon: icon,
-                color: color,
-                size: 48,
-                iconSize: 24,
-                radius: 15,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    MoreServicesModal.show(
+      context,
+      isDark: isDark,
+      student: widget.student,
+      onNavigateTab: widget.onNavigateTab,
     );
   }
 }
 
-class _ServiceItem {
-  final String title;
-  final IconData icon;
-  final Color color;
-  final Color bgColor;
-  final int tabIndex;
-  final bool isMore;
-
-  _ServiceItem({
-    required this.title,
-    required this.icon,
-    required this.color,
-    required this.bgColor,
-    this.tabIndex = 0,
-    this.isMore = false,
-  });
-}
-
-class _HeroBannerData {
-  final String badge;
-  final Color badgeBg;
-  final Color badgeTextColor;
-  final String title;
-  final String subtitle;
-  final String buttonLabel;
-  final List<Color> gradientColors;
-  final IconData icon;
-  final int tabIndex;
-
-  const _HeroBannerData({
-    required this.badge,
-    required this.badgeBg,
-    required this.badgeTextColor,
-    required this.title,
-    required this.subtitle,
-    required this.buttonLabel,
-    required this.gradientColors,
-    required this.icon,
-    required this.tabIndex,
-  });
-}
+typedef _ServiceItem = ServiceItem;

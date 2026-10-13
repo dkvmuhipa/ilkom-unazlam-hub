@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
@@ -57,18 +58,36 @@ class _AgendaScreenState extends State<AgendaScreen> {
   String? _loadError;
 
   final List<ClassAgendaItem> _agendaList = [];
+  RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
     _loadAgenda();
+    _initRealtime();
   }
 
-  Future<void> _loadAgenda() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
+  void _initRealtime() {
+    _realtimeChannel = SupabaseRepository.subscribeToAgenda(() {
+      if (mounted) {
+        _loadAgenda(silent: true);
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    SupabaseRepository.unsubscribeChannel(_realtimeChannel);
+    super.dispose();
+  }
+
+  Future<void> _loadAgenda({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
       final rows = await SupabaseRepository.getAgendaItems();
       final items = rows.map(_agendaFromRow).toList()

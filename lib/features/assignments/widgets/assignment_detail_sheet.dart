@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/assignment_file_picker.dart';
-import '../../../core/services/dummy_data.dart';
 import '../../../core/services/picked_assignment_file.dart';
 import '../../../core/services/safe_launcher.dart';
 import '../../../core/services/supabase_repository.dart';
@@ -38,6 +37,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
   String _feedback = '';
   String _gradedAt = '';
   bool _isSavingSubmission = false;
+  List<Course> _availableCourses = [];
 
   String get _submissionDisplayLabel {
     final uri = Uri.tryParse(_submissionUrl);
@@ -67,6 +67,11 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
   Future<void> _loadSubmissionData() async {
     final nim = widget.userNim ?? '';
     try {
+      final courses = await SupabaseRepository.getCourses();
+      if (mounted) {
+        setState(() => _availableCourses = courses);
+      }
+
       if (SupabaseService.client != null) {
         final submission =
             await SupabaseRepository.getPersonalAssignmentSubmission(
@@ -743,18 +748,29 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    items: DummyData.courses
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c.nama,
-                            child: Text(
-                              c.nama,
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
+                    items: _availableCourses.isEmpty
+                        ? [
+                            DropdownMenuItem(
+                              value: selectedCourse,
+                              child: Text(
+                                selectedCourse,
+                                style: const TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        )
-                        .toList(),
+                          ]
+                        : _availableCourses
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c.nama,
+                                child: Text(
+                                  c.nama,
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (val) {
                       if (val != null) {
                         setDialogState(() => selectedCourse = val);
@@ -884,19 +900,11 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
 
                       setDialogState(() => isSubmitting = true);
 
-                      final course = DummyData.courses.where(
+                      final course = _availableCourses.where(
                         (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase(),
-                      ).firstOrNull ?? DummyData.courses.first;
+                      ).firstOrNull;
 
-                      String resolvedCourseId = course.id;
-                      if (resolvedCourseId.length != 36) {
-                        final matchUuid = DummyData.courses.where(
-                          (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase() && c.id.length == 36,
-                        ).firstOrNull;
-                        if (matchUuid != null) {
-                          resolvedCourseId = matchUuid.id;
-                        }
-                      }
+                      String resolvedCourseId = course?.id ?? a.courseId;
 
                       final oldValues = (
                         a.judul,
@@ -909,7 +917,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       );
                       setState(() {
                         a.judul = judul;
-                        a.courseName = course.nama;
+                        a.courseName = course?.nama ?? selectedCourse;
                         a.courseId = resolvedCourseId;
                         a.kategori = kategori;
                         a.deadline = selectedDeadline;

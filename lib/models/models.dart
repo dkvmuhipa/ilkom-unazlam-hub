@@ -373,3 +373,127 @@ class StudioEquipment {
     required this.lokasi,
   });
 }
+
+class PermissionLetter {
+  final String id;
+  final String studentNim;
+  final String studentName;
+  final String letterType;
+  final String dosenName;
+  final String courseName;
+  final String reason;
+  final String letterDate;
+  final String fullContent;
+  final DateTime createdAt;
+
+  PermissionLetter({
+    required this.id,
+    required this.studentNim,
+    required this.studentName,
+    required this.letterType,
+    required this.dosenName,
+    required this.courseName,
+    required this.reason,
+    required this.letterDate,
+    required this.fullContent,
+    required this.createdAt,
+  });
+
+  factory PermissionLetter.fromMap(Map<String, dynamic> map) {
+    return PermissionLetter(
+      id: map['id']?.toString() ?? '',
+      studentNim: map['student_nim']?.toString() ?? '',
+      studentName: map['student_name']?.toString() ?? '',
+      letterType: map['letter_type']?.toString() ?? 'Izin Sakit',
+      dosenName: map['dosen_name']?.toString() ?? '',
+      courseName: map['course_name']?.toString() ?? '',
+      reason: map['reason']?.toString() ?? '',
+      letterDate: map['letter_date']?.toString() ?? '',
+      fullContent: map['full_content']?.toString() ?? '',
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'student_nim': studentNim,
+      'student_name': studentName,
+      'letter_type': letterType,
+      'dosen_name': dosenName,
+      'course_name': courseName,
+      'reason': reason,
+      'letter_date': letterDate,
+      'full_content': fullContent,
+    };
+  }
+}
+
+class PollOption {
+  final String id;
+  final String text;
+  int votes;
+  final List<String> votersNim;
+
+  PollOption({
+    required this.id,
+    required this.text,
+    this.votes = 0,
+    List<String>? votersNim,
+  }) : votersNim = votersNim ?? [];
+
+  factory PollOption.fromMap(Map<String, dynamic> map, {int votesCount = 0, List<String>? voters}) {
+    return PollOption(
+      id: map['id']?.toString() ?? '',
+      text: map['option_text']?.toString() ?? '',
+      votes: votesCount,
+      votersNim: voters ?? [],
+    );
+  }
+}
+
+class ClassPoll {
+  final String id;
+  final String title;
+  final String description;
+  final String author;
+  final DateTime createdAt;
+  final DateTime endsAt;
+  bool isOpen;
+  final List<PollOption> options;
+  String? userVotedId;
+
+  ClassPoll({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.author,
+    required this.createdAt,
+    required this.endsAt,
+    this.isOpen = true,
+    required this.options,
+    this.userVotedId,
+  });
+
+  int get totalVotes => options.fold(0, (sum, opt) => sum + opt.votes);
+
+  factory ClassPoll.fromMap(Map<String, dynamic> map, List<PollOption> options, {String? userVotedId}) {
+    return ClassPoll(
+      id: map['id']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      description: map['description']?.toString() ?? '',
+      author: map['author']?.toString() ?? 'Komti',
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      endsAt: map['ends_at'] != null
+          ? DateTime.tryParse(map['ends_at'].toString()) ?? DateTime.now().add(const Duration(days: 7))
+          : DateTime.now().add(const Duration(days: 7)),
+      isOpen: map['is_open'] == true,
+      options: options,
+      userVotedId: userVotedId,
+    );
+  }
+}
+

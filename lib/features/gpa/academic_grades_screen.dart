@@ -674,9 +674,73 @@ class _AcademicGradesScreenState extends State<AcademicGradesScreen> {
             ),
           ),
         ),
+        if (widget.canManage) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: Color(0xFFEF4444),
+            ),
+            tooltip: 'Hapus nilai',
+            onPressed: () => _confirmDeleteGrade(grade),
+          ),
+        ],
       ],
     ),
   );
+
+  void _confirmDeleteGrade(StudentCourseGrade grade) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(
+          'Hapus Nilai?',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+        content: Text(
+          'Hapus rekaman nilai "${grade.courseName}" (${grade.letterGrade})?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await AcademicGradeService.deleteGrade(grade.id);
+              if (mounted) {
+                if (ok) {
+                  setState(() {
+                    _grades.removeWhere((g) => g.id == grade.id);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nilai berhasil dihapus.'),
+                      backgroundColor: Color(0xFFEF4444),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Gagal menghapus nilai.')),
+                  );
+                }
+              }
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildEmptyState() => Container(
     padding: const EdgeInsets.all(24),

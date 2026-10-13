@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class UniversalSearchModal extends StatefulWidget {
@@ -24,6 +24,42 @@ class UniversalSearchModal extends StatefulWidget {
 class _UniversalSearchModalState extends State<UniversalSearchModal> {
   final TextEditingController _queryController = TextEditingController();
   String _query = '';
+  List<Course> _courses = [];
+  List<ResourceItem> _resources = [];
+  List<Assignment> _assignments = [];
+  List<StudentProfile> _students = [];
+  List<Announcement> _announcements = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSearchData();
+  }
+
+  Future<void> _loadSearchData() async {
+    try {
+      final results = await Future.wait([
+        SupabaseRepository.getCourses(),
+        SupabaseRepository.getResources(),
+        SupabaseRepository.getAssignments(),
+        SupabaseRepository.getClassDirectory(),
+        SupabaseRepository.getAnnouncements(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _courses = results[0] as List<Course>;
+          _resources = results[1] as List<ResourceItem>;
+          _assignments = results[2] as List<Assignment>;
+          _students = results[3] as List<StudentProfile>;
+          _announcements = results[4] as List<Announcement>;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -40,7 +76,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 1. Filter Courses
     final matchedCourses = q.isEmpty
         ? <Course>[]
-        : DummyData.courses
+        : _courses
             .where((c) =>
                 c.nama.toLowerCase().contains(q) ||
                 c.dosen.toLowerCase().contains(q) ||
@@ -50,7 +86,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 2. Filter Resources
     final matchedResources = q.isEmpty
         ? <ResourceItem>[]
-        : DummyData.resources
+        : _resources
             .where((r) =>
                 r.judul.toLowerCase().contains(q) ||
                 r.courseName.toLowerCase().contains(q) ||
@@ -60,7 +96,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 3. Filter Assignments
     final matchedAssignments = q.isEmpty
         ? <Assignment>[]
-        : DummyData.assignments
+        : _assignments
             .where((a) =>
                 a.judul.toLowerCase().contains(q) ||
                 a.courseName.toLowerCase().contains(q))
@@ -69,7 +105,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 4. Filter Students
     final matchedStudents = q.isEmpty
         ? <StudentProfile>[]
-        : DummyData.students
+        : _students
             .where((s) =>
                 s.nama.toLowerCase().contains(q) ||
                 s.nim.toLowerCase().contains(q) ||
@@ -79,7 +115,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 5. Filter Announcements
     final matchedAnnouncements = q.isEmpty
         ? <Announcement>[]
-        : DummyData.announcements
+        : _announcements
             .where((ann) =>
                 ann.judul.toLowerCase().contains(q) ||
                 ann.isi.toLowerCase().contains(q) ||
@@ -181,6 +217,15 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
               ),
             ),
           ),
+
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(2)),
+                child: LinearProgressIndicator(minHeight: 2, color: AppColors.primary),
+              ),
+            ),
 
           const Divider(height: 1),
 

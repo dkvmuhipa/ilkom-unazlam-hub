@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/models.dart';
-import 'dummy_data.dart';
 import 'supabase_service.dart';
 
 class AuthServiceException implements Exception {
@@ -69,43 +68,45 @@ class AuthService {
       // daftarkan secara otomatis ke Supabase Auth cloud agar password baru tersinkronisasi di server.
       try {
         String? targetEmail;
-        final matched = DummyData.students.where(
-          (s) => s.nim.trim().toLowerCase() == userNim.toLowerCase(),
-        ).firstOrNull;
-        if (matched != null && matched.email.contains('@')) {
-          targetEmail = matched.email.trim();
-        }
-
-        if (targetEmail == null) {
-          try {
-            final sRow = await _client
-                .from('students')
-                .select('email')
-                .eq('nim', userNim)
-                .maybeSingle();
-            if (sRow != null && sRow['email'] != null) {
-              targetEmail = (sRow['email'] as String).trim();
+        try {
+          final sRow = await _client
+              .from('students')
+              .select('email, auth_user_id')
+              .eq('nim', userNim)
+              .maybeSingle();
+            if (sRow != null) {
+              if (sRow['email'] != null) {
+                targetEmail = (sRow['email'] as String).trim();
+              }
+              if (sRow['auth_user_id'] != null) {
+                throw const AuthServiceException(
+                  'Sesi pemulihan telah kedaluwarsa. Silakan gunakan menu "Lupa Password" dari layar login untuk mendapatkan tautan pemulihan resmi.',
+                );
+              }
             }
+          } on AuthServiceException {
+            rethrow;
           } catch (_) {}
-        }
 
-        targetEmail ??= '$userNim@student.unazlam.ac.id';
-
-        final signUpRes = await _client.auth.signUp(
-          email: targetEmail,
-          password: password,
-        );
-
-        if (signUpRes.user != null) {
-          debugPrint(
-            'Info: Akun fallback berhasil didaftarkan ke Supabase Auth cloud (${signUpRes.user!.email}).',
+        if (targetEmail != null &&
+            !targetEmail.endsWith('@student.unazlam.ac.id') &&
+            !targetEmail.endsWith('@students.unazlam.ac.id')) {
+          final signUpRes = await _client.auth.signUp(
+            email: targetEmail,
+            password: password,
           );
-          try {
-            await _client
-                .from('students')
-                .update({'auth_user_id': signUpRes.user!.id})
-                .eq('nim', userNim);
-          } catch (_) {}
+
+          if (signUpRes.user != null) {
+            debugPrint(
+              'Info: Akun fallback berhasil didaftarkan ke Supabase Auth cloud (${signUpRes.user!.email}).',
+            );
+            try {
+              await _client
+                  .from('students')
+                  .update({'auth_user_id': signUpRes.user!.id})
+                  .eq('nim', userNim);
+            } catch (_) {}
+          }
         }
       } catch (e) {
         debugPrint('Info: Upaya sinkronisasi pendaftaran Supabase Auth cloud ($e).');
@@ -165,6 +166,13 @@ class AuthService {
         targetEmail ??= 'gellonaindonesia@gmail.com';
       }
 
+      bool isValidActiveEmail(String? em) {
+        if (em == null || !em.contains('@') || !em.contains('.')) return false;
+        final lower = em.toLowerCase().trim();
+        return !lower.endsWith('@student.unazlam.ac.id') &&
+            !lower.endsWith('@students.unazlam.ac.id');
+      }
+
       // 1. Coba panggil RPC get_student_login_email dari database Supabase jika tersedia
       if (targetEmail == null) {
         try {
@@ -172,7 +180,7 @@ class AuthService {
             'get_student_login_email',
             params: {'p_nim': loginValue},
           );
-          if (emailFromRpc is String && emailFromRpc.contains('@')) {
+          if (emailFromRpc is String && isValidActiveEmail(emailFromRpc)) {
             targetEmail = emailFromRpc.trim();
           }
         } catch (_) {}
@@ -187,27 +195,18 @@ class AuthService {
               .eq('nim', loginValue)
               .maybeSingle();
           if (sRow != null && sRow['email'] != null) {
-            targetEmail = (sRow['email'] as String).trim();
+            final em = (sRow['email'] as String).trim();
+            if (isValidActiveEmail(em)) {
+              targetEmail = em;
+            }
           }
         } catch (_) {}
       }
 
-      // 2. Cari di daftar profil mahasiswa (DummyData & memory)
-      if (targetEmail == null) {
-        final matched = DummyData.students.where(
-          (s) => s.nim.trim().toLowerCase() == loginValue.toLowerCase(),
-        ).firstOrNull;
-        if (matched != null && matched.email.contains('@')) {
-          targetEmail = matched.email.trim();
-        }
-      }
-
-      // 3. Fallback format standar email kampus
+      // 2. Fallback hanya untuk akun admin khusus
       if (targetEmail == null) {
         if (loginValue.toLowerCase() == 'admin') {
           targetEmail = 'gellonaindonesia@gmail.com';
-        } else if (RegExp(r'^\d{6,20}$').hasMatch(loginValue)) {
-          targetEmail = '$loginValue@student.unazlam.ac.id';
         }
       }
     }
@@ -255,28 +254,19 @@ class AuthService {
     }
 
     if (!loggedIn) {
-      // Izinkan verifikasi kredensial fallback jika akun belum terdaftar di auth.users Supabase
-      // atau jika menggunakan kata sandi kustom / default kampus
-      StudentProfile? matched = DummyData.students.where(
-        (s) =>
-            s.nim.trim().toLowerCase() == loginValue.toLowerCase() ||
-            (s.email.isNotEmpty &&
-                s.email.trim().toLowerCase() == loginValue.toLowerCase()),
-      ).firstOrNull;
-
-      if (matched == null) {
-        try {
-          final query = _client.from('students').select(
-            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
-          );
-          final sRow = loginValue.contains('@')
-              ? await query.eq('email', loginValue).maybeSingle()
-              : await query.eq('nim', loginValue).maybeSingle();
-          if (sRow != null) {
-            matched = _profileFromRow(sRow);
-          }
-        } catch (_) {}
-      }
+      // Ambil profil mahasiswa dari database Supabase untuk verifikasi sandi kampus/hash
+      StudentProfile? matched;
+      try {
+        final query = _client.from('students').select(
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+        );
+        final sRow = loginValue.contains('@')
+            ? await query.eq('email', loginValue).maybeSingle()
+            : await query.eq('nim', loginValue).maybeSingle();
+        if (sRow != null) {
+          matched = _profileFromRow(sRow);
+        }
+      } catch (_) {}
 
       if (matched != null) {
         SharedPreferences? prefs;
@@ -319,15 +309,19 @@ class AuthService {
         }
       }
 
-      if (authErrorMessage != null &&
-          authErrorMessage.toLowerCase().contains('invalid login credentials')) {
-        throw const AuthServiceException(
-          'NIM/Email atau kata sandi salah. Silakan periksa kembali kata sandi Anda.',
-        );
+      if (authErrorMessage != null) {
+        final errLower = authErrorMessage.toLowerCase();
+        if (errLower.contains('invalid') ||
+            errLower.contains('bad request') ||
+            errLower.contains('credentials')) {
+          throw const AuthServiceException(
+            'NIM/Email atau kata sandi tidak cocok. Silakan periksa kembali kata sandi Anda.',
+          );
+        }
+        throw AuthServiceException(authErrorMessage);
       }
-      throw AuthServiceException(
-        authErrorMessage ??
-            'NIM atau kata sandi salah, atau akun belum aktif.',
+      throw const AuthServiceException(
+        'NIM atau kata sandi salah, atau akun belum aktif.',
       );
     }
 
@@ -338,7 +332,7 @@ class AuthService {
     StudentProfile? profile;
     try {
       final selectCols =
-          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url';
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
       var row = await _client
           .from('students')
           .select(selectCols)
@@ -360,18 +354,11 @@ class AuthService {
       debugPrint('Info: Ambil profil mahasiswa dari database: $e');
     }
 
-    // Fallback profil jika database students belum ditautkan
-    profile ??= DummyData.students.where(
-      (s) =>
-          (user.email != null && s.email.toLowerCase() == user.email!.toLowerCase()) ||
-          s.nim.toLowerCase() == loginValue.toLowerCase(),
-    ).firstOrNull;
-
     profile ??= StudentProfile(
       id: user.id,
       nim: loginValue.contains('@') ? '16110376' : loginValue,
       nama: user.userMetadata?['nama']?.toString() ?? 'Mahasiswa ILKOM',
-      email: user.email ?? '$loginValue@student.unazlam.ac.id',
+      email: user.email ?? '',
       noWa: '',
       role: 'MAHASISWA',
       jabatan: 'Mahasiswa',
@@ -402,13 +389,89 @@ class AuthService {
     );
   }
 
+  /// Reset kata sandi mandiri mahasiswa dengan verifikasi data kontak (No WA / Email)
+  /// dan pendaftaran email aktif mahasiswa (menggantikan domain @student.unazlam.ac.id yang belum ada)
+  /// yang langsung memperbarui encrypted_password dan email di auth.users Supabase via RPC aman
+  static Future<String> studentSelfResetPassword({
+    required String nim,
+    required String verificationContact,
+    required String newPassword,
+    String? activeEmail,
+  }) async {
+    final cleanNim = nim.trim();
+    final cleanContact = verificationContact.trim();
+    final cleanPass = newPassword.trim();
+    final cleanEmail = activeEmail?.trim().toLowerCase();
+
+    if (cleanNim.isEmpty || cleanContact.isEmpty || cleanPass.isEmpty) {
+      throw const AuthServiceException(
+        'NIM, nomor WhatsApp verifikasi, dan kata sandi baru wajib diisi.',
+      );
+    }
+    if (cleanEmail != null && cleanEmail.isNotEmpty) {
+      if (!cleanEmail.contains('@') ||
+          !cleanEmail.contains('.') ||
+          cleanEmail.endsWith('@student.unazlam.ac.id') ||
+          cleanEmail.endsWith('@students.unazlam.ac.id')) {
+        throw const AuthServiceException(
+          'Harap gunakan alamat email aktif yang valid (misal: nama@gmail.com). Domain @student.unazlam.ac.id belum tersedia.',
+        );
+      }
+    }
+    if (cleanPass.length < 8) {
+      throw const AuthServiceException(
+        'Kata sandi baru minimal harus 8 karakter.',
+      );
+    }
+
+    try {
+      final res = await _client.rpc(
+        'student_self_reset_password',
+        params: {
+          'p_nim': cleanNim,
+          'p_verification': cleanContact,
+          'p_new_password': cleanPass,
+          'p_active_email': (cleanEmail != null && cleanEmail.isNotEmpty) ? cleanEmail : null,
+        },
+      );
+
+      final Map<String, dynamic> resMap =
+          res is Map ? Map<String, dynamic>.from(res) : {};
+      final success = resMap['success'] == true;
+      final message =
+          resMap['message']?.toString() ?? 'Kata sandi berhasil diperbarui.';
+      if (!success) {
+        throw AuthServiceException(message);
+      }
+
+      // Sinkronkan hash kata sandi baru ke SharedPreferences untuk offline fallback
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final hash = _hashPassword(cleanNim, cleanPass);
+        await prefs.setString('custom_pwd_hash_$cleanNim', hash);
+        await prefs.setString(
+          'custom_pwd_hash_${cleanNim.toLowerCase()}',
+          hash,
+        );
+        await prefs.remove('custom_pwd_$cleanNim');
+      } catch (_) {}
+
+      return message;
+    } on PostgrestException catch (e) {
+      throw AuthServiceException(e.message);
+    } catch (e) {
+      if (e is AuthServiceException) rethrow;
+      throw AuthServiceException('Gagal mengatur ulang kata sandi: $e');
+    }
+  }
+
   static Future<StudentProfile?> restoreSession() async {
     // 1. Coba dari sesi Supabase Auth jika ada
     final user = _client.auth.currentUser;
     if (user != null) {
       try {
         final selectCols =
-            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url';
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
         var row = await _client
             .from('students')
             .select(selectCols)
@@ -428,14 +491,6 @@ class AuthService {
           if (profile.isAktif) return profile;
         }
       } catch (_) {}
-
-      // Fallback DummyData jika baris remote belum terambil
-      if (user.email != null) {
-        final matched = DummyData.students.where(
-          (s) => s.email.toLowerCase() == user.email!.toLowerCase(),
-        ).firstOrNull;
-        if (matched != null && matched.isAktif) return matched;
-      }
     }
 
     // 2. Coba pulihkan dari sesi aktif tersimpan di SharedPreferences
@@ -443,13 +498,22 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       final savedNim = prefs.getString('active_session_nim');
       if (savedNim != null && savedNim.isNotEmpty) {
-        final matched = DummyData.students.where(
-          (s) => s.nim.trim().toLowerCase() == savedNim.toLowerCase(),
-        ).firstOrNull;
-        if (matched != null && matched.isAktif) {
-          _applyCustomProfileOverrides(matched, prefs);
-          return matched;
-        }
+        try {
+          final selectCols =
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+          final row = await _client
+              .from('students')
+              .select(selectCols)
+              .eq('nim', savedNim)
+              .maybeSingle();
+          if (row != null) {
+            final profile = _profileFromRow(row);
+            if (profile.isAktif) {
+              _applyCustomProfileOverrides(profile, prefs);
+              return profile;
+            }
+          }
+        } catch (_) {}
       }
     } catch (_) {}
 
@@ -497,17 +561,7 @@ class AuthService {
       }
     } catch (_) {}
 
-    // 2. Perbarui juga di DummyData in-memory jika ada
-    try {
-      final matched = DummyData.students.where(
-        (s) => s.nim.trim().toLowerCase() == nim.trim().toLowerCase(),
-      ).firstOrNull;
-      if (matched != null) {
-        matched.avatarUrl = avatarUrl;
-      }
-    } catch (_) {}
-
-    // 3. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
     try {
       await _client
           .from('students')
@@ -540,28 +594,14 @@ class AuthService {
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
-    // 2. Perbarui juga di DummyData in-memory
-    try {
-      final matched = DummyData.students.where(
-        (s) => s.nim.trim().toLowerCase() == nim.trim().toLowerCase(),
-      ).firstOrNull;
-      if (matched != null) {
-        if (noWa != null) matched.noWa = noWa;
-        if (peminatan != null) matched.peminatan = peminatan;
-        if (instagram != null) matched.instagram = instagram;
-        if (linkedin != null) matched.linkedin = linkedin;
-        if (email != null) matched.email = email;
-      }
-    } catch (_) {}
-
-    // 3. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
     try {
       final updates = <String, dynamic>{
-        'no_wa': ?noWa,
-        'peminatan': ?peminatan,
-        'instagram': ?instagram,
-        'linkedin': ?linkedin,
-        'email': ?email,
+        if (noWa != null) 'no_wa': noWa,
+        if (peminatan != null) 'peminatan': peminatan,
+        if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
+        if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
+        if (email != null) 'email': email.trim(),
       };
       if (updates.isNotEmpty) {
         await _client.from('students').update(updates).eq('nim', nim);

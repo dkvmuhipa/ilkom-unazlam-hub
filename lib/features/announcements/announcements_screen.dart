@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -39,15 +40,31 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   final List<String> _categories = ['Semua', 'Akademik', 'Dosen', 'Kelas'];
   List<Announcement> _announcements = [];
   bool _isLoading = true;
+  RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
     _loadAnnouncements();
+    _initRealtime();
   }
 
-  Future<void> _loadAnnouncements() async {
-    setState(() => _isLoading = true);
+  void _initRealtime() {
+    _realtimeChannel = SupabaseRepository.subscribeToAnnouncements(() {
+      if (mounted) {
+        _loadAnnouncements(silent: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    SupabaseRepository.unsubscribeChannel(_realtimeChannel);
+    super.dispose();
+  }
+
+  Future<void> _loadAnnouncements({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
     final data = await SupabaseRepository.getAnnouncements();
     if (mounted) {
       setState(() {

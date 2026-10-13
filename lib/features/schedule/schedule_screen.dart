@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/safe_launcher.dart';
 import '../../core/services/course_schedule_service.dart';
-import '../../core/services/dummy_data.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
@@ -38,14 +38,16 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   String _selectedDay = 'Senin';
   final List<String> _days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Semua'];
-  List<Course> _courses = DummyData.courses;
+  List<Course> _courses = [];
   bool _isLoading = false;
   bool _isSearching = false;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
+  RealtimeChannel? _coursesChannel;
 
   @override
   void dispose() {
+    SupabaseRepository.unsubscribeChannel(_coursesChannel);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -187,7 +189,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty) return;
                 final newCourse = Course(
@@ -204,12 +206,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ruangan: roomCtrl.text.trim().isEmpty ? 'Ruang A2' : roomCtrl.text.trim(),
                 );
                 setState(() {
-                  DummyData.courses.add(newCourse);
-                  _courses = List.from(DummyData.courses);
+                  _courses.add(newCourse);
                   _selectedDay = selectedDay;
                 });
-                SupabaseRepository.createCourse(newCourse);
                 Navigator.pop(ctx);
+                await SupabaseRepository.createCourse(newCourse);
+                await _fetchCourses(silent: true);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Mata kuliah berhasil ditambahkan ke jadwal!'),
@@ -253,43 +255,50 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     super.initState();
     _autoSelectActiveDay(_courses);
     _fetchCourses();
+    _initRealtime();
   }
 
-  Future<void> _fetchCourses() async {
+  void _initRealtime() {
+    _coursesChannel = SupabaseRepository.subscribeToCourses(() {
+      if (mounted) {
+        _fetchCourses(silent: true);
+      }
+    });
+  }
+
+  Future<void> _fetchCourses({bool silent = false}) async {
     final client = SupabaseService.client;
     if (client == null) return;
-    setState(() => _isLoading = true);
+    if (!silent) setState(() => _isLoading = true);
     try {
       final response = await client.from('courses').select();
-      if (response.isNotEmpty) {
-        final List<Course> loaded =
-            response.map<Course>((item) => Course.fromMap(item)).toList();
-        final dayOrder = {
-          'Senin': 1,
-          'Selasa': 2,
-          'Rabu': 3,
-          'Kamis': 4,
-          'Jumat': 5,
-          'Sabtu': 6,
-          'Minggu': 7,
-        };
-        loaded.sort((a, b) {
-          final da = dayOrder[a.hari] ?? 99;
-          final db = dayOrder[b.hari] ?? 99;
-          if (da != db) return da.compareTo(db);
-          return a.jamMulai.compareTo(b.jamMulai);
+      final List<Course> loaded =
+          (response as List).map<Course>((item) => Course.fromMap(item)).toList();
+      final dayOrder = {
+        'Senin': 1,
+        'Selasa': 2,
+        'Rabu': 3,
+        'Kamis': 4,
+        'Jumat': 5,
+        'Sabtu': 6,
+        'Minggu': 7,
+      };
+      loaded.sort((a, b) {
+        final da = dayOrder[a.hari] ?? 99;
+        final db = dayOrder[b.hari] ?? 99;
+        if (da != db) return da.compareTo(db);
+        return a.jamMulai.compareTo(b.jamMulai);
+      });
+      if (mounted) {
+        setState(() {
+          _courses = loaded;
+          _autoSelectActiveDay(loaded);
         });
-        if (mounted) {
-          setState(() {
-            _courses = loaded;
-            _autoSelectActiveDay(loaded);
-          });
-        }
       }
     } catch (e) {
       debugPrint('Error fetching courses from Supabase: $e');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && !silent) setState(() => _isLoading = false);
     }
   }
 
@@ -1098,9 +1107,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       c,
       canManage: widget.canManage,
       onCourseUpdated: () {
-        setState(() {
-          _courses = List.from(DummyData.courses);
-        });
         _fetchCourses();
       },
     );
@@ -1279,7 +1285,7 @@ class _CourseDetailSheetState extends State<_CourseDetailSheet> {
               child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty) return;
                 final updatedCourse = Course(
@@ -1295,22 +1301,20 @@ class _CourseDetailSheetState extends State<_CourseDetailSheet> {
                   jamSelesai: endCtrl.text.trim().isEmpty ? '09:40' : endCtrl.text.trim(),
                   ruangan: roomCtrl.text.trim().isEmpty ? 'Ruang A2' : roomCtrl.text.trim(),
                 );
-                final idx = DummyData.courses.indexWhere((x) => x.id == c.id);
-                if (idx != -1) {
-                  DummyData.courses[idx] = updatedCourse;
-                }
                 setState(() {
                   _course = updatedCourse;
                 });
-                SupabaseRepository.updateCourse(updatedCourse);
-                widget.onCourseUpdated?.call();
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Jadwal mata kuliah berhasil diperbarui!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                await SupabaseRepository.updateCourse(updatedCourse);
+                widget.onCourseUpdated?.call();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Jadwal mata kuliah berhasil diperbarui!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
@@ -1342,18 +1346,19 @@ class _CourseDetailSheetState extends State<_CourseDetailSheet> {
             child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
           ),
           ElevatedButton(
-            onPressed: () {
-              DummyData.courses.removeWhere((x) => x.id == c.id);
-              SupabaseRepository.deleteCourse(c.id);
-              widget.onCourseUpdated?.call();
+            onPressed: () async {
               Navigator.pop(ctx);
+              await SupabaseRepository.deleteCourse(c.id);
+              widget.onCourseUpdated?.call();
               onSuccess?.call();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Mata kuliah berhasil dihapus dari jadwal.'),
-                  backgroundColor: Color(0xFFEF4444),
-                ),
-              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Mata kuliah berhasil dihapus dari jadwal.'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
@@ -1370,11 +1375,7 @@ class _CourseDetailSheetState extends State<_CourseDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final c = _course;
-    final cleanCourseName = c.nama.replaceAll('*', '').trim().toLowerCase();
-    final relatedResources = DummyData.resources.where((r) {
-      final rName = r.courseName.replaceAll('*', '').trim().toLowerCase();
-      return rName == cleanCourseName || cleanCourseName.contains(rName) || rName.contains(cleanCourseName);
-    }).toList();
+    final relatedResources = <ResourceItem>[];
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;

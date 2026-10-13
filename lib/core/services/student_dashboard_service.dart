@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/models.dart';
 import 'course_schedule_service.dart';
-import 'dummy_data.dart';
 import 'supabase_service.dart';
 
 class StudentDashboardSnapshot {
@@ -186,14 +185,8 @@ class StudentDashboardService {
         );
       }).toList();
 
-      if (loadedCourses.isNotEmpty) {
-        DummyData.courses
-          ..clear()
-          ..addAll(loadedCourses);
-      }
     } catch (e) {
       debugPrint('Error loading courses in StudentDashboardService: $e');
-      loadedCourses = DummyData.courses;
     }
 
     final todayCourses = CourseScheduleService.getTodayCourses(loadedCourses, now);

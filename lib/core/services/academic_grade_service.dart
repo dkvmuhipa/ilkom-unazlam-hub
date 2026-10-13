@@ -96,4 +96,15 @@ class AcademicGradeService {
       'updated_at': now,
     }, onConflict: 'student_nim,course_id,semester,academic_year');
   }
+
+  static Future<bool> deleteGrade(String id) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+    try {
+      await client.from('student_course_grades').delete().eq('id', id);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

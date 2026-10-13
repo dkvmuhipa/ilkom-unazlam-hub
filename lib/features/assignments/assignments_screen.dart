@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
 import '../../core/services/safe_launcher.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/empty_state_widget.dart';
@@ -42,17 +42,42 @@ class AssignmentsScreen extends StatefulWidget {
 class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String _selectedTab = 'Aktif';
   String _selectedCourseFilter = 'Semua Mata Kuliah';
+  List<Assignment> _assignments = [];
+  List<Course> _courses = [];
   bool _isLoading = true;
   String? _loadError;
+  RealtimeChannel? _assignmentsChannel;
+  RealtimeChannel? _studentAssignmentsChannel;
 
   @override
   void initState() {
     super.initState();
     _loadPersonalAssignmentStatuses();
+    _initRealtime();
   }
 
-  Future<void> _loadPersonalAssignmentStatuses() async {
-    if (mounted) {
+  void _initRealtime() {
+    _assignmentsChannel = SupabaseRepository.subscribeToAssignments(() {
+      if (mounted) {
+        _loadPersonalAssignmentStatuses(silent: true);
+      }
+    });
+    _studentAssignmentsChannel = SupabaseRepository.subscribeToStudentAssignments(() {
+      if (mounted) {
+        _loadPersonalAssignmentStatuses(silent: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    SupabaseRepository.unsubscribeChannel(_assignmentsChannel);
+    SupabaseRepository.unsubscribeChannel(_studentAssignmentsChannel);
+    super.dispose();
+  }
+
+  Future<void> _loadPersonalAssignmentStatuses({bool silent = false}) async {
+    if (mounted && !silent) {
       setState(() {
         _isLoading = true;
         _loadError = null;
@@ -77,18 +102,21 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                 })
             : Future.value(<String, String>{}),
       ]);
-      final courses = results[1] as List<Course>;
-      if (courses.isNotEmpty) {
-        DummyData.courses
-          ..clear()
-          ..addAll(courses);
-      }
-
+      final loadedAssignments = results[0] as List<Assignment>;
+      final loadedCourses = results[1] as List<Course>;
       final cloudStatuses = results[2] as Map<String, String>;
-      for (final assignment in DummyData.assignments) {
+
+      for (final assignment in loadedAssignments) {
         assignment.status = cloudStatuses[assignment.id] ?? 'belum';
       }
-      if (mounted) setState(() => _isLoading = false);
+
+      if (mounted) {
+        setState(() {
+          _assignments = loadedAssignments;
+          _courses = loadedCourses;
+          _isLoading = false;
+        });
+      }
     } catch (error) {
       debugPrint('Gagal memuat tugas kelas dari Supabase: $error');
       if (mounted) {
@@ -233,7 +261,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   void _showAddAssignmentDialog() {
-    if (_isLoading || _loadError != null || DummyData.courses.isEmpty) {
+    final availableCourses = _courses.isNotEmpty ? _courses : <Course>[];
+    if (_isLoading || _loadError != null || availableCourses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -246,7 +275,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     final titleController = TextEditingController();
     final descController = TextEditingController();
     final linkController = TextEditingController();
-    String selectedCourse = DummyData.courses.first.nama;
+    String selectedCourse = availableCourses.first.nama;
     String kategori = 'Individu';
     DateTime selectedDeadline = DateTime.now().add(const Duration(days: 7));
     bool isSubmitting = false;
@@ -285,7 +314,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    items: DummyData.courses
+                    items: availableCourses
                         .map(
                           (c) => DropdownMenuItem(
                             value: c.nama,
@@ -430,9 +459,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
                       setDialogState(() => isSubmitting = true);
 
-                      final course = DummyData.courses.firstWhere(
+                      final course = availableCourses.firstWhere(
                         (c) => c.nama == selectedCourse,
-                        orElse: () => DummyData.courses.first,
+                        orElse: () => availableCourses.first,
                       );
 
                       final newAssignment = Assignment(
@@ -469,8 +498,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         );
                         return;
                       }
-                      if (mounted) setState(() {});
                       if (ctx.mounted) Navigator.pop(ctx);
+                      await _loadPersonalAssignmentStatuses(silent: true);
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text('Tugas "$judul" berhasil ditambahkan!'),
@@ -504,7 +533,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<Assignment> filteredList = DummyData.assignments;
+    List<Assignment> filteredList = _assignments;
     if (_selectedTab == 'Aktif') {
       filteredList = filteredList
           .where((a) => a.status != 'selesai' && a.status != 'dinilai')
@@ -524,7 +553,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     final availableCourses = [
       'Semua Mata Kuliah',
       if (!_isLoading && _loadError == null)
-        ...DummyData.courses.map((c) => c.nama).toSet(),
+        ..._courses.map((c) => c.nama).toSet(),
     ];
 
     return Scaffold(
@@ -573,11 +602,11 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('Aktif', DummyData.assignments.where((a) => a.status != 'selesai' && a.status != 'dinilai').length),
+                      _buildFilterChip('Aktif', _assignments.where((a) => a.status != 'selesai' && a.status != 'dinilai').length),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Selesai', DummyData.assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length),
+                      _buildFilterChip('Selesai', _assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Semua', DummyData.assignments.length),
+                      _buildFilterChip('Semua', _assignments.length),
                     ],
                   ),
                 ),
@@ -603,8 +632,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       ),
                       items: availableCourses.map((c) {
                         final countInCourse = c == 'Semua Mata Kuliah'
-                            ? DummyData.assignments.length
-                            : DummyData.assignments.where((a) => a.courseName == c).length;
+                            ? _assignments.length
+                            : _assignments.where((a) => a.courseName == c).length;
                         return DropdownMenuItem<String>(
                           value: c,
                           child: Row(
@@ -663,8 +692,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           // Assignment Progress Bar
           Builder(
             builder: (context) {
-              final total = DummyData.assignments.length;
-              final finished = DummyData.assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length;
+              final total = _assignments.length;
+              final finished = _assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length;
               final percent = total > 0 ? (finished / total) : 0.0;
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
@@ -755,12 +784,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                     icon: _selectedTab == 'Selesai'
                         ? Icons.checklist_rtl_rounded
                         : Icons.task_alt_rounded,
-                    title: DummyData.assignments.isEmpty
+                    title: _assignments.isEmpty
                         ? 'Belum Ada Tugas'
                         : _selectedTab == 'Selesai'
                         ? 'Belum Ada Tugas Selesai'
                         : 'Semua Tugas Telah Tuntas! 🎉',
-                    subtitle: DummyData.assignments.isEmpty
+                    subtitle: _assignments.isEmpty
                         ? 'Tugas dari pengurus kelas akan muncul di sini.'
                         : _selectedTab == 'Selesai'
                         ? 'Tugas yang sudah selesai atau dinilai akan muncul di sini.'

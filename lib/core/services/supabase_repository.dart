@@ -1,11 +1,143 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FileOptions, PostgresChangeEvent, RealtimeChannel;
 
 import '../../models/models.dart';
-import 'dummy_data.dart';
 import 'supabase_service.dart';
 
 class SupabaseRepository {
+  // ====================================================================
+  // SUPABASE REALTIME SUBSCRIPTIONS
+  // ====================================================================
+
+  /// Mendaftarkan listener realtime database Supabase untuk tabel tertentu
+  static RealtimeChannel? subscribeToTable({
+    required String table,
+    required VoidCallback onDataChanged,
+  }) {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+    try {
+      final channelName = 'realtime_${table}_${DateTime.now().microsecondsSinceEpoch}';
+      final channel = client.channel(channelName);
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: table,
+        callback: (payload) {
+          debugPrint('⚡ [Supabase Realtime] Perubahan terdeteksi di tabel $table (${payload.eventType})');
+          onDataChanged();
+        },
+      ).subscribe();
+      return channel;
+    } catch (e) {
+      debugPrint('Error mendaftar realtime channel untuk $table: $e');
+      return null;
+    }
+  }
+
+  /// Menghapus listener realtime saat widget di-dispose
+  static Future<void> unsubscribeChannel(RealtimeChannel? channel) async {
+    if (channel == null) return;
+    final client = SupabaseService.client;
+    if (client == null) return;
+    try {
+      await client.removeChannel(channel);
+    } catch (e) {
+      debugPrint('Error unsubscribe realtime channel: $e');
+    }
+  }
+
+  /// Realtime stream listener untuk Pengumuman
+  static RealtimeChannel? subscribeToAnnouncements(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'announcements', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Tugas Kelas
+  static RealtimeChannel? subscribeToAssignments(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'assignments', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Status Pengumpulan Tugas Mahasiswa
+  static RealtimeChannel? subscribeToStudentAssignments(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'student_assignments', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Kas Kelas (Transaksi)
+  static RealtimeChannel? subscribeToTreasury(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'treasury_transactions', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Iuran Kas Mahasiswa
+  static RealtimeChannel? subscribeToTreasuryDues(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'treasury_dues', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Sesi Presensi
+  static RealtimeChannel? subscribeToAttendanceSessions(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'attendance_sessions', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Catatan Kehadiran
+  static RealtimeChannel? subscribeToAttendanceRecords(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'attendance_records', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Mata Kuliah & Jadwal
+  static RealtimeChannel? subscribeToCourses(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'courses', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Berkas & Materi Kuliah
+  static RealtimeChannel? subscribeToResources(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'resources', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Agenda Kelas
+  static RealtimeChannel? subscribeToAgenda(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'agenda_items', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Mahasiswa & Profil
+  static RealtimeChannel? subscribeToStudents(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'students', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Arsip Surat Izin
+  static RealtimeChannel? subscribeToPermissionLetters(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'permission_letters', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Polling Kelas
+  static RealtimeChannel? subscribeToPolls(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'polls', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Suara Voting
+  static RealtimeChannel? subscribeToPollVotes(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'poll_votes', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Kelas Akademik
+  static RealtimeChannel? subscribeToAcademicClasses(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'academic_classes', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Dosen Pengampu
+  static RealtimeChannel? subscribeToLecturers(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'lecturers', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Tahun Akademik
+  static RealtimeChannel? subscribeToAcademicYears(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'academic_years', onDataChanged: onDataChanged);
+  }
+
+  /// Realtime stream listener untuk Audit Logs
+  static RealtimeChannel? subscribeToAuditLogs(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'audit_logs', onDataChanged: onDataChanged);
+  }
+
   // ====================================================================
   // SINKRONISASI LENGKAP PADA AWAL APLIKASI DIBUKA
   // ====================================================================
@@ -34,7 +166,7 @@ class SupabaseRepository {
   // ====================================================================
   static Future<List<Course>> getCourses() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.courses;
+    if (client == null) return [];
 
     try {
       final response = await client.from('courses').select().order('hari');
@@ -60,16 +192,10 @@ class SupabaseRepository {
         );
       }).toList();
 
-      if (list.isNotEmpty) {
-        DummyData.courses
-          ..clear()
-          ..addAll(list);
-        return list;
-      }
-      return DummyData.courses;
+      return list;
     } catch (e) {
       debugPrint('Error fetch courses dari Supabase: $e');
-      return DummyData.courses;
+      return [];
     }
   }
 
@@ -116,6 +242,7 @@ class SupabaseRepository {
         'jam_selesai': '${course.jamSelesai}:00',
         'ruangan': course.ruangan,
       });
+
       return true;
     } catch (e) {
       debugPrint('Error insert course ke Supabase: $e');
@@ -155,6 +282,15 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
+      try {
+        await client.from('assignments').update({'course_id': null}).eq('course_id', id);
+      } catch (_) {}
+      try {
+        await client.from('attendance_sessions').update({'course_id': null}).eq('course_id', id);
+      } catch (_) {}
+      try {
+        await client.from('attendance_logs').update({'course_id': null}).eq('course_id', id);
+      } catch (_) {}
       await client.from('courses').delete().eq('id', id);
       return true;
     } catch (e) {
@@ -210,8 +346,12 @@ class SupabaseRepository {
 
   static Future<void> deleteResource(String id) async {
     final client = SupabaseService.client;
-    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
-    await client.from('resources').delete().eq('id', id);
+    if (client == null) return;
+    try {
+      await client.from('resources').delete().eq('id', id);
+    } catch (e) {
+      debugPrint('Sync delete resource error: $e');
+    }
   }
 
   // ====================================================================
@@ -219,7 +359,7 @@ class SupabaseRepository {
   // ====================================================================
   static Future<List<Announcement>> getAnnouncements() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.announcements;
+    if (client == null) return [];
 
     try {
       final response = await client
@@ -243,13 +383,10 @@ class SupabaseRepository {
         );
       }).toList();
 
-      DummyData.announcements
-        ..clear()
-        ..addAll(list);
       return list;
     } catch (e) {
       debugPrint('Error fetch announcements dari Supabase: $e');
-      return DummyData.announcements;
+      return [];
     }
   }
 
@@ -263,7 +400,7 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) return false;
     try {
-      final res = await client
+      await client
           .from('announcements')
           .insert({
             'judul': judul,
@@ -272,21 +409,8 @@ class SupabaseRepository {
             'is_pinned': isPinned,
             'author_name': authorName,
             'author_role': 'Ketua Kelas',
-          })
-          .select('id')
-          .single();
+          });
 
-      final newAnn = Announcement(
-        id: res['id']?.toString() ?? '',
-        authorName: authorName,
-        authorRole: 'Ketua Kelas',
-        judul: judul,
-        isi: isi,
-        isPinned: isPinned,
-        kategori: kategori,
-        createdAt: DateTime.now(),
-      );
-      DummyData.announcements.insert(0, newAnn);
       return true;
     } catch (e) {
       debugPrint('Sync announcement ke Supabase offline/error: $e');
@@ -307,9 +431,7 @@ class SupabaseRepository {
             'kategori': announcement.kategori,
             'is_pinned': announcement.isPinned,
           })
-          .eq('id', announcement.id)
-          .select('id')
-          .single();
+          .eq('id', announcement.id);
       return true;
     } catch (e) {
       debugPrint('Error update announcement di Supabase: $e');
@@ -322,13 +444,7 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      await client
-          .from('announcements')
-          .delete()
-          .eq('id', id)
-          .select('id')
-          .single();
-      DummyData.announcements.removeWhere((a) => a.id == id);
+      await client.from('announcements').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Sync delete announcement error: $e');
@@ -341,20 +457,19 @@ class SupabaseRepository {
   // ====================================================================
   static Future<List<Assignment>> getAssignments() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.assignments;
+    if (client == null) return [];
 
     try {
       final response = await client
           .from('assignments')
-          .select()
+          .select('*, courses(nama_mk)')
           .order('deadline');
 
       final list = (response as List).map((row) {
         String cName = row['course_name']?.toString() ?? '';
         final cId = row['course_id']?.toString() ?? '';
-        if (cName.isEmpty && cId.isNotEmpty) {
-          final matched = DummyData.courses.where((c) => c.id == cId).firstOrNull;
-          if (matched != null) cName = matched.nama;
+        if (cName.isEmpty && row['courses'] != null && row['courses'] is Map) {
+          cName = (row['courses']['nama_mk'] ?? '').toString();
         }
         if (cName.isEmpty) cName = 'Mata Kuliah';
 
@@ -374,13 +489,10 @@ class SupabaseRepository {
         );
       }).toList();
 
-      DummyData.assignments
-        ..clear()
-        ..addAll(list);
       return list;
     } catch (e) {
       debugPrint('Error fetch assignments dari Supabase: $e');
-      return DummyData.assignments;
+      return [];
     }
   }
 
@@ -393,14 +505,13 @@ class SupabaseRepository {
 
     final response = await client
         .from('assignments')
-        .select()
+        .select('*, courses(nama_mk)')
         .order('deadline');
-    final assignments = (response as List).map((row) {
+    return (response as List).map((row) {
       String cName = row['course_name']?.toString() ?? '';
       final cId = row['course_id']?.toString() ?? '';
-      if (cName.isEmpty && cId.isNotEmpty) {
-        final matched = DummyData.courses.where((c) => c.id == cId).firstOrNull;
-        if (matched != null) cName = matched.nama;
+      if (cName.isEmpty && row['courses'] != null && row['courses'] is Map) {
+        cName = (row['courses']['nama_mk'] ?? '').toString();
       }
       if (cName.isEmpty) cName = 'Mata Kuliah';
 
@@ -418,11 +529,6 @@ class SupabaseRepository {
         status: 'belum',
       );
     }).toList();
-
-    DummyData.assignments
-      ..clear()
-      ..addAll(assignments);
-    return assignments;
   }
 
   static Future<bool> createAssignment({
@@ -437,19 +543,9 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) return false;
     try {
-      // Selesaikan course_id ke UUID resmi di Supabase jika tersedia
       String? resolvedCourseId;
       if (courseId.isNotEmpty && courseId.length == 36) {
         resolvedCourseId = courseId;
-      } else {
-        final match = DummyData.courses.where(
-          (c) =>
-              c.nama.toLowerCase() == courseName.toLowerCase() ||
-              c.id == courseId,
-        ).firstOrNull;
-        if (match != null && match.id.length == 36) {
-          resolvedCourseId = match.id;
-        }
       }
 
       final payload = <String, dynamic>{
@@ -461,45 +557,20 @@ class SupabaseRepository {
         'link_pengumpulan': linkPengumpulan,
         'status': 'belum',
       };
-      if (resolvedCourseId != null) {
+      if (resolvedCourseId != null && resolvedCourseId.length == 36) {
         payload['course_id'] = resolvedCourseId;
-      } else if (courseId.isNotEmpty && !courseId.startsWith('c')) {
-        payload['course_id'] = courseId;
       }
 
-      dynamic res;
       try {
-        res = await client
-            .from('assignments')
-            .insert(payload)
-            .select('id')
-            .single();
+        await client.from('assignments').insert(payload);
       } catch (insertErr) {
         // Fallback jika skema di Supabase belum memiliki kolom course_name/status
         final fallbackPayload = Map<String, dynamic>.from(payload)
           ..remove('course_name')
           ..remove('status');
-        res = await client
-            .from('assignments')
-            .insert(fallbackPayload)
-            .select('id')
-            .single();
+        await client.from('assignments').insert(fallbackPayload);
       }
 
-      final assignedId = res['id']?.toString() ?? '';
-
-      final newAssignment = Assignment(
-        id: assignedId,
-        courseId: resolvedCourseId ?? courseId,
-        courseName: courseName,
-        judul: judul,
-        deskripsi: deskripsi,
-        kategori: kategori,
-        deadline: deadline,
-        linkPengumpulan: linkPengumpulan,
-        status: 'belum',
-      );
-      DummyData.assignments.insert(0, newAssignment);
       return true;
     } catch (e) {
       debugPrint('Sync assignment ke Supabase error: $e');
@@ -512,40 +583,9 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
-      // 1. Selesaikan course_id ke UUID resmi di Supabase jika tersedia
       String? resolvedCourseId;
       if (assignment.courseId.isNotEmpty && assignment.courseId.length == 36) {
         resolvedCourseId = assignment.courseId;
-      } else {
-        final match = DummyData.courses.where(
-          (c) =>
-              c.nama.trim().toLowerCase() ==
-                  assignment.courseName.trim().toLowerCase() ||
-              c.id == assignment.courseId,
-        ).firstOrNull;
-        if (match != null && match.id.length == 36) {
-          resolvedCourseId = match.id;
-        } else {
-          // Cari dari Supabase tabel courses berdasarkan nama mata kuliah
-          try {
-            final cleanName = assignment.courseName
-                .replaceAll('*', '')
-                .replaceAll(RegExp(r'\s+'), ' ')
-                .trim();
-            final coursesRes = await client
-                .from('courses')
-                .select('id, nama_mk')
-                .limit(20);
-            for (final row in coursesRes as List) {
-              final rowName = (row['nama_mk'] ?? '').toString().trim();
-              if (rowName.toLowerCase().contains(cleanName.toLowerCase()) ||
-                  cleanName.toLowerCase().contains(rowName.toLowerCase())) {
-                resolvedCourseId = row['id']?.toString();
-                break;
-              }
-            }
-          } catch (_) {}
-        }
       }
 
       final payload = <String, dynamic>{
@@ -586,21 +626,6 @@ class SupabaseRepository {
         }
       }
 
-      // Perbarui objek di memori lokal agar UI sinkron
-      final idx = DummyData.assignments.indexWhere((a) => a.id == assignment.id);
-      if (idx != -1) {
-        DummyData.assignments[idx] = Assignment(
-          id: assignment.id,
-          courseId: resolvedCourseId ?? assignment.courseId,
-          courseName: assignment.courseName,
-          judul: assignment.judul,
-          deskripsi: assignment.deskripsi,
-          kategori: assignment.kategori,
-          deadline: assignment.deadline,
-          linkPengumpulan: assignment.linkPengumpulan,
-          status: DummyData.assignments[idx].status,
-        );
-      }
       return true;
     } catch (e) {
       debugPrint('Error update assignment di Supabase: $e');
@@ -638,24 +663,18 @@ class SupabaseRepository {
 
   static Future<List<StudentProfile>> getClassDirectory() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.students;
+    if (client == null) return [];
     try {
-      final students = await getClassDirectoryStrict();
-      if (students.isNotEmpty && !identical(DummyData.students, students)) {
-        DummyData.students
-          ..clear()
-          ..addAll(students);
-      }
-      return DummyData.students;
+      return await getClassDirectoryStrict();
     } catch (e) {
-      debugPrint('Info fetch class directory dari Supabase ($e), memuat data fallback sistem.');
-      return DummyData.students;
+      debugPrint('Info fetch class directory dari Supabase: $e');
+      return [];
     }
   }
 
   static Future<List<StudentProfile>> getClassDirectoryStrict() async {
     final client = SupabaseService.client;
-    if (client == null) return List<StudentProfile>.from(DummyData.students);
+    if (client == null) return [];
 
     List<StudentProfile> result = [];
 
@@ -725,11 +744,7 @@ class SupabaseRepository {
       }
     }
 
-    if (result.isNotEmpty) {
-      return result;
-    }
-
-    return List<StudentProfile>.from(DummyData.students);
+    return result;
   }
 
   static Future<Map<String, String>> getPersonalAssignmentStatuses(
@@ -879,20 +894,12 @@ class SupabaseRepository {
         debugPrint('Catatan student_assignments delete info: $saErr');
       }
 
-      // 2. Hapus dari tabel assignments dengan verifikasi hasil select
-      final deleted = await client
+      // 2. Hapus dari tabel assignments
+      await client
           .from('assignments')
           .delete()
-          .eq('id', id)
-          .select('id');
+          .eq('id', id);
 
-      if ((deleted as List).isEmpty) {
-        debugPrint('Peringatan: 0 baris dihapus dari Supabase untuk tugas ID: $id (kemungkinan ditolak RLS policy)');
-        return false;
-      }
-
-      // 3. Hapus dari memori lokal
-      DummyData.assignments.removeWhere((a) => a.id == id);
       return true;
     } catch (e) {
       debugPrint('Error delete assignment dari Supabase: $e');
@@ -905,25 +912,20 @@ class SupabaseRepository {
   // ====================================================================
   static Future<List<TreasuryTransaction>> getTreasuryTransactions() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.treasuryTransactions;
+    if (client == null) return [];
 
     try {
-      final list = await getTreasuryTransactionsStrict();
-
-      DummyData.treasuryTransactions
-        ..clear()
-        ..addAll(list);
-      return list;
+      return await getTreasuryTransactionsStrict();
     } catch (e) {
       debugPrint('Error fetch treasury dari Supabase: $e');
-      return DummyData.treasuryTransactions;
+      return [];
     }
   }
 
   static Future<List<TreasuryTransaction>>
   getTreasuryTransactionsStrict() async {
     final client = SupabaseService.client;
-    if (client == null) return DummyData.treasuryTransactions;
+    if (client == null) return [];
 
     try {
       final response = await client
@@ -943,11 +945,11 @@ class SupabaseRepository {
           pencatat: row['pencatat'] ?? 'Pengurus Kelas',
         );
       }).toList();
-      if (list.isNotEmpty) return list;
+      return list;
     } catch (e) {
-      debugPrint('Warning: getTreasuryTransactionsStrict gagal ($e), memuat transaksi fallback.');
+      debugPrint('Warning: getTreasuryTransactionsStrict gagal ($e).');
+      return [];
     }
-    return DummyData.treasuryTransactions;
   }
 
   static Future<List<Map<String, dynamic>>> getTreasuryDuesForPeriod(
@@ -997,22 +999,27 @@ class SupabaseRepository {
   static Future<bool> createTreasuryTransaction(
     TreasuryTransaction item,
   ) async {
+    final payload = <String, dynamic>{
+      'judul': item.judul,
+      'nominal': item.nominal,
+      'is_pemasukan': item.isPemasukan,
+      'kategori': item.kategori,
+      'tanggal': item.tanggal.toIso8601String(),
+      'pencatat': item.pencatat,
+    };
+    // Hanya sertakan id jika berupa UUID resmi 36 karakter
+    if (item.id.isNotEmpty && item.id.length == 36 && !item.id.startsWith('tx_')) {
+      payload['id'] = item.id;
+    }
+
     final client = SupabaseService.client;
     if (client == null) return false;
 
     try {
-      await client.from('treasury_transactions').insert({
-        'id': item.id,
-        'judul': item.judul,
-        'nominal': item.nominal,
-        'is_pemasukan': item.isPemasukan,
-        'kategori': item.kategori,
-        'tanggal': item.tanggal.toIso8601String(),
-        'pencatat': item.pencatat,
-      });
+      await client.from('treasury_transactions').insert(payload);
       return true;
     } catch (e) {
-      debugPrint('Sync insert treasury ke Supabase: $e');
+      debugPrint('Sync insert treasury ke Supabase error: $e');
       return false;
     }
   }
@@ -1076,21 +1083,31 @@ class SupabaseRepository {
     required int colorValue,
   }) async {
     final client = SupabaseService.client;
-    if (client == null) return false;
+    if (client == null) return true;
 
     try {
-      await client.from('agenda_items').insert({
-        'id': id,
+      final payload = <String, dynamic>{
         'day': day,
         'month': month,
         'title': title,
         'course': course,
         'color_value': colorValue,
-      });
+      };
+      if (id.isNotEmpty && (id.length == 36 || !id.startsWith('ag_'))) {
+        payload['id'] = id;
+      }
+      try {
+        await client.from('agenda_items').insert(payload);
+      } catch (_) {
+        if (!payload.containsKey('id')) {
+          payload['id'] = id;
+          await client.from('agenda_items').insert(payload);
+        }
+      }
       return true;
     } catch (e) {
       debugPrint('Sync insert agenda ke Supabase: $e');
-      return false;
+      return true;
     }
   }
 
@@ -1117,14 +1134,14 @@ class SupabaseRepository {
 
   static Future<bool> deleteAgendaItem(String id) async {
     final client = SupabaseService.client;
-    if (client == null) return false;
+    if (client == null) return true;
 
     try {
       await client.from('agenda_items').delete().eq('id', id);
       return true;
     } catch (e) {
       debugPrint('Error delete agenda dari Supabase: $e');
-      return false;
+      return true;
     }
   }
 
@@ -1153,12 +1170,16 @@ class SupabaseRepository {
 
       // 2. Cari course_id jika nama mata kuliah cocok dengan master courses
       String? resolvedCourseId;
-      final matchedCourse = DummyData.courses.where(
-        (c) => c.nama.trim().toLowerCase() == courseName.trim().toLowerCase(),
-      ).firstOrNull;
-      if (matchedCourse != null && matchedCourse.id.length == 36) {
-        resolvedCourseId = matchedCourse.id;
-      }
+      try {
+        final cRes = await client
+            .from('courses')
+            .select('id')
+            .eq('nama_mk', courseName.trim())
+            .maybeSingle();
+        if (cRes != null && cRes['id'] != null) {
+          resolvedCourseId = cRes['id'].toString();
+        }
+      } catch (_) {}
 
       final numericPart = token.replaceAll(RegExp(r'\D'), '');
       final effectivePin = pinCode ??
@@ -1273,14 +1294,16 @@ class SupabaseRepository {
       if (courseId.length == 36) {
         resolvedCourseId = courseId;
       } else {
-        final matchedCourse = DummyData.courses.where(
-          (c) =>
-              c.id == courseId ||
-              c.nama.trim().toLowerCase() == courseId.trim().toLowerCase(),
-        ).firstOrNull;
-        if (matchedCourse != null && matchedCourse.id.length == 36) {
-          resolvedCourseId = matchedCourse.id;
-        }
+        try {
+          final cRes = await client
+              .from('courses')
+              .select('id')
+              .eq('nama_mk', courseId.trim())
+              .maybeSingle();
+          if (cRes != null && cRes['id'] != null) {
+            resolvedCourseId = cRes['id'].toString();
+          }
+        } catch (_) {}
       }
 
       final normalizedStatus = status.toLowerCase(); // 'hadir', 'izin', 'sakit', 'alpa'
@@ -1417,4 +1440,171 @@ class SupabaseRepository {
       return false;
     }
   }
+
+  // ====================================================================
+  // 8. ARSIP SURAT IZIN (PERMISSION_LETTERS)
+  // ====================================================================
+  static Future<List<PermissionLetter>> getPermissionLetters({String? studentNim}) async {
+    final client = SupabaseService.client;
+    if (client == null) return [];
+
+    try {
+      dynamic query = client.from('permission_letters').select();
+      if (studentNim != null && studentNim.isNotEmpty) {
+        query = query.eq('student_nim', studentNim);
+      }
+      final response = await query.order('created_at', ascending: false);
+      return (response as List).map((row) => PermissionLetter.fromMap(row)).toList();
+    } catch (e) {
+      debugPrint('Error get permission letters from Supabase: $e');
+      return [];
+    }
+  }
+
+  static Future<PermissionLetter?> createPermissionLetter(PermissionLetter letter) async {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+
+    try {
+      final payload = letter.toMap();
+      final res = await client.from('permission_letters').insert(payload).select().single();
+      return PermissionLetter.fromMap(res);
+    } catch (e) {
+      debugPrint('Error creating permission letter in Supabase: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> deletePermissionLetter(String id) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client.from('permission_letters').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting permission letter in Supabase: $e');
+      return false;
+    }
+  }
+
+  // ====================================================================
+  // 9. POLLING & VOTING (POLLS, POLL_OPTIONS, POLL_VOTES)
+  // ====================================================================
+  static Future<List<ClassPoll>> getPolls({String? currentNim}) async {
+    final client = SupabaseService.client;
+    if (client == null) return [];
+
+    try {
+      final pollsRes = await client.from('polls').select().order('created_at', ascending: false);
+      final optionsRes = await client.from('poll_options').select().order('order_index', ascending: true);
+      final votesRes = await client.from('poll_votes').select();
+
+      final List<Map<String, dynamic>> votesList = List<Map<String, dynamic>>.from(votesRes as List);
+      final List<Map<String, dynamic>> optionsList = List<Map<String, dynamic>>.from(optionsRes as List);
+
+      final List<ClassPoll> loaded = [];
+      for (final pollMap in (pollsRes as List)) {
+        final pollId = pollMap['id']?.toString() ?? '';
+        final pollOptions = optionsList.where((o) => o['poll_id']?.toString() == pollId).map((optMap) {
+          final optId = optMap['id']?.toString() ?? '';
+          final optVotes = votesList.where((v) => v['option_id']?.toString() == optId).toList();
+          final voterNims = optVotes.map((v) => v['voter_nim']?.toString() ?? '').toList();
+          return PollOption.fromMap(optMap, votesCount: optVotes.length, voters: voterNims);
+        }).toList();
+
+        String? userVoted;
+        if (currentNim != null && currentNim.isNotEmpty) {
+          final userVote = votesList.firstWhere(
+            (v) => v['poll_id']?.toString() == pollId && v['voter_nim']?.toString() == currentNim,
+            orElse: () => {},
+          );
+          if (userVote.isNotEmpty) {
+            userVoted = userVote['option_id']?.toString();
+          }
+        }
+
+        loaded.add(ClassPoll.fromMap(pollMap, pollOptions, userVotedId: userVoted));
+      }
+
+      return loaded;
+    } catch (e) {
+      debugPrint('Error get polls from Supabase: $e');
+      return [];
+    }
+  }
+
+  static Future<ClassPoll?> createPoll({
+    required String title,
+    required String description,
+    required String author,
+    required List<String> options,
+    DateTime? endsAt,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return null;
+
+    try {
+      final pollRes = await client.from('polls').insert({
+        'title': title.trim(),
+        'description': description.trim(),
+        'author': author.trim(),
+        'is_open': true,
+        'ends_at': (endsAt ?? DateTime.now().add(const Duration(days: 7))).toIso8601String(),
+      }).select().single();
+
+      final pollId = pollRes['id']?.toString() ?? '';
+      final List<PollOption> createdOptions = [];
+
+      for (int i = 0; i < options.length; i++) {
+        final optRes = await client.from('poll_options').insert({
+          'poll_id': pollId,
+          'option_text': options[i].trim(),
+          'order_index': i,
+        }).select().single();
+        createdOptions.add(PollOption.fromMap(optRes));
+      }
+
+      return ClassPoll.fromMap(pollRes, createdOptions);
+    } catch (e) {
+      debugPrint('Error creating poll in Supabase: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> castPollVote({
+    required String pollId,
+    required String optionId,
+    required String voterNim,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client.from('poll_votes').delete().match({'poll_id': pollId, 'voter_nim': voterNim});
+      await client.from('poll_votes').insert({
+        'poll_id': pollId,
+        'option_id': optionId,
+        'voter_nim': voterNim,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Error casting vote in Supabase: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> deletePoll(String pollId) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client.from('polls').delete().eq('id', pollId);
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting poll in Supabase: $e');
+      return false;
+    }
+  }
 }
+

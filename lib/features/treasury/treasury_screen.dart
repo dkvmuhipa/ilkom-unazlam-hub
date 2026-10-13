@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/export_service.dart';
+import '../../core/services/safe_launcher.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
-
-import 'package:intl/intl.dart';
-import '../../core/services/safe_launcher.dart';
 import 'widgets/treasury_qris_modal.dart';
 import 'widgets/treasury_report_modal.dart';
 
@@ -43,6 +43,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
   final Set<String> _updatingDues = {};
   bool _isLoading = true;
   String? _loadError;
+  RealtimeChannel? _treasuryChannel;
+  RealtimeChannel? _treasuryDuesChannel;
 
   String get _periodKey => DateFormat('yyyy-MM').format(_selectedPeriod);
   String get _periodLabel =>
@@ -59,10 +61,31 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
   void initState() {
     super.initState();
     _loadTreasury();
+    _initRealtime();
   }
 
-  Future<void> _loadTreasury() async {
-    if (mounted) {
+  void _initRealtime() {
+    _treasuryChannel = SupabaseRepository.subscribeToTreasury(() {
+      if (mounted) {
+        _loadTreasury(silent: true);
+      }
+    });
+    _treasuryDuesChannel = SupabaseRepository.subscribeToTreasuryDues(() {
+      if (mounted) {
+        _loadTreasury(silent: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    SupabaseRepository.unsubscribeChannel(_treasuryChannel);
+    SupabaseRepository.unsubscribeChannel(_treasuryDuesChannel);
+    super.dispose();
+  }
+
+  Future<void> _loadTreasury({bool silent = false}) async {
+    if (mounted && !silent) {
       setState(() {
         _isLoading = true;
         _loadError = null;

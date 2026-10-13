@@ -1,9 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'dummy_data.dart';
-
 import 'package:intl/intl.dart';
 
 import 'download_stub.dart' if (dart.library.html) 'download_web.dart';
@@ -39,21 +36,40 @@ class ExportService {
   }
 
   /// Export Rekap Presensi Mahasiswa to CSV Format (Khusus Pengurus / Admin)
-  static String exportAttendanceCsv(String courseName) {
+  static String exportAttendanceCsv({
+    required String courseName,
+    List<Map<String, dynamic>> logs = const [],
+    List<StudentProfile> students = const [],
+  }) {
     final buffer = StringBuffer();
     buffer.writeln(
-      'No,NIM,Nama Mahasiswa,Program Studi,Status Kehadiran,Mata Kuliah',
+      'No,NIM,Nama Mahasiswa,Program Studi,Status Kehadiran,Mata Kuliah,Waktu Catat',
     );
 
-    final students = DummyData.students
-        .where((s) => s.role != 'ADMIN')
-        .toList();
-    for (int i = 0; i < students.length; i++) {
-      final s = students[i];
-      final status = (i % 8 == 0) ? 'Izin' : 'Hadir';
-      buffer.writeln(
-        '${i + 1},"${s.nim}","${s.nama}","${s.prodi}","$status","$courseName"',
-      );
+    final activeStudents = students.where((s) => s.role != 'ADMIN').toList();
+    if (logs.isNotEmpty) {
+      for (int i = 0; i < logs.length; i++) {
+        final log = logs[i];
+        final nim = (log['student_nim'] ?? '').toString();
+        final status = (log['status'] ?? 'Hadir').toString();
+        final time = (log['created_at'] ?? '-').toString();
+        final student = activeStudents.firstWhere(
+          (s) => s.nim == nim,
+          orElse: () => StudentProfile(id: '', nim: nim, nama: 'Mahasiswa $nim', email: '', noWa: ''),
+        );
+        buffer.writeln(
+          '${i + 1},"$nim","${student.nama}","${student.prodi}","$status","$courseName","$time"',
+        );
+      }
+    } else if (activeStudents.isNotEmpty) {
+      for (int i = 0; i < activeStudents.length; i++) {
+        final s = activeStudents[i];
+        buffer.writeln(
+          '${i + 1},"${s.nim}","${s.nama}","${s.prodi}","Belum ada catatan","$courseName","-"',
+        );
+      }
+    } else {
+      buffer.writeln('1,-,Belum ada data presensi,-,-,"$courseName",-');
     }
 
     return buffer.toString();

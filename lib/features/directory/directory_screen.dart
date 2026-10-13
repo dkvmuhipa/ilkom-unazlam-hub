@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/services/supabase_repository.dart';
@@ -19,15 +19,31 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   String _selectedFilter = 'Semua'; // 'Semua', 'Pengurus', 'Mahasiswa'
   List<StudentProfile> _students = const [];
   bool _isLoading = true;
+  RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
     _loadStudents();
+    _initRealtime();
   }
 
-  Future<void> _loadStudents() async {
-    setState(() => _isLoading = true);
+  void _initRealtime() {
+    _realtimeChannel = SupabaseRepository.subscribeToStudents(() {
+      if (mounted) {
+        _loadStudents(silent: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    SupabaseRepository.unsubscribeChannel(_realtimeChannel);
+    super.dispose();
+  }
+
+  Future<void> _loadStudents({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
     final students = await SupabaseRepository.getClassDirectory();
     if (mounted) {
       setState(() {

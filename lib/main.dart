@@ -33,7 +33,6 @@ import 'features/audit/audit_log_screen.dart';
 import 'features/gpa/academic_grades_screen.dart';
 
 import 'features/admin/admin_shell_screen.dart';
-import 'core/services/dummy_data.dart';
 import 'models/models.dart';
 
 void main() async {
@@ -185,8 +184,6 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   }
 
   void _onAuthSetupComplete(StudentProfile profile) {
-    DummyData.students.removeWhere((student) => student.nim == profile.nim);
-    DummyData.students.add(profile);
     setState(() {
       _authSetupFlowType = null;
       _isAuthSetupFlow = false;
@@ -202,8 +199,6 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
     if (SupabaseService.client == null) return;
     final profile = await AuthService.restoreSession();
     if (profile != null && mounted) {
-      DummyData.students.removeWhere((student) => student.nim == profile.nim);
-      DummyData.students.add(profile);
       setState(() {
         _isLoggedIn = true;
         _userNim = profile.nim;
@@ -223,8 +218,6 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   }
 
   void _onLoginSuccess(StudentProfile profile) {
-    DummyData.students.removeWhere((student) => student.nim == profile.nim);
-    DummyData.students.add(profile);
     setState(() {
       _userNim = profile.nim;
       _userName = profile.nama;
@@ -280,10 +273,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
                           : MainResponsiveShell(
                               userNim: _userNim,
                               userName: _userName,
-                              isAdminUser: DummyData.students.any(
-                                (student) =>
-                                    student.nim == _userNim && student.isAdmin,
-                              ),
+                              isAdminUser: _isAdminMode,
                               onSwitchToAdminView: () =>
                                   setState(() => _isAdminMode = true),
                               onLogout: _onLogout,
@@ -319,14 +309,29 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   final List<int> _navigationHistory = [0];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late String _activeNim;
+  StudentProfile? _profile;
 
   @override
   void initState() {
     super.initState();
-    _activeNim = widget.userNim ?? '260250023';
+    _activeNim = widget.userNim ?? '';
+    _loadUserProfile();
     SupabaseRepository.syncAllFromCloud().then((_) {
       if (mounted) setState(() {});
     });
+  }
+
+  Future<void> _loadUserProfile() async {
+    if (_activeNim.isEmpty) return;
+    try {
+      final students = await SupabaseRepository.getClassDirectory();
+      final matched = students.where((s) => s.nim == _activeNim).firstOrNull;
+      if (matched != null && mounted) {
+        setState(() {
+          _profile = matched;
+        });
+      }
+    } catch (_) {}
   }
 
   void _navigateToIndex(int index) {
@@ -354,19 +359,16 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   }
 
   StudentProfile get _currentUser {
-    final matched = DummyData.students
-        .where((student) => student.nim == _activeNim)
-        .firstOrNull;
-    if (matched != null) return matched;
-    final effectiveNim = _activeNim.isNotEmpty ? _activeNim : '260250001';
+    if (_profile != null) return _profile!;
+    final effectiveNim = _activeNim.isNotEmpty ? _activeNim : '16110376';
     return StudentProfile(
       id: effectiveNim,
       nim: effectiveNim,
       nama: widget.userName ?? 'Mahasiswa ILKOM',
-      email: '$effectiveNim@student.unazlam.ac.id',
+      email: '',
       noWa: '',
-      role: 'MAHASISWA',
-      jabatan: 'Mahasiswa',
+      role: widget.isAdminUser ? 'ADMIN' : 'MAHASISWA',
+      jabatan: widget.isAdminUser ? 'Administrator' : 'Mahasiswa',
     );
   }
 

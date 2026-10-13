@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
 import '../../core/services/student_dashboard_service.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class ClassNotificationItem {
@@ -142,7 +142,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final todayName = daysId[(now.weekday - 1) % 7];
       final tomorrowName = daysId[now.weekday % 7];
 
-      final todayCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
+      final courses = await SupabaseRepository.getCourses();
+      final todayCourses = courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
       for (final c in todayCourses) {
         rows.add(
           ClassNotificationItem(
@@ -155,7 +156,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       }
 
-      final tomorrowCourses = DummyData.courses.where((c) => c.hari.toLowerCase() == tomorrowName.toLowerCase()).toList();
+      final tomorrowCourses = courses.where((c) => c.hari.toLowerCase() == tomorrowName.toLowerCase()).toList();
       for (final c in tomorrowCourses) {
         rows.add(
           ClassNotificationItem(

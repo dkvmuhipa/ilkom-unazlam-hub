@@ -79,135 +79,49 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showForgotPasswordDialog() async {
-    final initialEmail = _nimController.text.contains('@')
-        ? _nimController.text.trim()
-        : (_nimController.text.trim().toLowerCase() == 'admin'
-            ? 'gellonaindonesia@gmail.com'
-            : '');
-    final emailController = TextEditingController(text: initialEmail);
-    final email = await showGlassModal<String>(
+    final result = await showGlassModal<_ResetResult>(
       context: context,
-      maxWidth: 480,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const GlassModalHeader(
-            title: 'Lupa Kata Sandi?',
-            subtitle:
-                'Masukkan email akun yang terdaftar untuk menerima tautan pemulihan.',
-            icon: Icons.lock_reset_rounded,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SaaSInputField(
-                  label: 'Email Pemulihan',
-                  controller: emailController,
-                  hintText: 'nama@student.unazlam.ac.id atau email terdaftar',
-                  prefixIcon: Icons.alternate_email_rounded,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Tautan untuk membuat kata sandi baru akan dikirim ke email tersebut. NIM mahasiswa hanya digunakan untuk login harian.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textSub,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSub,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    'Batal',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () =>
-                      Navigator.pop(ctx, emailController.text.trim()),
-                  icon: const Icon(Icons.send_rounded, size: 16),
-                  label: Text(
-                    'Kirim Tautan',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      maxWidth: 520,
+      builder: (ctx) => _ForgotPasswordModal(
+        initialNim: _nimController.text.trim(),
       ),
     );
 
-    // Schedule dispose after dialog route pop animation completes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      emailController.dispose();
-    });
+    if (result == null || !mounted) return;
 
-    if (email == null || email.isEmpty || !mounted) return;
-    setState(() => _isLoading = true);
-    try {
-      await AuthService.requestPasswordReset(
-        email: email,
-        redirectTo: Uri.base.origin,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Jika email terdaftar, tautan reset telah dikirim. Periksa kotak masuk dan folder spam.',
-          ),
-          backgroundColor: Color(0xFF059669),
-          duration: Duration(seconds: 5),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
+    if (result.isSelfReset) {
+      // Otomatis isikan NIM dan kata sandi baru ke form login
+      setState(() {
+        _nimController.text = result.nim;
+        _passwordController.text = result.password;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            error is AuthServiceException
-                ? error.message
-                : 'Tautan reset gagal dikirim. Periksa koneksi dan konfigurasi URL Auth Supabase.',
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  result.message.isNotEmpty
+                      ? result.message
+                      : 'Kata sandi berhasil diperbarui! Silakan tekan tombol Masuk.',
+                ),
+              ),
+            ],
           ),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: const Color(0xFF059669),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: const Color(0xFF059669),
           duration: const Duration(seconds: 5),
         ),
       );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -447,3 +361,479 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
+class _ResetResult {
+  final bool isSelfReset;
+  final String nim;
+  final String password;
+  final String message;
+
+  const _ResetResult({
+    required this.isSelfReset,
+    this.nim = '',
+    this.password = '',
+    required this.message,
+  });
+}
+
+class _ForgotPasswordModal extends StatefulWidget {
+  final String initialNim;
+
+  const _ForgotPasswordModal({required this.initialNim});
+
+  @override
+  State<_ForgotPasswordModal> createState() => _ForgotPasswordModalState();
+}
+
+class _ForgotPasswordModalState extends State<_ForgotPasswordModal> {
+  int _activeTab = 0; // 0: Mahasiswa (Mandiri), 1: Admin/Staff (Email)
+
+  late final TextEditingController _nimController;
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _activeEmailController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _adminEmailController = TextEditingController();
+
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    final isEmail = widget.initialNim.contains('@');
+    final isAdmin = widget.initialNim.toLowerCase() == 'admin';
+    if (isEmail || isAdmin) {
+      _activeTab = 1;
+      _nimController = TextEditingController();
+      _adminEmailController.text =
+          isEmail ? widget.initialNim : 'gellonaindonesia@gmail.com';
+    } else {
+      _activeTab = 0;
+      _nimController = TextEditingController(text: widget.initialNim);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nimController.dispose();
+    _contactController.dispose();
+    _activeEmailController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _adminEmailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleStudentReset() async {
+    setState(() => _errorMessage = null);
+    final nim = _nimController.text.trim();
+    final contact = _contactController.text.trim();
+    final activeEmail = _activeEmailController.text.trim().toLowerCase();
+    final newPass = _newPasswordController.text;
+    final confirmPass = _confirmPasswordController.text;
+
+    if (nim.isEmpty) {
+      setState(() => _errorMessage = 'NIM mahasiswa wajib diisi.');
+      return;
+    }
+    if (contact.isEmpty) {
+      setState(() => _errorMessage =
+          'Nomor WhatsApp profil wajib diisi untuk verifikasi identitas.');
+      return;
+    }
+    if (activeEmail.isEmpty ||
+        !activeEmail.contains('@') ||
+        !activeEmail.contains('.') ||
+        activeEmail.endsWith('@student.unazlam.ac.id') ||
+        activeEmail.endsWith('@students.unazlam.ac.id')) {
+      setState(() => _errorMessage =
+          'Harap masukkan alamat email aktif yang valid (misal: nama@gmail.com). Domain @student.unazlam.ac.id belum tersedia.');
+      return;
+    }
+    if (newPass.length < 8) {
+      setState(() => _errorMessage = 'Kata sandi baru minimal harus 8 karakter.');
+      return;
+    }
+    if (newPass != confirmPass) {
+      setState(() => _errorMessage = 'Konfirmasi kata sandi tidak cocok.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final msg = await AuthService.studentSelfResetPassword(
+        nim: nim,
+        verificationContact: contact,
+        activeEmail: activeEmail,
+        newPassword: newPass,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(_ResetResult(
+        isSelfReset: true,
+        nim: nim,
+        password: newPass,
+        message: msg,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e is AuthServiceException
+            ? e.message
+            : 'Gagal mengatur ulang kata sandi: $e';
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleAdminReset() async {
+    setState(() => _errorMessage = null);
+    final email = _adminEmailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _errorMessage = 'Masukkan alamat email yang valid.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.requestPasswordReset(
+        email: email,
+        redirectTo: Uri.base.origin,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(_ResetResult(
+        isSelfReset: false,
+        message:
+            'Tautan reset telah dikirim ke $email jika terdaftar. Silakan cek inbox atau spam.',
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e is AuthServiceException
+            ? e.message
+            : 'Tautan reset gagal dikirim: $e';
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const GlassModalHeader(
+          title: 'Atur Ulang Kata Sandi',
+          subtitle:
+              'Pilih metode verifikasi untuk mengatur ulang kata sandi akun Anda.',
+          icon: Icons.lock_reset_rounded,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Segmented Tabs
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildTabButton(
+                        index: 0,
+                        label: 'Mahasiswa (Mandiri)',
+                        icon: Icons.school_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _buildTabButton(
+                        index: 1,
+                        label: 'Admin / Staff',
+                        icon: Icons.admin_panel_settings_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              if (_errorMessage != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded,
+                          color: Color(0xFFDC2626), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF991B1B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              if (_activeTab == 0) ...[
+                // Form Mahasiswa Mandiri
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primaryBorder.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shield_rounded, color: AppColors.primary, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Verifikasi 2-Faktor profil akademik: NIM & No. WhatsApp / Email terdaftar.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SaaSInputField(
+                  label: 'NIM Mahasiswa',
+                  controller: _nimController,
+                  hintText: 'Contoh: 260250023',
+                  prefixIcon: Icons.badge_outlined,
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 12),
+                SaaSInputField(
+                  label: 'Nomor WhatsApp Terdaftar',
+                  controller: _contactController,
+                  hintText: '08xxxxxxxxxx (Nomor WA profil Anda)',
+                  prefixIcon: Icons.phone_android_rounded,
+                  helperText: 'Wajib sesuai dengan nomor WhatsApp yang terdaftar di kampus.',
+                ),
+                const SizedBox(height: 12),
+                SaaSInputField(
+                  label: 'Email Aktif Anda (Gmail/Yahoo/dll)',
+                  controller: _activeEmailController,
+                  hintText: 'contoh: nama@gmail.com',
+                  prefixIcon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                  helperText: 'Gunakan email aktif Anda (bukan domain @student.unazlam.ac.id).',
+                ),
+                const SizedBox(height: 12),
+                SaaSInputField(
+                  label: 'Kata Sandi Baru (Min. 8 Karakter)',
+                  controller: _newPasswordController,
+                  hintText: '••••••••',
+                  prefixIcon: Icons.lock_outline_rounded,
+                  obscureText: _obscureNew,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureNew
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SaaSInputField(
+                  label: 'Konfirmasi Kata Sandi Baru',
+                  controller: _confirmPasswordController,
+                  hintText: '••••••••',
+                  prefixIcon: Icons.lock_reset_rounded,
+                  obscureText: _obscureConfirm,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                ),
+              ] else ...[
+                // Form Admin / Staff
+                SaaSInputField(
+                  label: 'Email Akun Admin / Dosen',
+                  controller: _adminEmailController,
+                  hintText: 'admin@unazlam.ac.id atau email terdaftar',
+                  prefixIcon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Tautan untuk membuat kata sandi baru akan dikirimkan ke email administrator/dosen.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: AppColors.textSub,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSub,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  'Batal',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _isLoading
+                    ? null
+                    : (_activeTab == 0 ? _handleStudentReset : _handleAdminReset),
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Icon(
+                        _activeTab == 0
+                            ? Icons.save_rounded
+                            : Icons.send_rounded,
+                        size: 16,
+                      ),
+                label: Text(
+                  _isLoading
+                      ? 'Memproses...'
+                      : (_activeTab == 0
+                          ? 'Perbarui Kata Sandi'
+                          : 'Kirim Tautan Email'),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabButton({
+    required int index,
+    required String label,
+    required IconData icon,
+  }) {
+    final isSelected = _activeTab == index;
+    return InkWell(
+      onTap: () {
+        if (_activeTab != index) {
+          setState(() {
+            _activeTab = index;
+            _errorMessage = null;
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? AppColors.primary : AppColors.textMuted,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? AppColors.primary : AppColors.textSub,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

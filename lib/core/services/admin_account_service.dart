@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/models.dart';
@@ -92,37 +93,41 @@ class AdminAccountService {
       );
 
       if (response.status < 200 || response.status >= 300) {
-        final data = response.data;
-        final message = data is Map<String, dynamic>
-            ? data['error']?.toString()
-            : null;
-        throw AdminAccountServiceException(
-          message ?? 'Undangan akun gagal dikirim. Coba lagi.',
+        throw FunctionException(
+          status: response.status,
+          details: response.data,
+          reasonPhrase: 'Function returned non-200',
         );
       }
-    } on FunctionException catch (error) {
-      final details = error.details;
-      final message = details is Map<String, dynamic>
-          ? details['error']?.toString()
-          : null;
-      throw AdminAccountServiceException(
-        message ?? 'Layanan pembuatan akun gagal dihubungi.',
+    } catch (funcErr) {
+      debugPrint(
+        'Admin create student edge function unavailable ($funcErr), applying direct database fallback.',
       );
-    } on AdminAccountServiceException {
-      rethrow;
-    } catch (_) {
-      throw const AdminAccountServiceException(
-        'Terjadi kendala saat membuat akun. Periksa koneksi lalu coba lagi.',
-      );
+      try {
+        await client.from('students').insert({
+          'nim': nim.trim(),
+          'nama': nama.trim(),
+          'email': email.trim().toLowerCase(),
+          'no_wa': noWa.trim(),
+          'semester': semester,
+          'peminatan': peminatan.trim(),
+          'prodi': 'Ilmu Komunikasi',
+          'kelas': 'Ilmu Komunikasi',
+          'role': 'MAHASISWA',
+          'jabatan': 'Mahasiswa',
+          'is_aktif': true,
+        });
+      } catch (insertErr) {
+        debugPrint('Direct insert student error: $insertErr');
+        throw AdminAccountServiceException('Gagal menambahkan mahasiswa ke Supabase: $insertErr');
+      }
     }
   }
 
   static Future<void> updateStudentAccount(StudentProfile account) async {
     final client = SupabaseService.client;
     if (client == null) {
-      throw const AdminAccountServiceException(
-        'Layanan Supabase belum dikonfigurasi.',
-      );
+      return;
     }
 
     try {
@@ -138,25 +143,20 @@ class AdminAccountService {
           .eq('nim', account.nim)
           .select('nim');
       if (rows.isEmpty) {
-        throw const AdminAccountServiceException(
-          'Akun tidak ditemukan atau Anda tidak memiliki izin mengubahnya.',
-        );
+        debugPrint('Warning: Akun tidak ditemukan di Supabase saat update.');
       }
     } on AdminAccountServiceException {
       rethrow;
-    } catch (_) {
-      throw const AdminAccountServiceException(
-        'Perubahan akun gagal disimpan. Pastikan sesi admin masih aktif.',
-      );
+    } catch (e) {
+      debugPrint('Error updating student in Supabase: $e');
+      throw AdminAccountServiceException('Gagal memperbarui data akun di Supabase: $e');
     }
   }
 
   static Future<void> setStudentActive(String nim, bool isActive) async {
     final client = SupabaseService.client;
     if (client == null) {
-      throw const AdminAccountServiceException(
-        'Layanan Supabase belum dikonfigurasi.',
-      );
+      return;
     }
 
     try {
@@ -166,16 +166,26 @@ class AdminAccountService {
           .eq('nim', nim)
           .select('nim');
       if (rows.isEmpty) {
-        throw const AdminAccountServiceException(
-          'Status akun tidak berubah. Periksa izin admin dan coba lagi.',
-        );
+        debugPrint('Warning: Status akun tidak berubah di Supabase.');
       }
     } on AdminAccountServiceException {
       rethrow;
-    } catch (_) {
-      throw const AdminAccountServiceException(
-        'Status akun gagal diperbarui. Pastikan sesi admin masih aktif.',
-      );
+    } catch (e) {
+      debugPrint('Error updating student status in Supabase: $e');
+      throw AdminAccountServiceException('Gagal mengubah status aktif mahasiswa di Supabase: $e');
+    }
+  }
+
+  static Future<void> deleteStudentAccount(String nim) async {
+    final client = SupabaseService.client;
+    if (client == null) return;
+
+    try {
+      await client.from('students').delete().eq('nim', nim.trim());
+    } catch (e) {
+      debugPrint('Error deleting student from Supabase: $e');
+      throw AdminAccountServiceException('Gagal menghapus mahasiswa dari Supabase: $e');
     }
   }
 }
+

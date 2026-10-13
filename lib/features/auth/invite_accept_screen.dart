@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/models.dart';
 
@@ -70,12 +71,27 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       final user = SupabaseService.client?.auth.currentUser;
       final activeNim = user?.userMetadata?['nim']?.toString() ?? user?.email;
       if (!isInvite) await AuthService.setPassword(password, userNim: activeNim);
-      final profile = await AuthService.restoreSession();
-      if (profile == null) {
-        throw const AuthServiceException(
-          'Kata sandi tersimpan, tetapi profil akun belum dapat dimuat. Silakan masuk kembali atau hubungi administrator.',
-        );
+      var profile = await AuthService.restoreSession();
+      if (profile == null && activeNim != null) {
+        final students = await SupabaseRepository.getClassDirectory();
+        profile = students
+            .where((s) => s.nim == activeNim || s.email.toLowerCase() == activeNim.toLowerCase())
+            .firstOrNull;
       }
+
+      if (profile == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kata sandi baru berhasil disimpan! Silakan masuk dengan akun Anda. 🎉'),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        return;
+      }
+
       // Bersihkan kunci kata sandi plaintext lama dari SharedPreferences
       try {
         final prefs = await SharedPreferences.getInstance();

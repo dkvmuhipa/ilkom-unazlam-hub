@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
 class GpaSimulatorScreen extends StatefulWidget {
@@ -24,24 +24,39 @@ class _GpaSimulatorScreenState extends State<GpaSimulatorScreen> {
     'E': 0.0,
   };
 
-  late Map<String, String> _selectedGrades;
+  Map<String, String> _selectedGrades = {};
+  List<Course> _courses = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Default target nilai A atau B+ untuk tiap MK
-    _selectedGrades = {
-      for (var c in DummyData.courses) c.id: 'A',
-    };
-    if (_selectedGrades.containsKey('c3')) _selectedGrades['c3'] = 'A-';
-    if (_selectedGrades.containsKey('c5')) _selectedGrades['c5'] = 'B+';
+    _loadCourses();
+  }
+
+  Future<void> _loadCourses() async {
+    setState(() => _isLoading = true);
+    try {
+      final crs = await SupabaseRepository.getCourses();
+      if (mounted) {
+        setState(() {
+          _courses = crs;
+          _selectedGrades = {
+            for (var c in crs) c.id: 'A',
+          };
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   double _calculateGpa() {
     double totalPoints = 0;
     int totalSks = 0;
 
-    for (var c in DummyData.courses) {
+    for (var c in _courses) {
       final grade = _selectedGrades[c.id] ?? 'A';
       final point = _gradePoints[grade] ?? 4.0;
       totalPoints += point * c.sks;
@@ -69,8 +84,16 @@ class _GpaSimulatorScreenState extends State<GpaSimulatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Simulasi Target Nilai & IPK')),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+
     final gpa = _calculateGpa();
-    final totalSks = DummyData.courses.fold(0, (sum, c) => sum + c.sks);
+    final totalSks = _courses.fold(0, (sum, c) => sum + c.sks);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -147,7 +170,15 @@ class _GpaSimulatorScreenState extends State<GpaSimulatorScreen> {
             ),
             const SizedBox(height: 10),
 
-            ...DummyData.courses.map((c) => _buildCourseGradeTile(c)),
+            if (_courses.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text('Belum ada mata kuliah yang terdaftar.'),
+                ),
+              )
+            else
+              ..._courses.map((c) => _buildCourseGradeTile(c)),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/dummy_data.dart';
+import '../../core/services/supabase_repository.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../models/models.dart';
 import '../../core/services/safe_launcher.dart';
 
@@ -52,70 +53,45 @@ class GroupsScreen extends StatefulWidget {
 }
 
 class _GroupsScreenState extends State<GroupsScreen> {
-  late List<EnhancedGroupItem> _groups;
+  static List<EnhancedGroupItem>? _persistentGroups;
+  List<EnhancedGroupItem> _groups = [];
+  List<Course> _courses = [];
+  List<StudentProfile> _students = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initGroups();
+    _loadData();
   }
 
-  void _initGroups() {
-    final students = DummyData.students.where((s) => s.role != 'ADMIN').toList();
-    _groups = [
-      EnhancedGroupItem(
-        id: 'grp_1',
-        namaKelompok: 'Kelompok 1 - The Communicators',
-        courseName: 'Pendidikan Kewarganegaraan',
-        assignmentTitle: 'Makalah Analisis HAM & Demokrasi',
-        linkGDrive: 'https://drive.google.com',
-        members: students.take(4).toList(),
-        tasks: [
-          GroupTaskProgress(title: 'Riset Topik & Studi Literatur', isCompleted: true),
-          GroupTaskProgress(title: 'Penyusunan Bab 1 & 2', isCompleted: true),
-          GroupTaskProgress(title: 'Pembuatan Slide Canva', isCompleted: true),
-          GroupTaskProgress(title: 'Simulasi Presentasi Tim', isCompleted: false),
-        ],
-      ),
-      EnhancedGroupItem(
-        id: 'grp_2',
-        namaKelompok: 'Kelompok 2 - Public Relations Squad',
-        courseName: 'Dasar-Dasar Ilmu Komunikasi',
-        assignmentTitle: 'Analisis Studi Kasus Komunikasi Massa',
-        linkGDrive: 'https://drive.google.com',
-        members: students.skip(4).take(4).toList(),
-        tasks: [
-          GroupTaskProgress(title: 'Penentuan Kasus Komunikasi', isCompleted: true),
-          GroupTaskProgress(title: 'Wawancara Narasumber', isCompleted: false),
-          GroupTaskProgress(title: 'Penyusunan Laporan Proyek', isCompleted: false),
-        ],
-      ),
-      EnhancedGroupItem(
-        id: 'grp_3',
-        namaKelompok: 'Kelompok 3 - Media Research Lab',
-        courseName: 'Pengantar Jurnalistik',
-        assignmentTitle: 'Produksi Buletin Kampus Edisi 1',
-        linkGDrive: 'https://drive.google.com',
-        members: students.skip(8).take(4).toList(),
-        tasks: [
-          GroupTaskProgress(title: 'Liputan Berita Kampus', isCompleted: true),
-          GroupTaskProgress(title: 'Editing Artikel & Tata Letak', isCompleted: false),
-          GroupTaskProgress(title: 'Proofreading & Cetak Mockup', isCompleted: false),
-        ],
-      ),
-    ];
-  }
-
-  Future<void> _openDrive(String url) async {
-    await safeLaunchUrl(url);
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await Future.wait([
+        SupabaseRepository.getClassDirectory(),
+        SupabaseRepository.getCourses(),
+      ]);
+      if (!mounted) return;
+      final stds = (results[0] as List<StudentProfile>).where((s) => s.role != 'ADMIN').toList();
+      final crs = results[1] as List<Course>;
+      setState(() {
+        _students = stds;
+        _courses = crs;
+        _groups = _persistentGroups ?? [];
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showCreateGroupDialog() {
     final nameController = TextEditingController();
     final assignmentController = TextEditingController();
     final linkController = TextEditingController(text: 'https://drive.google.com');
-    String selectedCourse = DummyData.courses.first.nama;
-    final nonAdminStudents = DummyData.students.where((s) => s.role != 'ADMIN').toList();
+    String selectedCourse = _courses.isNotEmpty ? _courses.first.nama : 'Pendidikan Kewarganegaraan';
+    final nonAdminStudents = _students;
     List<StudentProfile> selectedMembers = nonAdminStudents.take(4).toList();
 
     showDialog(
@@ -154,7 +130,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       labelText: 'Mata Kuliah',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    items: DummyData.courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                    items: _courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
                     onChanged: (val) {
                       if (val != null) setDialogState(() => selectedCourse = val);
                     },
@@ -329,7 +305,17 @@ class _GroupsScreenState extends State<GroupsScreen> {
               label: const Text('Tambah Kelompok', style: TextStyle(fontWeight: FontWeight.w700)),
             )
           : null,
-      body: ListView.builder(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _groups.isEmpty
+              ? EmptyStateWidget(
+                  icon: Icons.groups_rounded,
+                  title: 'Belum Ada Kelompok Tugas',
+                  subtitle: 'Kelompok tugas dan tim proyek kelas yang dibentuk akan tampil di sini.',
+                  actionLabel: widget.canManage ? 'Tambah Kelompok' : null,
+                  onAction: widget.canManage ? _showCreateGroupDialog : null,
+                )
+              : ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         itemCount: _groups.length,
         itemBuilder: (context, i) {
@@ -542,7 +528,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _openDrive(group.linkGDrive!),
+                      onPressed: () => safeLaunchUrl(group.linkGDrive!),
                       icon: const Icon(Icons.folder_shared_outlined, size: 16),
                       label: const Text('Buka Folder Google Drive Tugas'),
                       style: OutlinedButton.styleFrom(
