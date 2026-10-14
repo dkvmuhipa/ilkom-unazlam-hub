@@ -2,29 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'supabase_service.dart';
 
 class AdminAuditService {
-  static final List<Map<String, dynamic>> _localAuditLogs = [
-    {
-      'id': 'audit_init_1',
-      'user_identifier': 'admin_sys',
-      'user_name': 'Administrator',
-      'action_type': 'INIT',
-      'target_module': 'KONSOL',
-      'description': 'Konsol Administrator Akademik aktif.',
-      'metadata': {},
-      'created_at': DateTime.now().toIso8601String(),
-    }
-  ];
+  static final List<Map<String, dynamic>> _localAuditLogs = [];
 
   static Future<void> record({
     required String action,
     required String module,
     required String description,
+    String? userIdentifier,
+    String? userName,
     Map<String, dynamic> metadata = const {},
   }) async {
+    final effectiveUid = userIdentifier ?? 'admin';
+    final effectiveName = userName ?? 'Administrator';
+
     _localAuditLogs.insert(0, {
       'id': 'audit_${DateTime.now().millisecondsSinceEpoch}',
-      'user_identifier': 'admin',
-      'user_name': 'Administrator',
+      'user_identifier': effectiveUid,
+      'user_name': effectiveName,
       'action_type': action.toUpperCase(),
       'target_module': module.toUpperCase(),
       'description': description,
@@ -45,8 +39,8 @@ class AdminAuditService {
       } catch (_) {
         // Fallback langsung ke tabel audit_logs jika RPC belum ada
         await client.from('audit_logs').insert({
-          'user_identifier': 'admin',
-          'user_name': 'Administrator',
+          'user_identifier': effectiveUid,
+          'user_name': effectiveName,
           'action_type': action.toUpperCase(),
           'target_module': module.toUpperCase(),
           'description': description,
