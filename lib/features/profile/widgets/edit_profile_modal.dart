@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 
+/// Ultra-modern bottom sheet allowing students to update their profile data:
+/// WhatsApp number, Email, Study Concentration (Peminatan), Instagram, LinkedIn, and Motto/Bio.
 class EditProfileModal {
   static void show(
     BuildContext context, {
@@ -13,12 +17,14 @@ class EditProfileModal {
       String email,
       String? instagram,
       String? linkedin,
+      String? bio,
     ) onSaved,
   }) {
     final waController = TextEditingController(text: student.noWa);
     final emailController = TextEditingController(text: student.email);
     final igController = TextEditingController(text: student.instagram ?? '');
     final linkedinController = TextEditingController(text: student.linkedin ?? '');
+    final bioController = TextEditingController(text: student.bio ?? '');
 
     final peminatanOptions = [
       'Public Relations',
@@ -40,12 +46,18 @@ class EditProfileModal {
       builder: (modalCtx) => StatefulBuilder(
         builder: (context, setModalState) {
           final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+          final inputFill = isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC);
+          final inputBorder = isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0);
+          final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+          final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
+
           return Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+              color: cardBg,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+            padding: EdgeInsets.fromLTRB(22, 16, 22, 24 + bottomInset),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -53,7 +65,7 @@ class EditProfileModal {
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
+                      width: 38,
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 18),
                       decoration: BoxDecoration(
@@ -65,121 +77,91 @@ class EditProfileModal {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         child: const Icon(
                           Icons.edit_note_rounded,
-                          color: Color(0xFF1E40AF),
+                          color: Colors.white,
                           size: 22,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Edit Data Profil',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Edit Data & Kontak Mahasiswa',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w800,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Perbarui kontak, peminatan, dan motto akademik Anda',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(modalCtx),
+                        visualDensity: VisualDensity.compact,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Perbarui kontak dan peminatan konsentrasi studi Anda',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white70 : const Color(0xFF6B7280),
-                    ),
-                  ),
                   const SizedBox(height: 20),
 
-                  // WhatsApp
-                  Text(
-                    'Nomor WhatsApp Aktif',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: waController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'Contoh: 081234567890',
-                      prefixIcon: const Icon(Icons.phone_rounded, size: 18, color: Color(0xFF10B981)),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF38384E) : const Color(0xFFE5E7EB)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Email
-                  Text(
-                    'Alamat Email',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      hintText: 'nama@email.com',
-                      prefixIcon: const Icon(Icons.email_outlined, size: 18, color: Color(0xFF3B82F6)),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF38384E) : const Color(0xFFE5E7EB)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Peminatan Dropdown
-                  Text(
-                    'Konsentrasi / Peminatan',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    ),
-                  ),
+                  // 1. Konsentrasi / Peminatan Dropdown
+                  _buildFieldLabel('Konsentrasi / Peminatan Studi', textPrimary),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
+                      color: inputFill,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: isDark ? const Color(0xFF38384E) : const Color(0xFFE5E7EB)),
+                      border: Border.all(color: inputBorder),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedPeminatan,
                         isExpanded: true,
-                        dropdownColor: isDark ? const Color(0xFF28283E) : Colors.white,
+                        dropdownColor: cardBg,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1E40AF)),
                         items: peminatanOptions.map((opt) {
                           return DropdownMenuItem<String>(
                             value: opt,
-                            child: Text(
-                              opt,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
-                              ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF1E40AF)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  opt,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -193,141 +175,262 @@ class EditProfileModal {
                   ),
                   const SizedBox(height: 14),
 
-                  // Instagram
-                  Text(
-                    'Instagram (Opsional)',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    ),
-                  ),
+                  // 2. WhatsApp
+                  _buildFieldLabel('Nomor WhatsApp Aktif', textPrimary),
                   const SizedBox(height: 6),
                   TextField(
-                    controller: igController,
+                    controller: waController,
+                    keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      hintText: '@username',
-                      prefixIcon: const Icon(Icons.camera_alt_outlined, size: 18, color: Color(0xFFEC4899)),
+                      hintText: 'Contoh: 081234567890',
+                      hintStyle: TextStyle(fontSize: 12, color: textSecondary),
+                      prefixIcon: const Icon(Icons.phone_rounded, size: 18, color: Color(0xFF10B981)),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
+                      fillColor: inputFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF38384E) : const Color(0xFFE5E7EB)),
+                        borderSide: BorderSide(color: inputBorder),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
                   const SizedBox(height: 14),
 
-                  // LinkedIn
-                  Text(
-                    'LinkedIn URL / Handle (Opsional)',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  // 3. Email Mahasiswa
+                  _buildFieldLabel('Alamat Email Pribadi / Mahasiswa', textPrimary),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'nama@email.com',
+                      hintStyle: TextStyle(fontSize: 12, color: textSecondary),
+                      prefixIcon: const Icon(Icons.email_outlined, size: 18, color: Color(0xFF2563EB)),
+                      filled: true,
+                      fillColor: inputFill,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
+                  const SizedBox(height: 14),
+
+                  // 4. Motto / Bio Singkat Mahasiswa
+                  _buildFieldLabel('Motto / Bio Akademik Singkat', textPrimary),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: bioController,
+                    maxLength: 80,
+                    decoration: InputDecoration(
+                      hintText: 'Contoh: Semangat berproses di dunia komunikasi digital ✨',
+                      hintStyle: TextStyle(fontSize: 12, color: textSecondary),
+                      prefixIcon: const Icon(Icons.format_quote_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                      filled: true,
+                      fillColor: inputFill,
+                      counterText: '',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 5. Instagram
+                  _buildFieldLabel('Username Instagram', textPrimary),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: igController,
+                    decoration: InputDecoration(
+                      hintText: '@username_kamu',
+                      hintStyle: TextStyle(fontSize: 12, color: textSecondary),
+                      prefixIcon: const Icon(Icons.camera_alt_outlined, size: 18, color: Color(0xFFE11D48)),
+                      filled: true,
+                      fillColor: inputFill,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 6. LinkedIn
+                  _buildFieldLabel('Tautan Profil LinkedIn (Opsional)', textPrimary),
                   const SizedBox(height: 6),
                   TextField(
                     controller: linkedinController,
                     decoration: InputDecoration(
-                      hintText: 'linkedin.com/in/username',
+                      hintText: 'https://linkedin.com/in/username',
+                      hintStyle: TextStyle(fontSize: 12, color: textSecondary),
                       prefixIcon: const Icon(Icons.work_outline_rounded, size: 18, color: Color(0xFF0284C7)),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF28283E) : const Color(0xFFF9FAFB),
+                      fillColor: inputFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF38384E) : const Color(0xFFE5E7EB)),
+                        borderSide: BorderSide(color: inputBorder),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: inputBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
                   const SizedBox(height: 22),
 
-                  // Action Buttons
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              setModalState(() => isSaving = true);
-                              final cleanWa = waController.text.trim();
-                              final cleanEmail = emailController.text.trim();
-                              final cleanIg = igController.text.trim();
-                              final cleanLinkedin = linkedinController.text.trim();
+                  // Simpan Button with ScaleButton
+                  ScaleButton(
+                    onTap: isSaving
+                        ? null
+                        : () async {
+                            setModalState(() => isSaving = true);
+                            final cleanWa = waController.text.trim();
+                            final cleanEmail = emailController.text.trim();
+                            var cleanIg = igController.text.trim();
+                            if (cleanIg.startsWith('@')) cleanIg = cleanIg.substring(1).trim();
+                            final cleanLinkedin = linkedinController.text.trim();
+                            final cleanBio = bioController.text.trim();
 
-                              final messenger = ScaffoldMessenger.of(context);
-                              final nav = Navigator.of(modalCtx);
+                            final messenger = ScaffoldMessenger.of(context);
+                            final nav = Navigator.of(modalCtx);
 
-                              try {
-                                await AuthService.updateProfileDetails(
-                                  nim: student.nim,
-                                  noWa: cleanWa,
-                                  peminatan: selectedPeminatan,
-                                  email: cleanEmail,
-                                  instagram: cleanIg,
-                                  linkedin: cleanLinkedin,
-                                );
+                            try {
+                              await AuthService.updateProfileDetails(
+                                nim: student.nim,
+                                noWa: cleanWa,
+                                peminatan: selectedPeminatan,
+                                email: cleanEmail,
+                                instagram: cleanIg,
+                                linkedin: cleanLinkedin,
+                                bio: cleanBio,
+                              );
 
-                                onSaved(
-                                  cleanWa,
-                                  selectedPeminatan,
-                                  cleanEmail,
-                                  cleanIg.isNotEmpty ? cleanIg : null,
-                                  cleanLinkedin.isNotEmpty ? cleanLinkedin : null,
-                                );
+                              onSaved(
+                                cleanWa,
+                                selectedPeminatan,
+                                cleanEmail,
+                                cleanIg.isNotEmpty ? cleanIg : null,
+                                cleanLinkedin.isNotEmpty ? cleanLinkedin : null,
+                                cleanBio.isNotEmpty ? cleanBio : null,
+                              );
 
-                                nav.pop();
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: const Row(
-                                      children: [
-                                        Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Data profil berhasil diperbarui! 🎉'),
-                                      ],
-                                    ),
-                                    backgroundColor: const Color(0xFF10B981),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              HapticFeedback.heavyImpact();
+                              nav.pop();
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Data profil berhasil diperbarui! 🎉'),
+                                    ],
                                   ),
-                                );
-                              } catch (e) {
-                                setModalState(() => isSaving = false);
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text('Gagal menyimpan profil: $e'),
-                                    backgroundColor: const Color(0xFFEF4444),
-                                  ),
-                                );
-                              }
-                            },
-                      icon: isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.check_circle_outline_rounded, size: 18),
-                      label: Text(isSaving ? 'Menyimpan...' : 'Simpan Perubahan Profil'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E40AF),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
+                                  backgroundColor: const Color(0xFF10B981),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            } catch (e) {
+                              setModalState(() => isSaving = false);
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal menyimpan profil: $e'),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                ),
+                              );
+                            }
+                          },
+                    scaleDown: 0.96,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
+                      alignment: Alignment.center,
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Simpan Perubahan Profil',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
+
+                  const SizedBox(height: 10),
+                  Center(
                     child: TextButton(
                       onPressed: () => Navigator.pop(modalCtx),
                       child: Text(
                         'Batal',
                         style: TextStyle(
-                          color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                          color: textSecondary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -338,6 +441,17 @@ class EditProfileModal {
             ),
           );
         },
+      ),
+    );
+  }
+
+  static Widget _buildFieldLabel(String label, Color color) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: color,
       ),
     );
   }

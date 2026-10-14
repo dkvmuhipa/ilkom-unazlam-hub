@@ -176,6 +176,7 @@ class _TreasuryTransactionModalState extends State<TreasuryTransactionModal> {
 
               widget.onDeleted!(t.id);
               Navigator.pop(ctx); // Close dialog
+              if (!mounted) return;
               Navigator.pop(context); // Close bottom sheet
               messenger.showSnackBar(
                 const SnackBar(

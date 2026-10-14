@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/scale_button.dart';
@@ -5,6 +6,8 @@ import '../../../models/models.dart';
 import '../models/attendance_models.dart';
 import '../widgets/course_detail_modal.dart';
 
+/// Ultra-modern personal attendance view featuring an animated radial gauge with 75% UAS
+/// safety marker, interactive 4-stat metric cards, alpa battery meter, and course breakdown.
 class PersonalAttendanceView extends StatelessWidget {
   final bool isDark;
   final int totalSessions;
@@ -61,330 +64,428 @@ class PersonalAttendanceView extends StatelessWidget {
 
     return Column(
       children: [
-        // 1. Scan QR Quick Trigger Banner (Khusus Mahasiswa)
-        Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E40AF), Color(0xFF7C3AED)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        // 1. Quick Presensi & Izin Actions Banner
+        FadeSlideEntrance(
+          delay: const Duration(milliseconds: 60),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E40AF), Color(0xFF4338CA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E40AF).withValues(alpha: 0.28),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
                 ),
-                child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Presensi Kuliah Mandiri',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pindai QR, masukkan PIN, atau ajukan izin',
+                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Presensi Kuliah Mandiri',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                    ScaleButton(
+                      onTap: onShowScanQr,
+                      scaleDown: 0.92,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.qr_code_scanner_rounded, size: 14, color: Color(0xFF1E40AF)),
+                            SizedBox(width: 5),
+                            Text(
+                              'Presensi',
+                              style: TextStyle(
+                                color: Color(0xFF1E40AF),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Pindai QR, masukkan PIN, atau ajukan izin/sakit',
-                      style: TextStyle(fontSize: 11, color: Colors.white70),
+                    const SizedBox(width: 6),
+                    ScaleButton(
+                      onTap: () => onShowAbsenceRequest(context),
+                      scaleDown: 0.92,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.assignment_turned_in_outlined, size: 13, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              'Izin/Sakit',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ScaleButton(
-                    onTap: onShowScanQr,
-                    scaleDown: 0.92,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.qr_code_scanner_rounded, size: 14, color: Color(0xFF1E40AF)),
-                          SizedBox(width: 4),
-                          Text(
-                            'Presensi',
-                            style: TextStyle(
-                              color: Color(0xFF1E40AF),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  ScaleButton(
-                    onTap: () => onShowAbsenceRequest(context),
-                    scaleDown: 0.92,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.assignment_turned_in_outlined, size: 13, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text(
-                            'Izin/Sakit',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
         // EARLY WARNING CARD JIKA ADA RISIKO UAS
         if (hasAcademicRisk)
-          _buildAcademicWarningCard(
-            context: context,
-            atRiskCourses: atRiskCourses,
-            remainingAlpa: remainingAlpa,
-            isDark: isDark,
+          FadeSlideEntrance(
+            delay: const Duration(milliseconds: 100),
+            child: _buildAcademicWarningCard(
+              context: context,
+              atRiskCourses: atRiskCourses,
+              remainingAlpa: remainingAlpa,
+              isDark: isDark,
+            ),
           ),
 
-        // 2. HERO ATTENDANCE CARD (Donut Progress + Safe Zone Status)
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ringkasan Kehadiran',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+        // 2. HERO ATTENDANCE RADIAL GAUGE CARD (With 75% UAS Threshold Marker)
+        FadeSlideEntrance(
+          delay: const Duration(milliseconds: 140),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ringkasan Kehadiran Semester',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Semester Ganjil 2026/2027',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Semester Ganjil 2026/2027 • Standar UAS 75%',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Safe Zone Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: totalSessions == 0
-                          ? (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9))
-                          : (isSafeZone
-                              ? (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7))
-                              : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: totalSessions == 0
-                            ? (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0))
-                            : (isSafeZone ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          totalSessions == 0
-                              ? Icons.schedule_rounded
-                              : (isSafeZone ? Icons.check_circle_rounded : Icons.warning_amber_rounded),
-                          size: 13,
+                    // Safe Zone Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: totalSessions == 0
+                            ? (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9))
+                            : (isSafeZone
+                                ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
+                                : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
                           color: totalSessions == 0
-                              ? (isDark ? Colors.white60 : const Color(0xFF64748B))
-                              : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
+                              ? (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0))
+                              : (isSafeZone ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          totalSessions == 0
-                              ? 'Belum Ada Sesi'
-                              : (isSafeZone ? 'Syarat Ujian Aman' : 'Batas Kritis (<75%)'),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            totalSessions == 0
+                                ? Icons.schedule_rounded
+                                : (isSafeZone ? Icons.verified_rounded : Icons.warning_amber_rounded),
+                            size: 13,
                             color: totalSessions == 0
                                 ? (isDark ? Colors.white60 : const Color(0xFF64748B))
                                 : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Circular Gauge Donut
-              SizedBox(
-                width: 130,
-                height: 130,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 130,
-                      height: 130,
-                      child: CircularProgressIndicator(
-                        value: totalSessions > 0 ? attendanceRatio : 0.0,
-                        strokeWidth: 11,
-                        backgroundColor: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFEFF6FF),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          totalSessions == 0
-                              ? const Color(0xFF94A3B8)
-                              : (isSafeZone ? const Color(0xFF1E40AF) : const Color(0xFFEF4444)),
-                        ),
-                        strokeCap: StrokeCap.round,
+                          const SizedBox(width: 4),
+                          Text(
+                            totalSessions == 0
+                                ? 'Belum Ada Sesi'
+                                : (isSafeZone ? 'Syarat UAS Aman' : 'Batas Kritis (<75%)'),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: totalSessions == 0
+                                  ? (isDark ? Colors.white60 : const Color(0xFF64748B))
+                                  : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          totalSessions > 0 ? '$attendancePercent%' : '0%',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          'Kehadiran',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white60 : const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 22),
 
-              // 4 Stat Counters in a Row (Hadir, Izin, Sakit, Alpa)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatBox('$hadirCount', 'Hadir', const Color(0xFF10B981), isDark),
-                  _buildStatBox('$izinCount', 'Izin', const Color(0xFFF59E0B), isDark),
-                  _buildStatBox('$sakitCount', 'Sakit', const Color(0xFF3B82F6), isDark),
-                  _buildStatBox('$alpaCount', 'Alpa', const Color(0xFFEF4444), isDark),
-                ],
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 22),
 
-              // Safe Tolerance Bar
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
+                // Radial Gauge with 75% Safety Line Marker
+                SizedBox(
+                  width: 145,
+                  height: 145,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(145, 145),
+                        painter: _AttendanceRadialGaugePainter(
+                          progress: totalSessions > 0 ? attendanceRatio : 0.0,
+                          isDark: isDark,
+                          isSafeZone: isSafeZone,
+                          totalSessions: totalSessions,
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            totalSessions > 0 ? '$attendancePercent%' : '0%',
+                            style: TextStyle(
+                              fontSize: 27,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            totalSessions > 0 ? '$hadirCount/$totalSessions Sesi' : 'Kehadiran',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
+
+                const SizedBox(height: 20),
+
+                // 4 Interactive Metric Cards: Hadir, Izin, Sakit, Alpa
+                Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF1E40AF)),
+                    Expanded(
+                      child: _buildMetricCard(
+                        count: '$hadirCount',
+                        label: 'Hadir',
+                        icon: Icons.check_circle_rounded,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        'Toleransi Alpa: sisa $remainingAlpa kali dari maks 4 pertemuan sebelum tidak memenuhi syarat UAS.',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white70 : const Color(0xFF475569),
-                          height: 1.3,
-                        ),
+                      child: _buildMetricCard(
+                        count: '$izinCount',
+                        label: 'Izin',
+                        icon: Icons.assignment_turned_in_rounded,
+                        color: const Color(0xFFF59E0B),
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildMetricCard(
+                        count: '$sakitCount',
+                        label: 'Sakit',
+                        icon: Icons.medical_services_rounded,
+                        color: const Color(0xFF3B82F6),
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildMetricCard(
+                        count: '$alpaCount',
+                        label: 'Alpa',
+                        icon: Icons.cancel_rounded,
+                        color: const Color(0xFFEF4444),
+                        isDark: isDark,
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Visual Alpa Tolerance Battery Meter
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.battery_charging_full_rounded,
+                                size: 15,
+                                color: remainingAlpa <= 1 ? const Color(0xFFEF4444) : const Color(0xFF1E40AF),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Toleransi Alpa (Batas Maksimal 4 Sesi)',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            'Sisa $remainingAlpa Kali',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: remainingAlpa <= 1 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // 4 Quota blocks
+                      Row(
+                        children: List.generate(4, (i) {
+                          final isAlpaUsed = i < alpaCount;
+                          return Expanded(
+                            child: Container(
+                              height: 6,
+                              margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
+                              decoration: BoxDecoration(
+                                color: isAlpaUsed
+                                    ? const Color(0xFFEF4444)
+                                    : (isDark ? const Color(0xFF10B981) : const Color(0xFF34D399)),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // 3. COURSE ATTENDANCE BREAKDOWN (Per Mata Kuliah)
+        FadeSlideEntrance(
+          delay: const Duration(milliseconds: 180),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Kehadiran Per Mata Kuliah',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${courses.length} Mata Kuliah',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E40AF),
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 20),
-
-        // 3. COURSE ATTENDANCE BREAKDOWN (Per Mata Kuliah)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Kehadiran Per Mata Kuliah',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : const Color(0xFF111827),
-              ),
-            ),
-            Text(
-              '8 Mata Kuliah',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
-              ),
-            ),
-          ],
         ),
         const SizedBox(height: 12),
 
@@ -421,9 +522,7 @@ class PersonalAttendanceView extends StatelessWidget {
             final int coursePct = courseLogs.isNotEmpty ? ((courseHadir / courseLogs.length) * 100).round() : 100;
             final String badgeText = courseLogs.isNotEmpty ? '$coursePct% Hadir ($courseHadir/${courseLogs.length})' : 'Belum Ada Sesi';
 
-            return Material(
-            color: Colors.transparent,
-            child: InkWell(
+            return ScaleButton(
               onTap: () => CourseDetailModal.show(
                 context,
                 course: course,
@@ -431,14 +530,21 @@ class PersonalAttendanceView extends StatelessWidget {
                 history: history,
                 onShowAbsenceRequest: onShowAbsenceRequest,
               ),
-              borderRadius: BorderRadius.circular(18),
+              scaleDown: 0.98,
               child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,10 +553,10 @@ class PersonalAttendanceView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(9),
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.menu_book_rounded, color: Color(0xFF1E40AF), size: 18),
                         ),
@@ -462,17 +568,17 @@ class PersonalAttendanceView extends StatelessWidget {
                               Text(
                                 course.nama,
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF111827),
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${course.kode} • ${course.sks} SKS • ${course.dosen}',
                                 style: TextStyle(
-                                  fontSize: 10.5,
-                                  color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -486,7 +592,7 @@ class PersonalAttendanceView extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: courseLogs.isNotEmpty
                                 ? (coursePct >= 75
-                                    ? (isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5))
+                                    ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
                                     : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
                                 : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(8),
@@ -495,7 +601,7 @@ class PersonalAttendanceView extends StatelessWidget {
                             badgeText,
                             style: TextStyle(
                               fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: courseLogs.isNotEmpty
                                   ? (coursePct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
                                   : (isDark ? Colors.white60 : const Color(0xFF64748B)),
@@ -512,7 +618,7 @@ class PersonalAttendanceView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
 
-                    // Pertemuan Indicator Matrix (P1 - P16) based on real sessions recorded
+                    // Pertemuan Indicator Matrix (P1 - P16)
                     Row(
                       children: List.generate(16, (i) {
                         final pNum = i + 1;
@@ -539,107 +645,154 @@ class PersonalAttendanceView extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
         const SizedBox(height: 20),
 
         // 4. RIWAYAT PRESENSI PRIBADI REAL-TIME
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Riwayat Presensi Pribadi',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : const Color(0xFF111827),
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (history.isNotEmpty && onConfirmResetPersonalAttendance != null) ...[
-                  TextButton.icon(
-                    onPressed: onConfirmResetPersonalAttendance,
-                    icon: const Icon(Icons.delete_sweep_outlined, size: 15, color: Color(0xFFEF4444)),
-                    label: const Text(
-                      'Kosongkan',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${history.length} Log Masuk',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E40AF),
-                    ),
-                  ),
+        FadeSlideEntrance(
+          delay: const Duration(milliseconds: 220),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Riwayat Presensi Pribadi',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
-              ],
-            ),
-          ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (history.isNotEmpty && onConfirmResetPersonalAttendance != null) ...[
+                    TextButton.icon(
+                      onPressed: onConfirmResetPersonalAttendance,
+                      icon: const Icon(Icons.delete_sweep_outlined, size: 15, color: Color(0xFFEF4444)),
+                      label: const Text(
+                        'Kosongkan',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${history.length} Log Masuk',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E40AF),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
 
         if (history.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+          FadeSlideEntrance(
+            delay: const Duration(milliseconds: 240),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.how_to_reg_rounded, size: 32, color: Color(0xFF1E40AF)),
                   ),
-                  child: const Icon(Icons.how_to_reg_rounded, size: 32, color: Color(0xFF1E40AF)),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Belum Ada Riwayat Presensi Pribadi',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : const Color(0xFF111827),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Belum Ada Riwayat Presensi Pribadi',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Presensi kuliah Anda melalui pemindaian QR Code atau lembar absensi kelas akan tercatat aman di sini.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: isDark ? Colors.white60 : const Color(0xFF6B7280),
-                    height: 1.4,
+                  const SizedBox(height: 6),
+                  Text(
+                    'Presensi kuliah Anda melalui pemindaian QR Code atau lembar absensi kelas akan tercatat aman di sini.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                      height: 1.4,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           )
         else
           ...history.map((h) => _buildHistoryTile(h, isDark)),
       ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required String count,
+    required String label,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.3 : 0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 6),
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -658,14 +811,14 @@ class PersonalAttendanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF450A0A) : const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+            color: const Color(0xFFEF4444).withValues(alpha: 0.14),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -758,30 +911,6 @@ class PersonalAttendanceView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatBox(String count, String label, Color color, bool isDark) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: isDark ? Colors.white : const Color(0xFF111827),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildHistoryTile(AttendanceHistoryItem item, bool isDark) {
     final isHadir = item.status == 'Hadir';
     final isIzin = item.status == 'Izin';
@@ -792,10 +921,10 @@ class PersonalAttendanceView extends StatelessWidget {
 
     if (isHadir) {
       statusColor = const Color(0xFF10B981);
-      statusBg = isDark ? const Color(0xFF14532D) : const Color(0xFFECFDF5);
+      statusBg = isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5);
     } else if (isIzin) {
       statusColor = const Color(0xFFF59E0B);
-      statusBg = isDark ? const Color(0xFF713F12) : const Color(0xFFFFFBEB);
+      statusBg = isDark ? const Color(0xFF78350F) : const Color(0xFFFFFBEB);
     } else if (isSakit) {
       statusColor = const Color(0xFF3B82F6);
       statusBg = isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF);
@@ -806,7 +935,7 @@ class PersonalAttendanceView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
       ),
       child: Row(
@@ -837,7 +966,7 @@ class PersonalAttendanceView extends StatelessWidget {
                     if (item.pertemuanKe != null) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(4),
@@ -898,5 +1027,87 @@ class PersonalAttendanceView extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Custom painter for the attendance radial donut gauge with a 75% threshold tick marker
+class _AttendanceRadialGaugePainter extends CustomPainter {
+  final double progress;
+  final bool isDark;
+  final bool isSafeZone;
+  final int totalSessions;
+
+  _AttendanceRadialGaugePainter({
+    required this.progress,
+    required this.isDark,
+    required this.isSafeZone,
+    required this.totalSessions,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 24) / 2;
+    const strokeWidth = 11.0;
+
+    // 1. Background Track
+    final trackPaint = Paint()
+      ..color = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // 2. Active Progress Arc
+    final activeColor = totalSessions == 0
+        ? const Color(0xFF94A3B8)
+        : (isSafeZone ? const Color(0xFF10B981) : const Color(0xFFEF4444));
+
+    final progressPaint = Paint()
+      ..color = activeColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    const startAngle = -math.pi / 2;
+    final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
+
+    if (sweepAngle > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        progressPaint,
+      );
+    }
+
+    // 3. Draw 75% Threshold Marker (UAS Safety Line)
+    // 75% point is at 270 degrees from top (-pi/2 + 2*pi*0.75 = pi)
+    const thresholdAngle = startAngle + (2 * math.pi * 0.75);
+    final markerInner = Offset(
+      center.dx + (radius - strokeWidth / 2 - 3) * math.cos(thresholdAngle),
+      center.dy + (radius - strokeWidth / 2 - 3) * math.sin(thresholdAngle),
+    );
+    final markerOuter = Offset(
+      center.dx + (radius + strokeWidth / 2 + 4) * math.cos(thresholdAngle),
+      center.dy + (radius + strokeWidth / 2 + 4) * math.sin(thresholdAngle),
+    );
+
+    final markerPaint = Paint()
+      ..color = const Color(0xFFDC2626)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(markerInner, markerOuter, markerPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _AttendanceRadialGaugePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.isDark != isDark ||
+        oldDelegate.isSafeZone != isSafeZone ||
+        oldDelegate.totalSessions != totalSessions;
   }
 }

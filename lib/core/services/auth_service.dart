@@ -499,6 +499,7 @@ class AuthService {
       instagram: row['instagram']?.toString(),
       linkedin: row['linkedin']?.toString(),
       avatarUrl: row['avatar_url']?.toString(),
+      bio: row['bio']?.toString(),
     );
     if (profile.nim.isEmpty || profile.nama.isEmpty || !profile.isAktif) {
       throw const AuthServiceException(
@@ -534,7 +535,7 @@ class AuthService {
     }
   }
 
-  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email)
+  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email, Bio)
   static Future<void> updateProfileDetails({
     required String nim,
     String? noWa,
@@ -542,6 +543,7 @@ class AuthService {
     String? instagram,
     String? linkedin,
     String? email,
+    String? bio,
   }) async {
     // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
     try {
@@ -553,17 +555,19 @@ class AuthService {
       if (instagram != null) data['instagram'] = instagram;
       if (linkedin != null) data['linkedin'] = linkedin;
       if (email != null) data['email'] = email;
+      if (bio != null) data['bio'] = bio;
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
     // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
     try {
       final updates = <String, dynamic>{
-        if (noWa != null) 'no_wa': noWa,
-        if (peminatan != null) 'peminatan': peminatan,
+        if (noWa != null) 'no_wa': noWa.trim(),
+        if (peminatan != null) 'peminatan': peminatan.trim(),
         if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
         if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
         if (email != null) 'email': email.trim(),
+        if (bio != null) 'bio': bio.trim(),
       };
       if (updates.isNotEmpty) {
         await _client.from('students').update(updates).eq('nim', nim);
@@ -587,6 +591,7 @@ class AuthService {
         if (data['instagram'] != null) profile.instagram = data['instagram'].toString();
         if (data['linkedin'] != null) profile.linkedin = data['linkedin'].toString();
         if (data['email'] != null) profile.email = data['email'].toString();
+        if (data['bio'] != null) profile.bio = data['bio'].toString();
       }
     } catch (_) {}
   }

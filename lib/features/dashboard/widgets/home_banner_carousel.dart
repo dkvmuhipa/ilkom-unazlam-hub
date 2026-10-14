@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/scale_button.dart';
 import '../models/dashboard_models.dart';
 
 class HomeBannerCarousel extends StatefulWidget {
@@ -17,11 +19,40 @@ class HomeBannerCarousel extends StatefulWidget {
 }
 
 class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
-  final PageController _pageController = PageController();
+  late final PageController _pageController;
   int _currentIndex = 0;
+  Timer? _autoPlayTimer;
+  bool _isUserInteracting = false;
+
+  final List<HeroBannerData> _banners = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.94);
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _autoPlayTimer?.cancel();
+    _autoPlayTimer = Timer.periodic(const Duration(milliseconds: 4500), (timer) {
+      if (!mounted || _isUserInteracting || _banners.isEmpty) return;
+      final nextIndex = (_currentIndex + 1) % _banners.length;
+      _pageController.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _resetAutoPlay() {
+    _startAutoPlay();
+  }
 
   @override
   void dispose() {
+    _autoPlayTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -29,6 +60,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
+
     final banners = [
       HeroBannerData(
         badge: '🎯 UTS GANJIL 2026',
@@ -71,159 +103,216 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
       ),
     ];
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 122,
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (idx) => setState(() => _currentIndex = idx),
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              final b = banners[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: b.gradientColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: b.gradientColors.first.withValues(alpha: isDark ? 0.35 : 0.18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Watermark Icon di Kanan Belakang
-                    Positioned(
-                      right: -8,
-                      bottom: -15,
-                      child: Icon(
-                        b.icon,
-                        size: 92,
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Badge Kategori
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: b.badgeBg,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            b.badge,
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w900,
-                              color: b.badgeTextColor,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
+    if (_banners.length != banners.length) {
+      _banners
+        ..clear()
+        ..addAll(banners);
+    }
 
-                        // Title & Subtitle
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              b.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              b.subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontWeight: FontWeight.w500,
-                              ),
+    return RepaintBoundary(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 126,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollStartNotification) {
+                  _isUserInteracting = true;
+                } else if (notification is ScrollEndNotification) {
+                  _isUserInteracting = false;
+                  _resetAutoPlay();
+                }
+                return false;
+              },
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (idx) {
+                  setState(() => _currentIndex = idx);
+                },
+                itemCount: banners.length,
+                itemBuilder: (context, index) {
+                  final b = banners[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ScaleButton(
+                      scaleDown: 0.98,
+                      onTap: () => widget.onNavigateTab(b.tabIndex),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: b.gradientColors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: b.gradientColors.first.withValues(alpha: isDark ? 0.35 : 0.18),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
-
-                        // Button Aksi
-                        InkWell(
-                          onTap: () => widget.onNavigateTab(b.tabIndex),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Ambient Ring / Geometric Accent
+                            Positioned(
+                              right: 40,
+                              top: -20,
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                ),
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            // Watermark Icon di Kanan Belakang
+                            Positioned(
+                              right: -8,
+                              bottom: -15,
+                              child: Icon(
+                                b.icon,
+                                size: 92,
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  b.buttonLabel,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: b.gradientColors.first,
+                                // Badge Kategori
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: b.badgeBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    b.badge,
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: b.badgeTextColor,
+                                      letterSpacing: 0.4,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 11,
-                                  color: b.gradientColors.first,
+
+                                // Title & Subtitle
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      b.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      b.subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white.withValues(alpha: 0.88),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // Button Aksi dengan Tactile Feedback
+                                ScaleButton(
+                                  scaleDown: 0.94,
+                                  onTap: () => widget.onNavigateTab(b.tabIndex),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          b.buttonLabel,
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: b.gradientColors.first,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 11,
+                                          color: b.gradientColors.first,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ],
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Indicator Dots (Active: Pill 18px, Inactive: Dot 5px)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(banners.length, (index) {
+              final isActive = index == _currentIndex;
+              return GestureDetector(
+                onTap: () {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: isActive ? 18 : 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary
+                        : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
                 ),
               );
-            },
+            }),
           ),
-        ),
-        const SizedBox(height: 8),
-
-        // Indicator Dots (Active: Pill 14px, Inactive: Dot 5px)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(banners.length, (index) {
-            final isActive = index == _currentIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: isActive ? 16 : 5,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.primary
-                    : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
-                borderRadius: BorderRadius.circular(5),
-              ),
-            );
-          }),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

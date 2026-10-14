@@ -10,6 +10,7 @@ import '../../models/models.dart';
 export 'models/attendance_models.dart';
 import 'models/attendance_models.dart';
 import 'widgets/absence_request_modal.dart';
+import 'widgets/active_attendance_session_card.dart';
 import 'widgets/attendance_qr_modal.dart';
 import 'widgets/attendance_scanner_modal.dart';
 
@@ -339,11 +340,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  String _formatTimer(int totalSecs) {
-    final m = totalSecs ~/ 60;
-    final s = totalSecs % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
 
   void _showClassAttendanceModal() {
     ClassAttendanceModal.show(
@@ -858,255 +854,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ],
 
             // ==========================================
-            // LIVE ACTIVE SESSION COUNTDOWN BANNER
+            // LIVE ACTIVE SESSION COUNTDOWN CARD
             // ==========================================
             if (currentSession != null && !currentSession!.isExpired) ...[
-              Builder(
-                builder: (context) {
-                  final session = currentSession!;
-                  final secsLeft = session.remainingSeconds;
-                  final isUrgent = secsLeft < 180;
-                  final hasAttended = session.attendedNims.contains(activeNim);
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isUrgent
-                          ? (isDark ? const Color(0xFF450A0A) : const Color(0xFFFEF2F2))
-                          : (isDark ? const Color(0xFF052E16) : const Color(0xFFF0FDF4)),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isUrgent
-                            ? (isDark ? const Color(0xFF991B1B) : const Color(0xFFFCA5A5))
-                            : (isDark ? const Color(0xFF166534) : const Color(0xFF86EFAC)),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isUrgent ? const Color(0xFFEF4444) : const Color(0xFF16A34A)).withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isUrgent ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  const Text(
-                                    'SESI AKTIF',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isUrgent
-                                    ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))
-                                    : (isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7)),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isUrgent ? const Color(0xFFEF4444) : const Color(0xFF16A34A),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.timer_outlined,
-                                    size: 14,
-                                    color: isUrgent ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _formatTimer(secsLeft),
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: isUrgent ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
-                                      fontFeatures: const [FontFeature.tabularFigures()],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          session.courseName,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+              ActiveAttendanceSessionCard(
+                session: currentSession!,
+                activeNim: activeNim,
+                canManageClassAttendance: widget.canManageClassAttendance,
+                isDark: isDark,
+                onShowScanQr: () => _showScanQrModal(context),
+                onShowActiveQr: () => AttendanceScreen.showActiveQrModal(context, session: currentSession),
+                onShowAbsenceRequest: () => _showAbsenceRequestSheet(
+                  context,
+                  preselectedCourse: currentSession!.courseName,
+                  preselectedPertemuan: currentSession!.pertemuanKe,
+                ),
+                onCloseSession: widget.canManageClassAttendance
+                    ? () {
+                        final activeId = currentSession?.id;
+                        setState(() {
+                          currentSession = null;
+                          _countdownTimer?.cancel();
+                        });
+                        SupabaseRepository.closeAttendanceSession(sessionId: activeId);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sesi presensi telah ditutup oleh pengurus kelas.'),
+                            backgroundColor: Color(0xFF374151),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Token: ${session.token} • Pertemuan ke-${session.pertemuanKe}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.grey.shade700,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.people_alt_outlined, size: 14, color: Color(0xFF1E40AF)),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    widget.canManageClassAttendance
-                                        ? '${session.attendedNims.length} Hadir'
-                                        : (hasAttended ? 'Tercatat Hadir' : 'Menunggu Presensi'),
-                                    style: const TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1E40AF),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            // Tombol Tampilkan QR Code (Dapat dilihat oleh siapapun/Ketua untuk proyektor)
-                            TextButton.icon(
-                              onPressed: () => AttendanceScreen.showActiveQrModal(context, session: session),
-                              icon: const Icon(Icons.qr_code_rounded, size: 15, color: Color(0xFF1E40AF)),
-                              label: const Text('Lihat QR', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF1E40AF))),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                backgroundColor: isDark ? const Color(0xFF2E2E3E) : Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            if (widget.canManageClassAttendance) ...[
-                              TextButton.icon(
-                                onPressed: () {
-                                  final activeId = currentSession?.id;
-                                  setState(() {
-                                    currentSession = null;
-                                    _countdownTimer?.cancel();
-                                  });
-                                  SupabaseRepository.closeAttendanceSession(sessionId: activeId);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Sesi presensi telah ditutup oleh pengurus kelas.'),
-                                      backgroundColor: Color(0xFF374151),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.stop_circle_outlined, size: 15, color: Color(0xFFDC2626)),
-                                label: const Text('Tutup', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626))),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  backgroundColor: isDark ? const Color(0xFF2E1A1A) : Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ] else ...[
-                              if (!hasAttended)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ElevatedButton.icon(
-                                      onPressed: () => _showScanQrModal(context),
-                                      icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
-                                      label: const Text('Presensi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF10B981),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    OutlinedButton.icon(
-                                      onPressed: () => _showAbsenceRequestSheet(
-                                        context,
-                                        preselectedCourse: session.courseName,
-                                        preselectedPertemuan: session.pertemuanKe,
-                                      ),
-                                      icon: const Icon(Icons.assignment_turned_in_outlined, size: 13),
-                                      label: const Text('Izin/Sakit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
-                                        side: BorderSide(color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFFBBF24)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              else
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    '✅ Sudah Hadir',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF16A34A),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        );
+                      }
+                    : null,
               ),
             ],
 

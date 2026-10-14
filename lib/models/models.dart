@@ -240,6 +240,7 @@ class StudentProfile {
   String? instagram;
   String? linkedin;
   String? avatarUrl;
+  String? bio;
 
   StudentProfile({
     required this.id,
@@ -257,6 +258,7 @@ class StudentProfile {
     this.instagram,
     this.linkedin,
     this.avatarUrl,
+    this.bio,
   });
 
   StudentProfile copyWith({
@@ -275,6 +277,7 @@ class StudentProfile {
     String? instagram,
     String? linkedin,
     String? avatarUrl,
+    String? bio,
   }) {
     return StudentProfile(
       id: id ?? this.id,
@@ -292,6 +295,7 @@ class StudentProfile {
       instagram: instagram ?? this.instagram,
       linkedin: linkedin ?? this.linkedin,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
     );
   }
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 import '../../assignments/assignments_screen.dart';
 
-class UrgentAssignmentSpotlight extends StatelessWidget {
+class UrgentAssignmentSpotlight extends StatefulWidget {
   final Assignment assignment;
   final int pendingCount;
   final bool isDark;
@@ -23,14 +24,42 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
   });
 
   @override
+  State<UrgentAssignmentSpotlight> createState() => _UrgentAssignmentSpotlightState();
+}
+
+class _UrgentAssignmentSpotlightState extends State<UrgentAssignmentSpotlight>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.15, end: 0.45).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
     final borderColor = isDark ? const Color(0xFF2E2C3D) : const Color(0xFFE2E8F0);
 
     final now = DateTime.now();
-    final due = assignment.deadline;
+    final due = widget.assignment.deadline;
     final diff = due.difference(now);
     final inDays = diff.inDays;
     final inHours = diff.inHours;
@@ -60,101 +89,116 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
 
     final formattedDeadline = DateFormat('EEE, d MMM yyyy • HH:mm', 'id_ID').format(due);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final bool shouldPulse = isOverdue || isUrgent;
+
+    return Semantics(
+      label: 'Sorotan Tugas Mendesak: ${widget.assignment.judul}, batas waktu: $formattedDeadline',
+      child: RepaintBoundary(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Tugas Mendesak',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: textMain,
-                    letterSpacing: -0.3,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Tugas Mendesak',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: textMain,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${widget.pendingCount} Tugas Aktif',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF7C3AED),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '$pendingCount Tugas Aktif',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF7C3AED),
+                ScaleButton(
+                  scaleDown: 0.94,
+                  onTap: () => widget.onNavigateTab(2), // Ke Tab Tugas
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Lihat Semua',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primary),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
-            InkWell(
-              onTap: () => onNavigateTab(2), // Ke Tab Tugas
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Lihat Semua',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primary),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-        // Spotlight Card
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              AssignmentsScreen.showAssignmentDetail(
-                context,
-                assignment,
-                userNim: student.nim,
-                canManage: student.canManageAssignments,
-                onStatusChanged: onRefresh,
-              );
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: (isOverdue || isUrgent) ? accentColor.withValues(alpha: 0.6) : borderColor,
-                  width: (isOverdue || isUrgent) ? 1.4 : 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isOverdue || isUrgent)
-                        ? const Color(0xFFEF4444).withValues(alpha: isDark ? 0.25 : 0.08)
-                        : const Color(0xFF0F172A).withValues(alpha: isDark ? 0.3 : 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+            // Spotlight Card with Animated Glow if Urgent
+            AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                final pulseAlpha = shouldPulse ? _pulseAnimation.value : 0.04;
+                final borderAlpha = shouldPulse ? (_pulseAnimation.value + 0.3).clamp(0.0, 1.0) : 1.0;
+
+                return ScaleButton(
+                  scaleDown: 0.98,
+                  onTap: () {
+                    AssignmentsScreen.showAssignmentDetail(
+                      context,
+                      widget.assignment,
+                      userNim: widget.student.nim,
+                      canManage: widget.student.canManageAssignments,
+                      onStatusChanged: widget.onRefresh,
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: shouldPulse
+                            ? accentColor.withValues(alpha: borderAlpha)
+                            : borderColor,
+                        width: shouldPulse ? 1.5 : 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: shouldPulse
+                              ? const Color(0xFFEF4444).withValues(alpha: pulseAlpha)
+                              : const Color(0xFF0F172A).withValues(alpha: isDark ? 0.3 : 0.04),
+                          blurRadius: shouldPulse ? 14 : 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: child,
                   ),
-                ],
-              ),
+                );
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -180,7 +224,7 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              assignment.courseName,
+                              widget.assignment.courseName,
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
@@ -191,7 +235,7 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              assignment.judul,
+                              widget.assignment.judul,
                               style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w900,
@@ -263,17 +307,17 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
                           ),
                         ],
                       ),
-                      InkWell(
+                      ScaleButton(
+                        scaleDown: 0.92,
                         onTap: () {
                           AssignmentsScreen.showAssignmentDetail(
                             context,
-                            assignment,
-                            userNim: student.nim,
-                            canManage: student.canManageAssignments,
-                            onStatusChanged: onRefresh,
+                            widget.assignment,
+                            userNim: widget.student.nim,
+                            canManage: widget.student.canManageAssignments,
+                            onStatusChanged: widget.onRefresh,
                           );
                         },
-                        borderRadius: BorderRadius.circular(10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
@@ -292,9 +336,9 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                assignment.status == 'dikumpulkan' ||
-                                        assignment.status == 'selesai' ||
-                                        assignment.status == 'dinilai'
+                                widget.assignment.status == 'dikumpulkan' ||
+                                        widget.assignment.status == 'selesai' ||
+                                        widget.assignment.status == 'dinilai'
                                     ? 'Lihat Detail'
                                     : 'Kumpul',
                                 style: const TextStyle(
@@ -315,9 +359,9 @@ class UrgentAssignmentSpotlight extends StatelessWidget {
                 ],
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
