@@ -1,12 +1,12 @@
 -- Migration: 20261014_update_fcm_webhook_auth.sql
--- Description: Update trigger_push_notification_webhook with required Supabase Edge Gateway
--- Authorization headers (apikey + Bearer anonKey) and attach triggers to announcements,
--- assignments, and attendance_sessions.
+-- Description: Update trigger_push_notification_webhook with bulletproof pg_net handling,
+-- valid Supabase Edge Gateway Authorization headers, and automated table triggers.
 
 BEGIN;
 
--- 1. Pastikan ekstensi pg_net aktif (ekstensi HTTP Supabase)
-CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA net;
+-- 1. Buat schema net jika belum ada, lalu aktifkan ekstensi pg_net
+CREATE SCHEMA IF NOT EXISTS net;
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- 2. Fungsi trigger webhook dengan Authorization header yang valid
 CREATE OR REPLACE FUNCTION public.trigger_push_notification_webhook()
@@ -28,18 +28,39 @@ BEGIN
     'record', row_to_json(NEW)
   );
 
-  -- Panggil Edge Function via pg_net (asinkron non-blocking)
+  -- Panggil Edge Function via pg_net (mendukung schema net maupun extensions)
   BEGIN
-    PERFORM net.http_post(
-      url := v_function_url,
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'apikey', v_anon_key,
-        'Authorization', 'Bearer ' || v_anon_key,
-        'x-webhook-secret', 'ilkom_unazlam_fcm_internal_secret_2026'
-      ),
-      body := v_payload
-    );
+    IF EXISTS (
+      SELECT 1 FROM pg_proc p 
+      JOIN pg_namespace n ON p.pronamespace = n.oid 
+      WHERE n.nspname = 'net' AND p.proname = 'http_post'
+    ) THEN
+      PERFORM net.http_post(
+        url := v_function_url,
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'apikey', v_anon_key,
+          'Authorization', 'Bearer ' || v_anon_key,
+          'x-webhook-secret', 'ilkom_unazlam_fcm_internal_secret_2026'
+        ),
+        body := v_payload
+      );
+    ELSIF EXISTS (
+      SELECT 1 FROM pg_proc p 
+      JOIN pg_namespace n ON p.pronamespace = n.oid 
+      WHERE n.nspname = 'extensions' AND p.proname = 'http_post'
+    ) THEN
+      PERFORM extensions.http_post(
+        url := v_function_url,
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'apikey', v_anon_key,
+          'Authorization', 'Bearer ' || v_anon_key,
+          'x-webhook-secret', 'ilkom_unazlam_fcm_internal_secret_2026'
+        ),
+        body := v_payload
+      );
+    END IF;
   EXCEPTION WHEN OTHERS THEN
     -- Fallback aman: kegagalan network webhook tidak akan membatalkan insert data utama
     NULL;
