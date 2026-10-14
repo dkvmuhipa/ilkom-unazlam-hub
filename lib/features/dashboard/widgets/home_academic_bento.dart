@@ -46,7 +46,13 @@ class HomeAcademicBento extends StatelessWidget {
     final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-    final isAttendanceSafe = attendancePercent != null && attendancePercent! >= 75;
+    final pct = attendancePercent;
+    final isAttendanceSafe = pct != null && pct >= 75;
+    final Color? progressColor = pct == null
+        ? null
+        : (pct >= 75
+            ? const Color(0xFF10B981)
+            : (pct >= 60 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,8 +103,8 @@ class HomeAcademicBento extends StatelessWidget {
             Expanded(
               child: _buildBentoTile(
                 title: 'Presensi',
-                value: attendancePercent == null ? '-' : '$attendancePercent%',
-                subValue: attendancePercent == null
+                value: pct == null ? '-' : '$pct%',
+                subValue: pct == null
                     ? 'Belum ada data'
                     : (isAttendanceSafe ? 'Aman UAS ($hadirCount Hadir)' : 'Pantau Presensi'),
                 icon: Icons.how_to_reg_rounded,
@@ -108,10 +114,8 @@ class HomeAcademicBento extends StatelessWidget {
                 borderColor: borderColor,
                 textMain: textMain,
                 textSub: textSub,
-                progressBarValue: attendancePercent == null ? null : (attendancePercent! / 100),
-                progressBarColor: isAttendanceSafe
-                    ? const Color(0xFF10B981)
-                    : (attendancePercent! >= 60 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+                progressBarValue: pct == null ? null : (pct / 100),
+                progressBarColor: progressColor,
                 onTap: () => onNavigateTab(5), // Presensi
               ),
             ),
