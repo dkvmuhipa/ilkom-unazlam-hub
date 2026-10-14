@@ -26,6 +26,7 @@ class ProfileScreen extends StatefulWidget {
   final StudentProfile? student;
   final VoidCallback? onBack;
   final VoidCallback? onLogout;
+  final ValueChanged<StudentProfile>? onProfileUpdated;
 
   const ProfileScreen({
     super.key,
@@ -34,6 +35,7 @@ class ProfileScreen extends StatefulWidget {
     this.student,
     this.onBack,
     this.onLogout,
+    this.onProfileUpdated,
   });
 
   @override
@@ -48,29 +50,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedAvatar();
+    _loadSavedProfileDetails();
   }
 
-  Future<void> _loadSavedAvatar() async {
+  Future<void> _loadSavedProfileDetails() async {
     final student = widget.student;
     if (student == null) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('custom_avatar_${student.nim}');
-      if (saved != null && saved.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _currentAvatarUrl = saved;
-            student.avatarUrl = saved;
-          });
-        }
+      AuthService.applyCustomProfileOverrides(student, prefs);
+      final savedAvatar = prefs.getString('custom_avatar_${student.nim}');
+      if (savedAvatar != null && savedAvatar.isNotEmpty) {
+        _currentAvatarUrl = savedAvatar;
+        student.avatarUrl = savedAvatar;
       } else if (student.avatarUrl != null && student.avatarUrl!.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _currentAvatarUrl = student.avatarUrl;
-          });
-        }
+        _currentAvatarUrl = student.avatarUrl;
       }
+      if (mounted) setState(() {});
     } catch (_) {}
   }
 
@@ -370,6 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             student.bio = cleanBio;
           });
         }
+        widget.onProfileUpdated?.call(student);
       },
     );
   }
@@ -493,9 +490,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh_rounded, color: textPrimary, size: 20),
+            tooltip: 'Segarkan Profil',
+            onPressed: () => _loadSavedProfileDetails(),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _loadSavedProfileDetails();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
           children: [
             // 1. Prestigious Smart KTM Card with EMV chip, role badge & animated glow
@@ -764,7 +774,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
   Widget _buildMenuItem({
     required IconData icon,

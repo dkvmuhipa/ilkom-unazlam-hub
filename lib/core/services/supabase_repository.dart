@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show FileOptions, PostgresChangeEvent, RealtimeChannel;
 
 import '../../models/models.dart';
+import 'auth_service.dart';
 import 'supabase_service.dart';
 
 class SupabaseRepository {
@@ -649,8 +651,8 @@ class SupabaseRepository {
         'assignment_id': id,
         'student_nim': studentNim,
         'status': status,
-        if (submissionUrl != null) 'link_pengumpulan': submissionUrl,
-        if (notes != null) 'catatan': notes,
+        'link_pengumpulan': ?submissionUrl,
+        'catatan': ?notes,
         if (status == 'dikumpulkan') 'submitted_at': now,
         'updated_at': now,
       }, onConflict: 'assignment_id,student_nim');
@@ -685,8 +687,8 @@ class SupabaseRepository {
         result = rows
             .map(
               (row) {
-                final rawEmail = row['email']?.toString() ?? '';
-                final cleanEmail = rawEmail.contains('@student.unazlam.ac.id') ? '' : rawEmail;
+                final rawEmail = row['email']?.toString().trim() ?? '';
+                final cleanEmail = rawEmail;
                 return StudentProfile(
                   id: row['id']?.toString() ?? '',
                   nim: row['nim']?.toString() ?? '',
@@ -725,8 +727,8 @@ class SupabaseRepository {
           result = rows
               .map(
                 (row) {
-                  final rawEmail = row['email']?.toString() ?? '';
-                  final cleanEmail = rawEmail.contains('@student.unazlam.ac.id') ? '' : rawEmail;
+                  final rawEmail = row['email']?.toString().trim() ?? '';
+                  final cleanEmail = rawEmail;
                   return StudentProfile(
                     id: row['id']?.toString() ?? '',
                     nim: row['nim']?.toString() ?? '',
@@ -750,6 +752,16 @@ class SupabaseRepository {
       } catch (e) {
         debugPrint('Warning: query langsung tabel students gagal ($e).');
       }
+    }
+
+    // 3. Terapkan local storage overrides (custom profile) jika ada
+    if (result.isNotEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        for (final profile in result) {
+          AuthService.applyCustomProfileOverrides(profile, prefs);
+        }
+      } catch (_) {}
     }
 
     return result;

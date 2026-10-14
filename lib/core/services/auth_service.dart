@@ -265,7 +265,7 @@ class AuthService {
             'Info: Akun terverifikasi melalui data profil sistem fallback (${matched.nama} - ${matched.role}).',
           );
           if (prefs != null) {
-            _applyCustomProfileOverrides(matched, prefs);
+            applyCustomProfileOverrides(matched, prefs);
           }
           return matched;
         }
@@ -335,7 +335,7 @@ class AuthService {
       await prefs.remove('custom_pwd_admin');
       await prefs.remove('custom_pwd_16110376');
       await prefs.remove('custom_pwd_gellonaindonesia@gmail.com');
-      _applyCustomProfileOverrides(profile, prefs);
+      applyCustomProfileOverrides(profile, prefs);
     } catch (_) {}
 
     return profile;
@@ -471,7 +471,7 @@ class AuthService {
           if (row != null) {
             final profile = _profileFromRow(row);
             if (profile.isAktif) {
-              _applyCustomProfileOverrides(profile, prefs);
+              applyCustomProfileOverrides(profile, prefs);
               return profile;
             }
           }
@@ -561,23 +561,26 @@ class AuthService {
 
     // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
     try {
-      final updates = <String, dynamic>{
-        if (noWa != null) 'no_wa': noWa.trim(),
-        if (peminatan != null) 'peminatan': peminatan.trim(),
-        if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
-        if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
-        if (email != null) 'email': email.trim(),
-        if (bio != null) 'bio': bio.trim(),
-      };
-      if (updates.isNotEmpty) {
-        await _client.from('students').update(updates).eq('nim', nim);
+      final client = SupabaseService.client;
+      if (client != null) {
+        final updates = <String, dynamic>{
+          if (noWa != null) 'no_wa': noWa.trim(),
+          if (peminatan != null) 'peminatan': peminatan.trim(),
+          if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
+          if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
+          if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
+          if (bio != null) 'bio': bio.trim(),
+        };
+        if (updates.isNotEmpty) {
+          await client.from('students').update(updates).eq('nim', nim);
+        }
       }
     } catch (e) {
       debugPrint('Info: Sinkronisasi update profil ke Supabase: $e');
     }
   }
 
-  static void _applyCustomProfileOverrides(StudentProfile profile, SharedPreferences prefs) {
+  static void applyCustomProfileOverrides(StudentProfile profile, SharedPreferences prefs) {
     try {
       final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
       if (customAvatar != null && customAvatar.isNotEmpty) {
@@ -593,6 +596,13 @@ class AuthService {
         if (data['email'] != null) profile.email = data['email'].toString();
         if (data['bio'] != null) profile.bio = data['bio'].toString();
       }
+    } catch (_) {}
+  }
+
+  static Future<void> applyCustomProfileOverridesAsync(StudentProfile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      applyCustomProfileOverrides(profile, prefs);
     } catch (_) {}
   }
 

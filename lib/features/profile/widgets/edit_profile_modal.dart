@@ -335,6 +335,20 @@ class EditProfileModal {
                             final messenger = ScaffoldMessenger.of(context);
                             final nav = Navigator.of(modalCtx);
 
+                            if (cleanEmail.isNotEmpty &&
+                                (!cleanEmail.contains('@') || !cleanEmail.contains('.'))) {
+                              setModalState(() => isSaving = false);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Format alamat email tidak valid (harus mengandung @ dan domain).',
+                                  ),
+                                  backgroundColor: Color(0xFFEF4444),
+                                ),
+                              );
+                              return;
+                            }
+
                             try {
                               await AuthService.updateProfileDetails(
                                 nim: student.nim,

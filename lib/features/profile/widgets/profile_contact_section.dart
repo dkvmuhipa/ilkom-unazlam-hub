@@ -74,9 +74,7 @@ class ProfileContactSection extends StatelessWidget {
     final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
     final dividerColor = isDark ? const Color(0xFF2A2A3C) : const Color(0xFFF3F4F6);
 
-    final isCustomEmail = student.email.isNotEmpty &&
-        !student.email.endsWith('@student.unazlam.ac.id') &&
-        !student.email.endsWith('@students.unazlam.ac.id');
+    final hasEmail = student.email.trim().isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -154,13 +152,13 @@ class ProfileContactSection extends StatelessWidget {
             icon: Icons.alternate_email_rounded,
             iconColor: const Color(0xFF2563EB),
             label: 'Email Mahasiswa',
-            value: isCustomEmail ? student.email : (student.email.isNotEmpty ? student.email : 'Belum diatur'),
+            value: hasEmail ? student.email.trim() : 'Belum diatur',
             textPrimary: textPrimary,
             textSecondary: textSecondary,
             actionIcon: Icons.email_outlined,
             actionTooltip: 'Kirim Email',
-            onAction: student.email.isNotEmpty ? () => _openEmail(context, student.email) : null,
-            onTap: student.email.isNotEmpty ? () => _copyToClipboard(context, student.email, 'Email') : null,
+            onAction: hasEmail ? () => _openEmail(context, student.email.trim()) : null,
+            onTap: hasEmail ? () => _copyToClipboard(context, student.email.trim(), 'Email') : null,
           ),
           Divider(height: 22, color: dividerColor),
 

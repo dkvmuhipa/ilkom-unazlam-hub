@@ -327,6 +327,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       final students = await SupabaseRepository.getClassDirectory();
       final matched = students.where((s) => s.nim == _activeNim).firstOrNull;
       if (matched != null && mounted) {
+        await AuthService.applyCustomProfileOverridesAsync(matched);
         setState(() {
           _profile = matched;
         });
@@ -423,6 +424,9 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         student: currentUser,
         onBack: _goBack,
         onLogout: widget.onLogout,
+        onProfileUpdated: (updated) {
+          if (mounted) setState(() => _profile = updated);
+        },
       ), // 4: Profil Saya
       AttendanceScreen(
         key: ValueKey('attendance_${currentUser.nim}'),
