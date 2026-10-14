@@ -250,7 +250,21 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.email}\nNIM: ${account.nim} • ${account.jabatan}',
+                  (account.email.trim().isNotEmpty && !account.email.contains('@student.unazlam.ac.id'))
+                      ? account.email.trim()
+                      : 'Email belum ditautkan (Login via NIM)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: (account.email.trim().isNotEmpty && !account.email.contains('@student.unazlam.ac.id'))
+                        ? FontWeight.w500
+                        : FontWeight.w600,
+                    color: (account.email.trim().isNotEmpty && !account.email.contains('@student.unazlam.ac.id'))
+                        ? const Color(0xFF4B5563)
+                        : const Color(0xFFD97706),
+                  ),
+                ),
+                Text(
+                  'NIM: ${account.nim} • ${account.jabatan}',
                   style: const TextStyle(
                     fontSize: 11,
                     height: 1.4,

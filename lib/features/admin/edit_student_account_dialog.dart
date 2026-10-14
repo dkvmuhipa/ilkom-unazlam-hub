@@ -17,6 +17,7 @@ class EditStudentAccountDialog extends StatefulWidget {
 
 class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _emailController;
   late final TextEditingController _namaController;
   late final TextEditingController _noWaController;
   late final TextEditingController _peminatanController;
@@ -27,6 +28,8 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
   void initState() {
     super.initState();
     final account = widget.account;
+    final initialEmail = account.email.contains('@student.unazlam.ac.id') ? '' : account.email;
+    _emailController = TextEditingController(text: initialEmail);
     _namaController = TextEditingController(text: account.nama);
     _noWaController = TextEditingController(text: account.noWa);
     _peminatanController = TextEditingController(text: account.peminatan);
@@ -36,6 +39,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
 
   @override
   void dispose() {
+    _emailController.dispose();
     _namaController.dispose();
     _noWaController.dispose();
     _peminatanController.dispose();
@@ -46,12 +50,13 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final account = widget.account;
+    final rawEmail = _emailController.text.trim().toLowerCase();
     Navigator.of(context).pop(
       StudentProfile(
         id: account.id,
         nim: account.nim,
         nama: _namaController.text.trim(),
-        email: account.email,
+        email: rawEmail,
         noWa: _noWaController.text.trim(),
         peminatan: _peminatanController.text.trim(),
         prodi: account.prodi,
@@ -110,13 +115,28 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
                           helperText: 'NIM menjadi identitas login permanen.',
                         ),
                         const SizedBox(height: 16),
-                        // Email (Read Only)
+                        // Email Akun (Editable by Admin)
                         SaaSInputField(
-                          label: 'Email Akun',
-                          controller: TextEditingController(text: account.email),
+                          label: 'Email Akun Mahasiswa',
+                          controller: _emailController,
                           prefixIcon: Icons.alternate_email_rounded,
-                          enabled: false,
-                          helperText: 'Email terikat pada akun autentikasi Supabase.',
+                          keyboardType: TextInputType.emailAddress,
+                          hintText: 'nama@gmail.com',
+                          helperText: 'Email pribadi aktif untuk aktivasi & pemulihan akun.',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null; // Boleh kosong jika mahasiswa belum aktivasi
+                            }
+                            final clean = value.trim().toLowerCase();
+                            if (clean.endsWith('@student.unazlam.ac.id') || clean.contains('unazlam.ac.id')) {
+                              return 'Domain @student.unazlam.ac.id belum tersedia. Gunakan email pribadi (Gmail/dll).';
+                            }
+                            final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                            if (!emailRegex.hasMatch(clean)) {
+                              return 'Format email tidak valid.';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                         // Nama Lengkap
@@ -219,14 +239,16 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
               const Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Batal'),
                     ),
-                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: _submit,
                       icon: const Icon(Icons.save_outlined, size: 18),

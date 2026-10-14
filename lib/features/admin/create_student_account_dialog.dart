@@ -237,15 +237,18 @@ class _CreateStudentAccountDialogState
                           children: [
                             SaaSInputField(
                               controller: _emailController,
-                              label: 'Email Kampus / Pribadi',
-                              hintText: 'mahasiswa@unazlam.ac.id',
+                              label: 'Email Aktif Mahasiswa (Google/Pribadi)',
+                              hintText: 'nama@gmail.com',
                               prefixIcon: Icons.alternate_email_rounded,
                               isRequired: true,
                               keyboardType: TextInputType.emailAddress,
-                              helperText: 'Tautan verifikasi akan otomatis dikirimkan ke email ini.',
+                              helperText: 'Tautan verifikasi akan otomatis dikirimkan ke email aktif ini.',
                               validator: (val) {
-                                final email = val?.trim() ?? '';
+                                final email = val?.trim().toLowerCase() ?? '';
                                 if (email.isEmpty) return 'Email wajib diisi.';
+                                if (email.endsWith('@student.unazlam.ac.id') || email.contains('unazlam.ac.id')) {
+                                  return 'Domain @student.unazlam.ac.id belum tersedia. Gunakan email aktif (Gmail/dll).';
+                                }
                                 if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
                                   return 'Format email belum benar.';
                                 }

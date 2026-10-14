@@ -684,22 +684,26 @@ class SupabaseRepository {
       if (rows is List && rows.isNotEmpty) {
         result = rows
             .map(
-              (row) => StudentProfile(
-                id: row['id']?.toString() ?? '',
-                nim: row['nim']?.toString() ?? '',
-                nama: row['nama']?.toString() ?? '',
-                email: row['email']?.toString() ?? '',
-                noWa: row['no_wa']?.toString() ?? '',
-                peminatan: row['peminatan']?.toString() ?? '',
-                prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
-                semester: (row['semester'] as num?)?.toInt() ?? 1,
-                kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
-                role: row['role']?.toString() ?? 'MAHASISWA',
-                jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
-                isAktif: row['is_aktif'] as bool? ?? true,
-                instagram: row['instagram']?.toString(),
-                linkedin: row['linkedin']?.toString(),
-              ),
+              (row) {
+                final rawEmail = row['email']?.toString() ?? '';
+                final cleanEmail = rawEmail.contains('@student.unazlam.ac.id') ? '' : rawEmail;
+                return StudentProfile(
+                  id: row['id']?.toString() ?? '',
+                  nim: row['nim']?.toString() ?? '',
+                  nama: row['nama']?.toString() ?? '',
+                  email: cleanEmail,
+                  noWa: row['no_wa']?.toString() ?? '',
+                  peminatan: row['peminatan']?.toString() ?? '',
+                  prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+                  semester: (row['semester'] as num?)?.toInt() ?? 1,
+                  kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+                  role: row['role']?.toString() ?? 'MAHASISWA',
+                  jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+                  isAktif: row['is_aktif'] as bool? ?? true,
+                  instagram: row['instagram']?.toString(),
+                  linkedin: row['linkedin']?.toString(),
+                );
+              },
             )
             .toList();
       }
@@ -720,22 +724,26 @@ class SupabaseRepository {
         if (rows.isNotEmpty) {
           result = rows
               .map(
-                (row) => StudentProfile(
-                  id: row['id']?.toString() ?? '',
-                  nim: row['nim']?.toString() ?? '',
-                  nama: row['nama']?.toString() ?? '',
-                  email: row['email']?.toString() ?? '',
-                  noWa: row['no_wa']?.toString() ?? '',
-                  peminatan: row['peminatan']?.toString() ?? '',
-                  prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
-                  semester: (row['semester'] as num?)?.toInt() ?? 1,
-                  kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
-                  role: row['role']?.toString() ?? 'MAHASISWA',
-                  jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
-                  isAktif: row['is_aktif'] as bool? ?? true,
-                  instagram: row['instagram']?.toString(),
-                  linkedin: row['linkedin']?.toString(),
-                ),
+                (row) {
+                  final rawEmail = row['email']?.toString() ?? '';
+                  final cleanEmail = rawEmail.contains('@student.unazlam.ac.id') ? '' : rawEmail;
+                  return StudentProfile(
+                    id: row['id']?.toString() ?? '',
+                    nim: row['nim']?.toString() ?? '',
+                    nama: row['nama']?.toString() ?? '',
+                    email: cleanEmail,
+                    noWa: row['no_wa']?.toString() ?? '',
+                    peminatan: row['peminatan']?.toString() ?? '',
+                    prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+                    semester: (row['semester'] as num?)?.toInt() ?? 1,
+                    kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+                    role: row['role']?.toString() ?? 'MAHASISWA',
+                    jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+                    isAktif: row['is_aktif'] as bool? ?? true,
+                    instagram: row['instagram']?.toString(),
+                    linkedin: row['linkedin']?.toString(),
+                  );
+                },
               )
               .toList();
         }

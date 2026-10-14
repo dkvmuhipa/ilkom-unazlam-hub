@@ -30,11 +30,13 @@ class AdminAccountService {
           )
           .order('nama');
       return (rows as List).map((row) {
+        final rawEmail = row['email']?.toString() ?? '';
+        final cleanEmail = rawEmail.contains('@student.unazlam.ac.id') ? '' : rawEmail;
         return StudentProfile(
           id: row['id']?.toString() ?? '',
           nim: row['nim']?.toString() ?? '',
           nama: row['nama']?.toString() ?? '',
-          email: row['email']?.toString() ?? '',
+          email: cleanEmail,
           noWa: row['no_wa']?.toString() ?? '',
           peminatan: row['peminatan']?.toString() ?? '',
           prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
@@ -130,11 +132,15 @@ class AdminAccountService {
       return;
     }
 
+    final rawEmail = account.email.trim().toLowerCase();
+    final cleanEmail = (rawEmail.isEmpty || rawEmail.contains('@student.unazlam.ac.id')) ? null : rawEmail;
+
     try {
       final rows = await client
           .from('students')
           .update({
             'nama': account.nama.trim(),
+            'email': cleanEmail,
             'no_wa': account.noWa.trim(),
             'peminatan': account.peminatan.trim(),
             'semester': account.semester,
