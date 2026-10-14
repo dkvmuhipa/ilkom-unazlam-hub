@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
+import 'widgets/announcement_card.dart';
+import 'widgets/announcement_detail_sheet.dart';
+import 'widgets/announcement_filter_bar.dart';
+import 'widgets/announcement_form_dialog.dart';
+import 'widgets/announcement_headline_card.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   final bool canPost;
   final VoidCallback? onBack;
 
-  const AnnouncementsScreen({super.key, this.canPost = true, this.onBack});
+  const AnnouncementsScreen({
+    super.key,
+    this.canPost = true,
+    this.onBack,
+  });
 
   static void showAnnouncementDetail(
     BuildContext context,
@@ -23,7 +30,7 @@ class AnnouncementsScreen extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AnnouncementDetailSheet(
+      builder: (ctx) => AnnouncementDetailSheet(
         announcement: announcement,
         onChanged: onChanged,
         canManage: canManage,
@@ -37,7 +44,7 @@ class AnnouncementsScreen extends StatefulWidget {
 
 class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   String _selectedCategory = 'Semua';
-  final List<String> _categories = ['Semua', 'Akademik', 'Dosen', 'Kelas'];
+  String _searchQuery = '';
   List<Announcement> _announcements = [];
   bool _isLoading = true;
   RealtimeChannel? _realtimeChannel;
@@ -74,122 +81,108 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     }
   }
 
-  void _showAddAnnouncementDialog() {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-    String category = 'Kelas';
+  Map<String, int> _computeCategoryCounts() {
+    int disematkanCount = 0;
+    int akademikCount = 0;
+    int dosenCount = 0;
+    int kelasCount = 0;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Buat Pengumuman Baru',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Judul Pengumuman',
-                    hintText: 'Misal: Perubahan Ruang Kuliah',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: category,
-                  decoration: const InputDecoration(labelText: 'Kategori'),
-                  items: ['Akademik', 'Dosen', 'Kelas']
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setDialogState(() => category = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contentController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Isi Pengumuman',
-                    hintText:
-                        'Tuliskan informasi penting untuk seluruh mahasiswa...',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: Color(0xFF6B7280)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.trim().isEmpty) return;
-                final saved = await SupabaseRepository.createAnnouncement(
-                  judul: titleController.text.trim(),
-                  isi: contentController.text.trim(),
-                  kategori: category,
-                  isPinned: true,
-                  authorName: 'Nur Farida (Ketua Kelas)',
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (!saved) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pengumuman gagal disimpan ke server.'),
-                      ),
-                    );
-                  }
-                  return;
-                }
-                _loadAnnouncements();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Kirim'),
-            ),
-          ],
-        ),
-      ),
+    for (final a in _announcements) {
+      if (a.isPinned) disematkanCount++;
+      final lower = a.kategori.toLowerCase();
+      if (lower.contains('akademik') || lower.contains('fakultas')) {
+        akademikCount++;
+      } else if (lower.contains('dosen') || lower.contains('jadwal')) {
+        dosenCount++;
+      } else {
+        kelasCount++;
+      }
+    }
+
+    return {
+      'Semua': _announcements.length,
+      'Disematkan': disematkanCount,
+      'Akademik': akademikCount,
+      'Dosen': dosenCount,
+      'Kelas': kelasCount,
+    };
+  }
+
+  List<Announcement> _getFilteredAnnouncements() {
+    return _announcements.where((a) {
+      // 1. Category Filter
+      bool matchesCategory = true;
+      if (_selectedCategory == 'Disematkan') {
+        matchesCategory = a.isPinned;
+      } else if (_selectedCategory == 'Akademik') {
+        matchesCategory = a.kategori.toLowerCase().contains('akademik') ||
+            a.kategori.toLowerCase().contains('fakultas');
+      } else if (_selectedCategory == 'Dosen') {
+        matchesCategory = a.kategori.toLowerCase().contains('dosen') ||
+            a.kategori.toLowerCase().contains('jadwal');
+      } else if (_selectedCategory == 'Kelas') {
+        matchesCategory = !a.kategori.toLowerCase().contains('akademik') &&
+            !a.kategori.toLowerCase().contains('fakultas') &&
+            !a.kategori.toLowerCase().contains('dosen') &&
+            !a.kategori.toLowerCase().contains('jadwal');
+      }
+
+      if (!matchesCategory) return false;
+
+      // 2. Search Query Filter
+      if (_searchQuery.trim().isNotEmpty) {
+        final q = _searchQuery.toLowerCase().trim();
+        final matchesTitle = a.judul.toLowerCase().contains(q);
+        final matchesContent = a.isi.toLowerCase().contains(q);
+        final matchesAuthor = a.authorName.toLowerCase().contains(q);
+        final matchesCategoryName = a.kategori.toLowerCase().contains(q);
+        return matchesTitle || matchesContent || matchesAuthor || matchesCategoryName;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  void _openDetail(Announcement ann) {
+    AnnouncementsScreen.showAnnouncementDetail(
+      context,
+      ann,
+      onChanged: _loadAnnouncements,
+      canManage: widget.canPost,
+    );
+  }
+
+  void _openCreateDialog() {
+    AnnouncementFormDialog.show(
+      context,
+      onSuccess: _loadAnnouncements,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _selectedCategory == 'Semua'
-        ? _announcements
-        : _announcements.where((a) {
-            if (_selectedCategory == 'Akademik')
-              return a.kategori.toLowerCase().contains('akademik') ||
-                  a.kategori.toLowerCase().contains('fakultas');
-            if (_selectedCategory == 'Dosen')
-              return a.kategori.toLowerCase().contains('dosen') ||
-                  a.kategori.toLowerCase().contains('jadwal');
-            return a.kategori.toLowerCase().contains('kelas') ||
-                a.kategori.toLowerCase().contains('penting');
-          }).toList();
+    final filtered = _getFilteredAnnouncements();
+    final categoryCounts = _computeCategoryCounts();
+
+    // Check if we have a top featured headline when viewing 'Semua' and no search
+    final isDefaultFeed = _selectedCategory == 'Semua' && _searchQuery.trim().isEmpty;
+    Announcement? headlineAnnouncement;
+    List<Announcement> standardFeedList = filtered;
+
+    if (isDefaultFeed && filtered.isNotEmpty) {
+      // Find the first pinned announcement, or the very first announcement
+      final pinnedIndex = filtered.indexWhere((a) => a.isPinned);
+      if (pinnedIndex != -1) {
+        headlineAnnouncement = filtered[pinnedIndex];
+        standardFeedList = List<Announcement>.from(filtered)..removeAt(pinnedIndex);
+      } else {
+        headlineAnnouncement = filtered.first;
+        standardFeedList = filtered.sublist(1);
+      }
+    }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -198,786 +191,223 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             ? IconButton(
                 icon: const Icon(
                   Icons.arrow_back_rounded,
-                  color: Color(0xFF111827),
+                  color: Color(0xFF0F172A),
                 ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
             : null,
-        title: const Text(
-          'Pengumuman',
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Warta & Pengumuman',
+              style: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+            Text(
+              'Kabar Resmi Civitas UNAZLAM',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
             icon: const Icon(
               Icons.refresh_rounded,
-              color: Color(0xFF111827),
-              size: 20,
+              color: Color(0xFF334155),
+              size: 22,
             ),
-            onPressed: _loadAnnouncements,
+            tooltip: 'Segarkan',
+            onPressed: () => _loadAnnouncements(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: Column(
         children: [
-          // Filter Chips matching Screen 9
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _categories.map((cat) {
-                  final isSelected = cat == _selectedCategory;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedCategory = cat),
-                      borderRadius: BorderRadius.circular(20),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFF1E40AF)
-                              : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          cat,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF4B5563),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+          // Sticky Filter & Search Bar
+          AnnouncementFilterBar(
+            searchQuery: _searchQuery,
+            onSearchChanged: (val) => setState(() => _searchQuery = val),
+            onClearSearch: () => setState(() => _searchQuery = ''),
+            selectedCategory: _selectedCategory,
+            onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+            categoryCounts: categoryCounts,
           ),
 
-          // Announcements List
+          // Main Feed Stream
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filtered.isEmpty
                 ? const Center(
-                    child: Text(
-                      'Belum ada pengumuman di kategori ini.',
-                      style: TextStyle(color: Color(0xFF6B7280)),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF1E3A8A),
                     ),
                   )
-                : RefreshIndicator(
-                    onRefresh: _loadAnnouncements,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final ann = filtered[index];
-                        final isYellow = index % 2 == 0;
-
-                        return InkWell(
-                          onTap: () =>
-                              AnnouncementsScreen.showAnnouncementDetail(
-                                context,
-                                ann,
-                                onChanged: _loadAnnouncements,
-                                canManage: widget.canPost,
-                              ),
-                          borderRadius: BorderRadius.circular(18),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: const Color(0xFFE5E7EB),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Icon Badge
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: isYellow
-                                        ? const Color(0xFFFEF3C7)
-                                        : const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(
-                                    isYellow
-                                        ? Icons.campaign_rounded
-                                        : Icons.description_outlined,
-                                    color: isYellow
-                                        ? const Color(0xFFB45309)
-                                        : const Color(0xFF1E40AF),
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                // Announcement Body
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        ann.judul,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF111827),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        ann.isi,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF4B5563),
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '${ann.createdAt.day} ${_monthName(ann.createdAt.month)} ${ann.createdAt.year}',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Color(0xFF9CA3AF),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              'Oleh ${ann.authorName}',
-                                              textAlign: TextAlign.end,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                color: Color(0xFF6B7280),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: widget.canPost
-          ? FloatingActionButton(
-              onPressed: _showAddAnnouncementDialog,
-              backgroundColor: const Color(0xFF1E40AF),
-              foregroundColor: Colors.white,
-              tooltip: 'Buat Pengumuman',
-              child: const Icon(Icons.add_rounded),
-            )
-          : null,
-    );
-  }
-
-  String _monthName(int month) {
-    const m = [
-      '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return m[month];
-  }
-}
-
-class _AnnouncementDetailSheet extends StatelessWidget {
-  final Announcement announcement;
-  final VoidCallback? onChanged;
-  final bool canManage;
-
-  const _AnnouncementDetailSheet({
-    required this.announcement,
-    this.onChanged,
-    this.canManage = false,
-  });
-
-  void _showEditDialog(BuildContext context) {
-    final titleController = TextEditingController(text: announcement.judul);
-    final contentController = TextEditingController(text: announcement.isi);
-    String category = announcement.kategori;
-    bool isPinned = announcement.isPinned;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Edit Pengumuman',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Judul Pengumuman',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue:
-                      ['Akademik', 'Dosen', 'Kelas'].contains(category)
-                      ? category
-                      : 'Kelas',
-                  decoration: const InputDecoration(labelText: 'Kategori'),
-                  items: ['Akademik', 'Dosen', 'Kelas']
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setDialogState(() => category = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-                CheckboxListTile(
-                  title: const Text(
-                    'Sematkan di atas (Penting)',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  value: isPinned,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (val) =>
-                      setDialogState(() => isPinned = val ?? false),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contentController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Isi Pengumuman',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: Color(0xFF6B7280)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final judul = titleController.text.trim();
-                final isi = contentController.text.trim();
-                if (judul.isEmpty) return;
-
-                final oldValues = (
-                  announcement.judul,
-                  announcement.isi,
-                  announcement.kategori,
-                  announcement.isPinned,
-                );
-                announcement.judul = judul;
-                announcement.isi = isi;
-                announcement.kategori = category;
-                announcement.isPinned = isPinned;
-                final saved = await SupabaseRepository.updateAnnouncement(
-                  announcement,
-                );
-                if (!saved) {
-                  announcement.judul = oldValues.$1;
-                  announcement.isi = oldValues.$2;
-                  announcement.kategori = oldValues.$3;
-                  announcement.isPinned = oldValues.$4;
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Perubahan pengumuman gagal disimpan.'),
-                      ),
-                    );
-                  }
-                  return;
-                }
-
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (context.mounted) Navigator.pop(context);
-                onChanged?.call();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pengumuman berhasil diperbarui!'),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Simpan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Hapus Pengumuman?',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: Text('Hapus pengumuman "${announcement.judul}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Batal',
-              style: TextStyle(color: Color(0xFF6B7280)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-              final saved = await SupabaseRepository.deleteAnnouncement(
-                announcement.id,
-              );
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (!saved) {
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Pengumuman gagal dihapus dari server.'),
-                  ),
-                );
-                return;
-              }
-              if (nav.mounted) nav.pop();
-              onChanged?.call();
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('Pengumuman berhasil dihapus.'),
-                  backgroundColor: Color(0xFFEF4444),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _shareToWhatsApp(BuildContext context) async {
-    final text =
-        '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n*${announcement.judul}*\n\n${announcement.isi}\n\n_Diposting oleh: ${announcement.authorName} (${announcement.authorRole})_';
-    final url = 'https://wa.me/?text=${Uri.encodeComponent(text)}';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Color _categoryColor(String cat) {
-    final lower = cat.toLowerCase();
-    if (lower.contains('penting')) return const Color(0xFFEF4444);
-    if (lower.contains('akademik')) return const Color(0xFF0284C7);
-    if (lower.contains('dosen')) return const Color(0xFF8B5CF6);
-    return const Color(0xFFF59E0B);
-  }
-
-  Color _categoryBg(String cat) {
-    final lower = cat.toLowerCase();
-    if (lower.contains('penting')) return const Color(0xFFFEE2E2);
-    if (lower.contains('akademik')) return const Color(0xFFE0F2FE);
-    if (lower.contains('dosen')) return const Color(0xFFEDE9FE);
-    return const Color(0xFFFEF3C7);
-  }
-
-  String _monthName(int month) {
-    const m = [
-      '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return m[month];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final catColor = _categoryColor(announcement.kategori);
-    final catBg = _categoryBg(announcement.kategori);
-
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: catBg,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        announcement.kategori,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: catColor,
-                        ),
-                      ),
-                    ),
-                    if (announcement.isPinned) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Row(
+                : filtered.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: () => _loadAnnouncements(silent: true),
+                        color: const Color(0xFF1E3A8A),
+                        child: ListView(
+                          padding: const EdgeInsets.only(bottom: 90),
                           children: [
-                            Icon(
-                              Icons.push_pin_rounded,
-                              size: 12,
-                              color: Color(0xFFDC2626),
+                            // 1. Featured Thesis Hero (if in default overview feed)
+                            if (headlineAnnouncement != null) ...[
+                              AnnouncementHeadlineCard(
+                                announcement: headlineAnnouncement,
+                                onTap: () => _openDetail(headlineAnnouncement!),
+                              ),
+                            ],
+
+                            // 2. Section Header
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    isDefaultFeed
+                                        ? 'Warta Lainnya (${standardFeedList.length})'
+                                        : 'Hasil Warta (${filtered.length})',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF0F172A),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (_searchQuery.isNotEmpty)
+                                    Text(
+                                      '"$_searchQuery"',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF2563EB),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Disematkan',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFDC2626),
+
+                            // 3. Announcements List
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                children: standardFeedList.map((ann) {
+                                  return AnnouncementCard(
+                                    announcement: ann,
+                                    onTap: () => _openDetail(ann),
+                                  );
+                                }).toList(),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                Row(
-                  children: [
-                    if (canManage) ...[
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          color: Color(0xFF1E40AF),
-                          size: 20,
-                        ),
-                        tooltip: 'Edit Pengumuman',
-                        onPressed: () => _showEditDialog(context),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
-                        tooltip: 'Hapus Pengumuman',
-                        onPressed: () => _confirmDelete(context),
-                      ),
-                    ],
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF9CA3AF),
-                        size: 22,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF3F4F6)),
-
-          // Body
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    announcement.judul,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Author info card
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: const Color(0xFF1E40AF)
-                              .withValues(alpha: 0.15),
-                          child: Text(
-                            announcement.authorName.isNotEmpty
-                                ? announcement.authorName[0]
-                                : 'U',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E40AF),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                announcement.authorName,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1F2937),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${announcement.authorRole} • ${announcement.createdAt.day} ${_monthName(announcement.createdAt.month)} ${announcement.createdAt.year}, ${announcement.createdAt.hour.toString().padLeft(2, '0')}:${announcement.createdAt.minute.toString().padLeft(2, '0')} WITA',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Full Announcement Text
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FE),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE0E7FF)),
-                    ),
-                    child: SelectableText(
-                      announcement.isi,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        color: Color(0xFF374151),
-                        height: 1.6,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      // Copy Button
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(
-                                text:
-                                    '${announcement.judul}\n\n${announcement.isi}',
-                              ),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Teks pengumuman berhasil disalin!',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.copy_rounded, size: 16),
-                          label: const Text(
-                            'Salin Isi',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF374151),
-                            side: const BorderSide(color: Color(0xFFD1D5DB)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Share to WA
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _shareToWhatsApp(context),
-                          icon: const Icon(Icons.share_rounded, size: 16),
-                          label: const Text(
-                            'Bagikan WA',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF16A34A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
+      ),
+      floatingActionButton: widget.canPost
+          ? FloatingActionButton.extended(
+              onPressed: _openCreateDialog,
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+              elevation: 4,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text(
+                'Buat Warta',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final hasSearch = _searchQuery.trim().isNotEmpty;
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFDBEAFE),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                hasSearch ? Icons.search_off_rounded : Icons.notifications_none_rounded,
+                size: 40,
+                color: const Color(0xFF1E3A8A),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              hasSearch ? 'Warta Tidak Ditemukan' : 'Belum Ada Pengumuman',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              hasSearch
+                  ? 'Tidak ada pengumuman yang cocok dengan kata kunci "$_searchQuery". Coba cari dengan kata kunci lain.'
+                  : 'Belum ada pengumuman yang diterbitkan untuk kategori $_selectedCategory.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (hasSearch)
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _searchQuery = ''),
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Hapus Pencarian'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1E3A8A),
+                  side: const BorderSide(color: Color(0xFFBFDBFE)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
+            else if (widget.canPost)
+              ElevatedButton.icon(
+                onPressed: _openCreateDialog,
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Buat Pengumuman Baru'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
