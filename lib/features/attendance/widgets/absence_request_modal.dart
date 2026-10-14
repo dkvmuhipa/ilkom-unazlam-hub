@@ -326,7 +326,7 @@ class AbsenceRequestModal {
                                       const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                        child: Text('Pengajuan $selectedStatus untuk "$selectedCourse" berhasil dicatat! ðŸ“„'),
+                                        child: Text('Pengajuan $selectedStatus untuk "$selectedCourse" berhasil dicatat! 📄'),
                                       ),
                                     ],
                                   ),

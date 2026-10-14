@@ -119,7 +119,7 @@ class AttendanceScannerModal {
                     const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Presensi Hadir untuk "${targetSession.courseName}" berhasil diverifikasi! ðŸŽ‰'),
+                      child: Text('Presensi Hadir untuk "${targetSession.courseName}" berhasil diverifikasi! 🎉'),
                     ),
                   ],
                 ),
@@ -503,7 +503,7 @@ class AttendanceScannerModal {
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  digit.isNotEmpty ? digit : (isCurrent ? 'â€¢' : ''),
+                                  digit.isNotEmpty ? digit : (isCurrent ? '•' : ''),
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.w900,

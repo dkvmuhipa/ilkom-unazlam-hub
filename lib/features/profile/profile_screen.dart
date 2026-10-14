@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -81,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
             const SizedBox(width: 8),
-            Text('$label berhasil disalin ke papan klip! ðŸ“‹'),
+            Text('$label berhasil disalin ke papan klip! 📋'),
           ],
         ),
         backgroundColor: const Color(0xFF10B981),
@@ -264,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 8),
-                  Text('Foto profil berhasil diperbarui! ðŸŽ‰'),
+                  Text('Foto profil berhasil diperbarui! 🎉'),
                 ],
               ),
               backgroundColor: const Color(0xFF10B981),
@@ -313,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                 SizedBox(width: 8),
-                Text('Avatar profil berhasil diterapkan! âœ¨'),
+                Text('Avatar profil berhasil diterapkan! ✨'),
               ],
             ),
             backgroundColor: const Color(0xFF10B981),
@@ -964,7 +964,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconColor: const Color(0xFF8B5CF6),
                       iconBg: const Color(0xFFF5F3FF),
                       title: 'Presensi',
-                      subtitle: 'Buka Rekap âž”',
+                      subtitle: 'Buka Rekap ➔',
                       cardBg: cardBg,
                       borderColor: borderColor,
                       textPrimary: textPrimary,
@@ -1072,7 +1072,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildDetailRow(
                     Icons.school_rounded,
                     'Status Terdaftar',
-                    'Aktif â€¢ Angkatan 2026 FISIP UNAZLAM',
+                    'Aktif • Angkatan 2026 FISIP UNAZLAM',
                     textPrimary,
                     textSecondary,
                   ),

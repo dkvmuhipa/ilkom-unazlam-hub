@@ -627,8 +627,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             Text(
               widget.canManageClassAttendance
-                  ? 'Akses Pengurus â€¢ ${studentProfile.nama}'
-                  : '${studentProfile.nama} â€¢ ${studentProfile.nim}',
+                  ? 'Akses Pengurus • ${studentProfile.nama}'
+                  : '${studentProfile.nama} • ${studentProfile.nim}',
               style: TextStyle(
                 color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                 fontSize: 11,
@@ -973,7 +973,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Token: ${session.token} â€¢ Pertemuan ke-${session.pertemuanKe}',
+                          'Token: ${session.token} • Pertemuan ke-${session.pertemuanKe}',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -1092,7 +1092,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Text(
-                                    'âœ… Sudah Hadir',
+                                    '✅ Sudah Hadir',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,

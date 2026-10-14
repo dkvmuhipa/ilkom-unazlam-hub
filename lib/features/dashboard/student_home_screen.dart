@@ -135,10 +135,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi â˜€ï¸';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang ðŸŒ¤ï¸';
-    if (hour >= 15 && hour < 18) return 'Selamat Sore ðŸŒ‡';
-    return 'Selamat Malam ðŸŒ™';
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore';
+    return 'Selamat Malam';
   }
 
   String _formatCurrency(int amount) {
@@ -297,7 +297,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const Icon(Icons.school_rounded, size: 12, color: AppColors.primary),
                   const SizedBox(width: 4),
                   Text(
-                    'Semester ${student.semester} â€¢ Ganjil',
+                    'Semester ${student.semester} • Ganjil',
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
@@ -312,7 +312,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${_getGreeting()}, $firstName ðŸ‘‹',
+          '${_getGreeting()}, $firstName 👋',
           style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w900,
@@ -558,7 +558,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     Text(
                       attendancePercent == null
                           ? 'Belum Ada Presensi'
-                          : '$hadirCount Hadir â€¢ $attendancePercent%',
+                          : '$hadirCount Hadir • $attendancePercent%',
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w900,
@@ -774,7 +774,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Presensi Aktif â€¢ ${session.courseName}',
+                  'Presensi Aktif • ${session.courseName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -787,7 +787,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 const SizedBox(height: 1),
                 Text(
                   attended
-                      ? 'Kamu sudah terdata hadir ðŸŽ‰'
+                      ? 'Kamu sudah terdata hadir 🎉'
                       : 'Sisa waktu ${session.remainingSeconds ~/ 60} menit',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w700),
                 ),
@@ -1221,7 +1221,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    'Hari ini libur â€¢ Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
+                    'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -1246,7 +1246,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 _buildSchedulePillButton(
-                  title: 'Mendatang â€¢ $_nextActiveDayName (${_upcomingCourses.length})',
+                  title: 'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
                   isSelected: _scheduleViewMode == 1,
                   isDark: isDark,
                   onTap: () => setState(() => _scheduleViewMode = 1),
@@ -1378,7 +1378,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ? '$minutesUntilStart MNT LAGI'
             : (isToday
                 ? '${course.jamMulai} - ${course.jamSelesai}'
-                : '${course.hari} â€¢ ${course.jamMulai} - ${course.jamSelesai}'));
+                : '${course.hari} • ${course.jamMulai} - ${course.jamSelesai}'));
 
     return InkWell(
       onTap: () {
@@ -1519,7 +1519,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${course.dosen} â€¢ ${course.sks} SKS',
+                  '${course.dosen} • ${course.sks} SKS',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
