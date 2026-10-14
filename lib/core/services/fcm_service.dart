@@ -125,12 +125,15 @@ class FcmService {
       // Simpan/Update token ke Supabase jika client aktif
       final client = SupabaseService.client;
       if (client != null && studentNim.isNotEmpty) {
-        await client.from('user_push_tokens').upsert({
-          'nim': studentNim,
-          'token': token,
-          'platform': defaultTargetPlatform.name,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+        await client.from('user_push_tokens').upsert(
+          {
+            'nim': studentNim,
+            'token': token,
+            'platform': defaultTargetPlatform.name,
+            'updated_at': DateTime.now().toIso8601String(),
+          },
+          onConflict: 'token',
+        );
         debugPrint('FCM Token tersimpan di Supabase.');
       }
 
