@@ -1,12 +1,18 @@
 -- Migration: 20261014_update_fcm_webhook_auth.sql
--- Description: Update trigger_push_notification_webhook with bulletproof pg_net handling,
--- valid Supabase Edge Gateway Authorization headers, and automated table triggers.
+-- Description: Drop lingering empty net schema if not owned by pg_net,
+-- enable pg_net cleanly, and attach push notification triggers.
 
-BEGIN;
-
--- 1. Buat schema net jika belum ada, lalu aktifkan ekstensi pg_net
-CREATE SCHEMA IF NOT EXISTS net;
-CREATE EXTENSION IF NOT EXISTS pg_net;
+-- 1. Bersihkan schema net manual (jika terlanjur dibuat) agar pg_net dapat membuat schema miliknya sendiri
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net') THEN
+    EXECUTE 'DROP SCHEMA IF EXISTS net CASCADE';
+    EXECUTE 'CREATE EXTENSION pg_net';
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  -- Abaikan jika sudah ada atau dikelola sistem
+  NULL;
+END $$;
 
 -- 2. Fungsi trigger webhook dengan Authorization header yang valid
 CREATE OR REPLACE FUNCTION public.trigger_push_notification_webhook()
@@ -28,7 +34,7 @@ BEGIN
     'record', row_to_json(NEW)
   );
 
-  -- Panggil Edge Function via pg_net (mendukung schema net maupun extensions)
+  -- Panggil Edge Function via pg_net (asinkron non-blocking)
   BEGIN
     IF EXISTS (
       SELECT 1 FROM pg_proc p 
@@ -62,7 +68,7 @@ BEGIN
       );
     END IF;
   EXCEPTION WHEN OTHERS THEN
-    -- Fallback aman: kegagalan network webhook tidak akan membatalkan insert data utama
+    -- Fallback aman: kegagalan network tidak akan membatalkan insert data utama
     NULL;
   END;
 
@@ -90,5 +96,3 @@ CREATE TRIGGER trigger_attendance_session_push
   AFTER INSERT ON public.attendance_sessions
   FOR EACH ROW
   EXECUTE FUNCTION public.trigger_push_notification_webhook();
-
-COMMIT;
