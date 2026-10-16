@@ -3,132 +3,30 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/supabase_repository.dart';
 import '../../../models/models.dart';
+import '../models/admin_models.dart';
+import 'admin_broadcast_hub_modal.dart';
 import 'admin_common_widgets.dart';
 
 class AdminCreationModals {
   static void showBroadcastAnnouncementDialog({
     required BuildContext context,
+    List<ClassItem> classes = const [],
     required Future<void> Function() onRefresh,
     required void Function(String message, {bool isError}) onShowMessage,
     required void Function({
       required String action,
       required String module,
       required String description,
+      Map<String, dynamic> metadata,
     }) onRecordAudit,
   }) {
-    final titleCtrl = TextEditingController();
-    final bodyCtrl = TextEditingController();
-    String category = 'Penting';
-    bool isPinned = false;
-
-    showDialog(
+    AdminBroadcastHubModal.show(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.campaign_rounded, color: AppColors.primary, size: 24),
-              SizedBox(width: 10),
-              Text('Broadcast Pengumuman', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AdminFormLabel('Judul Pengumuman'),
-                AdminFormField(controller: titleCtrl, hintText: 'Contoh: Perubahan Jadwal Kuliah & Ujian'),
-                const SizedBox(height: 12),
-                const AdminFormLabel('Kategori'),
-                AdminDropdownField<String>(
-                  value: category,
-                  items: const ['Penting', 'Akademik', 'Info Fakultas', 'Jadwal Kuliah', 'Tugas'],
-                  onChanged: (val) {
-                    if (val != null) setDialogState(() => category = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-                const AdminFormLabel('Isi Pengumuman'),
-                TextField(
-                  controller: bodyCtrl,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: 'Tuliskan informasi akademik resmi untuk mahasiswa...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Sematkan di Atas (Pin)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  value: isPinned,
-                  onChanged: (v) => setDialogState(() => isPinned = v),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.notifications_active_rounded, color: AppColors.primary, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Pesan ini akan otomatis disebarkan melalui Notifikasi Push FCM ke HP seluruh mahasiswa.',
-                          style: TextStyle(fontSize: 10.5, color: AppColors.primary, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-            FilledButton.icon(
-              icon: const Icon(Icons.send_rounded, size: 16),
-              label: const Text('Terbitkan & Push'),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              onPressed: () async {
-                if (titleCtrl.text.trim().isEmpty || bodyCtrl.text.trim().isEmpty) {
-                  onShowMessage('Judul dan isi pengumuman harus diisi.', isError: true);
-                  return;
-                }
-                Navigator.pop(ctx);
-                final ok = await SupabaseRepository.createAnnouncement(
-                  judul: titleCtrl.text.trim(),
-                  isi: bodyCtrl.text.trim(),
-                  kategori: category,
-                  isPinned: isPinned,
-                  authorName: 'Admin Akademik',
-                );
-                if (ok) {
-                  onRecordAudit(
-                    action: 'CREATE',
-                    module: 'PENGUMUMAN',
-                    description: 'Menerbitkan pengumuman "${titleCtrl.text.trim()}" dan mengirim broadcast push.',
-                  );
-                  onShowMessage('Pengumuman resmi diterbitkan & broadcast push dikirimkan!');
-                  await onRefresh();
-                } else {
-                  onShowMessage('Pengumuman gagal diterbitkan.', isError: true);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(() {
-      titleCtrl.dispose();
-      bodyCtrl.dispose();
-    });
+      classes: classes,
+      onRefresh: onRefresh,
+      onShowMessage: onShowMessage,
+      onRecordAudit: onRecordAudit,
+    );
   }
 
   static void showCreateAssignmentDialog({

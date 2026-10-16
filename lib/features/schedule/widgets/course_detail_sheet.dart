@@ -5,6 +5,7 @@ import '../../../core/services/safe_launcher.dart';
 import '../../../core/services/supabase_repository.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
+import 'course_reschedule_modal.dart';
 
 class CourseDetailSheet extends StatefulWidget {
   final Course course;
@@ -517,7 +518,124 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
+
+                  // Banner Penyesuaian Sesi Khusus (Jika ada Override Aktif)
+                  if (c.hasActiveOverride) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: c.isCancelledToday
+                            ? const Color(0xFFFEF2F2)
+                            : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: c.isCancelledToday
+                              ? const Color(0xFFFECACA)
+                              : const Color(0xFFFDE68A),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                c.isCancelledToday
+                                    ? Icons.cancel_rounded
+                                    : Icons.warning_amber_rounded,
+                                size: 18,
+                                color: c.isCancelledToday
+                                    ? const Color(0xFFDC2626)
+                                    : const Color(0xFFD97706),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'PERUBAHAN JADWAL: ${c.override!.statusBadgeLabel}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: c.isCancelledToday
+                                        ? const Color(0xFF991B1B)
+                                        : const Color(0xFF92400E),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (c.override!.alasan != null &&
+                              c.override!.alasan!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Pesan Dosen: ${c.override!.alasan}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: c.isCancelledToday
+                                    ? const Color(0xFFB91C1C)
+                                    : const Color(0xFFB45309),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Tombol Aksi Penyesuaian Jadwal (Khusus Pengurus / Admin)
+                  if (widget.canManage) ...[
+                    ScaleButton(
+                      onTap: () {
+                        CourseRescheduleModal.show(
+                          context,
+                          c,
+                          onSaved: () {
+                            widget.onCourseUpdated?.call();
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.edit_calendar_rounded,
+                              size: 17,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                c.hasActiveOverride
+                                    ? 'Ubah Penyesuaian (${c.override!.statusBadgeLabel})'
+                                    : 'Sesuaikan Sesi Ini (Reschedule / Daring / Ruang)',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1D4ED8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
                   // Schedule Info Card
                   Container(
@@ -558,13 +676,33 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${c.hari}, ${c.jamMulai} - ${c.jamSelesai} WITA',
-                                    style: const TextStyle(
+                                    c.isCancelledToday
+                                        ? '${c.hari} • KELAS DITIADAKAN'
+                                        : '${c.hari}, ${c.effectiveJamMulai} - ${c.effectiveJamSelesai} WITA',
+                                    style: TextStyle(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF0F172A),
+                                      color: c.isCancelledToday
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF0F172A),
                                     ),
                                   ),
+                                  if (c.hasActiveOverride &&
+                                      (c.jamMulai != c.effectiveJamMulai ||
+                                          c.jamSelesai !=
+                                              c.effectiveJamSelesai)) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Jadwal Normal: ${c.jamMulai} - ${c.jamSelesai} WITA (Digeser)',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF94A3B8),
+                                        decoration:
+                                            TextDecoration.lineThrough,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -578,7 +716,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: isOnlineClass
+                                color: isOnlineClass || c.isOnlineOverride
                                     ? const Color(0xFFEFF6FF)
                                     : (isHybridClass
                                         ? const Color(0xFFF3E8FF)
@@ -586,12 +724,12 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                isOnlineClass
+                                isOnlineClass || c.isOnlineOverride
                                     ? Icons.videocam_rounded
                                     : (isHybridClass
                                         ? Icons.sensors_rounded
                                         : Icons.meeting_room_outlined),
-                                color: isOnlineClass
+                                color: isOnlineClass || c.isOnlineOverride
                                     ? const Color(0xFF2563EB)
                                     : (isHybridClass
                                         ? const Color(0xFF7C3AED)
@@ -605,7 +743,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isOnlineClass
+                                    isOnlineClass || c.isOnlineOverride
                                         ? 'Mode Perkuliahan Virtual'
                                         : (isHybridClass
                                             ? 'Mode Perkuliahan Hybrid'
@@ -618,25 +756,40 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    isOnlineClass
+                                    isOnlineClass || c.isOnlineOverride
                                         ? 'Tatap Maya via Zoom / GMeet'
-                                        : '${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"} • Gedung FISIP',
+                                        : '${c.effectiveRuangan.isNotEmpty ? c.effectiveRuangan : "Ruang A2"} • Gedung FISIP',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF0F172A),
                                     ),
                                   ),
+                                  if (c.hasActiveOverride &&
+                                      c.ruangan != c.effectiveRuangan &&
+                                      !c.isOnlineOverride) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Ruang Normal: ${c.ruangan} (Pindah)',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF94A3B8),
+                                        decoration:
+                                            TextDecoration.lineThrough,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        if (c.linkVirtual != null &&
-                            c.linkVirtual!.trim().isNotEmpty) ...[
+                        if (c.effectiveLinkVirtual != null &&
+                            c.effectiveLinkVirtual!.trim().isNotEmpty) ...[
                           const SizedBox(height: 14),
                           ScaleButton(
-                            onTap: () => safeLaunchUrl(c.linkVirtual!),
+                            onTap: () => safeLaunchUrl(c.effectiveLinkVirtual!),
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -654,16 +807,16 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                 children: [
                                   Icon(
                                     Icons.video_call_rounded,
-                                    color: Colors.white,
                                     size: 18,
+                                    color: Colors.white,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Buka Link Kuliah Online (Zoom)',
+                                    'Masuk Kuliah Online',
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w800,
                                       fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],

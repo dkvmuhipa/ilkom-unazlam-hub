@@ -31,12 +31,13 @@ class CourseTimelineCard extends StatelessWidget {
   }
 
   bool _isCourseOngoing(Course c) {
+    if (c.isCancelledToday) return false;
     final now = DateTime.now();
     final today = CourseScheduleService.getDayName(now);
     if (today.toLowerCase() != c.hari.trim().toLowerCase()) return false;
     try {
-      final startParts = c.jamMulai.split(':');
-      final endParts = c.jamSelesai.split(':');
+      final startParts = c.effectiveJamMulai.split(':');
+      final endParts = c.effectiveJamSelesai.split(':');
       final startDt = DateTime(
         now.year,
         now.month,
@@ -58,11 +59,12 @@ class CourseTimelineCard extends StatelessWidget {
   }
 
   bool _isCourseFinished(Course c) {
+    if (c.isCancelledToday) return false;
     final now = DateTime.now();
     final today = CourseScheduleService.getDayName(now);
     if (today.toLowerCase() != c.hari.trim().toLowerCase()) return false;
     try {
-      final endParts = c.jamSelesai.split(':');
+      final endParts = c.effectiveJamSelesai.split(':');
       final endDt = DateTime(
         now.year,
         now.month,
@@ -78,8 +80,8 @@ class CourseTimelineCard extends StatelessWidget {
 
   int _calculateDurationMinutes(Course c) {
     try {
-      final s = c.jamMulai.split(':');
-      final e = c.jamSelesai.split(':');
+      final s = c.effectiveJamMulai.split(':');
+      final e = c.effectiveJamSelesai.split(':');
       final startMin = int.parse(s[0]) * 60 + int.parse(s[1]);
       final endMin = int.parse(e[0]) * 60 + int.parse(e[1]);
       return endMin - startMin;
@@ -212,25 +214,40 @@ class CourseTimelineCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  c.jamMulai,
+                  c.isCancelledToday ? '-' : c.effectiveJamMulai,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
-                    color: isOngoing
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFF0F172A),
+                    color: c.isCancelledToday
+                        ? const Color(0xFFEF4444)
+                        : (isOngoing
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF0F172A)),
                     letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  c.jamSelesai,
-                  style: const TextStyle(
+                  c.isCancelledToday ? 'Batal' : c.effectiveJamSelesai,
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: c.isCancelledToday
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF64748B),
                   ),
                 ),
+                if (c.hasActiveOverride && c.jamMulai != c.effectiveJamMulai) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    c.jamMulai,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: Color(0xFF94A3B8),
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
@@ -365,6 +382,37 @@ class CourseTimelineCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (c.hasActiveOverride) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.isCancelledToday
+                                      ? const Color(0xFFFEE2E2)
+                                      : const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: c.isCancelledToday
+                                        ? const Color(0xFFFCA5A5)
+                                        : const Color(0xFFFDE68A),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Text(
+                                  c.override!.statusBadgeLabel,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: c.isCancelledToday
+                                        ? const Color(0xFFB91C1C)
+                                        : const Color(0xFFB45309),
+                                  ),
+                                ),
+                              ),
+                            ],
                             const Spacer(),
                             if (isOngoing)
                               Container(
@@ -442,22 +490,51 @@ class CourseTimelineCard extends StatelessWidget {
                         // Room location
                         Row(
                           children: [
-                            const Icon(
-                              Icons.location_on_outlined,
+                            Icon(
+                              c.isOnlineOverride
+                                  ? Icons.videocam_rounded
+                                  : Icons.location_on_outlined,
                               size: 13,
-                              color: Color(0xFF64748B),
+                              color: c.isOnlineOverride
+                                  ? const Color(0xFF2563EB)
+                                  : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              c.ruangan.isNotEmpty ? c.ruangan : 'Ruang A2',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF334155),
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Text(
+                                c.isCancelledToday
+                                    ? 'Kelas ditiadakan / libur'
+                                    : (c.effectiveRuangan.isNotEmpty
+                                        ? c.effectiveRuangan
+                                        : 'Ruang A2'),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: c.isCancelledToday
+                                      ? const Color(0xFFDC2626)
+                                      : const Color(0xFF334155),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
+                        if (c.hasActiveOverride &&
+                            c.override!.alasan != null &&
+                            c.override!.alasan!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Catatan: ${c.override!.alasan}',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFFD97706),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                         const SizedBox(height: 10),
                         const Divider(height: 1, color: Color(0xFFE2E8F0)),
                         const SizedBox(height: 8),

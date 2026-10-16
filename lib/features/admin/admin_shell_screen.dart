@@ -1196,6 +1196,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   void _showBroadcastAnnouncementDialog() {
     AdminCreationModals.showBroadcastAnnouncementDialog(
       context: context,
+      classes: _classes,
       onRefresh: _refreshAllAdminData,
       onShowMessage: _showAdminMessage,
       onRecordAudit: _recordAudit,

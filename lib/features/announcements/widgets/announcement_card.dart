@@ -117,6 +117,27 @@ class AnnouncementCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (announcement.targetAudience != 'ALL') ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          announcement.targetAudience == 'ANGKATAN'
+                              ? 'Angkatan ${announcement.targetAngkatan ?? ""}'
+                              : 'Kelas ${announcement.targetKelas ?? ""}',
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
                     const Spacer(),
                     // Read Time Estimate
                     Text(

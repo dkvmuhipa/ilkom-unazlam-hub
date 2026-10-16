@@ -37,14 +37,14 @@ class CourseScheduleService {
     return '';
   }
 
-  /// Mengembalikan mata kuliah untuk hari ini, diurutkan berdasarkan jam mulai.
+  /// Mengembalikan mata kuliah untuk hari ini, diurutkan berdasarkan jam mulai efektif.
   static List<Course> getTodayCourses(List<Course> allCourses, [DateTime? now]) {
     final dt = now ?? DateTime.now();
     final today = getDayName(dt);
     final list = allCourses
         .where((c) => c.hari.trim().toLowerCase() == today.toLowerCase())
         .toList();
-    list.sort((a, b) => a.jamMulai.compareTo(b.jamMulai));
+    list.sort((a, b) => a.effectiveJamMulai.compareTo(b.effectiveJamMulai));
     return list;
   }
 
@@ -53,8 +53,9 @@ class CourseScheduleService {
     if (todayCourses.isEmpty) return false;
     final dt = now ?? DateTime.now();
     for (final c in todayCourses) {
+      if (c.isCancelledToday) continue;
       try {
-        final endParts = c.jamSelesai.split(':');
+        final endParts = c.effectiveJamSelesai.split(':');
         if (endParts.length == 2) {
           final endDt = DateTime(
             dt.year,

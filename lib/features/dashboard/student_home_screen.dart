@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/safe_launcher.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/saas_components.dart';
 import '../../core/widgets/scale_button.dart';
 import '../../core/services/student_dashboard_service.dart';
@@ -54,6 +56,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   int _unreadNotificationCount = 0;
   bool _isLoading = true;
   String? _loadError;
+  RealtimeChannel? _overridesChannel;
 
   @override
   void initState() {
@@ -66,10 +69,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       CurvedAnimation(parent: _livePulseController, curve: Curves.easeInOut),
     );
     _loadDashboard();
+    _initRealtimeOverrides();
+  }
+
+  void _initRealtimeOverrides() {
+    _overridesChannel = SupabaseRepository.subscribeToCourseOverrides(() {
+      if (mounted) {
+        _loadDashboard();
+      }
+    });
   }
 
   @override
   void dispose() {
+    SupabaseRepository.unsubscribeChannel(_overridesChannel);
     _livePulseController.dispose();
     super.dispose();
   }
@@ -1553,10 +1566,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     bool isUpcomingSoon = false;
     int minutesUntilStart = 0;
 
-    if (isToday) {
+    if (isToday && !course.isCancelledToday) {
       try {
-        final startParts = course.jamMulai.split(':');
-        final endParts = course.jamSelesai.split(':');
+        final startParts = course.effectiveJamMulai.split(':');
+        final endParts = course.effectiveJamSelesai.split(':');
         if (startParts.length == 2 && endParts.length == 2) {
           final startDt = DateTime(
             now.year,
@@ -1586,17 +1599,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       } catch (_) {}
     }
 
-    final String timeBadgeLabel = isLiveNow
-        ? 'BERLANGSUNG'
-        : (isUpcomingSoon
-            ? '$minutesUntilStart MNT LAGI'
-            : (isToday
-                ? '${course.jamMulai} - ${course.jamSelesai}'
-                : '${course.hari} • ${course.jamMulai} - ${course.jamSelesai}'));
+    final String timeBadgeLabel = course.isCancelledToday
+        ? 'DITIADAKAN'
+        : (isLiveNow
+            ? 'BERLANGSUNG'
+            : (isUpcomingSoon
+                ? '$minutesUntilStart MNT LAGI'
+                : (isToday
+                    ? '${course.effectiveJamMulai} - ${course.effectiveJamSelesai}'
+                    : '${course.hari} • ${course.effectiveJamMulai} - ${course.effectiveJamSelesai}')));
+
+    final bool hasOverride = course.hasActiveOverride;
+    final Color activeBorder = course.isCancelledToday
+        ? const Color(0xFFEF4444)
+        : (hasOverride
+            ? const Color(0xFFF59E0B)
+            : (isLiveNow
+                ? const Color(0xFF10B981)
+                : (isUpcomingSoon ? const Color(0xFFF59E0B) : borderColor)));
 
     return Semantics(
       button: true,
-      label: 'Kuliah ${course.nama}, Dosen ${course.dosen}, Ruangan ${course.ruangan}',
+      label: 'Kuliah ${course.nama}, Dosen ${course.dosen}, Ruangan ${course.effectiveRuangan}',
       child: ScaleButton(
         scaleDown: 0.98,
         onTap: () {
@@ -1614,16 +1638,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             color: cardBg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isLiveNow
-                  ? const Color(0xFF10B981)
-                  : (isUpcomingSoon ? const Color(0xFFF59E0B) : borderColor),
-              width: (isLiveNow || isUpcomingSoon) ? 1.4 : 1.0,
+              color: activeBorder,
+              width: (isLiveNow || isUpcomingSoon || hasOverride) ? 1.4 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
                 color: isLiveNow
                     ? const Color(0xFF10B981).withValues(alpha: 0.16)
-                    : (isUpcomingSoon
+                    : (isUpcomingSoon || hasOverride
                         ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
                         : const Color(0xFF0F172A).withValues(alpha: isDark ? 0.25 : 0.04)),
                 blurRadius: 10,
@@ -1635,32 +1657,39 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Header Waktu & Badge Live/Upcoming
+              // Header Waktu & Badge Live/Upcoming/Override
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: isLiveNow
-                          ? (isDark ? const Color(0xFF0F392B) : const Color(0xFFDCFCE7))
-                          : (isUpcomingSoon
-                              ? (isDark ? const Color(0xFF3D2E14) : const Color(0xFFFEF3C7))
-                              : (isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE))),
+                      color: course.isCancelledToday
+                          ? (isDark ? const Color(0xFF3B1E1E) : const Color(0xFFFEE2E2))
+                          : (isLiveNow
+                              ? (isDark ? const Color(0xFF0F392B) : const Color(0xFFDCFCE7))
+                              : (hasOverride || isUpcomingSoon
+                                  ? (isDark ? const Color(0xFF3D2E14) : const Color(0xFFFEF3C7))
+                                  : (isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE)))),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isLiveNow
-                            ? const Color(0xFF16A34A).withValues(alpha: 0.3)
-                            : (isUpcomingSoon
-                                ? const Color(0xFFD97706).withValues(alpha: 0.3)
-                                : AppColors.primary.withValues(alpha: 0.2)),
+                        color: course.isCancelledToday
+                            ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                            : (isLiveNow
+                                ? const Color(0xFF16A34A).withValues(alpha: 0.3)
+                                : (hasOverride || isUpcomingSoon
+                                    ? const Color(0xFFD97706).withValues(alpha: 0.3)
+                                    : AppColors.primary.withValues(alpha: 0.2))),
                         width: 0.8,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (isLiveNow) ...[
+                        if (course.isCancelledToday) ...[
+                          const Icon(Icons.cancel_rounded, size: 11, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 4),
+                        ] else if (isLiveNow) ...[
                           AnimatedBuilder(
                             animation: _livePulseAnimation,
                             builder: (context, child) => Container(
@@ -1681,9 +1710,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           ),
                         ] else ...[
                           Icon(
-                            isUpcomingSoon ? Icons.access_time_rounded : Icons.schedule_rounded,
+                            hasOverride
+                                ? Icons.edit_calendar_rounded
+                                : (isUpcomingSoon ? Icons.access_time_rounded : Icons.schedule_rounded),
                             size: 11,
-                            color: isUpcomingSoon ? const Color(0xFFB45309) : AppColors.primary,
+                            color: course.isCancelledToday
+                                ? const Color(0xFFDC2626)
+                                : (hasOverride || isUpcomingSoon
+                                    ? const Color(0xFFB45309)
+                                    : AppColors.primary),
                           ),
                           const SizedBox(width: 4),
                         ],
@@ -1693,11 +1728,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.1,
-                            color: isLiveNow
-                                ? const Color(0xFF15803D)
-                                : (isUpcomingSoon
-                                    ? const Color(0xFFB45309)
-                                    : AppColors.primary),
+                            color: course.isCancelledToday
+                                ? const Color(0xFFDC2626)
+                                : (isLiveNow
+                                    ? const Color(0xFF15803D)
+                                    : (hasOverride || isUpcomingSoon
+                                        ? const Color(0xFFB45309)
+                                        : AppColors.primary)),
                           ),
                         ),
                       ],
@@ -1712,14 +1749,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.meeting_room_outlined, size: 11, color: textSub),
+                        Icon(
+                          course.isOnlineOverride
+                              ? Icons.videocam_rounded
+                              : Icons.meeting_room_outlined,
+                          size: 11,
+                          color: course.isOnlineOverride ? const Color(0xFF2563EB) : textSub,
+                        ),
                         const SizedBox(width: 3),
-                        Text(
-                          course.ruangan.isNotEmpty ? course.ruangan : 'Lab A',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: textSub,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 90),
+                          child: Text(
+                            course.isCancelledToday
+                                ? 'Libur'
+                                : (course.effectiveRuangan.isNotEmpty
+                                    ? course.effectiveRuangan
+                                    : 'Lab A'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: course.isOnlineOverride ? const Color(0xFF2563EB) : textSub,
+                            ),
                           ),
                         ),
                       ],

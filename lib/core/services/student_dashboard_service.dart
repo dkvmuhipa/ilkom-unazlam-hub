@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/models.dart';
 import 'course_schedule_service.dart';
+import 'supabase_repository.dart';
 import 'supabase_service.dart';
 
 class StudentDashboardSnapshot {
@@ -160,31 +161,10 @@ class StudentDashboardService {
       );
     }
 
-    // Ambil daftar mata kuliah nyata dari Supabase
+    // Ambil daftar mata kuliah nyata dan penyesuaian jadwal aktif dari Supabase
     List<Course> loadedCourses = [];
     try {
-      final coursesRes = await client.from('courses').select().order('jam_mulai');
-      loadedCourses = (coursesRes as List).map<Course>((row) {
-        var start = row['jam_mulai']?.toString() ?? '08:00';
-        var end = row['jam_selesai']?.toString() ?? '10:00';
-        if (start.length >= 5) start = start.substring(0, 5);
-        if (end.length >= 5) end = end.substring(0, 5);
-        return Course(
-          id: row['id']?.toString() ?? '',
-          kode: row['kode_mk']?.toString() ?? '',
-          nama: row['nama_mk']?.toString() ?? '',
-          sks: (row['sks'] as num?)?.toInt() ?? 2,
-          semester: (row['semester'] as num?)?.toInt() ?? 1,
-          dosen: row['dosen_pengampu']?.toString() ?? '',
-          dosenWa: row['dosen_wa']?.toString(),
-          hari: row['hari']?.toString() ?? '',
-          jamMulai: start,
-          jamSelesai: end,
-          ruangan: row['ruangan']?.toString() ?? 'Ruang A2',
-          linkVirtual: row['link_virtual']?.toString(),
-        );
-      }).toList();
-
+      loadedCourses = await SupabaseRepository.getCoursesWithOverrides(now);
     } catch (e) {
       debugPrint('Error loading courses in StudentDashboardService: $e');
     }

@@ -90,6 +90,11 @@ class SupabaseRepository {
     return subscribeToTable(table: 'courses', onDataChanged: onDataChanged);
   }
 
+  /// Realtime stream listener untuk Penyesuaian Jadwal (Overrides)
+  static RealtimeChannel? subscribeToCourseOverrides(VoidCallback onDataChanged) {
+    return subscribeToTable(table: 'course_schedule_overrides', onDataChanged: onDataChanged);
+  }
+
   /// Realtime stream listener untuk Berkas & Materi Kuliah
   static RealtimeChannel? subscribeToResources(VoidCallback onDataChanged) {
     return subscribeToTable(table: 'resources', onDataChanged: onDataChanged);
@@ -301,6 +306,99 @@ class SupabaseRepository {
     }
   }
 
+  // ==========================================
+  // PENYESUAIAN JADWAL DINAMIS (OVERRIDES)
+  // ==========================================
+
+  /// Mengambil daftar penyesuaian jadwal pada tanggal tertentu (format: YYYY-MM-DD)
+  static Future<List<CourseScheduleOverride>> getCourseOverridesForDate(DateTime date) async {
+    final client = SupabaseService.client;
+    if (client == null) return [];
+
+    final dateStr =
+        "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+    try {
+      final response = await client
+          .from('course_schedule_overrides')
+          .select()
+          .eq('override_date', dateStr);
+
+      return (response as List)
+          .map((row) => CourseScheduleOverride.fromMap(row as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Error getCourseOverridesForDate: $e');
+      return [];
+    }
+  }
+
+  /// Mengambil mapping penyesuaian jadwal berdasarkan course_id untuk tanggal tertentu
+  static Future<Map<String, CourseScheduleOverride>> getCourseOverridesMap([DateTime? targetDate]) async {
+    final dt = targetDate ?? DateTime.now();
+    final list = await getCourseOverridesForDate(dt);
+    final map = <String, CourseScheduleOverride>{};
+    for (final ov in list) {
+      map[ov.courseId] = ov;
+    }
+    return map;
+  }
+
+  /// Mengambil seluruh mata kuliah yang telah digabungkan dengan override aktif pada tanggal terpilih
+  static Future<List<Course>> getCoursesWithOverrides([DateTime? targetDate]) async {
+    final dt = targetDate ?? DateTime.now();
+    final courses = await getCourses();
+    final overridesMap = await getCourseOverridesMap(dt);
+
+    if (overridesMap.isEmpty) return courses;
+
+    return courses.map((c) {
+      final ov = overridesMap[c.id];
+      if (ov != null) {
+        return c.copyWith(override: ov);
+      }
+      return c;
+    }).toList();
+  }
+
+  /// Menyimpan atau memperbarui penyesuaian jadwal (override) untuk suatu sesi mata kuliah
+  static Future<bool> saveCourseOverride(CourseScheduleOverride override) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client.from('course_schedule_overrides').upsert(
+        override.toMap(),
+        onConflict: 'course_id,override_date',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Error saveCourseOverride: $e');
+      return false;
+    }
+  }
+
+  /// Menghapus / membatalkan penyesuaian jadwal pada tanggal tertentu (kembali ke jadwal master)
+  static Future<bool> deleteCourseOverride(String courseId, DateTime date) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    final dateStr =
+        "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+    try {
+      await client
+          .from('course_schedule_overrides')
+          .delete()
+          .eq('course_id', courseId)
+          .eq('override_date', dateStr);
+      return true;
+    } catch (e) {
+      debugPrint('Error deleteCourseOverride: $e');
+      return false;
+    }
+  }
+
   static Future<List<ResourceItem>> getResources() async {
     final client = SupabaseService.client;
     if (client == null) throw StateError('Supabase belum dikonfigurasi.');
@@ -382,6 +480,9 @@ class SupabaseRepository {
           createdAt: row['created_at'] != null
               ? DateTime.parse(row['created_at'])
               : DateTime.now(),
+          targetAudience: row['target_audience']?.toString() ?? 'ALL',
+          targetAngkatan: row['target_angkatan']?.toString(),
+          targetKelas: row['target_kelas']?.toString(),
         );
       }).toList();
 
@@ -398,25 +499,48 @@ class SupabaseRepository {
     required String kategori,
     bool isPinned = false,
     String authorName = 'Nur Farida (Ketua Kelas)',
+    String authorRole = 'Ketua Kelas',
+    String targetAudience = 'ALL',
+    String? targetAngkatan,
+    String? targetKelas,
   }) async {
     final client = SupabaseService.client;
     if (client == null) return false;
     try {
-      await client
-          .from('announcements')
-          .insert({
-            'judul': judul,
-            'isi': isi,
-            'kategori': kategori,
-            'is_pinned': isPinned,
-            'author_name': authorName,
-            'author_role': 'Ketua Kelas',
-          });
+      final insertData = <String, dynamic>{
+        'judul': judul,
+        'isi': isi,
+        'kategori': kategori,
+        'is_pinned': isPinned,
+        'author_name': authorName,
+        'author_role': authorRole,
+        'target_audience': targetAudience,
+      };
+      if (targetAngkatan != null && targetAngkatan.isNotEmpty) {
+        insertData['target_angkatan'] = targetAngkatan;
+      }
+      if (targetKelas != null && targetKelas.isNotEmpty) {
+        insertData['target_kelas'] = targetKelas;
+      }
 
+      await client.from('announcements').insert(insertData);
       return true;
     } catch (e) {
-      debugPrint('Sync announcement ke Supabase offline/error: $e');
-      return false;
+      // Fallback jika kolom target belum ada di database
+      try {
+        await client.from('announcements').insert({
+          'judul': judul,
+          'isi': isi,
+          'kategori': kategori,
+          'is_pinned': isPinned,
+          'author_name': authorName,
+          'author_role': authorRole,
+        });
+        return true;
+      } catch (innerErr) {
+        debugPrint('Sync announcement ke Supabase offline/error: $innerErr');
+        return false;
+      }
     }
   }
 
@@ -425,18 +549,39 @@ class SupabaseRepository {
     if (client == null) return false;
 
     try {
+      final updateData = <String, dynamic>{
+        'judul': announcement.judul,
+        'isi': announcement.isi,
+        'kategori': announcement.kategori,
+        'is_pinned': announcement.isPinned,
+        'target_audience': announcement.targetAudience,
+      };
+      if (announcement.targetAngkatan != null) {
+        updateData['target_angkatan'] = announcement.targetAngkatan;
+      }
+      if (announcement.targetKelas != null) {
+        updateData['target_kelas'] = announcement.targetKelas;
+      }
+
       await client
           .from('announcements')
-          .update({
-            'judul': announcement.judul,
-            'isi': announcement.isi,
-            'kategori': announcement.kategori,
-            'is_pinned': announcement.isPinned,
-          })
+          .update(updateData)
           .eq('id', announcement.id);
       return true;
     } catch (e) {
       debugPrint('Error update announcement di Supabase: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> togglePinAnnouncement(String id, bool isPinned) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+    try {
+      await client.from('announcements').update({'is_pinned': isPinned}).eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error toggle pin announcement: $e');
       return false;
     }
   }
@@ -451,6 +596,43 @@ class SupabaseRepository {
     } catch (e) {
       debugPrint('Sync delete announcement error: $e');
       return false;
+    }
+  }
+
+  static Future<int> getPushTokenCountByTarget({
+    String targetAudience = 'ALL',
+    String? targetAngkatan,
+    String? targetKelas,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return 0;
+    try {
+      if (targetAudience == 'ALL' || (targetAngkatan == null && targetKelas == null)) {
+        final res = await client.from('user_push_tokens').select('id');
+        return (res as List).length;
+      }
+
+      var studentQuery = client.from('students').select('nim');
+      if (targetAudience == 'ANGKATAN' && targetAngkatan != null && targetAngkatan.isNotEmpty) {
+        studentQuery = studentQuery.eq('angkatan', targetAngkatan);
+      } else if (targetAudience == 'KELAS' && targetKelas != null && targetKelas.isNotEmpty) {
+        studentQuery = studentQuery.eq('kelas', targetKelas);
+      }
+      final studentRows = await studentQuery;
+      final nims = (studentRows as List)
+          .map((r) => r['nim']?.toString())
+          .where((n) => n != null && n.isNotEmpty)
+          .cast<String>()
+          .toList();
+
+      if (nims.isEmpty) return 0;
+      final tokenRows = await client
+          .from('user_push_tokens')
+          .select('id')
+          .inFilter('nim', nims);
+      return (tokenRows as List).length;
+    } catch (_) {
+      return 0;
     }
   }
 

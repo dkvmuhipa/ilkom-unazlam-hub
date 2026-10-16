@@ -59,6 +59,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   RealtimeChannel? _coursesChannel;
+  RealtimeChannel? _overridesChannel;
 
   @override
   void initState() {
@@ -71,12 +72,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   void dispose() {
     SupabaseRepository.unsubscribeChannel(_coursesChannel);
+    SupabaseRepository.unsubscribeChannel(_overridesChannel);
     _searchCtrl.dispose();
     super.dispose();
   }
 
   void _initRealtime() {
     _coursesChannel = SupabaseRepository.subscribeToCourses(() {
+      if (mounted) {
+        _fetchCourses(silent: true);
+      }
+    });
+    _overridesChannel = SupabaseRepository.subscribeToCourseOverrides(() {
       if (mounted) {
         _fetchCourses(silent: true);
       }
@@ -107,9 +114,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (client == null) return;
     if (!silent) setState(() => _isLoading = true);
     try {
-      final response = await client.from('courses').select();
-      final List<Course> loaded =
-          (response as List).map<Course>((item) => Course.fromMap(item)).toList();
+      final List<Course> loaded = await SupabaseRepository.getCoursesWithOverrides();
 
       final dayOrder = {
         'Senin': 1,
@@ -124,7 +129,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         final da = dayOrder[a.hari] ?? 99;
         final db = dayOrder[b.hari] ?? 99;
         if (da != db) return da.compareTo(db);
-        return a.jamMulai.compareTo(b.jamMulai);
+        return a.effectiveJamMulai.compareTo(b.effectiveJamMulai);
       });
 
       if (mounted) {

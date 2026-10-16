@@ -1,3 +1,103 @@
+class CourseScheduleOverride {
+  final String id;
+  final String courseId;
+  final DateTime overrideDate;
+  final String status; // 'RESCHEDULED', 'ONLINE', 'ROOM_CHANGE', 'CANCELLED'
+  final String originalJamMulai;
+  final String? originalJamSelesai;
+  final String? newJamMulai;
+  final String? newJamSelesai;
+  final String? newRuangan;
+  final String? onlineMeetingUrl;
+  final String? alasan;
+  final String? reportedByNim;
+  final DateTime? createdAt;
+
+  CourseScheduleOverride({
+    required this.id,
+    required this.courseId,
+    required this.overrideDate,
+    required this.status,
+    required this.originalJamMulai,
+    this.originalJamSelesai,
+    this.newJamMulai,
+    this.newJamSelesai,
+    this.newRuangan,
+    this.onlineMeetingUrl,
+    this.alasan,
+    this.reportedByNim,
+    this.createdAt,
+  });
+
+  factory CourseScheduleOverride.fromMap(Map<String, dynamic> map) {
+    DateTime parsedDate;
+    try {
+      parsedDate = DateTime.parse(map['override_date'].toString());
+    } catch (_) {
+      parsedDate = DateTime.now();
+    }
+
+    String? newStart = map['new_jam_mulai']?.toString();
+    if (newStart != null && newStart.length >= 5) newStart = newStart.substring(0, 5);
+
+    String? newEnd = map['new_jam_selesai']?.toString();
+    if (newEnd != null && newEnd.length >= 5) newEnd = newEnd.substring(0, 5);
+
+    String origStart = map['original_jam_mulai']?.toString() ?? '00:00';
+    if (origStart.length >= 5) origStart = origStart.substring(0, 5);
+
+    String? origEnd = map['original_jam_selesai']?.toString();
+    if (origEnd != null && origEnd.length >= 5) origEnd = origEnd.substring(0, 5);
+
+    return CourseScheduleOverride(
+      id: map['id']?.toString() ?? '',
+      courseId: map['course_id']?.toString() ?? '',
+      overrideDate: parsedDate,
+      status: map['status']?.toString() ?? 'RESCHEDULED',
+      originalJamMulai: origStart,
+      originalJamSelesai: origEnd,
+      newJamMulai: newStart,
+      newJamSelesai: newEnd,
+      newRuangan: map['new_ruangan']?.toString(),
+      onlineMeetingUrl: map['online_meeting_url']?.toString(),
+      alasan: map['alasan']?.toString(),
+      reportedByNim: map['reported_by_nim']?.toString(),
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'course_id': courseId,
+      'override_date': "${overrideDate.year.toString().padLeft(4, '0')}-${overrideDate.month.toString().padLeft(2, '0')}-${overrideDate.day.toString().padLeft(2, '0')}",
+      'status': status,
+      'original_jam_mulai': originalJamMulai,
+      'original_jam_selesai': originalJamSelesai,
+      'new_jam_mulai': newJamMulai,
+      'new_jam_selesai': newJamSelesai,
+      'new_ruangan': newRuangan,
+      'online_meeting_url': onlineMeetingUrl,
+      'alasan': alasan,
+      'reported_by_nim': reportedByNim,
+    };
+  }
+
+  String get statusBadgeLabel {
+    switch (status) {
+      case 'ONLINE':
+        return 'KULIAH DARING';
+      case 'ROOM_CHANGE':
+        return 'PINDAH RUANGAN';
+      case 'CANCELLED':
+        return 'KELAS DITIADAKAN';
+      case 'RESCHEDULED':
+      default:
+        return 'JADWAL DIGESER';
+    }
+  }
+}
+
 class Course {
   final String id;
   final String kode;
@@ -11,6 +111,7 @@ class Course {
   final String jamSelesai;
   final String ruangan;
   final String? linkVirtual;
+  final CourseScheduleOverride? override;
 
   Course({
     required this.id,
@@ -25,9 +126,64 @@ class Course {
     required this.jamSelesai,
     required this.ruangan,
     this.linkVirtual,
+    this.override,
   });
 
-  factory Course.fromMap(Map<String, dynamic> map) {
+  Course copyWith({
+    String? id,
+    String? kode,
+    String? nama,
+    int? sks,
+    int? semester,
+    String? dosen,
+    String? dosenWa,
+    String? hari,
+    String? jamMulai,
+    String? jamSelesai,
+    String? ruangan,
+    String? linkVirtual,
+    CourseScheduleOverride? override,
+    bool clearOverride = false,
+  }) {
+    return Course(
+      id: id ?? this.id,
+      kode: kode ?? this.kode,
+      nama: nama ?? this.nama,
+      sks: sks ?? this.sks,
+      semester: semester ?? this.semester,
+      dosen: dosen ?? this.dosen,
+      dosenWa: dosenWa ?? this.dosenWa,
+      hari: hari ?? this.hari,
+      jamMulai: jamMulai ?? this.jamMulai,
+      jamSelesai: jamSelesai ?? this.jamSelesai,
+      ruangan: ruangan ?? this.ruangan,
+      linkVirtual: linkVirtual ?? this.linkVirtual,
+      override: clearOverride ? null : (override ?? this.override),
+    );
+  }
+
+  /// Jam mulai efektif (memperhitungkan override hari ini/sesi aktif jika ada)
+  String get effectiveJamMulai => override?.newJamMulai ?? jamMulai;
+
+  /// Jam selesai efektif
+  String get effectiveJamSelesai => override?.newJamSelesai ?? jamSelesai;
+
+  /// Ruangan efektif
+  String get effectiveRuangan => override?.newRuangan ?? ruangan;
+
+  /// Tautan virtual efektif
+  String? get effectiveLinkVirtual => override?.onlineMeetingUrl ?? linkVirtual;
+
+  /// Cek apakah mata kuliah sedang dalam status override penyesuaian jadwal
+  bool get hasActiveOverride => override != null;
+
+  /// Cek apakah kelas dibatalkan/diliburkan khusus sesi ini
+  bool get isCancelledToday => override?.status == 'CANCELLED';
+
+  /// Cek apakah dialihkan ke daring
+  bool get isOnlineOverride => override?.status == 'ONLINE';
+
+  factory Course.fromMap(Map<String, dynamic> map, [CourseScheduleOverride? override]) {
     String jamM = map['jam_mulai']?.toString() ?? '00:00';
     if (jamM.length >= 5) jamM = jamM.substring(0, 5);
     String jamS = map['jam_selesai']?.toString() ?? '00:00';
@@ -46,9 +202,11 @@ class Course {
       jamSelesai: jamS,
       ruangan: map['ruangan']?.toString() ?? '-',
       linkVirtual: map['link_virtual']?.toString(),
+      override: override,
     );
   }
 }
+
 
 class Assignment {
   final String id;
@@ -77,12 +235,15 @@ class Assignment {
 class Announcement {
   final String id;
   String authorName;
-  String authorRole; // 'Komti', 'Dosen', 'Sekretaris'
+  String authorRole; // 'Komti', 'Dosen', 'Sekretaris', 'Admin'
   String judul;
   String isi;
   bool isPinned;
   String kategori; // 'Jadwal Kuliah', 'Tugas', 'Info Fakultas', 'Penting'
   final DateTime createdAt;
+  String targetAudience; // 'ALL', 'ANGKATAN', 'KELAS'
+  String? targetAngkatan;
+  String? targetKelas;
 
   Announcement({
     required this.id,
@@ -93,6 +254,9 @@ class Announcement {
     this.isPinned = false,
     required this.kategori,
     required this.createdAt,
+    this.targetAudience = 'ALL',
+    this.targetAngkatan,
+    this.targetKelas,
   });
 }
 
