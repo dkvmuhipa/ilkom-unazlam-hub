@@ -75,6 +75,88 @@ class ExportService {
     return buffer.toString();
   }
 
+  /// Export Matriks Presensi 16 Pertemuan & Kelayakan Ujian (BAP) ke CSV (Excel Friendly)
+  static String exportAttendanceMatrixCsv({
+    required String courseName,
+    required String dosenName,
+    required String semester,
+    required String tahunAkademik,
+    required List<StudentProfile> students,
+    required Map<String, Map<int, String>> matrixData,
+    int totalMeetingsHeld = 16,
+    double thresholdPercent = 75.0,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('BERITA ACARA & MATRIKS PRESENSI PERKULIAHAN (BAP)');
+    buffer.writeln('UNIVERSITAS AZZAM LAMONGAN (UNAZLAM)');
+    buffer.writeln('Program Studi,"Ilmu Komunikasi"');
+    buffer.writeln('Mata Kuliah,"$courseName"');
+    buffer.writeln('Dosen Pengampu,"$dosenName"');
+    buffer.writeln('Semester / T.A.,"$semester / $tahunAkademik"');
+    buffer.writeln('Syarat Kehadiran Minimal Ujian,"$thresholdPercent%"');
+    buffer.writeln('Tanggal Rekap,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"');
+    buffer.writeln('');
+
+    // Header Kolom
+    final headers = ['No', 'NIM', 'Nama Mahasiswa', 'Kelas'];
+    for (int p = 1; p <= 16; p++) {
+      if (p == 8) {
+        headers.add('P8 (UTS)');
+      } else if (p == 16) {
+        headers.add('P16 (UAS)');
+      } else {
+        headers.add('P$p');
+      }
+    }
+    headers.addAll(['Total Hadir', 'Total Sesi', '% Kehadiran', 'Status Kelayakan UAS']);
+    buffer.writeln(headers.map((h) => '"$h"').join(','));
+
+    // Rows
+    for (int i = 0; i < students.length; i++) {
+      final s = students[i];
+      final rowAttendance = matrixData[s.nim] ?? {};
+
+      int hadirCount = 0;
+      final meetingValues = <String>[];
+
+      for (int p = 1; p <= 16; p++) {
+        final status = (rowAttendance[p] ?? '').toLowerCase();
+        if (status == 'hadir') {
+          hadirCount++;
+          meetingValues.add('Hadir');
+        } else if (status == 'izin') {
+          meetingValues.add('Izin');
+        } else if (status == 'sakit') {
+          meetingValues.add('Sakit');
+        } else if (status == 'alpa' || status == 'alfa') {
+          meetingValues.add('Alfa');
+        } else {
+          meetingValues.add('-');
+        }
+      }
+
+      final activeMeetings = totalMeetingsHeld > 0 ? totalMeetingsHeld : 16;
+      final percent = ((hadirCount / activeMeetings) * 100).round();
+      final isEligible = percent >= thresholdPercent;
+      final statusLabel = isEligible ? 'MEMENUHI SYARAT' : 'DICEKAL (<${thresholdPercent.toInt()}%)';
+
+      final row = [
+        '${i + 1}',
+        '"${s.nim}"',
+        '"${s.nama}"',
+        '"${s.kelas}"',
+        ...meetingValues.map((v) => '"$v"'),
+        '$hadirCount',
+        '$activeMeetings',
+        '$percent%',
+        '"$statusLabel"',
+      ];
+      buffer.writeln(row.join(','));
+    }
+
+    return buffer.toString();
+  }
+
   /// Export Rekap Presensi Pribadi Mahasiswa (Privat untuk Mahasiswa bersangkutan)
   static String exportPersonalAttendanceCsv({
     required String studentNim,

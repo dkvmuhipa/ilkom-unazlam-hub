@@ -23,6 +23,7 @@ import 'views/admin_account_management_view.dart';
 import 'views/admin_system_settings_view.dart';
 import 'views/admin_classes_view.dart';
 import 'views/admin_students_view.dart';
+import 'views/admin_attendance_matrix_view.dart';
 import 'widgets/admin_creation_modals.dart';
 import 'models/admin_models.dart';
 
@@ -254,7 +255,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           view == 'matakuliah' ||
           view == 'tahun_akademik') {
         _navBarIndex = 2;
-      } else if (view == 'laporan') {
+      } else if (view == 'laporan' || view == 'matriks_presensi') {
         _navBarIndex = 3;
       } else if (view == 'pengaturan' ||
           view == 'role_permission' ||
@@ -427,6 +428,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         return _buildManajemenAkun();
       case 'laporan':
         return _buildLaporan();
+      case 'matriks_presensi':
+        return _buildMatriksPresensi();
       case 'pengaturan':
         return _buildPengaturanSistem();
       case 'role_permission':
@@ -882,7 +885,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   onTap: _showBroadcastAnnouncementDialog,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildQuickActionButton(
+                  icon: Icons.table_chart_rounded,
+                  label: 'Matriks BAP',
+                  subtitle: 'Presensi 16 Sesi',
+                  color: const Color(0xFF10B981),
+                  onTap: () => _navigateTo('matriks_presensi'),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: _buildQuickActionButton(
                   icon: Icons.post_add_rounded,
@@ -892,7 +905,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   onTap: _showCreateAssignmentDialog,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: _buildQuickActionButton(
                   icon: Icons.person_add_rounded,
@@ -1777,6 +1790,21 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       managedAccounts: _managedAccounts,
       onRefresh: () => setState(() => _reportFuture = _loadReportSnapshot()),
       onBack: () => _navigateTo('dashboard'),
+      onNavigate: _navigateTo,
+    );
+  }
+
+  // ==========================================
+  // EXTRA: MATRIKS PRESENSI & BAP
+  // ==========================================
+  Widget _buildMatriksPresensi() {
+    return AdminAttendanceMatrixView(
+      courses: _courses,
+      classes: _classes,
+      managedAccounts: _managedAccounts,
+      onBack: () => _navigateTo('laporan'),
+      onShowMessage: _showAdminMessage,
+      onRecordAudit: _recordAudit,
     );
   }
 }

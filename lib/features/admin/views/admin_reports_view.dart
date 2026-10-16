@@ -10,6 +10,7 @@ class AdminReportsView extends StatelessWidget {
   final List<StudentProfile> managedAccounts;
   final VoidCallback onRefresh;
   final VoidCallback onBack;
+  final void Function(String view)? onNavigate;
 
   const AdminReportsView({
     super.key,
@@ -17,6 +18,7 @@ class AdminReportsView extends StatelessWidget {
     required this.managedAccounts,
     required this.onRefresh,
     required this.onBack,
+    this.onNavigate,
   });
 
   @override
@@ -61,6 +63,80 @@ class AdminReportsView extends StatelessWidget {
               return ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 children: [
+                  // Banner Matriks Presensi 16 Sesi & BAP (Feature Highlight)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFF334155)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                          ),
+                          child: const Icon(Icons.table_chart_rounded, color: Color(0xFF34D399), size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Matriks Presensi 16 Pertemuan (BAP)',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Pantau kehadiran P1 - P16, kalkulasi batas kelayakan UAS 75%, dan cetak Berita Acara.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF94A3B8),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        FilledButton.icon(
+                          onPressed: () => onNavigate?.call('matriks_presensi'),
+                          icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+                          label: const Text('Buka Matriks', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            minimumSize: Size.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   Container(
                     margin: const EdgeInsets.only(bottom: 14),
                     padding: const EdgeInsets.all(12),

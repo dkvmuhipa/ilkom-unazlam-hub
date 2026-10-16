@@ -1611,6 +1611,79 @@ class SupabaseRepository {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> getAttendanceLogsForCourse({
+    required String courseId,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return [];
+
+    try {
+      final response = await client
+          .from('attendance_logs')
+          .select('id, course_id, student_nim, pertemuan_ke, status, catatan, created_at')
+          .eq('course_id', courseId)
+          .order('pertemuan_ke', ascending: true);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint('Error getAttendanceLogsForCourse: $e');
+      return [];
+    }
+  }
+
+  static Future<bool> upsertAttendanceLog({
+    required String courseId,
+    required String studentNim,
+    required int pertemuanKe,
+    required String status,
+    String? catatan,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client
+          .from('attendance_logs')
+          .delete()
+          .eq('course_id', courseId)
+          .eq('student_nim', studentNim)
+          .eq('pertemuan_ke', pertemuanKe);
+
+      await client.from('attendance_logs').insert({
+        'course_id': courseId,
+        'student_nim': studentNim,
+        'pertemuan_ke': pertemuanKe,
+        'status': status.toLowerCase(),
+        'catatan': catatan ?? 'Disimpan oleh Admin',
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Error upsertAttendanceLog: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> removeAttendanceLog({
+    required String courseId,
+    required String studentNim,
+    required int pertemuanKe,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      await client
+          .from('attendance_logs')
+          .delete()
+          .eq('course_id', courseId)
+          .eq('student_nim', studentNim)
+          .eq('pertemuan_ke', pertemuanKe);
+      return true;
+    } catch (e) {
+      debugPrint('Error removeAttendanceLog: $e');
+      return false;
+    }
+  }
+
   // ====================================================================
   // 7. MANAJEMEN AKUN & MAHASISWA (STUDENTS)
   // ====================================================================
