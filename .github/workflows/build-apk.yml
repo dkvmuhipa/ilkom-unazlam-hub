@@ -37,6 +37,41 @@ jobs:
       - name: Run Tests
         run: flutter test
 
+      - name: Setup Firebase google-services.json
+        run: |
+          mkdir -p android/app
+          cat << 'EOF' > android/app/google-services.json
+          {
+            "project_info": {
+              "project_number": "109827364512",
+              "project_id": "ilkom-unazlam-hub",
+              "storage_bucket": "ilkom-unazlam-hub.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:109827364512:android:abcdef0123456789",
+                  "android_client_info": {
+                    "package_name": "com.gellonatech.class_manager"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyFakeKeyForBuildingAndroidApk98765"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
       - name: Build Release APK
         run: flutter build apk --release
 
