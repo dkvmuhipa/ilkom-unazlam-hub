@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/course_schedule_service.dart';
+import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/widgets/scale_button.dart';
@@ -387,6 +389,311 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  void _showExportOptionsSheet() {
+    if (_courses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Belum ada data jadwal untuk diekspor.'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.ios_share_rounded, color: Color(0xFF1E40AF), size: 22),
+                SizedBox(width: 10),
+                Text(
+                  'Ekspor & Bagikan Jadwal',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Sinkronkan jadwal semester ini ke kalender HP atau bagikan teks jadwal ke grup WhatsApp.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 18),
+
+            // Option 1: Calendar (.ics)
+            _buildExportOptionTile(
+              icon: Icons.edit_calendar_rounded,
+              color: const Color(0xFF2563EB),
+              title: 'Ekspor ke Kalender Ponsel (.ics)',
+              subtitle: 'Google Calendar, Apple Calendar, Outlook (Otomatis mingguan)',
+              onTap: () {
+                Navigator.pop(ctx);
+                final ics = ExportService.exportScheduleIcs(courses: _courses);
+                ExportService.downloadFile('Jadwal_Kuliah_ILKOM_UNAZLAM.ics', ics);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('File kalender (.ics) berhasil diunduh! Buka file untuk menyinkronkan ke kalender.'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // Option 2: Excel / Spreadsheet (.csv)
+            _buildExportOptionTile(
+              icon: Icons.table_view_rounded,
+              color: const Color(0xFF059669),
+              title: 'Unduh Format Spreadsheet (.csv)',
+              subtitle: 'Kompatibel dengan Microsoft Excel dan Google Sheets',
+              onTap: () {
+                Navigator.pop(ctx);
+                final csv = ExportService.exportScheduleCsv(courses: _courses);
+                ExportService.showExportSheet(
+                  context,
+                  title: 'Ekspor Jadwal Kuliah',
+                  fileName: 'Jadwal_Kuliah_ILKOM.csv',
+                  content: csv,
+                  subtitle: 'Format CSV tabel rapi perkuliahan semester berjalan',
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // Option 3: WhatsApp Text Format
+            _buildExportOptionTile(
+              icon: Icons.chat_rounded,
+              color: const Color(0xFF16A34A),
+              title: 'Salin Teks Format WhatsApp',
+              subtitle: 'Teks rapi berformat tebal & jam untuk disebarkan di grup kelas',
+              onTap: () {
+                Navigator.pop(ctx);
+                final waText = ExportService.exportScheduleWhatsappText(courses: _courses);
+                Clipboard.setData(ClipboardData(text: waText));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Jadwal berhasil disalin ke clipboard! Siap dipaste ke grup WhatsApp.'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExportOptionTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleSkeleton() {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 90),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 140,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 140,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: 220,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: 160,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: List.generate(
+              5,
+              (i) => Expanded(
+                child: Container(
+                  height: 38,
+                  margin: EdgeInsets.only(right: i < 4 ? 8 : 0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          ...List.generate(
+            3,
+            (index) => Container(
+              height: 110,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        width: 50,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 180,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 120,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var filteredCourses = _selectedDay == 'Semua'
@@ -525,6 +832,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
             IconButton(
               icon: const Icon(
+                Icons.ios_share_rounded,
+                color: Color(0xFF0F172A),
+                size: 20,
+              ),
+              tooltip: 'Ekspor & Bagikan Jadwal',
+              onPressed: _showExportOptionsSheet,
+            ),
+            IconButton(
+              icon: const Icon(
                 Icons.sync_rounded,
                 color: Color(0xFF0F172A),
                 size: 20,
@@ -537,7 +853,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildScheduleSkeleton()
           : RefreshIndicator(
               onRefresh: () => _fetchCourses(silent: true),
               child: SingleChildScrollView(

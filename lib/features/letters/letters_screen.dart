@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
+import 'widgets/official_letter_sheet.dart';
 
 class LettersScreen extends StatefulWidget {
   final String studentName;
@@ -239,114 +240,29 @@ ${widget.studentName}
   }
 
   void _showLetterDetail(PermissionLetter letter) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, scrollController) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: ListView(
-            controller: scrollController,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          letter.courseName,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                        ),
-                        Text(
-                          '${letter.letterType} • Dosen: ${letter.dosenName}',
-                          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _deleteLetter(letter);
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
-                    tooltip: 'Hapus Surat',
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: SelectableText(
-                  letter.fullContent,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.4),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: letter.fullContent));
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Surat disalin ke clipboard!')),
-                        );
-                      },
-                      icon: const Icon(Icons.copy_rounded, size: 16),
-                      label: const Text('Salin Teks'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(letter.fullContent)}');
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        }
-                      },
-                      icon: const Icon(Icons.send_rounded, size: 16),
-                      label: const Text('Kirim ke WA'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    OfficialLetterSheet.show(
+      context,
+      letter: letter,
+      onDelete: () => _deleteLetter(letter),
+    );
+  }
+
+  void _previewOfficialLetter() {
+    final previewLetter = PermissionLetter(
+      id: 'letter_${DateTime.now().millisecondsSinceEpoch}',
+      studentNim: widget.studentNim,
+      studentName: widget.studentName,
+      letterType: _selectedType,
+      dosenName: _dosenController.text.trim(),
+      courseName: _courseController.text.trim(),
+      reason: _alasanController.text.trim(),
+      letterDate: _tanggalController.text.trim(),
+      fullContent: _generateLetterContent(),
+      createdAt: DateTime.now(),
+    );
+    OfficialLetterSheet.show(
+      context,
+      letter: previewLetter,
     );
   }
 
@@ -473,7 +389,7 @@ ${widget.studentName}
               children: [
                 if (_courses.isNotEmpty)
                   DropdownButtonFormField<String>(
-                    value: _courses.any((c) => c.nama == _courseController.text)
+                    initialValue: _courses.any((c) => c.nama == _courseController.text)
                         ? _courseController.text
                         : _courses.first.nama,
                     decoration: InputDecoration(
@@ -525,8 +441,22 @@ ${widget.studentName}
           const SizedBox(height: 20),
 
           // Preview Box
-          const Text('Pratinjau Surat Resmi:', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-          const SizedBox(height: 8),
+          // Preview Box Header with Official Sheet button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Pratinjau Surat Resmi:', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              TextButton.icon(
+                onPressed: _previewOfficialLetter,
+                icon: const Icon(Icons.verified_rounded, size: 15, color: Color(0xFF1E40AF)),
+                label: const Text(
+                  'Format Ber-Kop & QR',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -552,27 +482,44 @@ ${widget.studentName}
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _copyToClipboard,
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Simpan & Salin'),
+                  onPressed: _previewOfficialLetter,
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text('Dokumen Resmi'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1E40AF),
-                    side: const BorderSide(color: Color(0xFF1E40AF)),
-                    minimumSize: const Size.fromHeight(48),
+                    foregroundColor: const Color(0xFF0F172A),
+                    side: const BorderSide(color: Color(0xFF94A3B8)),
+                    minimumSize: const Size.fromHeight(46),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _copyToClipboard,
+                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Simpan & Salin'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E40AF),
+                    side: const BorderSide(color: Color(0xFF1E40AF)),
+                    minimumSize: const Size.fromHeight(46),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _shareToWhatsApp,
-                  icon: const Icon(Icons.send_rounded, size: 18),
-                  label: const Text('Kirim ke WA'),
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text('Kirim WA'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF25D366),
                     foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(46),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),

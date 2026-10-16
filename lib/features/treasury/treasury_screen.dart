@@ -333,6 +333,45 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     safeLaunchUrl(url);
   }
 
+  void _copyDuesBroadcast() {
+    final unPaid = _students.where((s) => (_iuranStatus[s.nim] ?? false) == false).toList();
+    final paid = _students.where((s) => (_iuranStatus[s.nim] ?? false) == true).toList();
+
+    final buffer = StringBuffer();
+    buffer.writeln('*📢 REKAP IURAN KAS KELAS ILKOM UNAZLAM*');
+    buffer.writeln('*Periode: $_periodLabel*');
+    buffer.writeln('────────────────────────────');
+    buffer.writeln('Total Mahasiswa : ${_students.length}');
+    buffer.writeln('✅ Sudah Lunas   : ${paid.length}');
+    buffer.writeln('⏳ Belum Lunas   : ${unPaid.length}');
+    buffer.writeln('────────────────────────────');
+
+    if (unPaid.isNotEmpty) {
+      buffer.writeln('\n*⚠️ DAFTAR MAHASISWA BELUM LUNAS:*');
+      for (int i = 0; i < unPaid.length; i++) {
+        final s = unPaid[i];
+        final nominal = _formatRupiah(_iuranNominal[s.nim] ?? 20000);
+        buffer.writeln('${i + 1}. ${s.nama} (${s.nim}) - $nominal');
+      }
+      buffer.writeln('\n💡 *Info Pembayaran Kas:*');
+      buffer.writeln('• Rek Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM 2026');
+      buffer.writeln('• Atau scan QRIS melalui Aplikasi ILKOM UNAZLAM Hub');
+      buffer.writeln('• Kirim bukti transfer ke nomor Bendahara Kelas');
+    } else {
+      buffer.writeln('\n🎉 *Alhamdulillah, semua mahasiswa telah melunasi kas untuk periode ini!*');
+    }
+    buffer.writeln('\n_Terima kasih atas kerja sama dan partisipasi aktif semuanya! 🙏_');
+
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Teks rekap tagihan berhasil disalin! Siap dikirim ke grup WhatsApp kelas. 📋'),
+        backgroundColor: Color(0xFF10B981),
+      ),
+    );
+  }
+
   void _showQrisPaymentModal() {
     TreasuryQrisModal.show(
       context,
@@ -2186,6 +2225,34 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                 ),
               );
             }),
+            const Spacer(),
+            if (widget.canManage)
+              ScaleButton(
+                onTap: _copyDuesBroadcast,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.share_rounded, size: 12, color: Color(0xFF059669)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Rekap WA',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 12),

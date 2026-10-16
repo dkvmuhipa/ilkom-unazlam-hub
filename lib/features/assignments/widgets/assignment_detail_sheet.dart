@@ -200,7 +200,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       await safeLaunchUrl(target);
     } catch (error) {
       debugPrint('Gagal membuka berkas pengumpulan: $error');
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -208,6 +208,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
             ),
           ),
         );
+      }
     }
   }
 
@@ -474,7 +475,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       );
     } catch (error) {
       debugPrint('Gagal menyimpan nilai tugas: $error');
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -482,6 +483,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
             ),
           ),
         );
+      }
     }
   }
 

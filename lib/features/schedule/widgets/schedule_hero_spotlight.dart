@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/course_schedule_service.dart';
+import '../../../core/services/safe_launcher.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 
@@ -373,34 +374,73 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Buka Kelas',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF064E3B),
+                  Wrap(
+                    spacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (c.linkVirtual != null && c.linkVirtual!.trim().isNotEmpty)
+                        ScaleButton(
+                          onTap: () => safeLaunchUrl(c.linkVirtual!.trim()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF86EFAC),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.videocam_rounded,
+                                  size: 13,
+                                  color: Color(0xFF064E3B),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Gabung Meet',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF064E3B),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 13,
-                          color: Color(0xFF064E3B),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5.5,
                         ),
-                      ],
-                    ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Buka Kelas',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF064E3B),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 13,
+                              color: Color(0xFF064E3B),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -599,10 +639,52 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                       ),
                     ],
                   ),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 13,
-                    color: Colors.white70,
+                  Wrap(
+                    spacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (c.linkVirtual != null && c.linkVirtual!.trim().isNotEmpty)
+                        ScaleButton(
+                          onTap: () => safeLaunchUrl(c.linkVirtual!.trim()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.videocam_rounded,
+                                  size: 12,
+                                  color: Color(0xFFBAE6FD),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Link Meet',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFBAE6FD),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 13,
+                        color: Colors.white70,
+                      ),
+                    ],
                   ),
                 ],
               ),

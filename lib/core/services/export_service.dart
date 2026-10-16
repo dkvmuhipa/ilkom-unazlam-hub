@@ -185,6 +185,134 @@ class ExportService {
     return buffer.toString();
   }
 
+  /// Export Jadwal Kuliah to iCalendar (.ics) format for Google Calendar / Apple Calendar
+  static String exportScheduleIcs({
+    required List<Course> courses,
+    String calendarName = 'Jadwal Kuliah ILKOM UNAZLAM',
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('BEGIN:VCALENDAR');
+    buffer.writeln('VERSION:2.0');
+    buffer.writeln('PRODID:-//ILKOM UNAZLAM//Jadwal Kuliah//ID');
+    buffer.writeln('CALSCALE:GREGORIAN');
+    buffer.writeln('METHOD:PUBLISH');
+    buffer.writeln('X-WR-CALNAME:$calendarName');
+    buffer.writeln('X-WR-TIMEZONE:Asia/Jakarta');
+
+    final dayToByDay = {
+      'senin': 'MO',
+      'selasa': 'TU',
+      'rabu': 'WE',
+      'kamis': 'TH',
+      'jumat': 'FR',
+      'sabtu': 'SA',
+      'minggu': 'SU',
+    };
+
+    final dayToWeekday = {
+      'senin': DateTime.monday,
+      'selasa': DateTime.tuesday,
+      'rabu': DateTime.wednesday,
+      'kamis': DateTime.thursday,
+      'jumat': DateTime.friday,
+      'sabtu': DateTime.saturday,
+      'minggu': DateTime.sunday,
+    };
+
+    final now = DateTime.now();
+
+    for (var c in courses) {
+      final cleanDay = c.hari.trim().toLowerCase();
+      final byDay = dayToByDay[cleanDay] ?? 'MO';
+      final targetWeekday = dayToWeekday[cleanDay] ?? DateTime.monday;
+
+      final daysOffset = (targetWeekday - now.weekday);
+      final refDate = now.add(Duration(days: daysOffset));
+
+      int startH = 8, startM = 0;
+      int endH = 9, endM = 40;
+      try {
+        final sp = c.jamMulai.split(':');
+        startH = int.parse(sp[0]);
+        startM = int.parse(sp[1]);
+      } catch (_) {}
+      try {
+        final ep = c.jamSelesai.split(':');
+        endH = int.parse(ep[0]);
+        endM = int.parse(ep[1]);
+      } catch (_) {}
+
+      final startDt = DateTime(refDate.year, refDate.month, refDate.day, startH, startM);
+      final endDt = DateTime(refDate.year, refDate.month, refDate.day, endH, endM);
+
+      final dtFormat = DateFormat("yyyyMMdd'T'HHmmss");
+      final dtStamp = DateFormat("yyyyMMdd'T'HHmmss'Z'").format(now.toUtc());
+
+      buffer.writeln('BEGIN:VEVENT');
+      buffer.writeln('UID:${c.id.isNotEmpty ? c.id : c.nama.hashCode}_course@unazlam.ac.id');
+      buffer.writeln('DTSTAMP:$dtStamp');
+      buffer.writeln('DTSTART;TZID=Asia/Jakarta:${dtFormat.format(startDt)}');
+      buffer.writeln('DTEND;TZID=Asia/Jakarta:${dtFormat.format(endDt)}');
+      buffer.writeln('RRULE:FREQ=WEEKLY;BYDAY=$byDay');
+      buffer.writeln('SUMMARY:${c.nama} (${c.kode})');
+      buffer.writeln('LOCATION:${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"}');
+      final desc = 'Dosen: ${c.dosen} | ${c.sks} SKS${c.linkVirtual != null && c.linkVirtual!.isNotEmpty ? " | Link: ${c.linkVirtual}" : ""}';
+      buffer.writeln('DESCRIPTION:$desc');
+      buffer.writeln('STATUS:CONFIRMED');
+      buffer.writeln('END:VEVENT');
+    }
+
+    buffer.writeln('END:VCALENDAR');
+    return buffer.toString();
+  }
+
+  /// Export Jadwal Kuliah to CSV Format
+  static String exportScheduleCsv({
+    required List<Course> courses,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('No,Hari,Jam Mulai,Jam Selesai,Kode MK,Nama Mata Kuliah,SKS,Dosen Pengampu,Ruangan,Link Virtual');
+
+    for (int i = 0; i < courses.length; i++) {
+      final c = courses[i];
+      buffer.writeln(
+        '${i + 1},"${c.hari}","${c.jamMulai}","${c.jamSelesai}","${c.kode}","${c.nama}",${c.sks},"${c.dosen}","${c.ruangan}","${c.linkVirtual ?? '-'}"',
+      );
+    }
+
+    return buffer.toString();
+  }
+
+  /// Export Jadwal Kuliah as WhatsApp share text
+  static String exportScheduleWhatsappText({
+    required List<Course> courses,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln('*📅 JADWAL KULIAH PRODI ILMU KOMUNIKASI*');
+    buffer.writeln('*UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI (UNAZLAM)*');
+    buffer.writeln('────────────────────────────');
+
+    final dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    for (final day in dayOrder) {
+      final dayCourses = courses.where((c) => c.hari.trim().toLowerCase() == day.toLowerCase()).toList();
+      if (dayCourses.isEmpty) continue;
+
+      buffer.writeln('\n*📌 HARI ${day.toUpperCase()}*');
+      for (final c in dayCourses) {
+        buffer.writeln('• *${c.nama}* (${c.sks} SKS)');
+        buffer.writeln('  ⏰ ${c.jamMulai} - ${c.jamSelesai} WITA');
+        buffer.writeln('  📍 Ruang: ${c.ruangan}');
+        buffer.writeln('  👨‍🏫 Dosen: ${c.dosen}');
+        if (c.linkVirtual != null && c.linkVirtual!.isNotEmpty) {
+          buffer.writeln('  🔗 Virtual: ${c.linkVirtual}');
+        }
+      }
+    }
+    buffer.writeln('\n────────────────────────────');
+    buffer.writeln('_Diunduh otomatis via ILKOM UNAZLAM Hub_');
+    return buffer.toString();
+  }
+
   /// Show Export & Download Sheet
   static void showExportSheet(
     BuildContext context, {

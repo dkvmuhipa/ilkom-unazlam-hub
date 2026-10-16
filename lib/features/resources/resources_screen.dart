@@ -146,8 +146,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                         )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null)
+                      if (val != null) {
                         setDialogState(() => selectedCourse = val);
+                      }
                     },
                   ),
                   const SizedBox(height: 12),
@@ -191,8 +192,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                                   )
                                   .toList(),
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setDialogState(() => selectedJenis = val);
+                            }
                           },
                         ),
                       ),
@@ -275,7 +277,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                   );
                 } catch (error) {
                   debugPrint('Gagal menyimpan materi: $error');
-                  if (mounted)
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -283,6 +285,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                         ),
                       ),
                     );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -622,7 +625,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                   );
                 } catch (error) {
                   debugPrint('Gagal menghapus materi: $error');
-                  if (mounted)
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -630,6 +633,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                         ),
                       ),
                     );
+                  }
                 }
               },
             ),
