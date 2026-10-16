@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 
 import '../../models/models.dart';
 import 'auth_service.dart';
+import 'bulk_csv_service.dart';
 import 'supabase_service.dart';
 
 class SupabaseRepository {
@@ -1879,6 +1880,156 @@ class SupabaseRepository {
     } catch (e) {
       debugPrint('Error deleting poll in Supabase: $e');
       return false;
+    }
+  }
+
+  // ====================================================================
+  // BULK INGESTION HUB (IMPORT MASSAL CSV)
+  // ====================================================================
+
+  /// Bulk import data mahasiswa ke tabel students di Supabase
+  static Future<Map<String, dynamic>> bulkUpsertStudents(
+    List<ParsedStudentRow> rows, {
+    bool updateExisting = true,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) {
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': 'Supabase belum dikonfigurasi.',
+      };
+    }
+
+    final validRows = rows.where((r) => r.isValid).toList();
+    if (validRows.isEmpty) {
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': 'Tidak ada data valid untuk diimpor.',
+      };
+    }
+
+    try {
+      List<ParsedStudentRow> targetRows = validRows;
+      int skippedCount = 0;
+
+      if (!updateExisting) {
+        final nims = validRows.map((r) => r.nim).toList();
+        final existingRes = await client
+            .from('students')
+            .select('nim')
+            .inFilter('nim', nims);
+        final existingNims = (existingRes as List)
+            .map((e) => e['nim']?.toString() ?? '')
+            .toSet();
+
+        targetRows = validRows.where((r) => !existingNims.contains(r.nim)).toList();
+        skippedCount = validRows.length - targetRows.length;
+      }
+
+      if (targetRows.isNotEmpty) {
+        final payload = targetRows.map((r) => r.toSupabaseMap()).toList();
+        await client.from('students').upsert(payload, onConflict: 'nim');
+      }
+
+      return {
+        'success': true,
+        'total': rows.length,
+        'inserted': targetRows.length,
+        'skipped': skippedCount,
+        'failed': rows.length - validRows.length,
+        'errorMessage': null,
+      };
+    } catch (e) {
+      debugPrint('Error bulk upsert students ke Supabase: $e');
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': e.toString(),
+      };
+    }
+  }
+
+  /// Bulk import data mata kuliah ke tabel courses di Supabase
+  static Future<Map<String, dynamic>> bulkUpsertCourses(
+    List<ParsedCourseRow> rows, {
+    bool updateExisting = true,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) {
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': 'Supabase belum dikonfigurasi.',
+      };
+    }
+
+    final validRows = rows.where((r) => r.isValid).toList();
+    if (validRows.isEmpty) {
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': 'Tidak ada data valid untuk diimpor.',
+      };
+    }
+
+    try {
+      List<ParsedCourseRow> targetRows = validRows;
+      int skippedCount = 0;
+
+      if (!updateExisting) {
+        final codes = validRows.map((r) => r.kode).toList();
+        final existingRes = await client
+            .from('courses')
+            .select('kode_mk')
+            .inFilter('kode_mk', codes);
+        final existingCodes = (existingRes as List)
+            .map((e) => e['kode_mk']?.toString().toUpperCase() ?? '')
+            .toSet();
+
+        targetRows = validRows.where((r) => !existingCodes.contains(r.kode.toUpperCase())).toList();
+        skippedCount = validRows.length - targetRows.length;
+      }
+
+      if (targetRows.isNotEmpty) {
+        final payload = targetRows.map((r) => r.toSupabaseMap()).toList();
+        await client.from('courses').upsert(payload, onConflict: 'kode_mk');
+      }
+
+      return {
+        'success': true,
+        'total': rows.length,
+        'inserted': targetRows.length,
+        'skipped': skippedCount,
+        'failed': rows.length - validRows.length,
+        'errorMessage': null,
+      };
+    } catch (e) {
+      debugPrint('Error bulk upsert courses ke Supabase: $e');
+      return {
+        'success': false,
+        'total': rows.length,
+        'inserted': 0,
+        'skipped': 0,
+        'failed': rows.length,
+        'errorMessage': e.toString(),
+      };
     }
   }
 }

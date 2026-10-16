@@ -6,6 +6,7 @@ import '../../../core/services/export_service.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
+import '../widgets/admin_bulk_csv_modal.dart';
 import '../widgets/admin_common_widgets.dart';
 
 class AdminStudentsView extends StatefulWidget {
@@ -21,6 +22,12 @@ class AdminStudentsView extends StatefulWidget {
   final Future<void> Function(StudentProfile account, bool isActive) onSetActive;
   final Future<void> Function(StudentProfile account) onDeleteAccount;
   final VoidCallback onCreateAccount;
+  final void Function({
+    required String action,
+    required String module,
+    required String description,
+    Map<String, dynamic>? metadata,
+  })? onRecordAudit;
 
   const AdminStudentsView({
     super.key,
@@ -36,6 +43,7 @@ class AdminStudentsView extends StatefulWidget {
     required this.onSetActive,
     required this.onDeleteAccount,
     required this.onCreateAccount,
+    this.onRecordAudit,
   });
 
   @override
@@ -46,6 +54,22 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
   String _studentFilter = 'Aktif';
   String _studentSearchQuery = '';
   int _detailTab = 0;
+
+  void _openBulkImport() {
+    AdminBulkCsvModal.show(
+      context,
+      initialType: BulkImportType.students,
+      onReload: widget.onReload,
+      onShowMessage: widget.onShowMessage,
+      onRecordAudit: widget.onRecordAudit ??
+          ({
+            required action,
+            required module,
+            required description,
+            metadata,
+          }) {},
+    );
+  }
 
   String _getInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -585,34 +609,64 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                     ),
                     const SizedBox(height: 12),
                     Row(
-                      children: ['Semua', 'Aktif', 'Nonaktif'].map((f) {
-                        final isSel = _studentFilter == f;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: InkWell(
-                            onTap: () => setState(() => _studentFilter = f),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: isSel ? AppColors.primary : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isSel ? AppColors.primary : AppColors.borderMedium,
+                      children: [
+                        ...['Semua', 'Aktif', 'Nonaktif'].map((f) {
+                          final isSel = _studentFilter == f;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: InkWell(
+                              onTap: () => setState(() => _studentFilter = f),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: isSel ? AppColors.primary : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSel ? AppColors.primary : AppColors.borderMedium,
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                f,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-                                  color: isSel ? Colors.white : const Color(0xFF475569),
+                                child: Text(
+                                  f,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                    color: isSel ? Colors.white : const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
                             ),
+                          );
+                        }),
+                        const Spacer(),
+                        InkWell(
+                          onTap: _openBulkImport,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFC7D2FE)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.file_upload_outlined, size: 14, color: AppColors.primary),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Import CSV',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -744,22 +798,49 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
               ),
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.person_add_rounded, size: 18),
-                  onPressed: widget.onCreateAccount,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.file_upload_outlined, size: 17),
+                        onPressed: _openBulkImport,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: Color(0xFFC7D2FE), width: 1.5),
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        label: const Text(
+                          'Import CSV',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
+                      ),
                     ),
-                    elevation: 0,
-                  ),
-                  label: const Text(
-                    '+ Tambah & Undang Mahasiswa',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.person_add_rounded, size: 18),
+                        onPressed: widget.onCreateAccount,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        label: const Text(
+                          '+ Tambah Akun',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

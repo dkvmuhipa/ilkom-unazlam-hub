@@ -24,6 +24,7 @@ import 'views/admin_system_settings_view.dart';
 import 'views/admin_classes_view.dart';
 import 'views/admin_students_view.dart';
 import 'views/admin_attendance_matrix_view.dart';
+import 'widgets/admin_bulk_csv_modal.dart';
 import 'widgets/admin_creation_modals.dart';
 import 'models/admin_models.dart';
 
@@ -844,32 +845,65 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   letterSpacing: -0.3,
                 ),
               ),
-              InkWell(
-                onTap: _showQuickExportModal,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () => _showBulkCsvModal(),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.download_rounded, size: 13, color: AppColors.primary),
-                      SizedBox(width: 4),
-                      Text(
-                        'Ekspor Data',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                        ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFC7D2FE)),
                       ),
-                    ],
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.file_upload_outlined, size: 13, color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            'Import CSV',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: _showQuickExportModal,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.download_rounded, size: 13, color: Color(0xFF0F172A)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Ekspor Data',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1233,6 +1267,28 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       );
   }
 
+  void _showBulkCsvModal({BulkImportType initialType = BulkImportType.students}) {
+    AdminBulkCsvModal.show(
+      context,
+      initialType: initialType,
+      onReload: _refreshAllAdminData,
+      onShowMessage: _showAdminMessage,
+      onRecordAudit: ({
+        required String action,
+        required String module,
+        required String description,
+        Map<String, dynamic>? metadata,
+      }) {
+        _recordAudit(
+          action: action,
+          module: module,
+          description: description,
+          metadata: metadata ?? {},
+        );
+      },
+    );
+  }
+
   Widget _buildMenuTile({
     required IconData icon,
     required String title,
@@ -1420,6 +1476,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onSetActive: _setManagedAccountActive,
       onDeleteAccount: _deleteStudentAccount,
       onCreateAccount: _showCreateStudentAccountDialog,
+      onRecordAudit: ({
+        required String action,
+        required String module,
+        required String description,
+        Map<String, dynamic>? metadata,
+      }) {
+        _recordAudit(
+          action: action,
+          module: module,
+          description: description,
+          metadata: metadata ?? {},
+        );
+      },
     );
   }
 
@@ -1440,6 +1509,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onSetActive: _setManagedAccountActive,
       onDeleteAccount: _deleteStudentAccount,
       onCreateAccount: _showCreateStudentAccountDialog,
+      onRecordAudit: ({
+        required String action,
+        required String module,
+        required String description,
+        Map<String, dynamic>? metadata,
+      }) {
+        _recordAudit(
+          action: action,
+          module: module,
+          description: description,
+          metadata: metadata ?? {},
+        );
+      },
     );
   }
 

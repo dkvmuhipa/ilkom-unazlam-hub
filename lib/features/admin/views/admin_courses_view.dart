@@ -6,6 +6,7 @@ import '../../../core/services/supabase_repository.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
+import '../widgets/admin_bulk_csv_modal.dart';
 import '../widgets/admin_common_widgets.dart';
 
 class AdminCoursesView extends StatefulWidget {
@@ -41,6 +42,16 @@ class AdminCoursesView extends StatefulWidget {
 
 class _AdminCoursesViewState extends State<AdminCoursesView> {
   String _searchQuery = '';
+
+  void _openBulkImport() {
+    AdminBulkCsvModal.show(
+      context,
+      initialType: BulkImportType.courses,
+      onReload: widget.onReload,
+      onShowMessage: widget.onShowMessage,
+      onRecordAudit: widget.onRecordAudit,
+    );
+  }
 
   Color _getCourseColor(int index) {
     const colors = [
@@ -339,21 +350,46 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
                 onChanged: (val) => setState(() => _searchQuery = val),
               ),
               const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: () => _showCourseDialog(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: _openBulkImport,
+                      icon: const Icon(Icons.file_upload_outlined, size: 17),
+                      label: const Text('Import CSV', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: Color(0xFFC7D2FE), width: 1.5),
+                        minimumSize: const Size.fromHeight(46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  '+ Tambah Mata Kuliah',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showCourseDialog(),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text(
+                        'Tambah Matkul',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               if (filtered.isEmpty && !widget.isLoading)
