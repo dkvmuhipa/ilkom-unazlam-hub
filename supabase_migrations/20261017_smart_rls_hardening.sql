@@ -104,27 +104,11 @@ DROP POLICY IF EXISTS announcements_delete_officer ON public.announcements;
 CREATE POLICY announcements_read_all ON public.announcements
   FOR SELECT TO public USING (true);
 
-CREATE POLICY announcements_insert_officer ON public.announcements
-  FOR INSERT TO authenticated
+CREATE POLICY announcements_manage_officer ON public.announcements
+  FOR ALL TO authenticated
+  USING (public.has_class_role(ARRAY['ADMIN', 'Ketua Kelas', 'Sekretaris']))
   WITH CHECK (public.has_class_role(ARRAY['ADMIN', 'Ketua Kelas', 'Sekretaris']));
 
-CREATE POLICY announcements_update_officer ON public.announcements
-  FOR UPDATE TO authenticated
-  USING (
-    author_nim = (SELECT public.current_student_nim())
-    OR public.has_class_role(ARRAY['ADMIN', 'Ketua Kelas'])
-  )
-  WITH CHECK (
-    author_nim = (SELECT public.current_student_nim())
-    OR public.has_class_role(ARRAY['ADMIN', 'Ketua Kelas'])
-  );
-
-CREATE POLICY announcements_delete_officer ON public.announcements
-  FOR DELETE TO authenticated
-  USING (
-    author_nim = (SELECT public.current_student_nim())
-    OR public.has_class_role(ARRAY['ADMIN', 'Ketua Kelas'])
-  );
 
 
 -- ====================================================================
