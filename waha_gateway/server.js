@@ -23,6 +23,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware Pengamanan API Key Opsional (jika disetel melalui variabel lingkungan WAHA_API_KEY)
+const WAHA_API_KEY = (process.env.WAHA_API_KEY || '').trim();
+if (WAHA_API_KEY) {
+  app.use('/api', (req, res, next) => {
+    const clientKey = req.headers['x-api-key'] || req.query.apiKey;
+    if (clientKey !== WAHA_API_KEY) {
+      return res.status(401).json({
+        error: 'Akses Ditolak: Kunci API (X-Api-Key) tidak valid atau belum disertakan.',
+      });
+    }
+    next();
+  });
+}
+
+
 // Sesi WhatsApp State
 let sock = null;
 let currentStatus = 'STOPPED'; // 'STARTING', 'SCAN_QR_CODE', 'WORKING', 'STOPPED', 'FAILED'
