@@ -3,10 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier extends ChangeNotifier {
   static const String _prefKey = 'app_theme_mode';
-  ThemeMode _themeMode = ThemeMode.system;
 
-  ThemeMode get themeMode => _themeMode;
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  ThemeMode get themeMode => ThemeMode.light;
+  bool get isDarkMode => false;
 
   ThemeNotifier() {
     _loadThemeMode();
@@ -15,39 +14,23 @@ class ThemeNotifier extends ChangeNotifier {
   Future<void> _loadThemeMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final modeStr = prefs.getString(_prefKey);
-      if (modeStr == 'dark') {
-        _themeMode = ThemeMode.dark;
-      } else if (modeStr == 'light') {
-        _themeMode = ThemeMode.light;
-      } else {
-        _themeMode = ThemeMode.system;
-      }
+      // Pastikan preferensi tersimpan selalu di-reset ke mode terang
+      await prefs.setString(_prefKey, 'light');
       notifyListeners();
     } catch (_) {}
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
+    // Aplikasi strictly hanya menggunakan mode terang
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (mode == ThemeMode.dark) {
-        await prefs.setString(_prefKey, 'dark');
-      } else if (mode == ThemeMode.light) {
-        await prefs.setString(_prefKey, 'light');
-      } else {
-        await prefs.setString(_prefKey, 'system');
-      }
+      await prefs.setString(_prefKey, 'light');
     } catch (_) {}
   }
 
   void toggleTheme() {
-    if (_themeMode == ThemeMode.dark) {
-      setThemeMode(ThemeMode.light);
-    } else {
-      setThemeMode(ThemeMode.dark);
-    }
+    // No-op: Mode gelap dinonaktifkan
   }
 }
 

@@ -10,12 +10,14 @@ class AnnouncementDetailSheet extends StatelessWidget {
   final Announcement announcement;
   final VoidCallback? onChanged;
   final bool canManage;
+  final StudentProfile? currentUser;
 
   const AnnouncementDetailSheet({
     super.key,
     required this.announcement,
     this.onChanged,
     this.canManage = false,
+    this.currentUser,
   });
 
   Future<void> _shareToWhatsApp(BuildContext context) async {
@@ -194,6 +196,7 @@ class AnnouncementDetailSheet extends StatelessWidget {
                           AnnouncementFormDialog.show(
                             context,
                             existingAnnouncement: announcement,
+                            currentUser: currentUser,
                             onSuccess: () {
                               Navigator.pop(context);
                               onChanged?.call();

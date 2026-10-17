@@ -100,35 +100,42 @@ class _UrgentAssignmentSpotlightState extends State<UrgentAssignmentSpotlight>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Tugas Mendesak',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: textMain,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${widget.pendingCount} Tugas Aktif',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF7C3AED),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Tugas Mendesak',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: textMain,
+                            letterSpacing: -0.3,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${widget.pendingCount} Tugas Aktif',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF7C3AED),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 ScaleButton(
                   scaleDown: 0.94,
                   onTap: () => widget.onNavigateTab(2), // Ke Tab Tugas

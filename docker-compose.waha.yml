@@ -1,0 +1,35 @@
+# ==============================================================================
+# WAHA (WhatsApp HTTP API) - Docker Compose Configuration
+# devlikeapro/waha: https://waha.devlike.pro/
+# Sistem Informasi ILKOM UNAZLAM Hub
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: ilkom_waha_gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Makassar
+      # Set API Key jika ingin mengamankan akses REST API (opsional)
+      - WAHA_API_KEY=
+      # Kredensial untuk Swagger Dashboard UI (http://localhost:3000/)
+      - WHATSAPP_SWAGGER_USERNAME=admin
+      - WHATSAPP_SWAGGER_PASSWORD=ilkomunazlam2026
+      # Default engine: WEBJS (paling stabil & mendukung QR Code scan visual)
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      # Matikan logging berlebih di terminal
+      - WAHA_LOG_LEVEL=info
+      # Cetak QR Code di terminal konsol
+      - WAHA_PRINT_QR=True
+    volumes:
+      # Menyimpan sesi login WhatsApp agar tidak perlu scan QR berulang kali saat restart
+      - waha_sessions:/app/.sessions
+
+volumes:
+  waha_sessions:
+    name: ilkom_waha_sessions_data

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -223,6 +224,7 @@ class ColorfulIconBox extends StatelessWidget {
 
 class SaaSAvatar extends StatelessWidget {
   final String name;
+  final String? avatarUrl;
   final double size;
   final double fontSize;
   final double borderRadius;
@@ -230,6 +232,7 @@ class SaaSAvatar extends StatelessWidget {
   const SaaSAvatar({
     super.key,
     required this.name,
+    this.avatarUrl,
     this.size = 38,
     this.fontSize = 13,
     double? radius,
@@ -262,7 +265,7 @@ class SaaSAvatar extends StatelessWidget {
     final hash = cleanName.codeUnits.fold<int>(0, (prev, elem) => prev + elem);
     final theme = _palette[hash % _palette.length];
 
-    return Container(
+    Widget fallbackContent = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
@@ -288,6 +291,59 @@ class SaaSAvatar extends StatelessWidget {
         ),
       ),
     );
+
+    if (avatarUrl != null && avatarUrl!.trim().isNotEmpty) {
+      final url = avatarUrl!.trim();
+      Widget? imageWidget;
+
+      if (url.startsWith('data:image') || (!url.startsWith('http') && !url.startsWith('assets') && url.length > 100)) {
+        try {
+          final commaIndex = url.indexOf(',');
+          final base64String = commaIndex != -1 ? url.substring(commaIndex + 1) : url;
+          final bytes = base64Decode(base64String);
+          imageWidget = Image.memory(
+            bytes,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => fallbackContent,
+          );
+        } catch (_) {}
+      } else if (url.startsWith('http://') || url.startsWith('https://')) {
+        imageWidget = Image.network(
+          url,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => fallbackContent,
+        );
+      } else if (url.startsWith('assets/')) {
+        imageWidget = Image.asset(
+          url,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => fallbackContent,
+        );
+      }
+
+      if (imageWidget != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(color: theme['border']!, width: 1.2),
+            ),
+            child: imageWidget,
+          ),
+        );
+      }
+    }
+
+    return fallbackContent;
   }
 }
 

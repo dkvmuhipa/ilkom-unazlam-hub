@@ -439,7 +439,9 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
+  static ThemeData get darkTheme => lightTheme;
+
+  static ThemeData get unusedDarkTheme {
     const background = Color(0xFF0F172A); // Slate 900
     const surface = Color(0xFF1E293B); // Slate 800
     const surfaceVariant = Color(0xFF334155); // Slate 700

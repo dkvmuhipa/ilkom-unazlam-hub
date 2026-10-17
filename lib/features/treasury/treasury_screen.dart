@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/safe_launcher.dart';
 import '../../core/services/supabase_repository.dart';
+import '../../core/services/waha_service.dart';
 import '../../core/widgets/scale_button.dart';
 import '../../models/models.dart';
 import 'widgets/treasury_qris_modal.dart';
@@ -318,17 +319,36 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
 
   Future<void> _openWhatsAppReminder(StudentProfile s) async {
     if (!widget.canManage || s.noWa.trim().isEmpty) return;
+
+    final nominalStr = _formatRupiah(_iuranNominal[s.nim] ?? 20000);
+    final rawMessage = 'Halo *${s.nama}* (NIM: ${s.nim}),\n\n'
+        'Kami mengingatkan tagihan iuran kas kelas periode $_periodLabel sebesar $nominalStr belum tercatat lunas.\n\n'
+        'Pembayaran dapat dilakukan melalui scan QRIS resmi kelas atau transfer ke Bank Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM UNAZLAM 2026.\n\n'
+        'Setelah transfer, silakan kirim bukti ke nomor ini. Terima kasih! 🙏✨';
+
+    // 1. Coba kirim otomatis jika WAHA Gateway aktif
+    try {
+      final wahaStatus = await WahaService.getSessionStatus();
+      if (wahaStatus.isConnected) {
+        final res = await WahaService.sendTextMessage(recipient: s.noWa, text: rawMessage);
+        if (res.success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pesan pengingat kas otomatis berhasil dikirim ke WhatsApp ${s.nama}! 📨✨'),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback membuka aplikasi WhatsApp via wa.me
     final cleanPhone = s.noWa.replaceAll(RegExp(r'\D'), '');
     final internationalPhone = cleanPhone.startsWith('0')
         ? '62${cleanPhone.substring(1)}'
         : cleanPhone;
-    final nominalStr = _formatRupiah(_iuranNominal[s.nim] ?? 20000);
-    final message = Uri.encodeComponent(
-      'Halo ${s.nama},\n\n'
-      'Kami mengingatkan tagihan iuran kas kelas periode $_periodLabel sebesar $nominalStr belum tercatat lunas.\n\n'
-      'Pembayaran dapat dilakukan melalui scan QRIS resmi kelas atau transfer ke Bank Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM UNAZLAM 2026.\n\n'
-      'Setelah transfer, silakan kirim bukti ke nomor ini. Terima kasih! 🙏',
-    );
+    final message = Uri.encodeComponent(rawMessage);
     final url = 'https://wa.me/$internationalPhone?text=$message';
     safeLaunchUrl(url);
   }

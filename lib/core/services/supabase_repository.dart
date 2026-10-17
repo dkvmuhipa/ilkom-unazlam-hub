@@ -31,7 +31,13 @@ class SupabaseRepository {
           debugPrint('⚡ [Supabase Realtime] Perubahan terdeteksi di tabel $table (${payload.eventType})');
           onDataChanged();
         },
-      ).subscribe();
+      ).subscribe((status, [error]) {
+        if (error != null) {
+          debugPrint('⚠️ [Supabase Realtime] Channel $table error: $error (status: $status)');
+        } else {
+          debugPrint('✅ [Supabase Realtime] Channel $table status: $status');
+        }
+      });
       return channel;
     } catch (e) {
       debugPrint('Error mendaftar realtime channel untuk $table: $e');
@@ -472,8 +478,8 @@ class SupabaseRepository {
       final list = (response as List).map((row) {
         return Announcement(
           id: row['id']?.toString() ?? '',
-          authorName: row['author_name'] ?? 'Nur Farida',
-          authorRole: row['author_role'] ?? 'Ketua Kelas',
+          authorName: row['author_name'] ?? 'Admin / Pengurus Kelas',
+          authorRole: row['author_role'] ?? 'Pengurus Kelas',
           judul: row['judul'] ?? '',
           isi: row['isi'] ?? '',
           isPinned: row['is_pinned'] ?? false,
@@ -499,8 +505,8 @@ class SupabaseRepository {
     required String isi,
     required String kategori,
     bool isPinned = false,
-    String authorName = 'Nur Farida (Ketua Kelas)',
-    String authorRole = 'Ketua Kelas',
+    String authorName = 'Admin / Pengurus Kelas',
+    String authorRole = 'Pengurus Kelas',
     String targetAudience = 'ALL',
     String? targetAngkatan,
     String? targetKelas,
@@ -555,6 +561,8 @@ class SupabaseRepository {
         'isi': announcement.isi,
         'kategori': announcement.kategori,
         'is_pinned': announcement.isPinned,
+        'author_name': announcement.authorName,
+        'author_role': announcement.authorRole,
         'target_audience': announcement.targetAudience,
       };
       if (announcement.targetAngkatan != null) {
@@ -887,6 +895,8 @@ class SupabaseRepository {
                   isAktif: row['is_aktif'] as bool? ?? true,
                   instagram: row['instagram']?.toString(),
                   linkedin: row['linkedin']?.toString(),
+                  avatarUrl: row['avatar_url']?.toString(),
+                  bio: row['bio']?.toString(),
                 );
               },
             )
@@ -902,7 +912,7 @@ class SupabaseRepository {
         final rows = await client
             .from('students')
             .select(
-              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio',
             )
             .eq('is_aktif', true)
             .order('nama');
@@ -927,13 +937,52 @@ class SupabaseRepository {
                     isAktif: row['is_aktif'] as bool? ?? true,
                     instagram: row['instagram']?.toString(),
                     linkedin: row['linkedin']?.toString(),
+                    avatarUrl: row['avatar_url']?.toString(),
+                    bio: row['bio']?.toString(),
                   );
                 },
               )
               .toList();
         }
       } catch (e) {
-        debugPrint('Warning: query langsung tabel students gagal ($e).');
+        try {
+          final fallbackRows = await client
+              .from('students')
+              .select(
+                'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url',
+              )
+              .eq('is_aktif', true)
+              .order('nama');
+          if (fallbackRows.isNotEmpty) {
+            result = fallbackRows
+                .map(
+                  (row) {
+                    final rawEmail = row['email']?.toString().trim() ?? '';
+                    final cleanEmail = rawEmail;
+                    return StudentProfile(
+                      id: row['id']?.toString() ?? '',
+                      nim: row['nim']?.toString() ?? '',
+                      nama: row['nama']?.toString() ?? '',
+                      email: cleanEmail,
+                      noWa: row['no_wa']?.toString() ?? '',
+                      peminatan: row['peminatan']?.toString() ?? '',
+                      prodi: row['prodi']?.toString() ?? 'Ilmu Komunikasi',
+                      semester: (row['semester'] as num?)?.toInt() ?? 1,
+                      kelas: row['kelas']?.toString() ?? 'Ilmu Komunikasi',
+                      role: row['role']?.toString() ?? 'MAHASISWA',
+                      jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
+                      isAktif: row['is_aktif'] as bool? ?? true,
+                      instagram: row['instagram']?.toString(),
+                      linkedin: row['linkedin']?.toString(),
+                      avatarUrl: row['avatar_url']?.toString(),
+                    );
+                  },
+                )
+                .toList();
+          }
+        } catch (err) {
+          debugPrint('Warning: query langsung tabel students gagal ($err).');
+        }
       }
     }
 

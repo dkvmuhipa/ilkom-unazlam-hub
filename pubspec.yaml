@@ -46,6 +46,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   image_picker: ^1.2.4
   crypto: ^3.0.7
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

@@ -12,11 +12,13 @@ import 'widgets/announcement_headline_card.dart';
 
 class AnnouncementsScreen extends StatefulWidget {
   final bool canPost;
+  final StudentProfile? currentUser;
   final VoidCallback? onBack;
 
   const AnnouncementsScreen({
     super.key,
     this.canPost = true,
+    this.currentUser,
     this.onBack,
   });
 
@@ -25,6 +27,7 @@ class AnnouncementsScreen extends StatefulWidget {
     Announcement announcement, {
     VoidCallback? onChanged,
     bool canManage = false,
+    StudentProfile? currentUser,
   }) {
     showModalBottomSheet(
       context: context,
@@ -34,6 +37,7 @@ class AnnouncementsScreen extends StatefulWidget {
         announcement: announcement,
         onChanged: onChanged,
         canManage: canManage,
+        currentUser: currentUser,
       ),
     );
   }
@@ -149,12 +153,14 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       ann,
       onChanged: _loadAnnouncements,
       canManage: widget.canPost,
+      currentUser: widget.currentUser,
     );
   }
 
   void _openCreateDialog() {
     AnnouncementFormDialog.show(
       context,
+      currentUser: widget.currentUser,
       onSuccess: _loadAnnouncements,
     );
   }

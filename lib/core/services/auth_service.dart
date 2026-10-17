@@ -229,7 +229,7 @@ class AuthService {
       StudentProfile? matched;
       try {
         final query = _client.from('students').select(
-          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio',
         );
         final sRow = loginValue.contains('@')
             ? await query.eq('email', loginValue).maybeSingle()
@@ -237,7 +237,19 @@ class AuthService {
         if (sRow != null) {
           matched = _profileFromRow(sRow);
         }
-      } catch (_) {}
+      } catch (_) {
+        try {
+          final query = _client.from('students').select(
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+          );
+          final sRow = loginValue.contains('@')
+              ? await query.eq('email', loginValue).maybeSingle()
+              : await query.eq('nim', loginValue).maybeSingle();
+          if (sRow != null) {
+            matched = _profileFromRow(sRow);
+          }
+        } catch (_) {}
+      }
 
       if (matched != null) {
         SharedPreferences? prefs;
@@ -293,8 +305,8 @@ class AuthService {
     // Ambil profil mahasiswa: cari berdasarkan auth_user_id ATAU email (parameterized)
     StudentProfile? profile;
     try {
-      final selectCols =
-          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+      const selectCols =
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio';
       var row = await _client
           .from('students')
           .select(selectCols)
@@ -313,7 +325,29 @@ class AuthService {
         profile = _profileFromRow(row);
       }
     } catch (e) {
-      debugPrint('Info: Ambil profil mahasiswa dari database: $e');
+      try {
+        const fallbackCols =
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+        var row = await _client
+            .from('students')
+            .select(fallbackCols)
+            .eq('auth_user_id', user.id)
+            .maybeSingle();
+
+        if (row == null && user.email != null && user.email!.isNotEmpty) {
+          row = await _client
+              .from('students')
+              .select(fallbackCols)
+              .eq('email', user.email!)
+              .maybeSingle();
+        }
+
+        if (row != null) {
+          profile = _profileFromRow(row);
+        }
+      } catch (err) {
+        debugPrint('Info: Ambil profil mahasiswa dari database: $err');
+      }
     }
 
     profile ??= StudentProfile(
@@ -432,8 +466,8 @@ class AuthService {
     final user = _client.auth.currentUser;
     if (user != null) {
       try {
-        final selectCols =
-            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+        const selectCols =
+            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio';
         var row = await _client
             .from('students')
             .select(selectCols)
@@ -450,9 +484,42 @@ class AuthService {
 
         if (row != null) {
           final profile = _profileFromRow(row);
-          if (profile.isAktif) return profile;
+          if (profile.isAktif) {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              applyCustomProfileOverrides(profile, prefs);
+            } catch (_) {}
+            return profile;
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        try {
+          const fallbackCols =
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+          var row = await _client
+              .from('students')
+              .select(fallbackCols)
+              .eq('auth_user_id', user.id)
+              .maybeSingle();
+
+          if (row == null && user.email != null && user.email!.isNotEmpty) {
+            row = await _client
+                .from('students')
+                .select(fallbackCols)
+                .eq('email', user.email!)
+                .maybeSingle();
+          }
+
+          if (row != null) {
+            final profile = _profileFromRow(row);
+            if (profile.isAktif) {
+              final prefs = await SharedPreferences.getInstance();
+              applyCustomProfileOverrides(profile, prefs);
+              return profile;
+            }
+          }
+        } catch (_) {}
+      }
     }
 
     // 2. Coba pulihkan dari sesi aktif tersimpan di SharedPreferences
@@ -461,8 +528,8 @@ class AuthService {
       final savedNim = prefs.getString('active_session_nim');
       if (savedNim != null && savedNim.isNotEmpty) {
         try {
-          final selectCols =
-              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+          const selectCols =
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio';
           final row = await _client
               .from('students')
               .select(selectCols)
@@ -475,7 +542,24 @@ class AuthService {
               return profile;
             }
           }
-        } catch (_) {}
+        } catch (_) {
+          try {
+            const fallbackCols =
+                'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin';
+            final row = await _client
+                .from('students')
+                .select(fallbackCols)
+                .eq('nim', savedNim)
+                .maybeSingle();
+            if (row != null) {
+              final profile = _profileFromRow(row);
+              if (profile.isAktif) {
+                applyCustomProfileOverrides(profile, prefs);
+                return profile;
+              }
+            }
+          } catch (_) {}
+        }
       }
     } catch (_) {}
 
@@ -563,16 +647,30 @@ class AuthService {
     try {
       final client = SupabaseService.client;
       if (client != null) {
-        final updates = <String, dynamic>{
+        final baseUpdates = <String, dynamic>{
           if (noWa != null) 'no_wa': noWa.trim(),
           if (peminatan != null) 'peminatan': peminatan.trim(),
           if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
           if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
           if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
-          if (bio != null) 'bio': bio.trim(),
         };
-        if (updates.isNotEmpty) {
-          await client.from('students').update(updates).eq('nim', nim);
+
+        // Coba sertakan bio terlebih dahulu
+        bool synced = false;
+        if (bio != null) {
+          try {
+            final updatesWithBio = Map<String, dynamic>.from(baseUpdates);
+            updatesWithBio['bio'] = bio.trim();
+            await client.from('students').update(updatesWithBio).eq('nim', nim);
+            synced = true;
+          } catch (e) {
+            debugPrint('Info: Sinkronisasi dengan bio belum didukung schema database: $e');
+          }
+        }
+
+        // Jika belum tersinkron atau bio null, kirim baseUpdates
+        if (!synced && baseUpdates.isNotEmpty) {
+          await client.from('students').update(baseUpdates).eq('nim', nim);
         }
       }
     } catch (e) {

@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/supabase_repository.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/waha_service.dart';
 import '../../../models/models.dart';
 import '../models/admin_models.dart';
 import 'admin_common_widgets.dart';
@@ -72,6 +75,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
   String _selectedKelas = '';
   bool _isPinned = true;
   bool _sendFcmPush = true;
+  bool _sendWahaBlast = false;
+  bool _isWahaOnline = false;
+  int _targetWaCount = 0;
+  String _wahaTargetMode = 'JAPRI'; // 'JAPRI' or 'GROUP'
   bool _isSending = false;
 
   // Data State
@@ -101,6 +108,16 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
 
     _updateTargetRecipientCount();
     _loadBroadcastHistory();
+    _checkWahaStatus();
+  }
+
+  Future<void> _checkWahaStatus() async {
+    try {
+      final info = await WahaService.getSessionStatus();
+      if (mounted) {
+        setState(() => _isWahaOnline = info.isConnected);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -120,6 +137,23 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         targetKelas: _targetAudience == 'KELAS' ? _selectedKelas : null,
       );
       if (mounted) setState(() => _targetTokenCount = count);
+
+      // Hitung juga jumlah nomor WhatsApp mahasiswa pada target
+      final client = SupabaseService.client;
+      if (client != null) {
+        var query = client.from('students').select('no_wa').eq('is_aktif', true);
+        if (_targetAudience == 'KELAS' && _selectedKelas.isNotEmpty) {
+          query = query.eq('kelas', _selectedKelas);
+        }
+        final rows = await query;
+        if (mounted) {
+          final waList = (rows as List).where((r) {
+            final wa = r['no_wa']?.toString().trim();
+            return wa != null && wa.isNotEmpty;
+          }).toList();
+          setState(() => _targetWaCount = waList.length);
+        }
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _isLoadingTokens = false);
@@ -169,7 +203,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         widget.onRecordAudit(
           action: 'BROADCAST',
           module: 'PENGUMUMAN',
-          description: 'Mengirim broadcast "$title" ke target $_targetAudience (Push: $_sendFcmPush)',
+          description: 'Mengirim broadcast "$title" ke target $_targetAudience (Push: $_sendFcmPush, WAHA: $_sendWahaBlast)',
           metadata: {
             'target_audience': _targetAudience,
             'target_angkatan': _targetAngkatanValue,
@@ -177,11 +211,59 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             'kategori': _selectedCategory,
             'is_pinned': _isPinned,
             'target_tokens': _targetTokenCount,
+            'waha_blast': _sendWahaBlast,
+            'waha_target_count': _targetWaCount,
           },
         );
 
+        // Eksekusi Pengiriman Pesan WhatsApp via WAHA Gateway
+        if (_sendWahaBlast) {
+          try {
+            final client = SupabaseService.client;
+            if (client != null) {
+              var query = client.from('students').select('nama,nim,no_wa').eq('is_aktif', true);
+              if (_targetAudience == 'KELAS' && _selectedKelas.isNotEmpty) {
+                query = query.eq('kelas', _selectedKelas);
+              }
+              final rows = await query;
+              final waList = <String>[];
+              for (final r in rows) {
+                final phone = r['no_wa']?.toString().trim();
+                if (phone != null && phone.isNotEmpty) {
+                  waList.add(phone);
+                }
+              }
+
+              final waMessage = WahaService.formatAnnouncementMessage(
+                Announcement(
+                  id: '',
+                  authorName: 'Admin Program Studi',
+                  authorRole: 'Admin',
+                  judul: title,
+                  isi: body,
+                  kategori: _selectedCategory,
+                  createdAt: DateTime.now(),
+                ),
+              );
+
+              if (_wahaTargetMode == 'GROUP') {
+                final defaultGroup = await WahaService.getDefaultGroupId();
+                if (defaultGroup != null && defaultGroup.isNotEmpty) {
+                  unawaited(WahaService.sendTextMessage(recipient: defaultGroup, text: waMessage));
+                }
+              } else if (waList.isNotEmpty) {
+                unawaited(WahaService.broadcastMessage(recipients: waList, text: waMessage));
+              }
+            }
+          } catch (e) {
+            debugPrint('Info: Gagal dispatch WhatsApp WAHA: $e');
+          }
+        }
+
         widget.onShowMessage(
-          'Siaran berhasil dikirim & disebarkan ke $_targetTokenCount perangkat mahasiswa!',
+          _sendWahaBlast
+              ? 'Siaran berhasil diterbitkan, push FCM aktif, dan $_targetWaCount pesan WhatsApp sedang disiarkan via WAHA!'
+              : 'Siaran berhasil dikirim & disebarkan ke $_targetTokenCount perangkat mahasiswa!',
         );
 
         await widget.onRefresh();
@@ -629,6 +711,132 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+
+          // WAHA WhatsApp Gateway Blast Switch
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: _sendWahaBlast ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _sendWahaBlast ? const Color(0xFFA7F3D0) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.phone_android_rounded, size: 16, color: Color(0xFF059669)),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Blast WhatsApp Otomatis (WAHA Gateway)',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: _isWahaOnline ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    _isWahaOnline ? 'ONLINE' : 'OFFLINE',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: _isWahaOnline ? const Color(0xFF166534) : const Color(0xFF991B1B),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _targetWaCount > 0
+                                  ? 'Tersedia $_targetWaCount nomor WhatsApp mahasiswa terverifikasi'
+                                  : 'Kirim pesan otomatis via REST API WhatsApp',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: _sendWahaBlast,
+                      activeThumbColor: const Color(0xFF25D366),
+                      activeTrackColor: const Color(0xFFA7F3D0),
+                      onChanged: (v) {
+                        setState(() => _sendWahaBlast = v);
+                        if (v && !_isWahaOnline) {
+                          widget.onShowMessage(
+                            'Perhatian: Server WAHA belum terhubung atau offline. Anda dapat mengaturnya di menu WA Gateway.',
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                if (_sendWahaBlast) ...[
+                  const SizedBox(height: 8),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text(
+                        'Target Kirim: ',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: Text('Japri ke Nomor Mahasiswa ($_targetWaCount Nomor)'),
+                        selected: _wahaTargetMode == 'JAPRI',
+                        selectedColor: const Color(0xFFDCFCE7),
+                        labelStyle: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: _wahaTargetMode == 'JAPRI' ? const Color(0xFF166534) : const Color(0xFF475569),
+                        ),
+                        onSelected: (val) {
+                          if (val) setState(() => _wahaTargetMode = 'JAPRI');
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Grup WA Resmi Kelas'),
+                        selected: _wahaTargetMode == 'GROUP',
+                        selectedColor: const Color(0xFFDCFCE7),
+                        labelStyle: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: _wahaTargetMode == 'GROUP' ? const Color(0xFF166534) : const Color(0xFF475569),
+                        ),
+                        onSelected: (val) {
+                          if (val) setState(() => _wahaTargetMode = 'GROUP');
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 

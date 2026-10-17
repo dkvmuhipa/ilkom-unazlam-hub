@@ -142,44 +142,53 @@ class DigitalKtmCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                              ),
+                              child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
                             ),
-                            child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
-                          ),
-                          const SizedBox(width: 10),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'UNAZLAM PALU',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.9,
-                                ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'UNAZLAM PALU',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.9,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 1),
+                                  Text(
+                                    'FAKULTAS ILMU SOSIAL & POLITIK',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.4,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 1),
-                              Text(
-                                'FAKULTAS ILMU SOSIAL & POLITIK',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
 
                       // Status Aktif LED Pill
                       Container(
@@ -472,13 +481,17 @@ class DigitalKtmCard extends StatelessWidget {
                         children: [
                           Icon(Icons.qr_code_rounded, size: 18, color: Color(0xFF1E40AF)),
                           SizedBox(width: 8),
-                          Text(
-                            'Tampilkan QR Code KTM Digital',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E40AF),
-                              letterSpacing: 0.2,
+                          Flexible(
+                            child: Text(
+                              'Tampilkan QR Code KTM Digital',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1E40AF),
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ),
                         ],

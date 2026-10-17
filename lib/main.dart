@@ -152,6 +152,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   String _userNim = '';
   String _userName = '';
   bool _isAdminMode = false;
+  bool _isActualAdmin = false;
   late bool _isAuthSetupFlow;
   late String? _authSetupFlowType;
   StreamSubscription<AuthState>? _authStateSubscription;
@@ -192,6 +193,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _userNim = profile.nim;
       _userName = profile.nama;
       _isAdminMode = profile.isAdmin;
+      _isActualAdmin = profile.isAdmin;
     });
   }
 
@@ -204,6 +206,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
         _userNim = profile.nim;
         _userName = profile.nama;
         _isAdminMode = profile.isAdmin;
+        _isActualAdmin = profile.isAdmin;
       });
       unawaited(FcmService.syncDeviceToken(profile.nim));
     }
@@ -223,6 +226,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _userName = profile.nama;
       _isLoggedIn = true;
       _isAdminMode = profile.isAdmin;
+      _isActualAdmin = profile.isAdmin;
     });
     unawaited(FcmService.syncDeviceToken(profile.nim));
   }
@@ -233,6 +237,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _userNim = '';
       _userName = '';
       _isAdminMode = false;
+      _isActualAdmin = false;
     });
     if (SupabaseService.client != null) {
       try {
@@ -252,8 +257,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
           title: 'ILKOM UNAZLAM Hub',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeScope.notifier.themeMode,
+          themeMode: ThemeMode.light,
           home: _isAuthSetupFlow
               ? InviteAcceptScreen(
                   flowType: _authSetupFlowType!,
@@ -268,12 +272,12 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
                           ? AdminShellScreen(
                               onLogout: _onLogout,
                               onSwitchToStudentView: () =>
-                                  setState(() => _isAdminMode = false),
+                                   setState(() => _isAdminMode = false),
                             )
                           : MainResponsiveShell(
                               userNim: _userNim,
                               userName: _userName,
-                              isAdminUser: _isAdminMode,
+                              isAdminUser: _isActualAdmin,
                               onSwitchToAdminView: () =>
                                   setState(() => _isAdminMode = true),
                               onLogout: _onLogout,
@@ -442,6 +446,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       AnnouncementsScreen(
         key: ValueKey('announcements_${currentUser.nim}'),
         canPost: currentUser.canPostAnnouncement,
+        currentUser: currentUser,
         onBack: _goBack,
       ), // 7: Pengumuman
       TreasuryScreen(
@@ -530,7 +535,22 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                           constraints: BoxConstraints(
                             maxWidth: isWide ? 900 : 580,
                           ),
-                          child: screen,
+                          child: Column(
+                            children: [
+                              if (widget.isAdminUser &&
+                                  widget.onSwitchToAdminView != null)
+                                _buildAdminPreviewBanner(isWide: isWide),
+                              Expanded(
+                                child: (isWide || !widget.isAdminUser)
+                                    ? screen
+                                    : MediaQuery.removePadding(
+                                        context: context,
+                                        removeTop: true,
+                                        child: screen,
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -575,6 +595,104 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         );
       },
     );
+  }
+
+  Widget _buildAdminPreviewBanner({required bool isWide}) {
+    final banner = Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(16, isWide ? 14 : 8, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFDC2626).withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.visibility_rounded,
+              color: Color(0xFFDC2626),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 11),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Mode Pratinjau Siswa',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF991B1B),
+                  ),
+                ),
+                Text(
+                  'Melihat aplikasi dari sudut pandang mahasiswa',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: Color(0xFFB91C1C),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: const Color(0xFFDC2626),
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              onTap: widget.onSwitchToAdminView,
+              borderRadius: BorderRadius.circular(10),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.admin_panel_settings_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Kembali ke Admin',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!isWide) {
+      return SafeArea(bottom: false, child: banner);
+    }
+    return banner;
   }
 
   Widget _buildDesktopSidebar(StudentProfile student) {
@@ -1118,38 +1236,6 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Column(
                 children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                      ),
-                      leading: const Icon(
-                        Icons.settings_outlined,
-                        color: Color(0xFF6B7280),
-                        size: 20,
-                      ),
-                      title: const Text(
-                        'Ganti tema',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4B5563),
-                        ),
-                      ),
-                      subtitle: const Text(
-                        'Beralih antara mode terang dan gelap',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: AppColors.textSub,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        ThemeScope.notifier.toggleTheme();
-                      },
-                    ),
-                  ),
                   Material(
                     color: Colors.transparent,
                     child: ListTile(

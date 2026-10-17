@@ -42,27 +42,34 @@ class ProfileAcademicSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.school_rounded, color: Color(0xFF1E40AF), size: 18),
                     ),
-                    child: const Icon(Icons.school_rounded, color: Color(0xFF1E40AF), size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Informasi Akademik',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: textPrimary,
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Informasi Akademik',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               ScaleButton(
                 onTap: onEditPeminatan,
                 scaleDown: 0.94,

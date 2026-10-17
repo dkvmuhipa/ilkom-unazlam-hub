@@ -5,17 +5,20 @@ import '../../../models/models.dart';
 
 class AnnouncementFormDialog extends StatefulWidget {
   final Announcement? existingAnnouncement;
+  final StudentProfile? currentUser;
   final VoidCallback onSuccess;
 
   const AnnouncementFormDialog({
     super.key,
     this.existingAnnouncement,
+    this.currentUser,
     required this.onSuccess,
   });
 
   static Future<void> show(
     BuildContext context, {
     Announcement? existingAnnouncement,
+    StudentProfile? currentUser,
     required VoidCallback onSuccess,
   }) {
     return showDialog(
@@ -23,6 +26,7 @@ class AnnouncementFormDialog extends StatefulWidget {
       barrierDismissible: false,
       builder: (ctx) => AnnouncementFormDialog(
         existingAnnouncement: existingAnnouncement,
+        currentUser: currentUser,
         onSuccess: onSuccess,
       ),
     );
@@ -35,6 +39,8 @@ class AnnouncementFormDialog extends StatefulWidget {
 class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
+  late final TextEditingController _authorNameController;
+  late final TextEditingController _authorRoleController;
   late String _category;
   late bool _isPinned;
   bool _isSubmitting = false;
@@ -50,8 +56,40 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
   void initState() {
     super.initState();
     final item = widget.existingAnnouncement;
+    final user = widget.currentUser;
+
     _titleController = TextEditingController(text: item?.judul ?? '');
     _contentController = TextEditingController(text: item?.isi ?? '');
+
+    // Resolusi nama & peran penerbit yang cerdas dan dinamis
+    String initialAuthorName;
+    String initialAuthorRole;
+
+    if (item != null) {
+      initialAuthorName = item.authorName;
+      initialAuthorRole = item.authorRole;
+    } else if (user != null) {
+      if (user.isAdmin) {
+        initialAuthorName = 'Admin Program Studi';
+        initialAuthorRole = 'Admin';
+      } else if (user.isKetuaKelas) {
+        initialAuthorName = '${user.nama} (Ketua Kelas)';
+        initialAuthorRole = 'Ketua Kelas';
+      } else if (user.isSekretaris) {
+        initialAuthorName = '${user.nama} (Sekretaris)';
+        initialAuthorRole = 'Sekretaris';
+      } else {
+        initialAuthorName = user.nama;
+        initialAuthorRole = user.jabatan.isNotEmpty ? user.jabatan : 'Pengurus Kelas';
+      }
+    } else {
+      initialAuthorName = 'Pengurus Kelas';
+      initialAuthorRole = 'Pengurus';
+    }
+
+    _authorNameController = TextEditingController(text: initialAuthorName);
+    _authorRoleController = TextEditingController(text: initialAuthorRole);
+
     _category = item?.kategori ?? 'Kelas';
     if (!_categoryOptions.contains(_category)) {
       _category = 'Kelas';
@@ -63,12 +101,20 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _authorNameController.dispose();
+    _authorRoleController.dispose();
     super.dispose();
   }
 
   Future<void> _handleSubmit() async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
+    final authorName = _authorNameController.text.trim().isNotEmpty
+        ? _authorNameController.text.trim()
+        : (widget.currentUser?.nama ?? 'Admin / Pengurus');
+    final authorRole = _authorRoleController.text.trim().isNotEmpty
+        ? _authorRoleController.text.trim()
+        : 'Pengurus Kelas';
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,11 +147,15 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
       final oldIsi = ann.isi;
       final oldCat = ann.kategori;
       final oldPin = ann.isPinned;
+      final oldAuthorName = ann.authorName;
+      final oldAuthorRole = ann.authorRole;
 
       ann.judul = title;
       ann.isi = content;
       ann.kategori = _category;
       ann.isPinned = _isPinned;
+      ann.authorName = authorName;
+      ann.authorRole = authorRole;
 
       success = await SupabaseRepository.updateAnnouncement(ann);
       if (!success) {
@@ -113,6 +163,8 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
         ann.isi = oldIsi;
         ann.kategori = oldCat;
         ann.isPinned = oldPin;
+        ann.authorName = oldAuthorName;
+        ann.authorRole = oldAuthorRole;
       }
     } else {
       success = await SupabaseRepository.createAnnouncement(
@@ -120,7 +172,8 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
         isi: content,
         kategori: _category,
         isPinned: _isPinned,
-        authorName: 'Nur Farida (Ketua Kelas)',
+        authorName: authorName,
+        authorRole: authorRole,
       );
     }
 
@@ -251,6 +304,130 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                       borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Identitas Penerbit (Author) Card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF1E3A8A)),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Identitas Penerbit Warta *',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Bisa disesuaikan',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blueGrey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: TextField(
+                              controller: _authorNameController,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Penerbit',
+                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                isDense: true,
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                              ),
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 4,
+                            child: TextField(
+                              controller: _authorRoleController,
+                              decoration: InputDecoration(
+                                labelText: 'Peran / Jabatan',
+                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                isDense: true,
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                              ),
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Quick Preset Chips
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (widget.currentUser != null)
+                            _buildAuthorPresetChip(
+                              label: 'Saya (${widget.currentUser!.nama.split(" ").first})',
+                              name: widget.currentUser!.nama,
+                              role: widget.currentUser!.jabatan.isNotEmpty
+                                  ? widget.currentUser!.jabatan
+                                  : (widget.currentUser!.isAdmin ? 'Admin' : 'Mahasiswa'),
+                            ),
+                          _buildAuthorPresetChip(
+                            label: 'Admin Prodi',
+                            name: 'Admin Program Studi',
+                            role: 'Admin',
+                          ),
+                          _buildAuthorPresetChip(
+                            label: 'Ketua Kelas',
+                            name: widget.currentUser?.isKetuaKelas == true
+                                ? '${widget.currentUser!.nama} (Ketua Kelas)'
+                                : 'Ketua Kelas',
+                            role: 'Ketua Kelas',
+                          ),
+                          _buildAuthorPresetChip(
+                            label: 'Dosen Pengampu',
+                            name: 'Dosen Pengampu',
+                            role: 'Dosen',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -442,6 +619,42 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthorPresetChip({
+    required String label,
+    required String name,
+    required String role,
+  }) {
+    final isActive = _authorNameController.text == name && _authorRoleController.text == role;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _authorNameController.text = name;
+          _authorRoleController.text = role;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFEFF6FF) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            width: isActive ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            color: isActive ? const Color(0xFF1E40AF) : const Color(0xFF475569),
           ),
         ),
       ),

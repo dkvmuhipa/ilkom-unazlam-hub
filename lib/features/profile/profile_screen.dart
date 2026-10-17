@@ -18,7 +18,6 @@ import 'widgets/ktm_card_modal.dart';
 import 'widgets/profile_academic_section.dart';
 import 'widgets/profile_contact_section.dart';
 import 'widgets/profile_quick_stats.dart';
-import 'widgets/theme_settings_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
@@ -43,7 +42,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _showLeaderPanel = false;
   String? _currentAvatarUrl;
   bool _isUpdatingAvatar = false;
 
@@ -207,6 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _currentAvatarUrl = base64String;
             student.avatarUrl = base64String;
           });
+          widget.onProfileUpdated?.call(student);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Row(
@@ -256,6 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _currentAvatarUrl = url;
           student.avatarUrl = url;
         });
+        widget.onProfileUpdated?.call(student);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -304,6 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _currentAvatarUrl = null;
           student.avatarUrl = null;
         });
+        widget.onProfileUpdated?.call(student);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -350,16 +351,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfileModal(BuildContext context, StudentProfile student, bool isDark) {
-    EditProfileModal.show(
+  void _showEditPeminatanModal(BuildContext context, StudentProfile student, bool isDark) {
+    EditProfileModal.showPeminatanPicker(
       context,
       student: student,
       isDark: isDark,
-      onSaved: (cleanWa, selectedPeminatan, cleanEmail, cleanIg, cleanLinkedin, cleanBio) {
+      onSaved: (selectedPeminatan) {
+        if (mounted) {
+          setState(() {
+            student.peminatan = selectedPeminatan;
+          });
+        }
+        widget.onProfileUpdated?.call(student);
+      },
+    );
+  }
+
+  void _showEditContactModal(BuildContext context, StudentProfile student, bool isDark) {
+    EditProfileModal.showContactEditor(
+      context,
+      student: student,
+      isDark: isDark,
+      onSaved: (cleanWa, cleanEmail, cleanIg, cleanLinkedin, cleanBio) {
         if (mounted) {
           setState(() {
             student.noWa = cleanWa;
-            student.peminatan = selectedPeminatan;
             student.email = cleanEmail;
             student.instagram = cleanIg;
             student.linkedin = cleanLinkedin;
@@ -444,9 +460,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showLeaderPanel) {
-      return _buildLeaderPanelScreen();
-    }
     return _buildProfileScreen();
   }
 
@@ -467,7 +480,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final borderColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB);
     final textPrimary = isDark ? Colors.white : const Color(0xFF111827);
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF6B7280);
-    final dividerColor = isDark ? const Color(0xFF2A2A3C) : const Color(0xFFF3F4F6);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF111018) : AppColors.background,
@@ -541,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ProfileAcademicSection(
                 student: student,
                 isDark: isDark,
-                onEditPeminatan: () => _showEditProfileModal(context, student, isDark),
+                onEditPeminatan: () => _showEditPeminatanModal(context, student, isDark),
               ),
             ),
             const SizedBox(height: 18),
@@ -552,153 +564,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ProfileContactSection(
                 student: student,
                 isDark: isDark,
-                onEditContact: () => _showEditProfileModal(context, student, isDark),
+                onEditContact: () => _showEditContactModal(context, student, isDark),
               ),
             ),
             const SizedBox(height: 18),
 
-            // ==========================================
-            // CONDITIONAL ROLE ACTIONS (PANEL PENGURUS)
-            // ==========================================
-            if (student.isKetuaKelas || student.isAdmin) ...[
-              ScaleButton(
-                onTap: () => setState(() => _showLeaderPanel = true),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.workspace_premium_outlined,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Panel Ketua Kelas',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Kelola absensi kelas, buat pengumuman, tugas & agenda',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-            ] else if (student.isBendahara) ...[
-              ScaleButton(
-                onTap: () => widget.onNavigateTab?.call(8), // Open Kas Kelas
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0D9488), Color(0xFF10B981)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0D9488).withValues(alpha: 0.3),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.account_balance_wallet_outlined,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Panel Bendahara Kelas',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Kelola transaksi kas kelas & perbarui QRIS iuran',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-            ],
+
 
             // ==========================================
             // PENGATURAN AKUN & PREFERENSI SISTEM
@@ -718,17 +589,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Ubah Kata Sandi Akun',
                     subtitle: 'Ganti kata sandi login akun Anda',
                     onTap: _changePassword,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                  ),
-                  Divider(height: 1, indent: 60, color: dividerColor),
-                  _buildMenuItem(
-                    icon: Icons.palette_outlined,
-                    iconColor: const Color(0xFF8B5CF6),
-                    iconBg: const Color(0xFFF5F3FF),
-                    title: 'Pengaturan Tema Tampilan',
-                    subtitle: 'Pilih Terang, Gelap, atau Ikuti Sistem HP',
-                    onTap: _showThemeSettingsDialog,
                     textPrimary: textPrimary,
                     textSecondary: textSecondary,
                   ),
@@ -821,194 +681,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onTap: onTap,
       ),
     );
-  }
-
-  // ==========================================
-  // SCREEN: PANEL KETUA KELAS
-  // ==========================================
-  Widget _buildLeaderPanelScreen() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB);
-    final textPrimary = isDark ? Colors.white : const Color(0xFF111827);
-
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF111018) : AppColors.background,
-      appBar: AppBar(
-        backgroundColor: cardBg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
-          onPressed: () => setState(() => _showLeaderPanel = false),
-        ),
-        title: Row(
-          children: [
-            const Icon(
-              Icons.workspace_premium_outlined,
-              color: Color(0xFFD97706),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Panel Ketua Kelas',
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF38230A) : const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFDE68A)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, color: Color(0xFFB45309), size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Anda memiliki hak akses sebagai Ketua Kelas ILKOM UNAZLAM 2026. Gunakan pintasan di bawah untuk mengelola kelas secara efisien.',
-                    style: TextStyle(
-                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          _buildLeaderMenuCard([
-            _buildLeaderActionTile(
-              icon: Icons.how_to_reg_outlined,
-              title: 'Kelola & Buka Sesi Presensi',
-              subtitle: 'Buat token QR & PIN presensi kelas',
-              onTap: () => widget.onNavigateTab?.call(5),
-              isDark: isDark,
-            ),
-            _buildLeaderActionTile(
-              icon: Icons.campaign_outlined,
-              title: 'Buat Pengumuman Kelas',
-              subtitle: 'Kirim info resmi untuk seluruh mahasiswa',
-              onTap: () => widget.onNavigateTab?.call(7),
-              isDark: isDark,
-            ),
-            _buildLeaderActionTile(
-              icon: Icons.assignment_outlined,
-              title: 'Kelola Tugas Kuliah',
-              subtitle: 'Tambah tugas & pantau pengumpulan',
-              onTap: () => widget.onNavigateTab?.call(2),
-              isDark: isDark,
-            ),
-            _buildLeaderActionTile(
-              icon: Icons.people_outline_rounded,
-              title: 'Data & Direktori Mahasiswa',
-              subtitle: 'Lihat daftar 23 anggota kelas',
-              onTap: () => widget.onNavigateTab?.call(3),
-              isDark: isDark,
-            ),
-            _buildLeaderActionTile(
-              icon: Icons.calendar_month_outlined,
-              title: 'Kelola Agenda Perkuliahan',
-              subtitle: 'Atur jadwal ujian & kegiatan kelas',
-              onTap: () => widget.onNavigateTab?.call(6),
-              isDark: isDark,
-            ),
-            _buildLeaderActionTile(
-              icon: Icons.account_balance_wallet_outlined,
-              title: 'Kas & Keuangan Kelas',
-              subtitle: 'Pantau saldo dan iuran bendahara',
-              onTap: () => widget.onNavigateTab?.call(8),
-              isLast: true,
-              isDark: isDark,
-            ),
-          ], cardBg, borderColor),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeaderMenuCard(List<Widget> children, Color cardBg, Color borderColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildLeaderActionTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool isLast = false,
-    required bool isDark,
-  }) {
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-            leading: Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: const Color(0xFF1E40AF), size: 20),
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF111827),
-              ),
-            ),
-            subtitle: Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
-              ),
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-            ),
-            onTap: onTap,
-          ),
-        ),
-        if (!isLast)
-          Divider(
-            height: 1,
-            indent: 64,
-            color: isDark ? const Color(0xFF2A2A3C) : const Color(0xFFF3F4F6),
-          ),
-      ],
-    );
-  }
-
-  void _showThemeSettingsDialog() {
-    ThemeSettingsDialog.show(context);
   }
 
   void _showClassInfoDialog() {

@@ -55,3 +55,8 @@ app.*.map.json
 .env
 *.env
 android/key.properties
+
+# Node & WAHA Gateway
+node_modules/
+**/node_modules/
+waha_gateway/sessions/

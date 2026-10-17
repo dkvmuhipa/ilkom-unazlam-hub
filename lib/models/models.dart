@@ -183,6 +183,9 @@ class Course {
   /// Cek apakah dialihkan ke daring
   bool get isOnlineOverride => override?.status == 'ONLINE';
 
+  /// Cek apakah mata kuliah mengalami perubahan jadwal / tanggal
+  bool get isRescheduled => override?.status == 'RESCHEDULED';
+
   factory Course.fromMap(Map<String, dynamic> map, [CourseScheduleOverride? override]) {
     String jamM = map['jam_mulai']?.toString() ?? '00:00';
     if (jamM.length >= 5) jamM = jamM.substring(0, 5);

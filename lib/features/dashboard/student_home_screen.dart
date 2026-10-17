@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/safe_launcher.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +13,7 @@ import '../../core/widgets/universal_search_modal.dart';
 import '../../models/models.dart';
 import '../attendance/attendance_screen.dart';
 import '../schedule/schedule_screen.dart';
+import '../schedule/widgets/lecturer_reminder_modal.dart';
 import 'models/dashboard_models.dart';
 import 'widgets/home_banner_carousel.dart';
 import 'widgets/more_services_modal.dart';
@@ -57,6 +57,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   bool _isLoading = true;
   String? _loadError;
   RealtimeChannel? _overridesChannel;
+  RealtimeChannel? _announcementsChannel;
+  RealtimeChannel? _assignmentsChannel;
 
   @override
   void initState() {
@@ -69,11 +71,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       CurvedAnimation(parent: _livePulseController, curve: Curves.easeInOut),
     );
     _loadDashboard();
-    _initRealtimeOverrides();
+    _initRealtimeSubscriptions();
   }
 
-  void _initRealtimeOverrides() {
+  void _initRealtimeSubscriptions() {
     _overridesChannel = SupabaseRepository.subscribeToCourseOverrides(() {
+      if (mounted) {
+        _loadDashboard();
+      }
+    });
+    _announcementsChannel = SupabaseRepository.subscribeToAnnouncements(() {
+      if (mounted) {
+        debugPrint('⚡ [StudentHome] Pengumuman baru terdeteksi, memuat ulang dashboard...');
+        _loadDashboard();
+      }
+    });
+    _assignmentsChannel = SupabaseRepository.subscribeToAssignments(() {
       if (mounted) {
         _loadDashboard();
       }
@@ -83,6 +96,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   @override
   void dispose() {
     SupabaseRepository.unsubscribeChannel(_overridesChannel);
+    SupabaseRepository.unsubscribeChannel(_announcementsChannel);
+    SupabaseRepository.unsubscribeChannel(_assignmentsChannel);
     _livePulseController.dispose();
     super.dispose();
   }
@@ -201,17 +216,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     ).format(amount);
   }
 
-  Future<void> _openWhatsAppDosen(String phone, String lecturerName) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final internationalPhone =
-        cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
-    final message = Uri.encodeComponent(
-      'Halo Bapak/Ibu $lecturerName, saya ${widget.student.nama} (NIM: ${widget.student.nim}) dari S1 Ilmu Komunikasi UNAZLAM...',
+  void _openLecturerReminder(Course course) {
+    LecturerReminderModal.show(
+      context,
+      course: course,
+      senderName: widget.student.nama,
     );
-    final uri = Uri.parse('https://wa.me/$internationalPhone?text=$message');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   Future<void> _openVirtualClass(String url) async {
@@ -342,43 +352,50 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                AnimatedBuilder(
-                  animation: _livePulseAnimation,
-                  builder: (context, child) => Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: _livePulseAnimation.value),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: _livePulseAnimation.value * 0.6),
-                          blurRadius: 4,
-                        ),
-                      ],
+            Expanded(
+              child: Row(
+                children: [
+                  AnimatedBuilder(
+                    animation: _livePulseAnimation,
+                    builder: (context, child) => Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: _livePulseAnimation.value),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: _livePulseAnimation.value * 0.6),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 7),
-                Icon(
-                  timeCtx['icon'] as IconData,
-                  size: 13,
-                  color: timeCtx['color'] as Color,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  dateStr.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                    color: textSub,
+                  const SizedBox(width: 7),
+                  Icon(
+                    timeCtx['icon'] as IconData,
+                    size: 13,
+                    color: timeCtx['color'] as Color,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      dateStr.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: textSub,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             ScaleButton(
               scaleDown: 0.94,
               onTap: () => widget.onNavigateTab(15), // KHS & Akademik
@@ -604,6 +621,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             children: [
               SaaSAvatar(
                 name: student.nama,
+                avatarUrl: student.avatarUrl,
                 size: 46,
                 radius: 14,
               ),
@@ -1354,40 +1372,47 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Text(
-                  isShowingUpcoming ? 'Jadwal Kuliah Mendatang' : 'Aktivitas Kuliah Hari Ini',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: textMain,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF26223D) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF3B3358) : const Color(0xFFE2E8F0),
-                      width: 0.8,
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      isShowingUpcoming ? 'Jadwal Kuliah Mendatang' : 'Aktivitas Kuliah Hari Ini',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: textMain,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    currentDayLabel,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? const Color(0xFFA78BFA) : AppColors.primary,
-                      letterSpacing: 0.2,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF26223D) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF3B3358) : const Color(0xFFE2E8F0),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      currentDayLabel,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? const Color(0xFFA78BFA) : AppColors.primary,
+                        letterSpacing: 0.2,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             ScaleButton(
               scaleDown: 0.92,
               onTap: () => widget.onNavigateTab(1), // Jadwal
@@ -1454,22 +1479,26 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           // Hari ini ada kuliah, dan ada juga jadwal aktif hari berikutnya -> berikan switcher
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                _buildSchedulePillButton(
-                  title: 'Hari Ini (${_todayCourses.length})',
-                  isSelected: _scheduleViewMode == 0,
-                  isDark: isDark,
-                  onTap: () => setState(() => _scheduleViewMode = 0),
-                ),
-                const SizedBox(width: 8),
-                _buildSchedulePillButton(
-                  title: 'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
-                  isSelected: _scheduleViewMode == 1,
-                  isDark: isDark,
-                  onTap: () => setState(() => _scheduleViewMode = 1),
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              child: Row(
+                children: [
+                  _buildSchedulePillButton(
+                    title: 'Hari Ini (${_todayCourses.length})',
+                    isSelected: _scheduleViewMode == 0,
+                    isDark: isDark,
+                    onTap: () => setState(() => _scheduleViewMode = 0),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildSchedulePillButton(
+                    title: 'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
+                    isSelected: _scheduleViewMode == 1,
+                    isDark: isDark,
+                    onTap: () => setState(() => _scheduleViewMode = 1),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -1812,10 +1841,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               // Aksi Cepat Bawah: WA Dosen 1-Tap & Virtual Link
               Row(
                 children: [
-                  if (course.dosenWa != null && course.dosenWa!.trim().isNotEmpty) ...[
+                  if (course.dosen.trim().isNotEmpty) ...[
                     ScaleButton(
                       scaleDown: 0.92,
-                      onTap: () => _openWhatsAppDosen(course.dosenWa!, course.dosen),
+                      onTap: () => _openLecturerReminder(course),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                         decoration: BoxDecoration(

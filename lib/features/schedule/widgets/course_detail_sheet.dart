@@ -6,6 +6,7 @@ import '../../../core/services/supabase_repository.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 import 'course_reschedule_modal.dart';
+import 'lecturer_reminder_modal.dart';
 
 class CourseDetailSheet extends StatefulWidget {
   final Course course;
@@ -62,16 +63,12 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
 
   bool get _isHybrid => _course.ruangan.toLowerCase().contains('hybrid');
 
-  void _openWhatsAppDosen(String phone, String lecturerName) {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final internationalPhone = cleanPhone.startsWith('0')
-        ? '62${cleanPhone.substring(1)}'
-        : cleanPhone;
-    final message = Uri.encodeComponent(
-      'Halo Bapak/Ibu $lecturerName, saya mahasiswa dari program studi Ilmu Komunikasi UNAZLAM...',
+  void _openWhatsAppDosen() {
+    LecturerReminderModal.show(
+      context,
+      course: _course,
+      senderName: 'Ketua Kelas',
     );
-    final url = 'https://wa.me/$internationalPhone?text=$message';
-    safeLaunchUrl(url);
   }
 
   void _copyScheduleInfo() {
@@ -873,9 +870,9 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                             ],
                           ),
                         ),
-                        if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
+                        if (c.dosen.trim().isNotEmpty)
                           ScaleButton(
-                            onTap: () => _openWhatsAppDosen(c.dosenWa!, c.dosen),
+                            onTap: _openWhatsAppDosen,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -937,6 +934,40 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF334155),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Quick Action: Pengingat & Konfirmasi ke Dosen
+                  ScaleButton(
+                    onTap: _openWhatsAppDosen,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.mark_chat_unread_rounded,
+                            size: 16,
+                            color: Color(0xFF059669),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Kirim Pengingat / Konfirmasi ke Dosen',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF059669),
                             ),
                           ),
                         ],

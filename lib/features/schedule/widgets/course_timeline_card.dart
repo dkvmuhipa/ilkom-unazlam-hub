@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/course_schedule_service.dart';
-import '../../../core/services/safe_launcher.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
+import 'lecturer_reminder_modal.dart';
 
 class CourseTimelineCard extends StatelessWidget {
   final Course course;
@@ -183,16 +183,12 @@ class CourseTimelineCard extends StatelessWidget {
     );
   }
 
-  void _openWhatsAppDosen(String phone, String lecturerName) {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final internationalPhone = cleanPhone.startsWith('0')
-        ? '62${cleanPhone.substring(1)}'
-        : cleanPhone;
-    final message = Uri.encodeComponent(
-      'Halo Bapak/Ibu $lecturerName, saya mahasiswa dari program studi Ilmu Komunikasi UNAZLAM...',
+  void _openWhatsAppDosen(BuildContext context, Course c) {
+    LecturerReminderModal.show(
+      context,
+      course: c,
+      senderName: 'Ketua Kelas',
     );
-    final url = 'https://wa.me/$internationalPhone?text=$message';
-    safeLaunchUrl(url);
   }
 
   @override
@@ -556,12 +552,9 @@ class CourseTimelineCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (c.dosenWa != null && c.dosenWa!.isNotEmpty)
+                            if (c.dosen.trim().isNotEmpty)
                               ScaleButton(
-                                onTap: () => _openWhatsAppDosen(
-                                  c.dosenWa!,
-                                  c.dosen,
-                                ),
+                                onTap: () => _openWhatsAppDosen(context, c),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,

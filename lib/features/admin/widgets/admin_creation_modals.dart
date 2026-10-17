@@ -6,8 +6,19 @@ import '../../../models/models.dart';
 import '../models/admin_models.dart';
 import 'admin_broadcast_hub_modal.dart';
 import 'admin_common_widgets.dart';
+import 'admin_waha_gateway_modal.dart';
 
 class AdminCreationModals {
+  static void showWahaGatewayDialog({
+    required BuildContext context,
+    required void Function(String message, {bool isError}) onShowMessage,
+  }) {
+    AdminWahaGatewayModal.show(
+      context: context,
+      onShowMessage: onShowMessage,
+    );
+  }
+
   static void showBroadcastAnnouncementDialog({
     required BuildContext context,
     List<ClassItem> classes = const [],

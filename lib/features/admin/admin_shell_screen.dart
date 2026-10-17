@@ -755,157 +755,232 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF312E81).withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
-                  ),
-                  child: const Icon(
-                    Icons.cell_tower_rounded,
-                    color: Color(0xFFA5B4FC),
-                    size: 19,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+            child: LayoutBuilder(
+              builder: (context, bannerConstraints) {
+                final isNarrow = bannerConstraints.maxWidth < 640;
+                final fcmInfo = Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF312E81).withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+                      ),
+                      child: const Icon(
+                        Icons.cell_tower_rounded,
+                        color: Color(0xFFA5B4FC),
+                        size: 19,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'Firebase Cloud Messaging (FCM v1)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.2,
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
                               ),
+                              const SizedBox(width: 6),
+                              const Expanded(
+                                child: Text(
+                                  'Firebase Cloud Messaging (FCM v1)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF94A3B8),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF94A3B8),
-                        ),
+                    ),
+                  ],
+                );
+
+                final actionButtons = Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _showBroadcastAnnouncementDialog,
+                      icon: const Icon(Icons.send_rounded, size: 13),
+                      label: const Text('Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
                       ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _showWahaGatewayDialog,
+                      icon: const Icon(Icons.phone_android_rounded, size: 13),
+                      label: const Text('WhatsApp WAHA', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                      ),
+                    ),
+                  ],
+                );
+
+                if (isNarrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      fcmInfo,
+                      const SizedBox(height: 12),
+                      actionButtons,
                     ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: _showBroadcastAnnouncementDialog,
-                  icon: const Icon(Icons.send_rounded, size: 13),
-                  label: const Text('Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                  ),
-                ),
-              ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: fcmInfo),
+                    const SizedBox(width: 8),
+                    actionButtons,
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 22),
 
           // Section "Aksi Cepat Admin"
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Aksi Cepat Terintegrasi',
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.3,
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                const Text(
+                  'Aksi Cepat Terintegrasi',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
                 ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    onTap: () => _showBulkCsvModal(),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2FF),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFC7D2FE)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.file_upload_outlined, size: 13, color: AppColors.primary),
-                          SizedBox(width: 4),
-                          Text(
-                            'Import CSV',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    InkWell(
+                      onTap: _showWahaGatewayDialog,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone_android_rounded, size: 13, color: Color(0xFF059669)),
+                            SizedBox(width: 4),
+                            Text(
+                              'WA Gateway',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF059669),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  InkWell(
-                    onTap: _showQuickExportModal,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.download_rounded, size: 13, color: Color(0xFF0F172A)),
-                          SizedBox(width: 4),
-                          Text(
-                            'Ekspor Data',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                    InkWell(
+                      onTap: () => _showBulkCsvModal(),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFC7D2FE)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.file_upload_outlined, size: 13, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'Import CSV',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    InkWell(
+                      onTap: _showQuickExportModal,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.download_rounded, size: 13, color: Color(0xFF0F172A)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Ekspor Data',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -1237,6 +1312,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showWahaGatewayDialog() {
+    AdminCreationModals.showWahaGatewayDialog(
+      context: context,
+      onShowMessage: _showAdminMessage,
     );
   }
 

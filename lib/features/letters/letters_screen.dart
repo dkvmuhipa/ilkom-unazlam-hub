@@ -14,8 +14,8 @@ class LettersScreen extends StatefulWidget {
 
   const LettersScreen({
     super.key,
-    this.studentName = 'Nur Farida',
-    this.studentNim = '260250023',
+    this.studentName = 'Mahasiswa ILKOM',
+    this.studentNim = '',
     this.onBack,
   });
 
