@@ -10,8 +10,23 @@ import 'supabase_service.dart';
 
 class SupabaseRepository {
   // ====================================================================
+  // IN-MEMORY CACHE (FAST NAVIGATION / ZERO-LOADING)
+  // ====================================================================
+  static List<Course>? _cachedCourses;
+  static List<Announcement>? _cachedAnnouncements;
+  static List<StudentProfile>? _cachedStudents;
+
+  /// Membersihkan cache in-memory
+  static void invalidateCaches() {
+    _cachedCourses = null;
+    _cachedAnnouncements = null;
+    _cachedStudents = null;
+  }
+
+  // ====================================================================
   // SUPABASE REALTIME SUBSCRIPTIONS
   // ====================================================================
+
 
   /// Mendaftarkan listener realtime database Supabase untuk tabel tertentu
   static RealtimeChannel? subscribeToTable({
@@ -59,7 +74,13 @@ class SupabaseRepository {
 
   /// Realtime stream listener untuk Pengumuman
   static RealtimeChannel? subscribeToAnnouncements(VoidCallback onDataChanged) {
-    return subscribeToTable(table: 'announcements', onDataChanged: onDataChanged);
+    return subscribeToTable(
+      table: 'announcements',
+      onDataChanged: () {
+        _cachedAnnouncements = null;
+        onDataChanged();
+      },
+    );
   }
 
   /// Realtime stream listener untuk Tugas Kelas
@@ -94,12 +115,24 @@ class SupabaseRepository {
 
   /// Realtime stream listener untuk Mata Kuliah & Jadwal
   static RealtimeChannel? subscribeToCourses(VoidCallback onDataChanged) {
-    return subscribeToTable(table: 'courses', onDataChanged: onDataChanged);
+    return subscribeToTable(
+      table: 'courses',
+      onDataChanged: () {
+        _cachedCourses = null;
+        onDataChanged();
+      },
+    );
   }
 
   /// Realtime stream listener untuk Penyesuaian Jadwal (Overrides)
   static RealtimeChannel? subscribeToCourseOverrides(VoidCallback onDataChanged) {
-    return subscribeToTable(table: 'course_schedule_overrides', onDataChanged: onDataChanged);
+    return subscribeToTable(
+      table: 'course_schedule_overrides',
+      onDataChanged: () {
+        _cachedCourses = null;
+        onDataChanged();
+      },
+    );
   }
 
   /// Realtime stream listener untuk Berkas & Materi Kuliah
@@ -114,7 +147,13 @@ class SupabaseRepository {
 
   /// Realtime stream listener untuk Mahasiswa & Profil
   static RealtimeChannel? subscribeToStudents(VoidCallback onDataChanged) {
-    return subscribeToTable(table: 'students', onDataChanged: onDataChanged);
+    return subscribeToTable(
+      table: 'students',
+      onDataChanged: () {
+        _cachedStudents = null;
+        onDataChanged();
+      },
+    );
   }
 
   /// Realtime stream listener untuk Arsip Surat Izin
@@ -178,9 +217,12 @@ class SupabaseRepository {
   // ====================================================================
   // 1. MATA KULIAH & JADWAL KULIAH (COURSES)
   // ====================================================================
-  static Future<List<Course>> getCourses() async {
+  static Future<List<Course>> getCourses({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedCourses != null && _cachedCourses!.isNotEmpty) {
+      return List<Course>.from(_cachedCourses!);
+    }
     final client = SupabaseService.client;
-    if (client == null) return [];
+    if (client == null) return _cachedCourses ?? [];
 
     try {
       final response = await client.from('courses').select().order('hari');
@@ -206,10 +248,11 @@ class SupabaseRepository {
         );
       }).toList();
 
+      _cachedCourses = list;
       return list;
     } catch (e) {
       debugPrint('Error fetch courses dari Supabase: $e');
-      return [];
+      return _cachedCourses ?? [];
     }
   }
 
@@ -464,9 +507,12 @@ class SupabaseRepository {
   // ====================================================================
   // 2. PENGUMUMAN KELAS (ANNOUNCEMENTS)
   // ====================================================================
-  static Future<List<Announcement>> getAnnouncements() async {
+  static Future<List<Announcement>> getAnnouncements({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedAnnouncements != null && _cachedAnnouncements!.isNotEmpty) {
+      return List<Announcement>.from(_cachedAnnouncements!);
+    }
     final client = SupabaseService.client;
-    if (client == null) return [];
+    if (client == null) return _cachedAnnouncements ?? [];
 
     try {
       final response = await client
@@ -493,10 +539,11 @@ class SupabaseRepository {
         );
       }).toList();
 
+      _cachedAnnouncements = list;
       return list;
     } catch (e) {
       debugPrint('Error fetch announcements dari Supabase: $e');
-      return [];
+      return _cachedAnnouncements ?? [];
     }
   }
 
@@ -854,14 +901,19 @@ class SupabaseRepository {
     }
   }
 
-  static Future<List<StudentProfile>> getClassDirectory() async {
+  static Future<List<StudentProfile>> getClassDirectory({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedStudents != null && _cachedStudents!.isNotEmpty) {
+      return List<StudentProfile>.from(_cachedStudents!);
+    }
     final client = SupabaseService.client;
-    if (client == null) return [];
+    if (client == null) return _cachedStudents ?? [];
     try {
-      return await getClassDirectoryStrict();
+      final list = await getClassDirectoryStrict();
+      if (list.isNotEmpty) _cachedStudents = list;
+      return list;
     } catch (e) {
       debugPrint('Info fetch class directory dari Supabase: $e');
-      return [];
+      return _cachedStudents ?? [];
     }
   }
 

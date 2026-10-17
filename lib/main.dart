@@ -311,6 +311,7 @@ class MainResponsiveShell extends StatefulWidget {
 class _MainResponsiveShellState extends State<MainResponsiveShell> {
   int _currentIndex = 0;
   final List<int> _navigationHistory = [0];
+  final Set<int> _loadedTabs = {0};
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late String _activeNim;
   StudentProfile? _profile;
@@ -342,6 +343,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   void _navigateToIndex(int index) {
     if (_currentIndex == index) return;
     setState(() {
+      _loadedTabs.add(index);
       _navigationHistory.remove(index);
       _navigationHistory.add(index);
       _currentIndex = index;
@@ -353,12 +355,14 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       setState(() {
         _navigationHistory.removeLast();
         _currentIndex = _navigationHistory.last;
+        _loadedTabs.add(_currentIndex);
       });
     } else if (_currentIndex != 0) {
       setState(() {
         _navigationHistory.clear();
         _navigationHistory.add(0);
         _currentIndex = 0;
+        _loadedTabs.add(0);
       });
     }
   }
@@ -494,25 +498,15 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
-        final screen = AnimatedSwitcher(
-          duration: const Duration(milliseconds: 240),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.02),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          ),
-          child: KeyedSubtree(
-            key: ValueKey('tab_$_currentIndex'),
-            child: screens[_currentIndex],
-          ),
+        final screen = IndexedStack(
+          index: _currentIndex,
+          children: List.generate(screens.length, (i) {
+            return _loadedTabs.contains(i)
+                ? screens[i]
+                : const SizedBox.shrink();
+          }),
         );
+
 
         return PopScope(
           canPop: _currentIndex == 0 && _navigationHistory.length <= 1,
