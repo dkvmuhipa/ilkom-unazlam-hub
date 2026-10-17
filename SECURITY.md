@@ -26,14 +26,14 @@ Audit keamanan komprehensif (*Paranoid Mode*) telah dilaksanakan pada **17 Oktob
 
 | Kategori OWASP | Deskripsi & Komponen | Tingkat Risiko | Status Audit | Catatan & Mitigasi |
 | :--- | :--- | :---: | :---: | :--- |
-| **A01: Broken Access Control** | Penegakan RLS pada tabel master data & admin. | Sedang | 🟡 **Warning (Fase Transisi)** | Pada migrasi saat ini, RLS dibuka (`USING (true)`) untuk mendukung operasi CRUD hibrida mahasiswa saat domain email kampus belum aktif. Disarankan bertransisi ke RLS berbasis `auth.uid()` setelah seluruh akun terikat resmi. |
+| **A01: Broken Access Control** | Penegakan RLS pada tabel master data & admin. | Rendah | 🟢 **Lolos (Aman - Smart RLS)** | Diterapkan pada migrasi `20261017_smart_rls_hardening.sql`. Hak baca (SELECT) tetap terbuka untuk civitas kelas, namun seluruh hak mutasi (INSERT, UPDATE, DELETE) dicabut total dari `anon` dan dikunci ketat berbasis peran akun (`authenticated`). |
 | **A01: Broken Access Control** | Otorisasi perintah WhatsApp Bot & Gateway API. | Rendah | 🟢 **Lolos (Aman)** | Verifikasi pengirim pesan WhatsApp (`cleanSender.endsWith(cleanKomti)`) mencegah perintah palsu. Dukungan otentikasi `X-Api-Key` pada endpoint REST. |
 | **A02: Cryptographic Failures**| Penyimpanan kredensial di `SharedPreferences` & Sesi WhatsApp. | Rendah | 🟢 **Lolos (Aman)** | Plaintext dieliminasi 100%. Digantikan Salted SHA-256 (`crypto: ^3.0.7`). Token sesi Baileys disimpan di folder lokal terisolasi yang diabaikan oleh Git. |
 | **A03: Injection** | Injeksi filter PostgREST atau kueri database PostgreSQL. | Rendah | 🟢 **Lolos (Aman)** | Semua parameter kueri di-bind secara aman via client SDK. Fungsi database menggunakan `SECURITY DEFINER` dengan `SET search_path = ''`. |
 | **A04: Insecure Design** | Alur otomatisasi pengingat dosen & presensi kelas. | Rendah | 🟢 **Lolos (Aman)** | Mekanisme *Kombinasi Cerdas* memberi jeda toleransi (45 menit) bagi Komti untuk membatalkan sebelum pesan otomatis meluncur ke dosen. Voting dilindungi pencegahan suara ganda per-NIM (`UNIQUE(poll_id, voter_nim)`). |
 | **A05: Security Misconfiguration**| Konfigurasi CORS, Secrets, dan Service Role Keys. | Rendah | 🟢 **Lolos (Aman)** | Service role key hanya diakses di sisi server Deno (`Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')`). Gateway WhatsApp berjalan pada localhost port 3000. |
 | **A06: Vulnerable Components** | Audit dependensi (`pubspec.yaml`, `waha_gateway/package.json`). | Rendah | 🟢 **Lolos (Aman)** | `npm audit` menunjukkan 0 vulnerabilities. Pustaka Flutter menggunakan versi teruji tanpa CVE aktif. |
-| **A07: Identification & Auth** | Mekanisme autentikasi ganda (Supabase Auth + Fallback NIM). | Sedang | 🟢 **Lolos (Terkontrol)** | Endpoint `student-login` mengembalikan refresh token resmi Supabase tanpa membocorkan pemetaan email ke klien. Pesan kesalahan login bersifat generik untuk mencegah *user enumeration*. |
+| **A07: Identification & Auth** | Mekanisme autentikasi ganda (Supabase Auth + Fallback NIM). | Rendah | 🟢 **Lolos (Aman)** | Endpoint `student-login` mengembalikan refresh token resmi Supabase tanpa membocorkan pemetaan email ke klien. Pesan kesalahan login bersifat generik untuk mencegah *user enumeration*. |
 | **A08: Software & Data Integrity**| Tautan eksternal, QR Code Baileys, dan unggahan data mahasiswa. | Rendah | 🟢 **Lolos (Aman)** | Validasi skema URL via `safeLaunchUrl()`. QR Code Baileys digenerate in-memory tanpa mengekspos raw token ke publik. |
 | **A09: Logging & Monitoring** | Audit trail tindakan administratif & log pengingat otomatis. | Rendah | 🟢 **Lolos (Aman)** | Seluruh tindakan kritis admin (CREATE, UPDATE, DELETE, EXPORT) dicatat ke `audit_logs`. Pengiriman pengingat dosen dicatat ke `reminder_history.json`. |
 | **A10: Server-Side Request Forgery**| Pengiriman webhook notifikasi FCM & panggilan API WAHA. | Rendah | 🟢 **Lolos (Aman)** | Endpoint FCM terkunci pada Google API resmi (`fcm.googleapis.com`). Panggilan API WAHA diarahkan ke target URL internal terkonfigurasi. |
@@ -55,9 +55,18 @@ Audit keamanan komprehensif (*Paranoid Mode*) telah dilaksanakan pada **17 Oktob
 * **Pengamanan Endpoint API Gateway**:
   Tersedia middleware `WAHA_API_KEY`. Dalam penyebaran di server publik atau multi-user, cukup tetapkan environment variable `WAHA_API_KEY` untuk mengunci seluruh endpoint `/api`.
 
-### 2. Kebijakan Row Level Security (RLS) pada Fase Transisi
-* **Kondisi Saat Ini**:
-  Untuk memastikan seluruh fitur CRUD (Kas, Pengumuman, Tugas, Nilai, Surat Izin, Polling, dan Data Kelas) dapat beroperasi tanpa kendala saat mahasiswa masih dalam proses klaim akun dengan email pribadi, migrasi `20261013_full_crud_permissions_fix.sql` mengizinkan operasi `SELECT`, `INSERT`, `UPDATE`, dan `DELETE` kepada role `public`.
+### 2. Kebijakan Smart Row Level Security (RLS Hardening)
+* **Kondisi & Solusi (Migrasi `20261017_smart_rls_hardening.sql`)**:
+  Untuk menutup kerentanan *Broken Access Control*, telah diterapkan kebijakan *Smart Hardening*:
+  1. **Hak Baca (SELECT)**: Tetap dibuka untuk seluruh mahasiswa (`anon` & `authenticated`) agar dashboard, jadwal kuliah, pengumuman, materi, dan transparansi kas kelas tidak terblokir.
+  2. **Pencabutan Izin Anonim**: Hak `INSERT`, `UPDATE`, dan `DELETE` ditarik total dari peran `anon` (`REVOKE INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM anon;`). Penyerang luar yang memegang anon key tidak dapat memanipulasi data apapun via REST API.
+  3. **Role-Based Access Control (RBAC)**:
+     - **Kas Kelas (`treasury_transactions`, `treasury_dues`)**: Hanya dapat dimutasi oleh peran `BENDAHARA` atau `ADMIN`.
+     - **Mata Kuliah & Jadwal (`courses`, `overrides`)**: Hanya dapat diubah oleh peran `KETUA KELAS` atau `ADMIN`.
+     - **Pengumuman & Tugas (`announcements`, `assignments`)**: Hanya dapat dibuat/diubah oleh peran `KETUA KELAS`, `SEKRETARIS`, atau `ADMIN`.
+     - **Profil Mahasiswa (`students`)**: Hanya pemilik akun bersangkutan (`auth.uid() = auth_user_id` atau `nim = current_student_nim()`) atau `ADMIN` yang dapat memperbarui profil.
+     - **Anti-Privilege Escalation**: Dilengkapi trigger database `trg_prevent_privilege_escalation` yang menggagalkan upaya mahasiswa non-admin mengubah nilai kolom `role`, `jabatan`, atau `is_aktif`.
+
 * **Rekomendasi Lingkungan Produksi**:
   Setelah seluruh mahasiswa mengklaim akun resmi mereka:
   1. Perketat kebijakan RLS pada tabel `students` agar hanya pemilik akun (`auth.uid() = auth_user_id`) yang dapat memperbarui profilnya.
