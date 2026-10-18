@@ -119,13 +119,16 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       if (_selectedCategory == 'Disematkan') {
         matchesCategory = a.isPinned;
       } else if (_selectedCategory == 'Akademik') {
-        matchesCategory = a.kategori.toLowerCase().contains('akademik') ||
+        matchesCategory =
+            a.kategori.toLowerCase().contains('akademik') ||
             a.kategori.toLowerCase().contains('fakultas');
       } else if (_selectedCategory == 'Dosen') {
-        matchesCategory = a.kategori.toLowerCase().contains('dosen') ||
+        matchesCategory =
+            a.kategori.toLowerCase().contains('dosen') ||
             a.kategori.toLowerCase().contains('jadwal');
       } else if (_selectedCategory == 'Kelas') {
-        matchesCategory = !a.kategori.toLowerCase().contains('akademik') &&
+        matchesCategory =
+            !a.kategori.toLowerCase().contains('akademik') &&
             !a.kategori.toLowerCase().contains('fakultas') &&
             !a.kategori.toLowerCase().contains('dosen') &&
             !a.kategori.toLowerCase().contains('jadwal');
@@ -140,7 +143,10 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         final matchesContent = a.isi.toLowerCase().contains(q);
         final matchesAuthor = a.authorName.toLowerCase().contains(q);
         final matchesCategoryName = a.kategori.toLowerCase().contains(q);
-        return matchesTitle || matchesContent || matchesAuthor || matchesCategoryName;
+        return matchesTitle ||
+            matchesContent ||
+            matchesAuthor ||
+            matchesCategoryName;
       }
 
       return true;
@@ -171,7 +177,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     final categoryCounts = _computeCategoryCounts();
 
     // Check if we have a top featured headline when viewing 'Semua' and no search
-    final isDefaultFeed = _selectedCategory == 'Semua' && _searchQuery.trim().isEmpty;
+    final isDefaultFeed =
+        _selectedCategory == 'Semua' && _searchQuery.trim().isEmpty;
     Announcement? headlineAnnouncement;
     List<Announcement> standardFeedList = filtered;
 
@@ -180,7 +187,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       final pinnedIndex = filtered.indexWhere((a) => a.isPinned);
       if (pinnedIndex != -1) {
         headlineAnnouncement = filtered[pinnedIndex];
-        standardFeedList = List<Announcement>.from(filtered)..removeAt(pinnedIndex);
+        standardFeedList = List<Announcement>.from(filtered)
+          ..removeAt(pinnedIndex);
       } else {
         headlineAnnouncement = filtered.first;
         standardFeedList = filtered.sublist(1);
@@ -246,7 +254,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             onSearchChanged: (val) => setState(() => _searchQuery = val),
             onClearSearch: () => setState(() => _searchQuery = ''),
             selectedCategory: _selectedCategory,
-            onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+            onCategorySelected: (cat) =>
+                setState(() => _selectedCategory = cat),
             categoryCounts: categoryCounts,
           ),
 
@@ -254,75 +263,75 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF1E3A8A),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFF1E3A8A)),
                   )
                 : filtered.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: () => _loadAnnouncements(silent: true),
-                        color: const Color(0xFF1E3A8A),
-                        child: ListView(
-                          padding: const EdgeInsets.only(bottom: 90),
-                          children: [
-                            // 1. Featured Thesis Hero (if in default overview feed)
-                            if (headlineAnnouncement != null) ...[
-                              AnnouncementHeadlineCard(
-                                announcement: headlineAnnouncement,
-                                onTap: () => _openDetail(headlineAnnouncement!),
-                              ),
-                            ],
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: () => _loadAnnouncements(silent: true),
+                    color: const Color(0xFF1E3A8A),
+                    child: ListView(
+                      padding: const EdgeInsets.only(bottom: 90),
+                      children: [
+                        // 1. Featured Thesis Hero (if in default overview feed)
+                        if (headlineAnnouncement != null) ...[
+                          AnnouncementHeadlineCard(
+                            announcement: headlineAnnouncement,
+                            onTap: () => _openDetail(headlineAnnouncement!),
+                          ),
+                        ],
 
-                            // 2. Section Header
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    isDefaultFeed
-                                        ? 'Warta Lainnya (${standardFeedList.length})'
-                                        : 'Hasil Warta (${filtered.length})',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF0F172A),
-                                      letterSpacing: -0.2,
-                                    ),
+                        // 2. Section Header
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+                          child: Row(
+                            children: [
+                              Text(
+                                isDefaultFeed
+                                    ? 'Warta Lainnya (${standardFeedList.length})'
+                                    : 'Hasil Warta (${filtered.length})',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_searchQuery.isNotEmpty)
+                                Text(
+                                  '"$_searchQuery"',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF2563EB),
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const Spacer(),
-                                  if (_searchQuery.isNotEmpty)
-                                    Text(
-                                      '"$_searchQuery"',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF2563EB),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-
-                            // 3. Announcements List
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Column(
-                                children: standardFeedList.map((ann) {
-                                  return AnnouncementCard(
-                                    announcement: ann,
-                                    onTap: () => _openDetail(ann),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ],
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
+
+                        // 3. Announcements List
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: standardFeedList.map((ann) {
+                              return AnnouncementCard(
+                                announcement: ann,
+                                onTap: () => _openDetail(ann),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
-      floatingActionButton: widget.canPost
+      floatingActionButton:
+          widget.canPost &&
+              (filtered.isNotEmpty || _searchQuery.trim().isNotEmpty)
           ? FloatingActionButton.extended(
               onPressed: _openCreateDialog,
               backgroundColor: const Color(0xFF1E3A8A),
@@ -352,13 +361,12 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF6FF),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFDBEAFE),
-                  width: 2,
-                ),
+                border: Border.all(color: const Color(0xFFDBEAFE), width: 2),
               ),
               child: Icon(
-                hasSearch ? Icons.search_off_rounded : Icons.notifications_none_rounded,
+                hasSearch
+                    ? Icons.search_off_rounded
+                    : Icons.notifications_none_rounded,
                 size: 40,
                 color: const Color(0xFF1E3A8A),
               ),

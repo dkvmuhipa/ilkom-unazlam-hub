@@ -19,7 +19,8 @@ class AdminBulkCsvModal extends StatefulWidget {
     required String module,
     required String description,
     Map<String, dynamic>? metadata,
-  }) onRecordAudit;
+  })
+  onRecordAudit;
 
   const AdminBulkCsvModal({
     super.key,
@@ -39,7 +40,8 @@ class AdminBulkCsvModal extends StatefulWidget {
       required String module,
       required String description,
       Map<String, dynamic>? metadata,
-    }) onRecordAudit,
+    })
+    onRecordAudit,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -96,16 +98,29 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
     });
   }
 
-  void _downloadTemplate() {
+  Future<void> _downloadTemplate() async {
+    late final String fileName;
+    late final String template;
     if (_selectedType == BulkImportType.students) {
-      final template = BulkCsvService.getStudentCsvTemplate();
-      ExportService.downloadFile('template_mahasiswa_unazlam.csv', template);
-      widget.onShowMessage('Template CSV Mahasiswa berhasil diunduh.');
+      fileName = 'template_mahasiswa_unazlam.csv';
+      template = BulkCsvService.getStudentCsvTemplate();
     } else {
-      final template = BulkCsvService.getCourseCsvTemplate();
-      ExportService.downloadFile('template_matakuliah_unazlam.csv', template);
-      widget.onShowMessage('Template CSV Mata Kuliah berhasil diunduh.');
+      fileName = 'template_matakuliah_unazlam.csv';
+      template = BulkCsvService.getCourseCsvTemplate();
     }
+    final result = await ExportService.exportFile(fileName, template);
+    if (result == FileExportResult.dismissed) return;
+    if (result == FileExportResult.unavailable) {
+      await Clipboard.setData(ClipboardData(text: template));
+    }
+    widget.onShowMessage(switch (result) {
+      FileExportResult.downloaded => 'Template CSV berhasil diunduh.',
+      FileExportResult.shared =>
+        'Menu berbagi terbuka. Pilih aplikasi untuk menyimpan template CSV.',
+      FileExportResult.dismissed => '',
+      FileExportResult.unavailable =>
+        'Ekspor file tidak tersedia. Template CSV disalin ke clipboard.',
+    });
   }
 
   void _copyTemplate() {
@@ -147,7 +162,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
   void _validateAndParse() {
     final raw = _textController.text.trim();
     if (raw.isEmpty) {
-      widget.onShowMessage('Silakan upload file CSV atau tempel teks data terlebih dahulu.', isError: true);
+      widget.onShowMessage(
+        'Silakan upload file CSV atau tempel teks data terlebih dahulu.',
+        isError: true,
+      );
       return;
     }
 
@@ -181,7 +199,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
         : _parsedCourses.where((r) => r.isValid).length;
 
     if (totalValid == 0) {
-      widget.onShowMessage('Tidak ada data valid yang dapat diimpor.', isError: true);
+      widget.onShowMessage(
+        'Tidak ada data valid yang dapat diimpor.',
+        isError: true,
+      );
       return;
     }
 
@@ -200,7 +221,8 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
           widget.onRecordAudit(
             action: 'BULK_IMPORT',
             module: 'MAHASISWA',
-            description: 'Impor massal $inserted mahasiswa baru ($skipped dilewati).',
+            description:
+                'Impor massal $inserted mahasiswa baru ($skipped dilewati).',
             metadata: {'inserted': inserted, 'skipped': skipped},
           );
           await widget.onReload();
@@ -211,7 +233,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             );
           }
         } else {
-          widget.onShowMessage('Gagal impor: ${res['errorMessage']}', isError: true);
+          widget.onShowMessage(
+            'Gagal impor: ${res['errorMessage']}',
+            isError: true,
+          );
         }
       } else {
         final res = await SupabaseRepository.bulkUpsertCourses(
@@ -225,7 +250,8 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
           widget.onRecordAudit(
             action: 'BULK_IMPORT',
             module: 'MATA_KULIAH',
-            description: 'Impor massal $inserted mata kuliah/jadwal ($skipped dilewati).',
+            description:
+                'Impor massal $inserted mata kuliah/jadwal ($skipped dilewati).',
             metadata: {'inserted': inserted, 'skipped': skipped},
           );
           await widget.onReload();
@@ -236,7 +262,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             );
           }
         } else {
-          widget.onShowMessage('Gagal impor: ${res['errorMessage']}', isError: true);
+          widget.onShowMessage(
+            'Gagal impor: ${res['errorMessage']}',
+            isError: true,
+          );
         }
       }
     } catch (e) {
@@ -326,7 +355,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
               ],
             ),
@@ -369,7 +401,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
 
           // Body Content
           Expanded(
-            child: _hasValidated ? _buildPreviewSection() : _buildInputSection(isCompact),
+            child: _hasValidated
+                ? _buildPreviewSection()
+                : _buildInputSection(isCompact),
           ),
         ],
       ),
@@ -415,7 +449,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                color: isSelected
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFF64748B),
               ),
             ),
           ],
@@ -505,14 +541,20 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A), size: 20),
+              const Icon(
+                Icons.table_chart_rounded,
+                color: Color(0xFF16A34A),
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isStudent ? 'Format Standar Mahasiswa' : 'Format Standar Mata Kuliah',
+                      isStudent
+                          ? 'Format Standar Mahasiswa'
+                          : 'Format Standar Mata Kuliah',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -525,7 +567,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                           : 'Kolom: Kode MK, Nama MK, SKS, Semester, Dosen, Hari, Jam, Ruang',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF15803D)),
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFF15803D),
+                      ),
                     ),
                   ],
                 ),
@@ -534,12 +579,20 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
               FilledButton.icon(
                 onPressed: _downloadTemplate,
                 icon: const Icon(Icons.download_rounded, size: 13),
-                label: const Text('Unduh Template', style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Unduh Template',
+                  style: TextStyle(fontSize: 11),
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   minimumSize: Size.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ],
@@ -564,7 +617,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                 TextButton.icon(
                   onPressed: _copyTemplate,
                   icon: const Icon(Icons.copy_rounded, size: 13),
-                  label: const Text('Salin Format', style: TextStyle(fontSize: 11)),
+                  label: const Text(
+                    'Salin Format',
+                    style: TextStyle(fontSize: 11),
+                  ),
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     foregroundColor: const Color(0xFF64748B),
@@ -614,7 +670,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
             ),
             contentPadding: const EdgeInsets.all(14),
           ),
@@ -628,18 +687,25 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Icon(Icons.analytics_outlined, size: 18),
           label: Text(
-            _isProcessing ? 'Memvalidasi Data...' : 'Proses & Validasi Skema Data',
+            _isProcessing
+                ? 'Memvalidasi Data...'
+                : 'Proses & Validasi Skema Data',
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
         ),
@@ -649,7 +715,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
 
   Widget _buildPreviewSection() {
     final isStudent = _selectedType == BulkImportType.students;
-    final totalRows = isStudent ? _parsedStudents.length : _parsedCourses.length;
+    final totalRows = isStudent
+        ? _parsedStudents.length
+        : _parsedCourses.length;
     final validCount = isStudent
         ? _parsedStudents.where((r) => r.isValid).length
         : _parsedCourses.where((r) => r.isValid).length;
@@ -670,14 +738,25 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             children: [
               _buildMiniStat('Total', '$totalRows', const Color(0xFF334155)),
               const VerticalDivider(width: 24, thickness: 1),
-              _buildMiniStat('Siap Impor', '$validCount', const Color(0xFF16A34A)),
+              _buildMiniStat(
+                'Siap Impor',
+                '$validCount',
+                const Color(0xFF16A34A),
+              ),
               const VerticalDivider(width: 24, thickness: 1),
-              _buildMiniStat('Format Salah', '$errorCount', const Color(0xFFDC2626)),
+              _buildMiniStat(
+                'Format Salah',
+                '$errorCount',
+                const Color(0xFFDC2626),
+              ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => setState(() => _hasValidated = false),
                 icon: const Icon(Icons.edit_note_rounded, size: 16),
-                label: const Text('Edit Input', style: TextStyle(fontSize: 11.5)),
+                label: const Text(
+                  'Edit Input',
+                  style: TextStyle(fontSize: 11.5),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF64748B),
                   visualDensity: VisualDensity.compact,
@@ -694,18 +773,26 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             children: [
               Checkbox(
                 value: _updateExisting,
-                onChanged: (val) => setState(() => _updateExisting = val ?? true),
+                onChanged: (val) =>
+                    setState(() => _updateExisting = val ?? true),
                 activeColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _updateExisting = !_updateExisting),
+                  onTap: () =>
+                      setState(() => _updateExisting = !_updateExisting),
                   child: Text(
                     isStudent
                         ? 'Perbarui data profil jika NIM sudah terdaftar (Upsert)'
                         : 'Perbarui data mata kuliah jika Kode MK sudah terdaftar (Upsert)',
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF334155),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -739,32 +826,44 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                 onPressed: () => setState(() => _hasValidated = false),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(90, 46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('Batal'),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: validCount == 0 || _isImporting ? null : _executeImport,
+                  onPressed: validCount == 0 || _isImporting
+                      ? null
+                      : _executeImport,
                   icon: _isImporting
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Icon(Icons.check_circle_rounded, size: 18),
                   label: Text(
                     _isImporting
                         ? 'Mengimpor ke Supabase...'
                         : 'Impor $validCount ${isStudent ? 'Mahasiswa' : 'Mata Kuliah'} Sekarang',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(46),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -781,7 +880,10 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+        ),
         Text(
           value,
           style: TextStyle(
@@ -807,7 +909,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             color: row.isValid ? Colors.white : const Color(0xFFFEF2F2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: row.isValid ? const Color(0xFFE2E8F0) : const Color(0xFFFECACA),
+              color: row.isValid
+                  ? const Color(0xFFE2E8F0)
+                  : const Color(0xFFFECACA),
             ),
           ),
           child: Row(
@@ -817,14 +921,20 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                 alignment: Alignment.center,
                 child: Text(
                   '${row.index}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: row.isValid ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                  color: row.isValid
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -832,7 +942,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
-                    color: row.isValid ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                    color: row.isValid
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFDC2626),
                   ),
                 ),
               ),
@@ -843,22 +955,37 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                   children: [
                     Text(
                       row.nama.isNotEmpty ? row.nama : 'Tanpa Nama',
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     Text(
                       'NIM: ${row.nim} • ${row.kelas} • Smt ${row.semester}',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                     if (!row.isValid)
                       Text(
                         'Alasan: ${row.errors.join(", ")}',
-                        style: const TextStyle(fontSize: 10.5, color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: Color(0xFFDC2626),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: Color(0xFF94A3B8),
+                ),
                 onPressed: () {
                   setState(() {
                     _parsedStudents.removeAt(i);
@@ -885,7 +1012,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
             color: row.isValid ? Colors.white : const Color(0xFFFEF2F2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: row.isValid ? const Color(0xFFE2E8F0) : const Color(0xFFFECACA),
+              color: row.isValid
+                  ? const Color(0xFFE2E8F0)
+                  : const Color(0xFFFECACA),
             ),
           ),
           child: Row(
@@ -895,14 +1024,20 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                 alignment: Alignment.center,
                 child: Text(
                   '${row.index}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: row.isValid ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                  color: row.isValid
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -910,7 +1045,9 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
-                    color: row.isValid ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                    color: row.isValid
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFDC2626),
                   ),
                 ),
               ),
@@ -921,22 +1058,37 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                   children: [
                     Text(
                       row.nama.isNotEmpty ? row.nama : 'Tanpa Nama Matkul',
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     Text(
                       '${row.kode} • ${row.sks} SKS • ${row.hari}, ${row.jamMulai}-${row.jamSelesai} • ${row.ruangan}',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                     if (!row.isValid)
                       Text(
                         'Alasan: ${row.errors.join(", ")}',
-                        style: const TextStyle(fontSize: 10.5, color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: Color(0xFFDC2626),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: Color(0xFF94A3B8),
+                ),
                 onPressed: () {
                   setState(() {
                     _parsedCourses.removeAt(i);

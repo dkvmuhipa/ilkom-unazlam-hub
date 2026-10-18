@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../core/services/lecturer_reminder_service.dart';
 import '../../../core/services/safe_launcher.dart';
 import '../../../core/services/waha_service.dart';
@@ -14,7 +15,9 @@ class LecturerReminderModal {
     bool isDark = false,
     VoidCallback? onSent,
   }) async {
-    final contactedTime = await LecturerReminderService.getContactedTimeToday(course.id);
+    final contactedTime = await LecturerReminderService.getContactedTimeToday(
+      course.id,
+    );
 
     if (!context.mounted) return;
 
@@ -49,10 +52,12 @@ class _LecturerReminderModalContent extends StatefulWidget {
   });
 
   @override
-  State<_LecturerReminderModalContent> createState() => _LecturerReminderModalContentState();
+  State<_LecturerReminderModalContent> createState() =>
+      _LecturerReminderModalContentState();
 }
 
-class _LecturerReminderModalContentState extends State<_LecturerReminderModalContent> {
+class _LecturerReminderModalContentState
+    extends State<_LecturerReminderModalContent> {
   late ReminderScenario _selectedScenario;
   late TextEditingController _messageController;
   final TextEditingController _notesController = TextEditingController();
@@ -92,7 +97,9 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
       course: widget.course,
       senderName: widget.senderName,
       scenario: _selectedScenario,
-      customNotes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      customNotes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
       virtualLink: widget.course.linkVirtual,
     );
   }
@@ -117,20 +124,30 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
         : (widget.course.dosenWa ?? '');
 
     if (rawPhone.isEmpty) {
-      _showErrorSnackBar('Nomor WhatsApp dosen belum diisi. Masukkan nomor kontak terlebih dahulu.');
+      _showErrorSnackBar(
+        'Nomor WhatsApp dosen belum diisi. Masukkan nomor kontak terlebih dahulu.',
+      );
       return;
     }
 
-    final formattedPhone = LecturerReminderService.formatPhoneForWhatsApp(rawPhone);
+    final formattedPhone = LecturerReminderService.formatPhoneForWhatsApp(
+      rawPhone,
+    );
     final text = Uri.encodeComponent(_messageController.text.trim());
     final url = 'https://wa.me/$formattedPhone?text=$text';
 
-    await safeLaunchUrl(url);
-    await _markAsContacted();
-
+    final opened = await safeLaunchUrl(url);
+    if (!opened) {
+      _showErrorSnackBar(
+        'WhatsApp tidak dapat dibuka. Salin pesan lalu kirim secara manual.',
+      );
+      return;
+    }
     if (mounted) {
       Navigator.pop(context);
-      _showSuccessSnackBar('Aplikasi WhatsApp dibuka untuk dosen ${widget.course.dosen}! 💬');
+      _showSuccessSnackBar(
+        'Draft pesan dibuka di WhatsApp untuk ${widget.course.dosen}. Tekan Kirim di WhatsApp.',
+      );
     }
   }
 
@@ -147,7 +164,9 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
     setState(() => _isSendingWaha = true);
 
     try {
-      final formattedPhone = LecturerReminderService.formatPhoneForWhatsApp(rawPhone);
+      final formattedPhone = LecturerReminderService.formatPhoneForWhatsApp(
+        rawPhone,
+      );
       final text = _messageController.text.trim();
 
       // Cek konektivitas WAHA Gateway
@@ -176,20 +195,29 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
           );
         }
       } else {
-        throw Exception(result.errorMessage ?? 'Server WAHA menolak pengiriman pesan.');
+        throw Exception(
+          result.errorMessage ?? 'Server WAHA menolak pengiriman pesan.',
+        );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSendingWaha = false);
-        _showErrorSnackBar('Pengiriman via WAHA gagal ($e). Mencoba lewat WhatsApp langsung...');
+        _showErrorSnackBar(
+          'Pengiriman via WAHA gagal ($e). Mencoba lewat WhatsApp langsung...',
+        );
         await _sendViaWhatsAppDirect();
       }
     }
   }
 
   Future<void> _markAsContacted() async {
-    await LecturerReminderService.markContactedToday(widget.course.id, widget.course.dosen);
-    final newTime = await LecturerReminderService.getContactedTimeToday(widget.course.id);
+    await LecturerReminderService.markContactedToday(
+      widget.course.id,
+      widget.course.dosen,
+    );
+    final newTime = await LecturerReminderService.getContactedTimeToday(
+      widget.course.id,
+    );
     if (mounted) {
       setState(() => _contactedTime = newTime);
       widget.onSent?.call();
@@ -207,7 +235,11 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(child: Text(msg)),
           ],
@@ -245,8 +277,12 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final inputFill = isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC);
-    final inputBorder = isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0);
+    final inputFill = isDark
+        ? const Color(0xFF28283E)
+        : const Color(0xFFF8FAFC);
+    final inputBorder = isDark
+        ? const Color(0xFF38384E)
+        : const Color(0xFFE2E8F0);
     final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
     final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -328,9 +364,13 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                            color: const Color(0xFF1E40AF)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
@@ -349,10 +389,7 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       '${widget.course.nama} • ${widget.course.hari}, ${widget.course.jamMulai} WIB',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: textSecondary,
-                      ),
+                      style: TextStyle(fontSize: 11.5, color: textSecondary),
                     ),
                   ],
                 ),
@@ -377,7 +414,11 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF059669),
+                    size: 14,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Sudah dihubungi hari ini pukul $_contactedTime WIB',
@@ -425,14 +466,19 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                             selectedColor: const Color(0xFF1E40AF),
                             backgroundColor: inputFill,
                             side: BorderSide(
-                              color: isSelected ? const Color(0xFF1E40AF) : inputBorder,
+                              color: isSelected
+                                  ? const Color(0xFF1E40AF)
+                                  : inputBorder,
                             ),
                             labelStyle: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
                               color: isSelected ? Colors.white : textPrimary,
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -478,7 +524,10 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       ),
                       filled: true,
                       fillColor: inputFill,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: inputBorder),
@@ -489,7 +538,10 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.6),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF1E40AF),
+                          width: 1.6,
+                        ),
                       ),
                     ),
                   ),
@@ -510,7 +562,8 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                     controller: _notesController,
                     onChanged: (_) => _onNotesChanged(),
                     decoration: InputDecoration(
-                      hintText: 'Contoh: Proyektor sudah disiapkan di ruang 302',
+                      hintText:
+                          'Contoh: Proyektor sudah disiapkan di ruang 302',
                       hintStyle: TextStyle(fontSize: 12, color: textSecondary),
                       prefixIcon: const Icon(
                         Icons.edit_note_rounded,
@@ -519,7 +572,10 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       ),
                       filled: true,
                       fillColor: inputFill,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: inputBorder),
@@ -530,7 +586,10 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.6),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF6366F1),
+                          width: 1.6,
+                        ),
                       ),
                     ),
                   ),
@@ -552,15 +611,23 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       ScaleButton(
                         onTap: _copyToClipboard,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                            color: const Color(0xFF1E40AF)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.copy_rounded, size: 12, color: Color(0xFF1E40AF)),
+                              Icon(
+                                Icons.copy_rounded,
+                                size: 12,
+                                color: Color(0xFF1E40AF),
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'Salin Teks',
@@ -622,7 +689,8 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                          color: const Color(0xFF10B981)
+                              .withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -657,10 +725,14 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2E2E42) : const Color(0xFFEEF2F6),
+                      color: isDark
+                          ? const Color(0xFF2E2E42)
+                          : const Color(0xFFEEF2F6),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF42425E) : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? const Color(0xFF42425E)
+                            : const Color(0xFFCBD5E1),
                       ),
                     ),
                     child: _isSendingWaha
@@ -685,7 +757,9 @@ class _LecturerReminderModalContentState extends State<_LecturerReminderModalCon
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
                                 ),
                               ),
                             ],

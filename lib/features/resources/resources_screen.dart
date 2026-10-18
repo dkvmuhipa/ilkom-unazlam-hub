@@ -119,7 +119,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,22 +360,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          if (widget.canManage)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.add_circle_outline_rounded,
-                  color: AppColors.primary,
-                ),
-                tooltip: 'Tambah Materi',
-                onPressed: _showAddResourceDialog,
-              ),
-            ),
-        ],
       ),
-      floatingActionButton: widget.canManage
+      floatingActionButton:
+          widget.canManage && (filtered.isNotEmpty || _searchQuery.isNotEmpty)
           ? FloatingActionButton.extended(
               onPressed: _showAddResourceDialog,
               backgroundColor: AppColors.primary,
@@ -503,10 +492,12 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     subtitle: _searchQuery.isNotEmpty
                         ? 'Tidak ada modul atau slide yang cocok dengan "$_searchQuery". Coba kata kunci lain.'
                         : 'Slide PPT, diktat e-book, atau jurnal perkuliahan dari dosen akan dihimpun di sini.',
-                    actionLabel: widget.canManage
+                    actionLabel: widget.canManage && _searchQuery.isEmpty
                         ? 'Tambah Materi Pertama'
                         : null,
-                    onAction: widget.canManage ? _showAddResourceDialog : null,
+                    onAction: widget.canManage && _searchQuery.isEmpty
+                        ? _showAddResourceDialog
+                        : null,
                   )
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),

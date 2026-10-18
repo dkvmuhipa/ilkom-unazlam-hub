@@ -150,11 +150,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _loadPushTokensCount(),
       ]);
       if (mounted) {
-        _showAdminMessage('Seluruh modul dan data admin berhasil disinkronkan!');
+        _showAdminMessage(
+          'Seluruh modul dan data admin berhasil disinkronkan!',
+        );
       }
     } catch (e) {
       if (mounted) {
-        _showAdminMessage('Sinkronisasi selesai dengan beberapa data offline.', isError: false);
+        _showAdminMessage(
+          'Sinkronisasi selesai dengan beberapa data offline.',
+          isError: false,
+        );
       }
     } finally {
       if (mounted) setState(() => _isRefreshing = false);
@@ -183,7 +188,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     } catch (_) {}
 
     try {
-      final res = await client.from('treasury_transactions').select('nominal,is_pemasukan');
+      final res = await client
+          .from('treasury_transactions')
+          .select('nominal,is_pemasukan');
       cash = List<Map<String, dynamic>>.from(res as List);
     } catch (_) {}
 
@@ -193,29 +200,49 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     } catch (_) {}
 
     try {
-      final res = await client.from('students').select('nim').eq('is_aktif', true).neq('role', 'ADMIN');
+      final res = await client
+          .from('students')
+          .select('nim')
+          .eq('is_aktif', true)
+          .neq('role', 'ADMIN');
       students = List<dynamic>.from(res as List);
     } catch (_) {}
 
-    final present = attendance.where((row) => (row['status']?.toString().toLowerCase() ?? '') == 'hadir').length;
-    final attendanceRate = attendance.isEmpty ? null : (present * 100 / attendance.length).round();
+    final present = attendance
+        .where(
+          (row) => (row['status']?.toString().toLowerCase() ?? '') == 'hadir',
+        )
+        .length;
+    final attendanceRate = attendance.isEmpty
+        ? null
+        : (present * 100 / attendance.length).round();
     final balance = cash.fold<int>(0, (sum, row) {
       final amount = (row['nominal'] as num?)?.toInt() ?? 0;
       return sum + (row['is_pemasukan'] == true ? amount : -amount);
     });
-    final formattedBalance = balance.abs().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+    final formattedBalance = balance.abs().toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '.',
+    );
 
     return {
-      'attendance': attendanceRate == null ? 'Kehadiran: Belum ada sesi' : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
-      'treasury': 'Saldo dari ${cash.length} transaksi: Rp ${balance < 0 ? '-' : ''}$formattedBalance',
+      'attendance': attendanceRate == null
+          ? 'Kehadiran: Belum ada sesi'
+          : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
+      'treasury':
+          'Saldo dari ${cash.length} transaksi: Rp ${balance < 0 ? '-' : ''}$formattedBalance',
       'assignments': '${assignments.length} tugas aktif tercatat',
-      'students': '${students.isNotEmpty ? students.length : _managedAccounts.where((s) => s.isAktif).length} akun mahasiswa aktif',
+      'students':
+          '${students.isNotEmpty ? students.length : _managedAccounts.where((s) => s.isAktif).length} akun mahasiswa aktif',
     };
   }
 
   Future<void> _loadAcademicData() async {
     if (!mounted) return;
-    setState(() { _isLoadingAcademicData = true; _academicLoadError = null; });
+    setState(() {
+      _isLoadingAcademicData = true;
+      _academicLoadError = null;
+    });
     try {
       final results = await Future.wait([
         AdminAcademicService.listClasses(),
@@ -225,15 +252,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       ]);
       if (!mounted) return;
       setState(() {
-        _classes = (results[0] as List<Map<String, dynamic>>).map((row) => ClassItem.fromMap(row)).toList();
-        _lecturers = (results[1] as List<Map<String, dynamic>>).map((row) => LecturerItem.fromMap(row)).toList();
-        _academicYears = (results[2] as List<Map<String, dynamic>>).map((row) => AcademicYearItem.fromMap(row)).toList();
+        _classes = (results[0] as List<Map<String, dynamic>>)
+            .map((row) => ClassItem.fromMap(row))
+            .toList();
+        _lecturers = (results[1] as List<Map<String, dynamic>>)
+            .map((row) => LecturerItem.fromMap(row))
+            .toList();
+        _academicYears = (results[2] as List<Map<String, dynamic>>)
+            .map((row) => AcademicYearItem.fromMap(row))
+            .toList();
         _courses = results[3] as List<Course>;
       });
     } on AdminAcademicException catch (error) {
       if (mounted) setState(() => _academicLoadError = error.message);
     } catch (error) {
-      if (mounted) setState(() => _academicLoadError = 'Data akademik gagal dimuat: $error');
+      if (mounted)
+        setState(
+          () => _academicLoadError = 'Data akademik gagal dimuat: $error',
+        );
     } finally {
       if (mounted) setState(() => _isLoadingAcademicData = false);
     }
@@ -476,7 +512,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                              color: const Color(0xFF0F172A)
+                                  .withValues(alpha: 0.03),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -515,7 +552,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                            color: const Color(0xFF0F172A)
+                                .withValues(alpha: 0.03),
                             blurRadius: 4,
                             offset: const Offset(0, 1),
                           ),
@@ -556,7 +594,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                                color: const Color(0xFF0F172A)
+                                    .withValues(alpha: 0.03),
                                 blurRadius: 4,
                                 offset: const Offset(0, 1),
                               ),
@@ -591,7 +630,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(6),
@@ -756,8 +798,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ],
             ),
             child: LayoutBuilder(
-              builder: (context, bannerConstraints) {
-                final isNarrow = bannerConstraints.maxWidth < 640;
+              builder: (_, _) {
                 final fcmInfo = Row(
                   children: [
                     Container(
@@ -765,7 +806,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF312E81).withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                        ),
                       ),
                       child: const Icon(
                         Icons.cell_tower_rounded,
@@ -820,55 +863,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ],
                 );
 
-                final actionButtons = Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _showBroadcastAnnouncementDialog,
-                      icon: const Icon(Icons.send_rounded, size: 13),
-                      label: const Text('Broadcast', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F46E5),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                      ),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _showWahaGatewayDialog,
-                      icon: const Icon(Icons.phone_android_rounded, size: 13),
-                      label: const Text('WhatsApp WAHA', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                      ),
-                    ),
-                  ],
-                );
-
-                if (isNarrow) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      fcmInfo,
-                      const SizedBox(height: 12),
-                      actionButtons,
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    Expanded(child: fcmInfo),
-                    const SizedBox(width: 8),
-                    actionButtons,
-                  ],
-                );
+                return fcmInfo;
               },
             ),
           ),
@@ -900,7 +895,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       onTap: _showWahaGatewayDialog,
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFECFDF5),
                           borderRadius: BorderRadius.circular(8),
@@ -909,7 +907,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.phone_android_rounded, size: 13, color: Color(0xFF059669)),
+                            Icon(
+                              Icons.phone_android_rounded,
+                              size: 13,
+                              color: Color(0xFF059669),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'WA Gateway',
@@ -927,7 +929,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       onTap: () => _showBulkCsvModal(),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2FF),
                           borderRadius: BorderRadius.circular(8),
@@ -936,7 +941,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.file_upload_outlined, size: 13, color: AppColors.primary),
+                            Icon(
+                              Icons.file_upload_outlined,
+                              size: 13,
+                              color: AppColors.primary,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Import CSV',
@@ -954,7 +963,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       onTap: _showQuickExportModal,
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
@@ -963,7 +975,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.download_rounded, size: 13, color: Color(0xFF0F172A)),
+                            Icon(
+                              Icons.download_rounded,
+                              size: 13,
+                              color: Color(0xFF0F172A),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Ekspor Data',
@@ -1142,7 +1158,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       SizedBox(height: 2),
                       Text(
                         'Tahun Akademik 2026/2027 Ganjil aktif • Database Supabase',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -1346,28 +1365,31 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     AdminCreationModals.showQuickExportModal(
       context: context,
       onNavigate: _navigateTo,
-      );
+    );
   }
 
-  void _showBulkCsvModal({BulkImportType initialType = BulkImportType.students}) {
+  void _showBulkCsvModal({
+    BulkImportType initialType = BulkImportType.students,
+  }) {
     AdminBulkCsvModal.show(
       context,
       initialType: initialType,
       onReload: _refreshAllAdminData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
     );
   }
 
@@ -1453,19 +1475,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onNavigate: _navigateTo,
       onReload: _loadAcademicData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
     );
   }
@@ -1486,19 +1509,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onNavigate: _navigateTo,
       onReload: _loadAcademicData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
     );
   }
@@ -1507,10 +1531,16 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // SCREEN 6: DATA MAHASISWA
   // ==========================================
 
-
   void _showAdminMessage(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: isError ? const Color(0xFFB91C1C) : const Color(0xFF059669)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? const Color(0xFFB91C1C)
+            : const Color(0xFF059669),
+      ),
+    );
   }
 
   void _recordAudit({
@@ -1536,10 +1566,28 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     setState(() => _auditFuture = AdminAuditService.list());
   }
 
-  Future<bool> _confirmDelete(String message) async => await showDialog<bool>(
-    context: context, builder: (ctx) => AlertDialog(title: const Text('Konfirmasi hapus'), content: Text(message),
-      actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')), FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB91C1C)), child: const Text('Hapus'))]),
-  ) ?? false;
+  Future<bool> _confirmDelete(String message) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Konfirmasi hapus'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB91C1C),
+              ),
+              child: const Text('Hapus'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   // ==========================================
   // SCREEN 6: DATA MAHASISWA
@@ -1558,19 +1606,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onSetActive: _setManagedAccountActive,
       onDeleteAccount: _deleteStudentAccount,
       onCreateAccount: _showCreateStudentAccountDialog,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
     );
   }
 
@@ -1591,19 +1640,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onSetActive: _setManagedAccountActive,
       onDeleteAccount: _deleteStudentAccount,
       onCreateAccount: _showCreateStudentAccountDialog,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
     );
   }
 
@@ -1619,19 +1669,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onBack: () => _navigateTo('dashboard'),
       onReload: _loadAcademicData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
     );
   }
@@ -1647,19 +1698,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onBack: () => _navigateTo('dashboard'),
       onReload: _loadAcademicData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
     );
   }
@@ -1675,19 +1727,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onBack: () => _navigateTo('dashboard'),
       onReload: _loadAcademicData,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
     );
   }
@@ -1706,7 +1759,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     _recordAudit(
       action: 'CREATE',
       module: 'AKUN',
-      description: 'Membuat akun mahasiswa ${profile.nama} (${profile.nim}) dan mengirim undangan.',
+      description:
+          'Membuat akun mahasiswa ${profile.nama} (${profile.nim}) dan mengirim undangan.',
       metadata: {'nim': profile.nim},
     );
 
@@ -1732,7 +1786,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       _recordAudit(
         action: 'UPDATE',
         module: 'AKUN',
-        description: 'Memperbarui profil mahasiswa ${updated.nama} (${updated.nim}).',
+        description:
+            'Memperbarui profil mahasiswa ${updated.nama} (${updated.nim}).',
         metadata: {'nim': updated.nim},
       );
       if (!mounted) return;
@@ -1800,7 +1855,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       _recordAudit(
         action: 'UPDATE',
         module: 'AKUN',
-        description: '${isActive ? 'Mengaktifkan' : 'Menonaktifkan'} akun ${account.nama} (${account.nim}).',
+        description:
+            '${isActive ? 'Mengaktifkan' : 'Menonaktifkan'} akun ${account.nama} (${account.nim}).',
         metadata: {'nim': account.nim, 'is_aktif': isActive},
       );
       if (!mounted) return;
@@ -1832,7 +1888,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       _recordAudit(
         action: 'DELETE',
         module: 'AKUN',
-        description: 'Menghapus akun mahasiswa ${account.nama} (${account.nim}).',
+        description:
+            'Menghapus akun mahasiswa ${account.nama} (${account.nim}).',
         metadata: {'nim': account.nim, 'nama': account.nama},
       );
       if (!mounted) return;
@@ -1846,7 +1903,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     }
   }
 
-
   // ==========================================
   // SCREEN 11: MANAJEMEN AKUN
   // ==========================================
@@ -1858,19 +1914,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onBack: () => _navigateTo('dashboard'),
       onReload: _loadManagedAccounts,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
       onConfirmDelete: _confirmDelete,
       onSelectedStudentChanged: (updated) {
         setState(() {
@@ -1899,19 +1956,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       lecturers: _lecturers,
       courses: _courses,
       onShowMessage: _showAdminMessage,
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
     );
   }
 
@@ -1930,21 +1988,23 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       managedAccounts: _managedAccounts,
       selectedStudent: _selectedStudent,
       onBack: () => _navigateTo('pengaturan'),
-      onRecordAudit: ({
-        required String action,
-        required String module,
-        required String description,
-        Map<String, dynamic>? metadata,
-      }) {
-        _recordAudit(
-          action: action,
-          module: module,
-          description: description,
-          metadata: metadata ?? {},
-        );
-      },
+      onRecordAudit:
+          ({
+            required String action,
+            required String module,
+            required String description,
+            Map<String, dynamic>? metadata,
+          }) {
+            _recordAudit(
+              action: action,
+              module: module,
+              description: description,
+              metadata: metadata ?? {},
+            );
+          },
     );
   }
+
   // ==========================================
   // EXTRA: LAPORAN ADMIN
   // ==========================================
@@ -1972,4 +2032,3 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 }
-

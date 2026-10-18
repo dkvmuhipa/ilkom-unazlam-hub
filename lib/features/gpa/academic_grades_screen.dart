@@ -161,7 +161,7 @@ class _AcademicGradesScreenState extends State<AcademicGradesScreen> {
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Catat nilai akhir'),
           content: SizedBox(
-            width: 420,
+            width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 420.0).toDouble(),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -379,7 +379,7 @@ class _AcademicGradesScreenState extends State<AcademicGradesScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),

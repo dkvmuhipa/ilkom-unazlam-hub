@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/export_service.dart';
@@ -25,7 +26,8 @@ class AdminSystemSettingsView extends StatelessWidget {
     required String module,
     required String description,
     Map<String, dynamic>? metadata,
-  }) onRecordAudit;
+  })
+  onRecordAudit;
 
   const AdminSystemSettingsView({
     super.key,
@@ -93,9 +95,16 @@ class AdminSystemSettingsView extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.notifications_active_outlined, color: AppColors.primary, size: 22),
+            Icon(
+              Icons.notifications_active_outlined,
+              color: AppColors.primary,
+              size: 22,
+            ),
             SizedBox(width: 10),
-            Text('Pengaturan Notifikasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(
+              'Pengaturan Notifikasi',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
           ],
         ),
         content: Column(
@@ -111,12 +120,20 @@ class AdminSystemSettingsView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.token_rounded, color: AppColors.primary, size: 20),
+                  const Icon(
+                    Icons.token_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       '$registeredTokensCount token FCM aktif terdaftar dari instalasi mahasiswa.',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -130,7 +147,11 @@ class AdminSystemSettingsView extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               '• Firebase Cloud Messaging (FCM v1) Terintegrasi\n• Supabase Database Webhook & Edge Function Aktif\n• Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
-              style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF4B5563)),
+              style: TextStyle(
+                fontSize: 11.5,
+                height: 1.4,
+                color: Color(0xFF4B5563),
+              ),
             ),
           ],
         ),
@@ -157,10 +178,12 @@ class AdminSystemSettingsView extends StatelessWidget {
   }
 
   void _showAppProfileDialog(BuildContext context) {
-    final activeYear = academicYears.firstWhere(
-      (y) => y.isAktif,
-      orElse: () => AcademicYearItem(tahun: '2026/2027', isAktif: true),
-    ).tahun;
+    final activeYear = academicYears
+        .firstWhere(
+          (y) => y.isAktif,
+          orElse: () => AcademicYearItem(tahun: '2026/2027', isAktif: true),
+        )
+        .tahun;
 
     showDialog(
       context: context,
@@ -177,7 +200,11 @@ class AdminSystemSettingsView extends StatelessWidget {
           children: [
             const Text(
               'ILKOM UNAZLAM Hub',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF111827)),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                color: Color(0xFF111827),
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -185,14 +212,19 @@ class AdminSystemSettingsView extends StatelessWidget {
               style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
             ),
             const Divider(height: 20),
-            _buildProfileInfoRow('Target Pengguna', 'Mahasiswa & Pengurus Kelas'),
+            _buildProfileInfoRow(
+              'Target Pengguna',
+              'Mahasiswa & Pengurus Kelas',
+            ),
             _buildProfileInfoRow('Tahun Akademik', activeYear),
             _buildProfileInfoRow('Kelas Terdaftar', '${classes.length} Kelas'),
             _buildProfileInfoRow('Dosen Pengampu', '${lecturers.length} Dosen'),
             _buildProfileInfoRow('Mata Kuliah', '${courses.length} MK'),
             _buildProfileInfoRow(
               'Basis Data',
-              SupabaseService.client != null ? 'Supabase Connected 🟢' : 'Offline / Standalone 🟡',
+              SupabaseService.client != null
+                  ? 'Supabase Connected 🟢'
+                  : 'Offline / Standalone 🟡',
             ),
             _buildProfileInfoRow('Versi Rilis', 'v2.5.0 Production'),
           ],
@@ -221,13 +253,21 @@ class AdminSystemSettingsView extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 11.5, color: Color(0xFF111827), fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFF111827),
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -258,7 +298,8 @@ class AdminSystemSettingsView extends StatelessWidget {
             onPressed: () async {
               try {
                 final client = SupabaseService.client;
-                if (client == null) throw Exception('Supabase belum terhubung.');
+                if (client == null)
+                  throw Exception('Supabase belum terhubung.');
                 final tables = [
                   'students',
                   'courses',
@@ -276,11 +317,16 @@ class AdminSystemSettingsView extends StatelessWidget {
                 for (final table in tables) {
                   backup[table] = await client.from(table).select();
                 }
-                final payload = const JsonEncoder.withIndent('  ').convert(backup);
-                ExportService.downloadFile(
+                final payload = const JsonEncoder.withIndent('  ')
+                    .convert(backup);
+                final exportResult = await ExportService.exportFile(
                   'ilkom_hub_backup_${DateTime.now().toIso8601String().substring(0, 10)}.json',
                   payload,
                 );
+                if (exportResult == FileExportResult.dismissed) return;
+                if (exportResult == FileExportResult.unavailable) {
+                  await Clipboard.setData(ClipboardData(text: payload));
+                }
                 onRecordAudit(
                   action: 'EXPORT',
                   module: 'BACKUP',
@@ -289,7 +335,13 @@ class AdminSystemSettingsView extends StatelessWidget {
                 );
                 if (!ctx.mounted) return;
                 Navigator.pop(ctx);
-                onShowMessage('Backup JSON dibuat dari data Supabase.');
+                onShowMessage(switch (exportResult) {
+                  FileExportResult.downloaded =>
+                    'Backup JSON berhasil diunduh.',
+                  FileExportResult.shared => 'Pilih lokasi penyimpanan pada menu berbagi untuk menyimpan backup JSON.',
+                  FileExportResult.dismissed => '',
+                  FileExportResult.unavailable => 'Ekspor file tidak tersedia. Data backup JSON disalin ke clipboard.',
+                });
               } catch (error) {
                 onShowMessage('Backup gagal: $error', isError: true);
               }
@@ -318,7 +370,11 @@ class AdminSystemSettingsView extends StatelessWidget {
         ),
         content: const Text(
           'Aplikasi Pengelolaan Kelas Terpadu Ilmu Komunikasi Universitas Al-Azhar Menggala (UNAZLAM).\n\n"Satu Kelas, Banyak Cerita, Lebih Banyak Karya."',
-          style: TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF4B5563)),
+          style: TextStyle(
+            fontSize: 12.5,
+            height: 1.4,
+            color: Color(0xFF4B5563),
+          ),
         ),
         actions: [
           ElevatedButton(

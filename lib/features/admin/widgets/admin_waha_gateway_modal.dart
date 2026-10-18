@@ -358,7 +358,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         side: BorderSide(color: tokens.borderCol),
       ),
       child: Container(
-        width: 760,
+        width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 760.0).toDouble(),
         constraints: BoxConstraints(maxHeight: screenSize.height * 0.90),
         child: Column(
           children: [

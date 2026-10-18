@@ -364,7 +364,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
           ],
         ),
         content: Container(
-          width: 650,
+          width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 650.0).toDouble(),
           constraints: const BoxConstraints(maxHeight: 460),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(

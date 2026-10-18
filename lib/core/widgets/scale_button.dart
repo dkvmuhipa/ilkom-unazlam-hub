@@ -23,26 +23,43 @@ class ScaleButton extends StatefulWidget {
 
 class _ScaleButtonState extends State<ScaleButton> {
   bool _isPressed = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        if (widget.onTap != null) setState(() => _isPressed = true);
-      },
-      onTapUp: (_) {
-        if (widget.onTap != null) setState(() => _isPressed = false);
-      },
-      onTapCancel: () {
-        if (widget.onTap != null) setState(() => _isPressed = false);
-      },
-      onTap: widget.onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedScale(
-        scale: _isPressed ? widget.scaleDown : 1.0,
-        duration: widget.duration,
-        curve: Curves.easeOutCubic,
-        child: widget.child,
+    return Semantics(
+      button: true,
+      enabled: widget.onTap != null,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+          onHighlightChanged: (value) => setState(() => _isPressed = value),
+          onFocusChange: (value) => setState(() => _focused = value),
+          child: AnimatedScale(
+            scale: _isPressed && !MediaQuery.disableAnimationsOf(context)
+                ? widget.scaleDown
+                : 1.0,
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : widget.duration,
+            curve: Curves.easeOutCubic,
+            child: Container(
+              foregroundDecoration: _focused
+                  ? BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                      borderRadius:
+                          widget.borderRadius ?? BorderRadius.circular(12),
+                    )
+                  : null,
+              child: widget.child,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -100,12 +117,10 @@ class _FadeSlideEntranceState extends State<FadeSlideEntrance>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
     return FadeTransition(
       opacity: _fadeAnim,
-      child: SlideTransition(
-        position: _slideAnim,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slideAnim, child: widget.child),
     );
   }
 }

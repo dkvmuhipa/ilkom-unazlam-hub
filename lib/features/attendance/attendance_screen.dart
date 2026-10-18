@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math' show Random;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
+
 import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/qr_widget.dart';
@@ -67,7 +69,12 @@ class AttendanceScreen extends StatefulWidget {
     List<Course> courses = const [],
     VoidCallback? onSuccess,
   }) {
-    AttendanceScannerModal.show(context, userNim: userNim, courses: courses, onSuccess: onSuccess);
+    AttendanceScannerModal.show(
+      context,
+      userNim: userNim,
+      courses: courses,
+      onSuccess: onSuccess,
+    );
   }
 
   // =========================================================================
@@ -98,8 +105,10 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   Timer? _countdownTimer;
   int _activeTab = 0; // 0: Presensi Saya, 1: Rekap Seluruh Kelas
-  ActiveAttendanceSession? get currentSession => AttendanceScreen.currentSession;
-  set currentSession(ActiveAttendanceSession? s) => AttendanceScreen.currentSession = s;
+  ActiveAttendanceSession? get currentSession =>
+      AttendanceScreen.currentSession;
+  set currentSession(ActiveAttendanceSession? s) =>
+      AttendanceScreen.currentSession = s;
 
   List<AttendanceHistoryItem> _history = [];
   List<Map<String, dynamic>> _allClassLogs = [];
@@ -161,15 +170,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           studentNim: widget.canManageClassAttendance ? null : activeNim,
         );
       } catch (err) {
-        debugPrint('Warning: getAttendanceLogsStrict gagal ($err), mencoba getAttendanceLogs fallback');
+        debugPrint(
+          'Warning: getAttendanceLogsStrict gagal ($err), mencoba getAttendanceLogs fallback',
+        );
         rawLogs = await SupabaseRepository.getAttendanceLogs(
           studentNim: widget.canManageClassAttendance ? null : activeNim,
         );
       }
-      
+
       final courses = await SupabaseRepository.getCourses();
       final students = await SupabaseRepository.getClassDirectory();
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -178,11 +189,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         _allClassLogs = rawLogs;
 
         // 2. Filter riwayat presensi khusus untuk mahasiswa yang sedang aktif login
-        final personalLogs = rawLogs.where((l) => l['student_nim'] == activeNim).toList();
+        final personalLogs = rawLogs
+            .where((l) => l['student_nim'] == activeNim)
+            .toList();
 
         _history = personalLogs.map((l) {
-          final createdAt = l['created_at'] != null ? DateTime.parse(l['created_at']) : DateTime.now();
-          final formattedDate = '${DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(createdAt)} (${DateFormat('HH:mm').format(createdAt)} WITA)';
+          final createdAt = l['created_at'] != null
+              ? DateTime.parse(l['created_at'])
+              : DateTime.now();
+          final formattedDate =
+              '${DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(createdAt)} (${DateFormat('HH:mm').format(createdAt)} WITA)';
 
           String cName = 'Mata Kuliah';
           if (l['courses'] != null && l['courses']['nama_mk'] != null) {
@@ -236,7 +252,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kosongkan Riwayat Presensi Pribadi?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Kosongkan Riwayat Presensi Pribadi?',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Text(
           'Semua catatan scan presensi Anda akan dihapus karena belum ada aktivitas perkuliahan yang aktif. Riwayat Anda akan kembali bersih/kosong.',
           style: TextStyle(fontSize: 13, height: 1.4),
@@ -247,20 +266,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() {
                 _history = [];
                 _allClassLogs.removeWhere((l) => l['student_nim'] == activeNim);
               });
-              await SupabaseRepository.clearAttendanceLogs(studentNim: activeNim);
+              await SupabaseRepository.clearAttendanceLogs(
+                studentNim: activeNim,
+              );
               await _loadRealAttendanceData();
 
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Riwayat presensi pribadi telah berhasil dikosongkan.'),
+                  content: Text(
+                    'Riwayat presensi pribadi telah berhasil dikosongkan.',
+                  ),
                   backgroundColor: Color(0xFF10B981),
                 ),
               );
@@ -276,7 +302,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kosongkan Rekap Seluruh Kelas?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text(
+          'Kosongkan Rekap Seluruh Kelas?',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: const Text(
           'Semua catatan log presensi kelas akan dibersihkan dari server karena belum ada perkuliahan aktif. Rekap kehadiran seluruh mahasiswa akan kembali ke kondisi awal (0 sesi).',
           style: TextStyle(fontSize: 13, height: 1.4),
@@ -287,7 +316,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() {
@@ -300,7 +332,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Rekap presensi seluruh kelas telah berhasil dikosongkan.'),
+                  content: Text(
+                    'Rekap presensi seluruh kelas telah berhasil dikosongkan.',
+                  ),
                   backgroundColor: Color(0xFF10B981),
                 ),
               );
@@ -340,7 +374,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-
   void _showClassAttendanceModal() {
     ClassAttendanceModal.show(
       context,
@@ -353,7 +386,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _showGenerateQrModal(BuildContext context) {
-    String selectedCourse = _courses.isNotEmpty ? _courses.first.nama : 'Mata Kuliah';
+    String selectedCourse = _courses.isNotEmpty
+        ? _courses.first.nama
+        : 'Mata Kuliah';
     int pertemuan = 5;
     String token = _generateAttendanceToken();
 
@@ -377,9 +412,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('QR Code Presensi Sesi Kelas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+                          Text(
+                            'QR Code Presensi Sesi Kelas',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
                           SizedBox(height: 2),
-                          Text('Tampilkan kode ini kepada mahasiswa di kelas', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                          Text(
+                            'Tampilkan kode ini kepada mahasiswa di kelas',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -397,17 +445,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Mata Kuliah',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                   ),
                   items: _courses.isEmpty
                       ? [
                           DropdownMenuItem(
                             value: selectedCourse,
-                            child: Text(selectedCourse, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              selectedCourse,
+                              style: const TextStyle(fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ]
-                      : _courses.map((c) => DropdownMenuItem(value: c.nama, child: Text(c.nama, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                      : _courses
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c.nama,
+                                child: Text(
+                                  c.nama,
+                                  style: const TextStyle(fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
                   onChanged: (val) {
                     if (val != null) {
                       setModalState(() {
@@ -420,15 +488,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 const SizedBox(height: 20),
 
                 // ISO-Compliant QR Code View
-                QrCodeWidget(
-                  data: token,
-                  size: 200,
-                ),
+                QrCodeWidget(data: token, size: 200),
                 const SizedBox(height: 16),
 
                 // Token Box
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(12),
@@ -437,11 +505,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.vpn_key_rounded, size: 16, color: Color(0xFF1E40AF)),
+                      const Icon(
+                        Icons.vpn_key_rounded,
+                        size: 16,
+                        color: Color(0xFF1E40AF),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'TOKEN: $token',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF1E40AF), letterSpacing: 0.5),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1E40AF),
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
@@ -451,11 +528,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.timer_outlined, size: 16, color: Color(0xFFEF4444)),
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: Color(0xFFEF4444),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Berlaku hingga 15 menit ke depan (10:15 WITA)',
-                      style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -489,15 +574,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ).then((created) {
                       if (created != null && created['id'] != null && mounted) {
                         setState(() {
-                          currentSession = ActiveAttendanceSession.fromMap(created);
+                          currentSession = ActiveAttendanceSession.fromMap(
+                            created,
+                          );
                         });
                       }
                     });
 
                     // Broadcast class announcement so every classmate sees it in Notifications & Announcements
                     SupabaseRepository.createAnnouncement(
-                      judul: 'Presensi Dibuka: $selectedCourse Pertemuan $pertemuan',
-                      isi: 'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas dan berlaku selama 15 menit. Silakan scan QR di kelas atau masukkan Token "$token" / PIN "${newSession.pinCode}" langsung di aplikasi.',
+                      judul:
+                          'Presensi Dibuka: $selectedCourse Pertemuan $pertemuan',
+                      isi:
+                          'Sesi presensi QR untuk mata kuliah $selectedCourse (Pertemuan $pertemuan) telah dibuka oleh pengurus kelas dan berlaku selama 15 menit. Silakan scan QR di kelas atau masukkan Token "$token" / PIN "${newSession.pinCode}" langsung di aplikasi.',
                       kategori: 'Kelas',
                       isPinned: true,
                       authorName: 'Pengurus Kelas (Ketua)',
@@ -506,16 +595,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     Navigator.pop(ctx);
 
                     // Re-open persistent active session presenter modal so Ketua can project/show it to the entire class
-                    AttendanceScreen.showActiveQrModal(context, session: newSession);
+                    AttendanceScreen.showActiveQrModal(
+                      context,
+                      session: newSession,
+                    );
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Row(
                           children: [
-                            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text('Sesi presensi "$selectedCourse" aktif selama 15 menit! Pengumuman kelas telah disiarkan.'),
+                              child: Text(
+                                'Sesi presensi "$selectedCourse" aktif selama 15 menit! Pengumuman kelas telah disiarkan.',
+                              ),
                             ),
                           ],
                         ),
@@ -525,12 +623,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     );
                   },
                   icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
-                  label: const Text('Buka Sesi Presensi Sekarang (15 Menit)', style: TextStyle(fontWeight: FontWeight.w700)),
+                  label: const Text(
+                    'Buka Sesi Presensi Sekarang (15 Menit)',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E40AF),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ],
@@ -544,7 +647,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String _generateAttendanceToken() {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     final random = Random.secure();
-    return List.generate(8, (_) => alphabet[random.nextInt(alphabet.length)]).join();
+    return List.generate(
+      8,
+      (_) => alphabet[random.nextInt(alphabet.length)],
+    ).join();
   }
 
   void _showScanQrModal(BuildContext context) {
@@ -556,7 +662,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  void _showAbsenceRequestSheet(BuildContext context, {String? preselectedCourse, int? preselectedPertemuan}) {
+  void _showAbsenceRequestSheet(
+    BuildContext context, {
+    String? preselectedCourse,
+    int? preselectedPertemuan,
+  }) {
     AttendanceScreen.showAbsenceRequestModal(
       context,
       userNim: widget.userNim ?? '',
@@ -586,7 +696,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final izinCount = _history.where((h) => h.status == 'Izin').length;
     final sakitCount = _history.where((h) => h.status == 'Sakit').length;
     final alpaCount = _history.where((h) => h.status == 'Alpa').length;
-    final double attendanceRatio = totalSessions > 0 ? (hadirCount / totalSessions) : 1.0;
+    final double attendanceRatio = totalSessions > 0
+        ? (hadirCount / totalSessions)
+        : 1.0;
     final int attendancePercent = (attendanceRatio * 100).round();
     final bool isSafeZone = attendancePercent >= 75;
 
@@ -600,7 +712,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF111827)),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : const Color(0xFF111827),
+          ),
           tooltip: 'Kembali',
           onPressed: () {
             if (widget.onBack != null) {
@@ -614,7 +729,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.canManageClassAttendance ? 'Presensi & Kehadiran' : 'Presensi Saya',
+              widget.canManageClassAttendance
+                  ? 'Presensi & Kehadiran'
+                  : 'Presensi Saya',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF111827),
                 fontSize: 17,
@@ -636,37 +753,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ],
         ),
         actions: [
-          // Prominent Buka QR / Scan QR Action Button
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                if (widget.canManageClassAttendance) {
-                  _showGenerateQrModal(context);
-                } else {
-                  _showScanQrModal(context);
-                }
-              },
-              icon: Icon(
-                widget.canManageClassAttendance ? Icons.qr_code_2_rounded : Icons.qr_code_scanner_rounded,
-                size: 16,
-              ),
-              label: Text(
-                widget.canManageClassAttendance ? 'Buka QR' : 'Scan QR',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ),
           // Export Button (Personal vs Class)
           IconButton(
-            icon: Icon(Icons.file_download_outlined, color: isDark ? Colors.white70 : const Color(0xFF374151), size: 22),
+            icon: Icon(
+              Icons.file_download_outlined,
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              size: 22,
+            ),
             tooltip: widget.canManageClassAttendance
                 ? 'Export Rekap Presensi Kelas (Excel/CSV)'
                 : 'Export Rekap Kehadiran Saya (CSV)',
@@ -678,7 +771,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   subtitle: 'Format data CSV kompatibel dengan Microsoft Excel & Google Sheets',
                   fileName: 'Rekap_Presensi_Kelas_ILKOM_UNAZLAM_2026.csv',
                   content: ExportService.exportAttendanceCsv(
-                    courseName: _courses.isNotEmpty ? _courses.first.nama : 'Mata Kuliah ILKOM',
+                    courseName: _courses.isNotEmpty
+                        ? _courses.first.nama
+                        : 'Mata Kuliah ILKOM',
                     logs: _allClassLogs,
                     students: _students,
                   ),
@@ -687,8 +782,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ExportService.showExportSheet(
                   context,
                   title: 'Export Rekap Presensi Pribadi',
-                  subtitle: 'Khusus data kehadiran atas nama ${studentProfile.nama} (${studentProfile.nim})',
-                  fileName: 'Presensi_${studentProfile.nim}_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv',
+                  subtitle:
+                      'Khusus data kehadiran atas nama ${studentProfile.nama} (${studentProfile.nim})',
+                  fileName:
+                      'Presensi_${studentProfile.nim}_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv',
                   content: ExportService.exportPersonalAttendanceCsv(
                     studentNim: studentProfile.nim,
                     studentName: studentProfile.nama,
@@ -698,34 +795,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               }
             },
           ),
-          if (widget.canManageClassAttendance)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TextButton.icon(
-                onPressed: _showClassAttendanceModal,
-                icon: const Icon(Icons.fact_check_outlined, size: 16, color: Color(0xFF1E40AF)),
-                label: const Text('Input Kelas', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
         ],
       ),
-      floatingActionButton: widget.canManageClassAttendance
-          ? FloatingActionButton.extended(
-              onPressed: () => _showGenerateQrModal(context),
-              backgroundColor: const Color(0xFF1E40AF),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.qr_code_2_rounded, size: 20),
-              label: const Text(
-                'Buka Presensi QR',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-              ),
-            )
-          : null,
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Column(
@@ -738,10 +809,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF1F5F9),
+                  color: isDark
+                      ? const Color(0xFF1E1E2E)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF2E2E3E)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
@@ -754,13 +829,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _activeTab == 0
-                                ? (isDark ? const Color(0xFF1E40AF) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF1E40AF)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: _activeTab == 0
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.06),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.06,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -774,18 +853,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 Icons.person_rounded,
                                 size: 16,
                                 color: _activeTab == 0
-                                    ? (_activeTab == 0 && isDark ? Colors.white : const Color(0xFF1E40AF))
-                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                    ? (_activeTab == 0 && isDark
+                                          ? Colors.white
+                                          : const Color(0xFF1E40AF))
+                                    : (isDark
+                                          ? Colors.white60
+                                          : const Color(0xFF64748B)),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Presensi Saya',
                                 style: TextStyle(
                                   fontSize: 12.5,
-                                  fontWeight: _activeTab == 0 ? FontWeight.w800 : FontWeight.w600,
+                                  fontWeight: _activeTab == 0
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
                                   color: _activeTab == 0
-                                      ? (_activeTab == 0 && isDark ? Colors.white : const Color(0xFF1E293B))
-                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                      ? (_activeTab == 0 && isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1E293B))
+                                      : (isDark
+                                            ? Colors.white60
+                                            : const Color(0xFF64748B)),
                                 ),
                               ),
                             ],
@@ -801,13 +890,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _activeTab == 1
-                                ? (isDark ? const Color(0xFF1E40AF) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF1E40AF)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: _activeTab == 1
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.06),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.06,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -821,18 +914,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 Icons.groups_rounded,
                                 size: 16,
                                 color: _activeTab == 1
-                                    ? (_activeTab == 1 && isDark ? Colors.white : const Color(0xFF1E40AF))
-                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                    ? (_activeTab == 1 && isDark
+                                          ? Colors.white
+                                          : const Color(0xFF1E40AF))
+                                    : (isDark
+                                          ? Colors.white60
+                                          : const Color(0xFF64748B)),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Rekap Seluruh Kelas',
                                 style: TextStyle(
                                   fontSize: 12.5,
-                                  fontWeight: _activeTab == 1 ? FontWeight.w800 : FontWeight.w600,
+                                  fontWeight: _activeTab == 1
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
                                   color: _activeTab == 1
-                                      ? (_activeTab == 1 && isDark ? Colors.white : const Color(0xFF1E293B))
-                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                      ? (_activeTab == 1 && isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1E293B))
+                                      : (isDark
+                                            ? Colors.white60
+                                            : const Color(0xFF64748B)),
                                 ),
                               ),
                             ],
@@ -848,7 +951,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             // ==========================================
             // KETUA KELAS / DOSEN: HERO CARD BUKA PRESENSI QR
             // ==========================================
-            if (widget.canManageClassAttendance && (currentSession == null || currentSession!.isExpired)) ...[
+            if (widget.canManageClassAttendance &&
+                (currentSession == null || currentSession!.isExpired)) ...[
               _buildStartAttendanceHeroCard(context, isDark),
               const SizedBox(height: 16),
             ],
@@ -863,7 +967,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 canManageClassAttendance: widget.canManageClassAttendance,
                 isDark: isDark,
                 onShowScanQr: () => _showScanQrModal(context),
-                onShowActiveQr: () => AttendanceScreen.showActiveQrModal(context, session: currentSession),
+                onShowActiveQr: () => AttendanceScreen.showActiveQrModal(
+                  context,
+                  session: currentSession,
+                ),
                 onShowAbsenceRequest: () => _showAbsenceRequestSheet(
                   context,
                   preselectedCourse: currentSession!.courseName,
@@ -876,10 +983,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           currentSession = null;
                           _countdownTimer?.cancel();
                         });
-                        SupabaseRepository.closeAttendanceSession(sessionId: activeId);
+                        SupabaseRepository.closeAttendanceSession(
+                          sessionId: activeId,
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Sesi presensi telah ditutup oleh pengurus kelas.'),
+                            content: Text(
+                              'Sesi presensi telah ditutup oleh pengurus kelas.',
+                            ),
                             backgroundColor: Color(0xFF374151),
                           ),
                         );
@@ -921,8 +1032,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 isDark: isDark,
                 allClassLogs: _allClassLogs,
                 students: _students,
-                onShowGenerateQr: () => _showGenerateQrModal(context),
-                onShowClassAttendanceModal: _showClassAttendanceModal,
                 onConfirmResetAllAttendance: _confirmResetAllAttendance,
               ),
             ] else ...[
@@ -941,12 +1050,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 history: _history,
                 courses: _courses,
                 onShowScanQr: () => _showScanQrModal(context),
-                onShowAbsenceRequest: (ctx, {preselectedCourse, preselectedPertemuan}) => _showAbsenceRequestSheet(
-                  ctx,
-                  preselectedCourse: preselectedCourse,
-                  preselectedPertemuan: preselectedPertemuan,
-                ),
-                onConfirmResetPersonalAttendance: _confirmResetPersonalAttendance,
+                onShowAbsenceRequest:
+                    (ctx, {preselectedCourse, preselectedPertemuan}) =>
+                        _showAbsenceRequestSheet(
+                          ctx,
+                          preselectedCourse: preselectedCourse,
+                          preselectedPertemuan: preselectedPertemuan,
+                        ),
+                onConfirmResetPersonalAttendance:
+                    _confirmResetPersonalAttendance,
               ),
             ],
           ],
@@ -982,16 +1094,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.stars_rounded, size: 14, color: Color(0xFFFBBF24)),
+                    Icon(
+                      Icons.stars_rounded,
+                      size: 14,
+                      color: Color(0xFFFBBF24),
+                    ),
                     SizedBox(width: 5),
                     Text(
                       'PENGURUS KELAS / DOSEN',
@@ -1006,7 +1127,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.qr_code_2_rounded, size: 28, color: Colors.white70),
+              const Icon(
+                Icons.qr_code_2_rounded,
+                size: 28,
+                color: Colors.white70,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1061,7 +1186,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -1073,5 +1201,4 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
     );
   }
-
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/saas_components.dart';
 import '../../../core/widgets/scale_button.dart';
@@ -36,11 +37,19 @@ class _MoreServicesSheetContent extends StatefulWidget {
   });
 
   @override
-  State<_MoreServicesSheetContent> createState() => _MoreServicesSheetContentState();
+  State<_MoreServicesSheetContent> createState() =>
+      _MoreServicesSheetContentState();
 }
 
 class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
   String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +57,9 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
     final sheetBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? const Color(0xFF2E2C3D) : const Color(0xFFE2E8F0);
+    final borderColor = isDark
+        ? const Color(0xFF2E2C3D)
+        : const Color(0xFFE2E8F0);
 
     final allItems = [
       _ServiceModalData(
@@ -117,7 +128,7 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
       if (widget.student.isKetuaKelas || widget.student.isAdmin)
         _ServiceModalData(
           icon: Icons.admin_panel_settings_rounded,
-          label: 'Panel Komti',
+          label: 'Pengumuman',
           color: const Color(0xFFEA580C),
           bgColor: isDark ? const Color(0xFF381D26) : const Color(0xFFFFF7ED),
           tabIndex: 7,
@@ -127,144 +138,203 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
     final filteredItems = _searchQuery.trim().isEmpty
         ? allItems
         : allItems
-            .where((item) => item.label.toLowerCase().contains(_searchQuery.toLowerCase().trim()))
-            .toList();
+              .where(
+                (item) => item.label.toLowerCase().contains(
+                  _searchQuery.toLowerCase().trim(),
+                ),
+              )
+              .toList();
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 28),
-      decoration: BoxDecoration(
-        color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Direktori Layanan Portal',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: textMain,
-                      letterSpacing: -0.3,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Direktori Layanan Portal',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            color: textMain,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Akses cepat ke seluruh modul & fasilitas kelas',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: textSub,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Akses cepat ke seluruh modul & fasilitas kelas',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: textSub,
+                  ScaleButton(
+                    scaleDown: 0.9,
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF26223D)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: textMain,
+                      ),
                     ),
                   ),
                 ],
               ),
-              ScaleButton(
-                scaleDown: 0.9,
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF26223D) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.close_rounded, size: 18, color: textMain),
+              const SizedBox(height: 14),
+
+              // Search Bar Filter
+              Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF161524)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search_rounded, size: 18, color: textSub),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: textMain,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Cari layanan atau menu...',
+                          hintStyle: TextStyle(
+                            fontSize: 12.5,
+                            color: isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8),
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    if (_searchQuery.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Hapus pencarian',
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        icon: Icon(
+                          Icons.clear_rounded,
+                          size: 18,
+                          color: textSub,
+                        ),
+                      ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 18),
+
+              if (filteredItems.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      'Layanan "$_searchQuery" tidak ditemukan',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: textSub,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = (constraints.maxWidth / 76)
+                        .floor()
+                        .clamp(3, 5)
+                        .toInt();
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredItems.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        mainAxisExtent:
+                            70 + MediaQuery.textScalerOf(context).scale(30),
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = filteredItems[index];
+                        return _buildModalMenuItem(
+                          context,
+                          icon: item.icon,
+                          label: item.label,
+                          color: item.color,
+                          bgColor: item.bgColor,
+                          textColor: textMain,
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.onNavigateTab(item.tabIndex);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
             ],
           ),
-          const SizedBox(height: 14),
-
-          // Search Bar Filter
-          Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF161524) : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search_rounded, size: 18, color: textSub),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textMain,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Cari layanan atau menu...',
-                      hintStyle: TextStyle(
-                        fontSize: 12.5,
-                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                    ),
-                  ),
-                ),
-                if (_searchQuery.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => setState(() => _searchQuery = ''),
-                    child: Icon(Icons.clear_rounded, size: 16, color: textSub),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          if (filteredItems.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Text(
-                  'Layanan "$_searchQuery" tidak ditemukan',
-                  style: TextStyle(fontSize: 12.5, color: textSub, fontWeight: FontWeight.w600),
-                ),
-              ),
-            )
-          else
-            Wrap(
-              spacing: 12,
-              runSpacing: 16,
-              children: filteredItems
-                  .map((item) => _buildModalMenuItem(
-                        context,
-                        icon: item.icon,
-                        label: item.label,
-                        color: item.color,
-                        bgColor: item.bgColor,
-                        textColor: textMain,
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onNavigateTab(item.tabIndex);
-                        },
-                      ))
-                  .toList(),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -278,37 +348,34 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
     required Color textColor,
     required VoidCallback onTap,
   }) {
-    return SizedBox(
-      width: 76,
-      child: ScaleButton(
-        scaleDown: 0.92,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ColorfulIconBox(
-                icon: icon,
-                color: color,
-                size: 48,
-                iconSize: 24,
-                radius: 15,
+    return ScaleButton(
+      scaleDown: 0.92,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ColorfulIconBox(
+              icon: icon,
+              color: color,
+              size: 48,
+              iconSize: 24,
+              radius: 15,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: textColor,
               ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

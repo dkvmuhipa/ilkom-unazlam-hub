@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/scale_button.dart';
@@ -23,7 +24,12 @@ class PersonalAttendanceView extends StatelessWidget {
   final List<AttendanceHistoryItem> history;
   final List<Course> courses;
   final VoidCallback onShowScanQr;
-  final void Function(BuildContext context, {String? preselectedCourse, int? preselectedPertemuan}) onShowAbsenceRequest;
+  final void Function(
+    BuildContext context, {
+    String? preselectedCourse,
+    int? preselectedPertemuan,
+  })
+  onShowAbsenceRequest;
   final VoidCallback? onConfirmResetPersonalAttendance;
 
   const PersonalAttendanceView({
@@ -52,7 +58,9 @@ class PersonalAttendanceView extends StatelessWidget {
     final remainingAlpa = (maxAlpaAllowed - alpaCount).clamp(0, maxAlpaAllowed);
 
     final atRiskCourses = courses.where((course) {
-      final logs = history.where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase()).toList();
+      final logs = history
+          .where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase())
+          .toList();
       if (logs.isEmpty) return false;
       final hadir = logs.where((h) => h.status == 'Hadir').length;
       final pct = (hadir / logs.length) * 100;
@@ -60,7 +68,8 @@ class PersonalAttendanceView extends StatelessWidget {
       return pct < 75 || alpaInCourse >= 3;
     }).toList();
 
-    final bool hasAcademicRisk = atRiskCourses.isNotEmpty || alpaCount >= 3 || remainingAlpa <= 1;
+    final bool hasAcademicRisk =
+        atRiskCourses.isNotEmpty || alpaCount >= 3 || remainingAlpa <= 1;
 
     return Column(
       children: [
@@ -85,100 +94,68 @@ class PersonalAttendanceView extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Presensi Kuliah Mandiri',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Pindai QR, masukkan PIN, atau ajukan izin',
-                        style: TextStyle(fontSize: 11, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 540;
+                final intro = Row(
                   children: [
-                    ScaleButton(
-                      onTap: onShowScanQr,
-                      scaleDown: 0.92,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.qr_code_scanner_rounded, size: 14, color: Color(0xFF1E40AF)),
-                            SizedBox(width: 5),
-                            Text(
-                              'Presensi',
-                              style: TextStyle(
-                                color: Color(0xFF1E40AF),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11.5,
-                              ),
-                            ),
-                          ],
-                        ),
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: Colors.white,
+                        size: 26,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    ScaleButton(
-                      onTap: () => onShowAbsenceRequest(context),
-                      scaleDown: 0.92,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.assignment_turned_in_outlined, size: 13, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              'Izin/Sakit',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                              ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Presensi Kuliah Mandiri',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Pindai QR, masukkan PIN, atau ajukan izin',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ],
+                );
+                final actions = _buildQuickAttendanceActions(
+                  context,
+                  isCompact,
+                );
+
+                if (isCompact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [intro, const SizedBox(height: 14), actions],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: intro),
+                    const SizedBox(width: 14),
+                    actions,
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -204,7 +181,11 @@ class PersonalAttendanceView extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF2E2E3E)
+                    : const Color(0xFFE5E7EB),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
@@ -227,7 +208,9 @@ class PersonalAttendanceView extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -235,7 +218,9 @@ class PersonalAttendanceView extends StatelessWidget {
                             'Semester Ganjil 2026/2027 • Standar UAS 75%',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.white60
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -243,18 +228,31 @@ class PersonalAttendanceView extends StatelessWidget {
                     ),
                     // Safe Zone Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: totalSessions == 0
-                            ? (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9))
+                            ? (isDark
+                                  ? const Color(0xFF2E2E3E)
+                                  : const Color(0xFFF1F5F9))
                             : (isSafeZone
-                                ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
-                                : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))),
+                                  ? (isDark
+                                        ? const Color(0xFF064E3B)
+                                        : const Color(0xFFDCFCE7))
+                                  : (isDark
+                                        ? const Color(0xFF7F1D1D)
+                                        : const Color(0xFFFEE2E2))),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: totalSessions == 0
-                              ? (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0))
-                              : (isSafeZone ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
+                              ? (isDark
+                                    ? const Color(0xFF3E3E4E)
+                                    : const Color(0xFFE2E8F0))
+                              : (isSafeZone
+                                    ? const Color(0xFF86EFAC)
+                                    : const Color(0xFFFCA5A5)),
                         ),
                       ),
                       child: Row(
@@ -263,23 +261,35 @@ class PersonalAttendanceView extends StatelessWidget {
                           Icon(
                             totalSessions == 0
                                 ? Icons.schedule_rounded
-                                : (isSafeZone ? Icons.verified_rounded : Icons.warning_amber_rounded),
+                                : (isSafeZone
+                                      ? Icons.verified_rounded
+                                      : Icons.warning_amber_rounded),
                             size: 13,
                             color: totalSessions == 0
-                                ? (isDark ? Colors.white60 : const Color(0xFF64748B))
-                                : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
+                                ? (isDark
+                                      ? Colors.white60
+                                      : const Color(0xFF64748B))
+                                : (isSafeZone
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFFDC2626)),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             totalSessions == 0
                                 ? 'Belum Ada Sesi'
-                                : (isSafeZone ? 'Syarat UAS Aman' : 'Batas Kritis (<75%)'),
+                                : (isSafeZone
+                                      ? 'Syarat UAS Aman'
+                                      : 'Batas Kritis (<75%)'),
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
                               color: totalSessions == 0
-                                  ? (isDark ? Colors.white60 : const Color(0xFF64748B))
-                                  : (isSafeZone ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
+                                  ? (isDark
+                                        ? Colors.white60
+                                        : const Color(0xFF64748B))
+                                  : (isSafeZone
+                                        ? const Color(0xFF16A34A)
+                                        : const Color(0xFFDC2626)),
                             ),
                           ),
                         ],
@@ -314,16 +324,22 @@ class PersonalAttendanceView extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 27,
                               fontWeight: FontWeight.w900,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                               letterSpacing: -0.5,
                             ),
                           ),
                           Text(
-                            totalSessions > 0 ? '$hadirCount/$totalSessions Sesi' : 'Kehadiran',
+                            totalSessions > 0
+                                ? '$hadirCount/$totalSessions Sesi'
+                                : 'Kehadiran',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.white60
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -384,44 +400,63 @@ class PersonalAttendanceView extends StatelessWidget {
                 // Visual Alpa Tolerance Battery Meter
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF252538) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF252538)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF3E3E4E)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.battery_charging_full_rounded,
-                                size: 15,
-                                color: remainingAlpa <= 1 ? const Color(0xFFEF4444) : const Color(0xFF1E40AF),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Toleransi Alpa (Batas Maksimal 4 Sesi)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            Icons.battery_charging_full_rounded,
+                            size: 15,
+                            color: remainingAlpa <= 1
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF1E40AF),
                           ),
-                          Text(
-                            'Sisa $remainingAlpa Kali',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: remainingAlpa <= 1 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Toleransi Alpa (maks. 4 sesi)',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : const Color(0xFF334155),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Sisa $remainingAlpa kali',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: remainingAlpa <= 1
+                                        ? const Color(0xFFEF4444)
+                                        : const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -438,7 +473,9 @@ class PersonalAttendanceView extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isAlpaUsed
                                     ? const Color(0xFFEF4444)
-                                    : (isDark ? const Color(0xFF10B981) : const Color(0xFF34D399)),
+                                    : (isDark
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFF34D399)),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                             ),
@@ -495,12 +532,20 @@ class PersonalAttendanceView extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF2E2E3E)
+                    : const Color(0xFFE5E7EB),
+              ),
             ),
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.menu_book_rounded, size: 36, color: isDark ? Colors.white38 : Colors.grey.shade400),
+                  Icon(
+                    Icons.menu_book_rounded,
+                    size: 36,
+                    color: isDark ? Colors.white38 : Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Belum ada mata kuliah yang terjadwal',
@@ -517,10 +562,21 @@ class PersonalAttendanceView extends StatelessWidget {
         else
           ...courses.map((course) {
             // Check personal logs for this course
-            final courseLogs = history.where((h) => h.courseName.toLowerCase() == course.nama.toLowerCase()).toList();
-            final courseHadir = courseLogs.where((h) => h.status == 'Hadir').length;
-            final int coursePct = courseLogs.isNotEmpty ? ((courseHadir / courseLogs.length) * 100).round() : 100;
-            final String badgeText = courseLogs.isNotEmpty ? '$coursePct% Hadir ($courseHadir/${courseLogs.length})' : 'Belum Ada Sesi';
+            final courseLogs = history
+                .where(
+                  (h) =>
+                      h.courseName.toLowerCase() == course.nama.toLowerCase(),
+                )
+                .toList();
+            final courseHadir = courseLogs
+                .where((h) => h.status == 'Hadir')
+                .length;
+            final int coursePct = courseLogs.isNotEmpty
+                ? ((courseHadir / courseLogs.length) * 100).round()
+                : 100;
+            final String badgeText = courseLogs.isNotEmpty
+                ? '$coursePct% Hadir ($courseHadir/${courseLogs.length})'
+                : 'Belum Ada Sesi';
 
             return ScaleButton(
               onTap: () => CourseDetailModal.show(
@@ -537,10 +593,16 @@ class PersonalAttendanceView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF2E2E3E)
+                        : const Color(0xFFE5E7EB),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.2 : 0.03,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -555,10 +617,15 @@ class PersonalAttendanceView extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(9),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                            color: const Color(0xFF1E40AF)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.menu_book_rounded, color: Color(0xFF1E40AF), size: 18),
+                          child: const Icon(
+                            Icons.menu_book_rounded,
+                            color: Color(0xFF1E40AF),
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -570,7 +637,9 @@ class PersonalAttendanceView extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -578,7 +647,9 @@ class PersonalAttendanceView extends StatelessWidget {
                                 '${course.kode} • ${course.sks} SKS • ${course.dosen}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                  color: isDark
+                                      ? Colors.white60
+                                      : const Color(0xFF64748B),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -588,13 +659,22 @@ class PersonalAttendanceView extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: courseLogs.isNotEmpty
                                 ? (coursePct >= 75
-                                    ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
-                                    : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2)))
-                                : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
+                                      ? (isDark
+                                            ? const Color(0xFF064E3B)
+                                            : const Color(0xFFECFDF5))
+                                      : (isDark
+                                            ? const Color(0xFF7F1D1D)
+                                            : const Color(0xFFFEF2F2)))
+                                : (isDark
+                                      ? const Color(0xFF2E2E3E)
+                                      : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -603,8 +683,12 @@ class PersonalAttendanceView extends StatelessWidget {
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
                               color: courseLogs.isNotEmpty
-                                  ? (coursePct >= 75 ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                                  : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                  ? (coursePct >= 75
+                                        ? const Color(0xFF10B981)
+                                        : const Color(0xFFEF4444))
+                                  : (isDark
+                                        ? Colors.white60
+                                        : const Color(0xFF64748B)),
                             ),
                           ),
                         ),
@@ -612,7 +696,9 @@ class PersonalAttendanceView extends StatelessWidget {
                         Icon(
                           Icons.chevron_right_rounded,
                           size: 18,
-                          color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFF94A3B8),
                         ),
                       ],
                     ),
@@ -623,11 +709,18 @@ class PersonalAttendanceView extends StatelessWidget {
                       children: List.generate(16, (i) {
                         final pNum = i + 1;
                         final isRecorded = pNum <= courseLogs.length;
-                        final bool isHadir = isRecorded && courseLogs[courseLogs.length - pNum].status == 'Hadir';
+                        final bool isHadir =
+                            isRecorded &&
+                            courseLogs[courseLogs.length - pNum].status ==
+                                'Hadir';
 
-                        Color dotColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE2E8F0);
+                        Color dotColor = isDark
+                            ? const Color(0xFF2E2E3E)
+                            : const Color(0xFFE2E8F0);
                         if (isRecorded) {
-                          dotColor = isHadir ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+                          dotColor = isHadir
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444);
                         }
 
                         return Expanded(
@@ -666,16 +759,28 @@ class PersonalAttendanceView extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (history.isNotEmpty && onConfirmResetPersonalAttendance != null) ...[
+                  if (history.isNotEmpty &&
+                      onConfirmResetPersonalAttendance != null) ...[
                     TextButton.icon(
                       onPressed: onConfirmResetPersonalAttendance,
-                      icon: const Icon(Icons.delete_sweep_outlined, size: 15, color: Color(0xFFEF4444)),
+                      icon: const Icon(
+                        Icons.delete_sweep_outlined,
+                        size: 15,
+                        color: Color(0xFFEF4444),
+                      ),
                       label: const Text(
                         'Kosongkan',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFEF4444),
+                        ),
                       ),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -683,7 +788,10 @@ class PersonalAttendanceView extends StatelessWidget {
                     const SizedBox(width: 6),
                   ],
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -713,7 +821,11 @@ class PersonalAttendanceView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF2E2E3E)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 children: [
@@ -723,7 +835,11 @@ class PersonalAttendanceView extends StatelessWidget {
                       color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.how_to_reg_rounded, size: 32, color: Color(0xFF1E40AF)),
+                    child: const Icon(
+                      Icons.how_to_reg_rounded,
+                      size: 32,
+                      color: Color(0xFF1E40AF),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -754,6 +870,100 @@ class PersonalAttendanceView extends StatelessWidget {
     );
   }
 
+  Widget _buildQuickAttendanceActions(BuildContext context, bool compact) {
+    return Row(
+      children: [
+        if (compact) ...[
+          Expanded(child: _buildScanAction(compact: true)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildAbsenceAction(context, compact: true)),
+        ] else ...[
+          _buildScanAction(compact: false),
+          const SizedBox(width: 6),
+          _buildAbsenceAction(context, compact: false),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildScanAction({required bool compact}) => ScaleButton(
+    onTap: onShowScanQr,
+    scaleDown: 0.92,
+    child: Container(
+      width: compact ? double.infinity : null,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12, vertical: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.qr_code_scanner_rounded,
+            size: 14,
+            color: Color(0xFF1E40AF),
+          ),
+          SizedBox(width: 5),
+          Text(
+            'Presensi',
+            style: TextStyle(
+              color: Color(0xFF1E40AF),
+              fontWeight: FontWeight.w900,
+              fontSize: 11.5,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildAbsenceAction(BuildContext context, {required bool compact}) =>
+      ScaleButton(
+        onTap: () => onShowAbsenceRequest(context),
+        scaleDown: 0.92,
+        child: Container(
+          width: compact ? double.infinity : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 8 : 10,
+            vertical: 10,
+          ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.assignment_turned_in_outlined,
+                size: 13,
+                color: Colors.white,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'Izin/Sakit',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
   Widget _buildMetricCard({
     required String count,
     required String label,
@@ -766,9 +976,7 @@ class PersonalAttendanceView extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: isDark ? 0.14 : 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: isDark ? 0.3 : 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: isDark ? 0.3 : 0.2)),
       ),
       child: Column(
         children: [
@@ -836,7 +1044,11 @@ class PersonalAttendanceView extends StatelessWidget {
                   color: const Color(0xFFDC2626),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -860,7 +1072,9 @@ class PersonalAttendanceView extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : const Color(0xFF7F1D1D),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF7F1D1D),
                         height: 1.35,
                       ),
                     ),
@@ -879,7 +1093,11 @@ class PersonalAttendanceView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFFDC2626)),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: Color(0xFFDC2626),
+                ),
                 const SizedBox(width: 6),
                 const Expanded(
                   child: Text(
@@ -894,13 +1112,20 @@ class PersonalAttendanceView extends StatelessWidget {
                 TextButton(
                   onPressed: () => onShowAbsenceRequest(context),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: const Text(
                     'Ajukan Izin',
-                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFFDC2626),
+                    ),
                   ),
                 ),
               ],
@@ -936,7 +1161,9 @@ class PersonalAttendanceView extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Row(
         children: [
@@ -959,16 +1186,23 @@ class PersonalAttendanceView extends StatelessWidget {
                       item.date,
                       style: TextStyle(
                         fontSize: 10.5,
-                        color: isDark ? Colors.white60 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white60
+                            : const Color(0xFF9CA3AF),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (item.pertemuanKe != null) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9),
+                          color: isDark
+                              ? const Color(0xFF2E2E3E)
+                              : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -976,7 +1210,9 @@ class PersonalAttendanceView extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9.5,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF475569),
                           ),
                         ),
                       ),

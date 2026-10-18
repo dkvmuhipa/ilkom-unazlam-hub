@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../core/services/safe_launcher.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
@@ -24,7 +25,11 @@ class ProfileContactSection extends StatelessWidget {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text('$label "$text" berhasil disalin! 📋'),
           ],
@@ -37,16 +42,29 @@ class ProfileContactSection extends StatelessWidget {
     );
   }
 
-  Future<void> _openWhatsApp(String phone, String name) async {
+  Future<void> _openWhatsApp(
+    BuildContext context,
+    String phone,
+    String name,
+  ) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final internationalPhone = cleanPhone.startsWith('0')
         ? '62${cleanPhone.substring(1)}'
         : cleanPhone;
     final message = Uri.encodeComponent(
-      'Halo $name, saya ingin berkomunikasi mengenai perkuliahan ILKOM UNAZLAM...',
+      'Halo $name, saya ingin berkomunikasi mengenai perkuliahan ILKOM UNAZLAM.',
     );
     final url = 'https://wa.me/$internationalPhone?text=$message';
-    await safeLaunchUrl(url);
+    final opened = await safeLaunchUrl(url);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'WhatsApp tidak dapat dibuka. Periksa nomor dan aplikasi Anda.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _openInstagram(String handle) async {
@@ -69,10 +87,14 @@ class ProfileContactSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF2E2E3E) : const Color(0xFFE5E7EB);
+    final borderColor = isDark
+        ? const Color(0xFF2E2E3E)
+        : const Color(0xFFE5E7EB);
     final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
     final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
-    final dividerColor = isDark ? const Color(0xFF2A2A3C) : const Color(0xFFF3F4F6);
+    final dividerColor = isDark
+        ? const Color(0xFF2A2A3C)
+        : const Color(0xFFF3F4F6);
 
     final hasEmail = student.email.trim().isNotEmpty;
 
@@ -105,7 +127,11 @@ class ProfileContactSection extends StatelessWidget {
                         color: const Color(0xFF10B981).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.contact_mail_rounded, color: Color(0xFF10B981), size: 18),
+                      child: const Icon(
+                        Icons.contact_mail_rounded,
+                        color: Color(0xFF10B981),
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Flexible(
@@ -128,7 +154,10 @@ class ProfileContactSection extends StatelessWidget {
                 onTap: onEditContact,
                 scaleDown: 0.94,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
@@ -136,7 +165,11 @@ class ProfileContactSection extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.edit_rounded, color: Color(0xFF059669), size: 13),
+                      Icon(
+                        Icons.edit_rounded,
+                        color: Color(0xFF059669),
+                        size: 13,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Ubah Kontak',
@@ -164,8 +197,12 @@ class ProfileContactSection extends StatelessWidget {
             textSecondary: textSecondary,
             actionIcon: Icons.email_outlined,
             actionTooltip: 'Kirim Email',
-            onAction: hasEmail ? () => _openEmail(context, student.email.trim()) : null,
-            onTap: hasEmail ? () => _copyToClipboard(context, student.email.trim(), 'Email') : null,
+            onAction: hasEmail
+                ? () => _openEmail(context, student.email.trim())
+                : null,
+            onTap: hasEmail
+                ? () => _copyToClipboard(context, student.email.trim(), 'Email')
+                : null,
           ),
           Divider(height: 22, color: dividerColor),
 
@@ -179,8 +216,12 @@ class ProfileContactSection extends StatelessWidget {
             textSecondary: textSecondary,
             actionIcon: Icons.chat_rounded,
             actionTooltip: 'Chat WhatsApp',
-            onAction: student.noWa.isNotEmpty ? () => _openWhatsApp(student.noWa, student.nama) : null,
-            onTap: student.noWa.isNotEmpty ? () => _copyToClipboard(context, student.noWa, 'Nomor WA') : null,
+            onAction: student.noWa.isNotEmpty
+                ? () => _openWhatsApp(context, student.noWa, student.nama)
+                : null,
+            onTap: student.noWa.isNotEmpty
+                ? () => _copyToClipboard(context, student.noWa, 'Nomor WA')
+                : null,
           ),
 
           // Instagram jika ada
@@ -190,7 +231,9 @@ class ProfileContactSection extends StatelessWidget {
               icon: Icons.camera_alt_outlined,
               iconColor: const Color(0xFFE11D48),
               label: 'Instagram',
-              value: student.instagram!.startsWith('@') ? student.instagram! : '@${student.instagram!}',
+              value: student.instagram!.startsWith('@')
+                  ? student.instagram!
+                  : '@${student.instagram!}',
               textPrimary: textPrimary,
               textSecondary: textSecondary,
               actionIcon: Icons.open_in_new_rounded,
@@ -213,7 +256,8 @@ class ProfileContactSection extends StatelessWidget {
               actionIcon: Icons.open_in_new_rounded,
               actionTooltip: 'Buka LinkedIn',
               onAction: () => safeLaunchUrl(student.linkedin!),
-              onTap: () => _copyToClipboard(context, student.linkedin!, 'LinkedIn'),
+              onTap: () =>
+                  _copyToClipboard(context, student.linkedin!, 'LinkedIn'),
             ),
           ],
         ],

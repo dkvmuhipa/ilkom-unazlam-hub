@@ -30,6 +30,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
   List<StudentProfile> _students = [];
   List<Announcement> _announcements = [];
   bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -38,13 +39,15 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
   }
 
   Future<void> _loadSearchData() async {
+    if (!mounted) return;
+    setState(() { _isLoading = true; _loadError = null; });
     try {
       final results = await Future.wait([
-        SupabaseRepository.getCourses(),
+        SupabaseRepository.getCoursesStrict(),
         SupabaseRepository.getResources(),
-        SupabaseRepository.getAssignments(),
-        SupabaseRepository.getClassDirectory(),
-        SupabaseRepository.getAnnouncements(),
+        SupabaseRepository.getAssignmentsStrict(),
+        SupabaseRepository.getClassDirectoryStrict(),
+        SupabaseRepository.getAnnouncements(strict: true),
       ]);
       if (mounted) {
         setState(() {
@@ -57,7 +60,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() { _isLoading = false; _loadError = 'Data pencarian gagal dimuat. Periksa koneksi dan coba lagi.'; });
     }
   }
 
@@ -125,7 +128,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
     // 6. Quick Actions
     final allActions = [
       {'title': 'Presensi Kuliah (Scan QR)', 'desc': 'Scan QR Code atau input token absensi', 'tab': 5, 'badge': 'Presensi', 'icon': Icons.qr_code_scanner_rounded},
-      {'title': 'Jadwal Kuliah Semester 1', 'desc': 'Daftar mata kuliah, ruangan, & kontak dosen', 'tab': 1, 'badge': 'Jadwal', 'icon': Icons.calendar_today_rounded},
+      {'title': 'Jadwal Kuliah', 'desc': 'Daftar mata kuliah, ruangan, & kontak dosen', 'tab': 1, 'badge': 'Jadwal', 'icon': Icons.calendar_today_rounded},
       {'title': 'Tugas & Deadline Kuliah', 'desc': 'Manajemen tugas aktif, deadline, & kirim tugas', 'tab': 2, 'badge': 'Tugas', 'icon': Icons.assignment_outlined},
       {'title': 'Kas & Keuangan Kelas', 'desc': 'Laporan saldo transparan & status iuran mahasiswa', 'tab': 8, 'badge': 'Kas', 'icon': Icons.account_balance_wallet_outlined},
       {'title': 'Gudang Materi & Silabus', 'desc': 'Kumpulan slide kuliah, RPS, e-book, dan modul', 'tab': 10, 'badge': 'Materi', 'icon': Icons.menu_book_rounded},
@@ -152,7 +155,8 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
         matchedActions.length;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom) * 0.85,
+      margin: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF181428) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -231,7 +235,10 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
 
           // Results list or prompt
           Expanded(
-            child: _query.isEmpty
+            child: _loadError != null
+                ? Center(child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [Padding(padding: const EdgeInsets.all(20), child: Text(_loadError!, textAlign: TextAlign.center)), TextButton(onPressed: _loadSearchData, child: const Text('Coba lagi'))])))
+                : _isLoading ? const Center(child: CircularProgressIndicator())
+                : _query.isEmpty
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(28),

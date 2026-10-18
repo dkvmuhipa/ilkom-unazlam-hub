@@ -6,7 +6,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/course_schedule_service.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/supabase_repository.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/widgets/scale_button.dart';
 import '../../models/models.dart';
 import 'widgets/course_detail_sheet.dart';
@@ -18,11 +17,7 @@ class ScheduleScreen extends StatefulWidget {
   final bool canManage;
   final VoidCallback? onBack;
 
-  const ScheduleScreen({
-    super.key,
-    this.canManage = true,
-    this.onBack,
-  });
+  const ScheduleScreen({super.key, this.canManage = true, this.onBack});
 
   static void showCourseDetail(
     BuildContext context,
@@ -55,6 +50,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   ];
   List<Course> _courses = [];
   bool _isLoading = false;
+  String? _loadError;
   bool _isSearching = false;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
@@ -110,12 +106,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _fetchCourses({bool silent = false}) async {
-    final client = SupabaseService.client;
-    if (client == null) return;
-    if (!silent) setState(() => _isLoading = true);
+    if (!silent && mounted) setState(() => _isLoading = true);
     try {
-      final List<Course> loaded = await SupabaseRepository.getCoursesWithOverrides();
-
+      final loaded = await SupabaseRepository.getCoursesWithOverridesStrict();
       final dayOrder = {
         'Senin': 1,
         'Selasa': 2,
@@ -131,16 +124,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         if (da != db) return da.compareTo(db);
         return a.effectiveJamMulai.compareTo(b.effectiveJamMulai);
       });
-
-      if (mounted) {
-        setState(() {
-          _courses = loaded;
-          if (_courses.isNotEmpty && _selectedDay == 'Senin') {
-            _autoSelectActiveDay(loaded);
-          }
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _courses = loaded;
+        _loadError = null;
+        if (_courses.isNotEmpty && _selectedDay == 'Senin') {
+          _autoSelectActiveDay(loaded);
+        }
+      });
     } catch (e) {
+      if (mounted) {
+        setState(
+          () => _loadError =
+              'Jadwal gagal diperbarui. Data terakhir tetap ditampilkan.',
+        );
+      }
       debugPrint('Error fetching courses from Supabase: $e');
     } finally {
       if (mounted && !silent) setState(() => _isLoading = false);
@@ -164,14 +162,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: const Text(
             'Tambah Jadwal Kuliah',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,17 +228,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    items: [
-                      'Senin',
-                      'Selasa',
-                      'Rabu',
-                      'Kamis',
-                      'Jumat',
-                      'Sabtu',
-                      'Minggu',
-                    ]
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-                        .toList(),
+                    items:
+                        [
+                              'Senin',
+                              'Selasa',
+                              'Rabu',
+                              'Kamis',
+                              'Jumat',
+                              'Sabtu',
+                              'Minggu',
+                            ]
+                            .map(
+                              (d) => DropdownMenuItem(value: d, child: Text(d)),
+                            )
+                            .toList(),
                     onChanged: (val) {
                       if (val != null) setDialogState(() => selectedDay = val);
                     },
@@ -322,7 +327,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -330,7 +338,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 if (name.isEmpty) return;
                 final newCourse = Course(
                   id: 'course_${DateTime.now().millisecondsSinceEpoch}',
-                  kode: codeCtrl.text.trim().isEmpty ? 'MK ILKOM' : codeCtrl.text.trim(),
+                  kode: codeCtrl.text.trim().isEmpty
+                      ? 'MK ILKOM'
+                      : codeCtrl.text.trim(),
                   nama: name,
                   sks: int.tryParse(sksCtrl.text.trim()) ?? 2,
                   semester: 1,
@@ -364,7 +374,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Mata kuliah berhasil ditambahkan ke jadwal!'),
+                      content: Text(
+                        'Mata kuliah berhasil ditambahkan ke jadwal!',
+                      ),
                       backgroundColor: Color(0xFF10B981),
                     ),
                   );
@@ -405,6 +417,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       return;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -430,7 +443,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             const SizedBox(height: 16),
             const Row(
               children: [
-                Icon(Icons.ios_share_rounded, color: Color(0xFF1E40AF), size: 22),
+                Icon(
+                  Icons.ios_share_rounded,
+                  color: Color(0xFF1E40AF),
+                  size: 22,
+                ),
                 SizedBox(width: 10),
                 Text(
                   'Ekspor & Bagikan Jadwal',
@@ -455,13 +472,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               color: const Color(0xFF2563EB),
               title: 'Ekspor ke Kalender Ponsel (.ics)',
               subtitle: 'Google Calendar, Apple Calendar, Outlook (Otomatis mingguan)',
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
                 final ics = ExportService.exportScheduleIcs(courses: _courses);
-                ExportService.downloadFile('Jadwal_Kuliah_ILKOM_UNAZLAM.ics', ics);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('File kalender (.ics) berhasil diunduh! Buka file untuk menyinkronkan ke kalender.'),
+                final exportResult = await ExportService.exportFile(
+                  'Jadwal_Kuliah_ILKOM_UNAZLAM.ics',
+                  ics,
+                );
+                if (exportResult == FileExportResult.dismissed) return;
+                if (exportResult == FileExportResult.unavailable) {
+                  await Clipboard.setData(ClipboardData(text: ics));
+                }
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(switch (exportResult) {
+                      FileExportResult.downloaded => 'File kalender (.ics) berhasil diunduh. Buka untuk menyinkronkan ke kalender.',
+                      FileExportResult.shared =>
+                        'Pilih aplikasi kalender untuk membuka file .ics.',
+                      FileExportResult.dismissed => '',
+                      FileExportResult.unavailable => 'Ekspor file tidak tersedia. Data kalender disalin ke clipboard.',
+                    }),
                     backgroundColor: Color(0xFF10B981),
                   ),
                 );
@@ -483,7 +514,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   title: 'Ekspor Jadwal Kuliah',
                   fileName: 'Jadwal_Kuliah_ILKOM.csv',
                   content: csv,
-                  subtitle: 'Format CSV tabel rapi perkuliahan semester berjalan',
+                  subtitle:
+                      'Format CSV tabel rapi perkuliahan semester berjalan',
                 );
               },
             ),
@@ -497,11 +529,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               subtitle: 'Teks rapi berformat tebal & jam untuk disebarkan di grup kelas',
               onTap: () {
                 Navigator.pop(ctx);
-                final waText = ExportService.exportScheduleWhatsappText(courses: _courses);
+                final waText = ExportService.exportScheduleWhatsappText(
+                  courses: _courses,
+                );
                 Clipboard.setData(ClipboardData(text: waText));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Jadwal berhasil disalin ke clipboard! Siap dipaste ke grup WhatsApp.'),
+                    content: Text(
+                      'Jadwal berhasil disalin ke clipboard! Siap dipaste ke grup WhatsApp.',
+                    ),
                     backgroundColor: Color(0xFF10B981),
                   ),
                 );
@@ -564,7 +600,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 13,
+              color: Color(0xFF94A3B8),
+            ),
           ],
         ),
       ),
@@ -704,9 +744,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     var filteredCourses = _selectedDay == 'Semua'
         ? _courses
         : _courses
-            .where((c) =>
-                c.hari.trim().toLowerCase() == _selectedDay.trim().toLowerCase())
-            .toList();
+              .where(
+                (c) =>
+                    c.hari.trim().toLowerCase() ==
+                    _selectedDay.trim().toLowerCase(),
+              )
+              .toList();
 
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
@@ -727,7 +770,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ? ScaleButton(
               onTap: _showAddCourseDialog,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
@@ -869,6 +915,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_loadError != null)
+                      MaterialBanner(
+                        content: Text(_loadError!),
+                        actions: [
+                          TextButton(
+                            onPressed: () => _fetchCourses(),
+                            child: const Text('Coba lagi'),
+                          ),
+                        ],
+                      ),
                     // Spotlight Hero Card (Ongoing Live / Upcoming Countdown)
                     if (_courses.isNotEmpty && _searchQuery.isEmpty) ...[
                       ScheduleHeroSpotlight(
@@ -883,7 +939,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       selectedDay: _selectedDay,
                       days: _days,
                       allCourses: _courses,
-                      onDaySelected: (day) => setState(() => _selectedDay = day),
+                      onDaySelected: (day) =>
+                          setState(() => _selectedDay = day),
                     ),
                     const SizedBox(height: 14),
 
@@ -911,8 +968,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               _searchQuery.isNotEmpty
                                   ? 'Hasil pencarian: ${filteredCourses.length} mata kuliah'
                                   : (_selectedDay == 'Semua'
-                                      ? 'Total ${_courses.length} mata kuliah terdaftar ($totalSks SKS)'
-                                      : '$_selectedDay • ${filteredCourses.length} mata kuliah ($totalSks SKS)'),
+                                        ? 'Total ${_courses.length} mata kuliah terdaftar ($totalSks SKS)'
+                                        : '$_selectedDay • ${filteredCourses.length} mata kuliah ($totalSks SKS)'),
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
@@ -1001,8 +1058,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               builder: (ctx) {
                                 final nextInfo =
                                     CourseScheduleService.getNextActiveDayInfo(
-                                  _courses,
-                                );
+                                      _courses,
+                                    );
                                 if (nextInfo != null &&
                                     nextInfo.dayName != _selectedDay &&
                                     _searchQuery.isEmpty) {

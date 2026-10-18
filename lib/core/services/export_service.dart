@@ -1,20 +1,59 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'download_stub.dart' if (dart.library.html) 'download_web.dart';
 import '../../models/models.dart';
 import 'academic_grade_service.dart';
 
+enum FileExportResult { downloaded, shared, dismissed, unavailable }
+
 class ExportService {
-  /// Trigger direct file download in browser or copy to clipboard on other platforms
-  static void downloadFile(String fileName, String content) {
+  /// Downloads a file in a browser or opens the native share/save sheet.
+  static Future<FileExportResult> exportFile(
+    String fileName,
+    String content,
+  ) async {
     if (kIsWeb) {
-      downloadFilePlatform(fileName, content);
-    } else {
-      Clipboard.setData(ClipboardData(text: content));
+      return downloadFilePlatform(fileName, content)
+          ? FileExportResult.downloaded
+          : FileExportResult.unavailable;
     }
+    try {
+      final mimeType = switch (fileName.split('.').last.toLowerCase()) {
+        'csv' => 'text/csv',
+        'json' => 'application/json',
+        'ics' => 'text/calendar',
+        'html' => 'text/html',
+        'pdf' => 'application/pdf',
+        _ => 'text/plain',
+      };
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          title: fileName,
+          files: [XFile.fromData(utf8.encode(content), mimeType: mimeType)],
+          fileNameOverrides: [fileName],
+        ),
+      );
+      return switch (result.status) {
+        ShareResultStatus.success => FileExportResult.shared,
+        ShareResultStatus.dismissed => FileExportResult.dismissed,
+        ShareResultStatus.unavailable => FileExportResult.unavailable,
+      };
+    } catch (error) {
+      debugPrint('ExportService: Gagal membagikan $fileName: $error');
+      return FileExportResult.unavailable;
+    }
+  }
+
+  /// Opens a printable HTML document in a new browser tab and starts print.
+  static bool printHtml(String html) {
+    if (kIsWeb) return printHtmlPlatform(html);
+    return false;
   }
 
   /// Export Rekap Kas Kelas to CSV Format
@@ -55,7 +94,13 @@ class ExportService {
         final time = (log['created_at'] ?? '-').toString();
         final student = activeStudents.firstWhere(
           (s) => s.nim == nim,
-          orElse: () => StudentProfile(id: '', nim: nim, nama: 'Mahasiswa $nim', email: '', noWa: ''),
+          orElse: () => StudentProfile(
+            id: '',
+            nim: nim,
+            nama: 'Mahasiswa $nim',
+            email: '',
+            noWa: '',
+          ),
         );
         buffer.writeln(
           '${i + 1},"$nim","${student.nama}","${student.prodi}","$status","$courseName","$time"',
@@ -94,7 +139,9 @@ class ExportService {
     buffer.writeln('Dosen Pengampu,"$dosenName"');
     buffer.writeln('Semester / T.A.,"$semester / $tahunAkademik"');
     buffer.writeln('Syarat Kehadiran Minimal Ujian,"$thresholdPercent%"');
-    buffer.writeln('Tanggal Rekap,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"');
+    buffer.writeln(
+      'Tanggal Rekap,"${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}"',
+    );
     buffer.writeln('');
 
     // Header Kolom
@@ -108,7 +155,12 @@ class ExportService {
         headers.add('P$p');
       }
     }
-    headers.addAll(['Total Hadir', 'Total Sesi', '% Kehadiran', 'Status Kelayakan UAS']);
+    headers.addAll([
+      'Total Hadir',
+      'Total Sesi',
+      '% Kehadiran',
+      'Status Kelayakan UAS',
+    ]);
     buffer.writeln(headers.map((h) => '"$h"').join(','));
 
     // Rows
@@ -138,7 +190,9 @@ class ExportService {
       final activeMeetings = totalMeetingsHeld > 0 ? totalMeetingsHeld : 16;
       final percent = ((hadirCount / activeMeetings) * 100).round();
       final isEligible = percent >= thresholdPercent;
-      final statusLabel = isEligible ? 'MEMENUHI SYARAT' : 'DICEKAL (<${thresholdPercent.toInt()}%)';
+      final statusLabel = isEligible
+          ? 'MEMENUHI SYARAT'
+          : 'DICEKAL (<${thresholdPercent.toInt()}%)';
 
       final row = [
         '${i + 1}',
@@ -197,7 +251,9 @@ class ExportService {
   }) {
     final buffer = StringBuffer();
     buffer.writeln('KARTU HASIL STUDI (KHS) / TRANSKRIP AKADEMIK');
-    buffer.writeln('PORTAL ILKOM UNAZLAM - UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI');
+    buffer.writeln(
+      'PORTAL ILKOM UNAZLAM - UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI',
+    );
     buffer.writeln('NIM,"${student.nim}"');
     buffer.writeln('Nama Mahasiswa,"${student.nama}"');
     buffer.writeln('Program Studi,"${student.prodi}"');
@@ -230,9 +286,7 @@ class ExportService {
   }
 
   /// Export Rekap Data Mahasiswa to CSV Format
-  static String exportStudentsCsv({
-    required List<StudentProfile> students,
-  }) {
+  static String exportStudentsCsv({required List<StudentProfile> students}) {
     final buffer = StringBuffer();
     buffer.writeln(
       'No,NIM,Nama Mahasiswa,Program Studi,Semester,Kelas,Jabatan,Email,No WA,Status',
@@ -250,9 +304,7 @@ class ExportService {
   }
 
   /// Export Rekap Distribusi Tugas Mahasiswa to CSV Format
-  static String exportAssignmentsCsv({
-    required List<Assignment> assignments,
-  }) {
+  static String exportAssignmentsCsv({required List<Assignment> assignments}) {
     final buffer = StringBuffer();
     buffer.writeln('No,Mata Kuliah,Judul Tugas,Kategori,Tenggat Waktu,Status');
 
@@ -324,21 +376,38 @@ class ExportService {
         endM = int.parse(ep[1]);
       } catch (_) {}
 
-      final startDt = DateTime(refDate.year, refDate.month, refDate.day, startH, startM);
-      final endDt = DateTime(refDate.year, refDate.month, refDate.day, endH, endM);
+      final startDt = DateTime(
+        refDate.year,
+        refDate.month,
+        refDate.day,
+        startH,
+        startM,
+      );
+      final endDt = DateTime(
+        refDate.year,
+        refDate.month,
+        refDate.day,
+        endH,
+        endM,
+      );
 
       final dtFormat = DateFormat("yyyyMMdd'T'HHmmss");
       final dtStamp = DateFormat("yyyyMMdd'T'HHmmss'Z'").format(now.toUtc());
 
       buffer.writeln('BEGIN:VEVENT');
-      buffer.writeln('UID:${c.id.isNotEmpty ? c.id : c.nama.hashCode}_course@unazlam.ac.id');
+      buffer.writeln(
+        'UID:${c.id.isNotEmpty ? c.id : c.nama.hashCode}_course@unazlam.ac.id',
+      );
       buffer.writeln('DTSTAMP:$dtStamp');
       buffer.writeln('DTSTART;TZID=Asia/Jakarta:${dtFormat.format(startDt)}');
       buffer.writeln('DTEND;TZID=Asia/Jakarta:${dtFormat.format(endDt)}');
       buffer.writeln('RRULE:FREQ=WEEKLY;BYDAY=$byDay');
       buffer.writeln('SUMMARY:${c.nama} (${c.kode})');
-      buffer.writeln('LOCATION:${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"}');
-      final desc = 'Dosen: ${c.dosen} | ${c.sks} SKS${c.linkVirtual != null && c.linkVirtual!.isNotEmpty ? " | Link: ${c.linkVirtual}" : ""}';
+      buffer.writeln(
+        'LOCATION:${c.ruangan.isNotEmpty ? c.ruangan : "Ruang A2"}',
+      );
+      final desc =
+          'Dosen: ${c.dosen} | ${c.sks} SKS${c.linkVirtual != null && c.linkVirtual!.isNotEmpty ? " | Link: ${c.linkVirtual}" : ""}';
       buffer.writeln('DESCRIPTION:$desc');
       buffer.writeln('STATUS:CONFIRMED');
       buffer.writeln('END:VEVENT');
@@ -349,11 +418,11 @@ class ExportService {
   }
 
   /// Export Jadwal Kuliah to CSV Format
-  static String exportScheduleCsv({
-    required List<Course> courses,
-  }) {
+  static String exportScheduleCsv({required List<Course> courses}) {
     final buffer = StringBuffer();
-    buffer.writeln('No,Hari,Jam Mulai,Jam Selesai,Kode MK,Nama Mata Kuliah,SKS,Dosen Pengampu,Ruangan,Link Virtual');
+    buffer.writeln(
+      'No,Hari,Jam Mulai,Jam Selesai,Kode MK,Nama Mata Kuliah,SKS,Dosen Pengampu,Ruangan,Link Virtual',
+    );
 
     for (int i = 0; i < courses.length; i++) {
       final c = courses[i];
@@ -366,9 +435,7 @@ class ExportService {
   }
 
   /// Export Jadwal Kuliah as WhatsApp share text
-  static String exportScheduleWhatsappText({
-    required List<Course> courses,
-  }) {
+  static String exportScheduleWhatsappText({required List<Course> courses}) {
     final buffer = StringBuffer();
     buffer.writeln('*📅 JADWAL KULIAH PRODI ILMU KOMUNIKASI*');
     buffer.writeln('*UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI (UNAZLAM)*');
@@ -376,7 +443,9 @@ class ExportService {
 
     final dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     for (final day in dayOrder) {
-      final dayCourses = courses.where((c) => c.hari.trim().toLowerCase() == day.toLowerCase()).toList();
+      final dayCourses = courses
+          .where((c) => c.hari.trim().toLowerCase() == day.toLowerCase())
+          .toList();
       if (dayCourses.isEmpty) continue;
 
       buffer.writeln('\n*📌 HARI ${day.toUpperCase()}*');
@@ -403,6 +472,7 @@ class ExportService {
     required String content,
     String? subtitle,
   }) {
+    final messenger = ScaffoldMessenger.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -572,15 +642,28 @@ class ExportService {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      downloadFile(fileName, content);
+                    onPressed: () async {
+                      final result = await exportFile(fileName, content);
+                      if (result == FileExportResult.dismissed) return;
+                      if (result == FileExportResult.unavailable) {
+                        await Clipboard.setData(ClipboardData(text: content));
+                      }
+                      if (!ctx.mounted || !context.mounted) return;
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
-                          content: Text(
-                            'File "$fileName" berhasil diunduh ke perangkat Anda! 📁',
-                          ),
-                          backgroundColor: const Color(0xFF16A34A),
+                          content: Text(switch (result) {
+                            FileExportResult.downloaded =>
+                              'File "$fileName" berhasil diunduh.',
+                            FileExportResult.shared =>
+                              'Menu berbagi file terbuka. Pilih aplikasi untuk menyimpan "$fileName".',
+                            FileExportResult.dismissed => '',
+                            FileExportResult.unavailable => 'Ekspor file tidak tersedia. Data disalin ke clipboard.',
+                          }),
+                          backgroundColor:
+                              result == FileExportResult.unavailable
+                              ? const Color(0xFF2563EB)
+                              : const Color(0xFF16A34A),
                         ),
                       );
                     },

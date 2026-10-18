@@ -13,7 +13,12 @@ class AssignmentsScreen extends StatefulWidget {
   final bool canManage;
   final String? userNim;
   final VoidCallback? onBack;
-  const AssignmentsScreen({super.key, this.canManage = true, this.userNim, this.onBack});
+  const AssignmentsScreen({
+    super.key,
+    this.canManage = true,
+    this.userNim,
+    this.onBack,
+  });
 
   static void showAssignmentDetail(
     BuildContext context,
@@ -62,11 +67,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         _loadPersonalAssignmentStatuses(silent: true);
       }
     });
-    _studentAssignmentsChannel = SupabaseRepository.subscribeToStudentAssignments(() {
-      if (mounted) {
-        _loadPersonalAssignmentStatuses(silent: true);
-      }
-    });
+    _studentAssignmentsChannel =
+        SupabaseRepository.subscribeToStudentAssignments(() {
+          if (mounted) {
+            _loadPersonalAssignmentStatuses(silent: true);
+          }
+        });
   }
 
   @override
@@ -86,20 +92,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     try {
       final nim = widget.userNim;
       final results = await Future.wait<dynamic>([
-        SupabaseRepository.getAssignmentsStrict().catchError((e) async {
-          debugPrint('Info: getAssignmentsStrict gagal ($e), mencoba getAssignments fallback.');
-          return await SupabaseRepository.getAssignments();
-        }),
-        SupabaseRepository.getCoursesStrict().catchError((e) async {
-          debugPrint('Info: getCoursesStrict gagal ($e), mencoba getCourses fallback.');
-          return await SupabaseRepository.getCourses();
-        }),
+        SupabaseRepository.getAssignmentsStrict(),
+        SupabaseRepository.getCoursesStrict(),
         (nim != null && nim.isNotEmpty)
             ? SupabaseRepository.getPersonalAssignmentStatusesStrict(nim)
-                .catchError((e) {
-                  debugPrint('Info: Status tugas perorangan ($e), default belum dikerjakan.');
-                  return <String, String>{};
-                })
             : Future.value(<String, String>{}),
       ]);
       final loadedAssignments = results[0] as List<Assignment>;
@@ -114,6 +110,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         setState(() {
           _assignments = loadedAssignments;
           _courses = loadedCourses;
+          _loadError = null;
           _isLoading = false;
         });
       }
@@ -300,7 +297,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,75 +343,87 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: kategori,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final categoryField = DropdownButtonFormField<String>(
+                        initialValue: kategori,
+                        decoration: InputDecoration(
+                          labelText: 'Kategori',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        items: ['Individu', 'Kelompok', 'Praktikum', 'Ujian']
+                            .map(
+                              (k) => DropdownMenuItem(
+                                value: k,
+                                child: Text(
+                                  k,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => kategori = val);
+                          }
+                        },
+                      );
+                      final deadlineField = InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDeadline,
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 30),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
+                          );
+                          if (picked != null) {
+                            setDialogState(() => selectedDeadline = picked);
+                          }
+                        },
+                        child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Kategori',
+                            labelText: 'Deadline',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          items: ['Individu', 'Kelompok', 'Praktikum', 'Ujian']
-                              .map(
-                                (k) => DropdownMenuItem(
-                                  value: k,
-                                  child: Text(
-                                    k,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setDialogState(() => kategori = val);
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: selectedDeadline,
-                              firstDate: DateTime.now().subtract(
-                                const Duration(days: 30),
-                              ),
-                              lastDate: DateTime.now().add(
-                                const Duration(days: 365),
-                              ),
-                            );
-                            if (picked != null) {
-                              setDialogState(() => selectedDeadline = picked);
-                            }
-                          },
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: 'Deadline',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 12,
-                              ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 12,
                             ),
-                            child: Text(
-                              '${selectedDeadline.day}/${selectedDeadline.month}/${selectedDeadline.year}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          ),
+                          child: Text(
+                            '${selectedDeadline.day}/${selectedDeadline.month}/${selectedDeadline.year}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      );
+
+                      if (constraints.maxWidth < 340) {
+                        return Column(
+                          children: [
+                            categoryField,
+                            const SizedBox(height: 12),
+                            deadlineField,
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: categoryField),
+                          const SizedBox(width: 10),
+                          Expanded(child: deadlineField),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -558,25 +569,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: widget.canManage
-          ? FloatingActionButton.extended(
-              onPressed: _showAddAssignmentDialog,
-              backgroundColor: const Color(0xFF1E40AF),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_task_rounded, size: 20),
-              label: const Text(
-                'Tambah Tugas',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-            )
-          : null,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: widget.onBack != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF111827),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
@@ -602,9 +604,27 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('Aktif', _assignments.where((a) => a.status != 'selesai' && a.status != 'dinilai').length),
+                      _buildFilterChip(
+                        'Aktif',
+                        _assignments
+                            .where(
+                              (a) =>
+                                  a.status != 'selesai' &&
+                                  a.status != 'dinilai',
+                            )
+                            .length,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Selesai', _assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length),
+                      _buildFilterChip(
+                        'Selesai',
+                        _assignments
+                            .where(
+                              (a) =>
+                                  a.status == 'selesai' ||
+                                  a.status == 'dinilai',
+                            )
+                            .length,
+                      ),
                       const SizedBox(width: 8),
                       _buildFilterChip('Semua', _assignments.length),
                     ],
@@ -633,7 +653,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       items: availableCourses.map((c) {
                         final countInCourse = c == 'Semua Mata Kuliah'
                             ? _assignments.length
-                            : _assignments.where((a) => a.courseName == c).length;
+                            : _assignments
+                                  .where((a) => a.courseName == c)
+                                  .length;
                         return DropdownMenuItem<String>(
                           value: c,
                           child: Row(
@@ -663,14 +685,21 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                               ),
                               if (countInCourse > 0)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1.5,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE2E8F0),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     '$countInCourse',
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF475569),
+                                    ),
                                   ),
                                 ),
                             ],
@@ -693,10 +722,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           Builder(
             builder: (context) {
               final total = _assignments.length;
-              final finished = _assignments.where((a) => a.status == 'selesai' || a.status == 'dinilai').length;
+              final finished = _assignments
+                  .where((a) => a.status == 'selesai' || a.status == 'dinilai')
+                  .length;
               final percent = total > 0 ? (finished / total) : 0.0;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 9,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
                   border: Border(
@@ -709,11 +743,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            alignment: WrapAlignment.spaceBetween,
                             children: [
                               Text(
                                 'Progres Tugas Semester Ini: $finished/$total selesai',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
@@ -737,7 +775,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                               value: percent,
                               minHeight: 5,
                               backgroundColor: const Color(0xFFE2E8F0),
-                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1E40AF)),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF1E40AF),
+                              ),
                             ),
                           ),
                         ],
@@ -810,7 +850,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       final courseColor =
                           _courseColors[a.courseName] ??
                           const Color(0xFF1E40AF);
-                      final isDone = a.status == 'selesai' || a.status == 'dinilai';
+                      final isDone =
+                          a.status == 'selesai' || a.status == 'dinilai';
 
                       return InkWell(
                         onTap: () => AssignmentsScreen.showAssignmentDetail(
@@ -845,7 +886,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                               decoration: BoxDecoration(
                                 border: Border(
                                   left: BorderSide(
-                                    color: isDone ? const Color(0xFF10B981) : courseColor,
+                                    color: isDone
+                                        ? const Color(0xFF10B981)
+                                        : courseColor,
                                     width: 4,
                                   ),
                                 ),
@@ -855,8 +898,11 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Top row: Course Pill, Category & Status / Quick Check Action
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 8,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
@@ -864,19 +910,32 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                           vertical: 3.5,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: courseColor.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: courseColor.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        child: Text(
-                                          a.courseName,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                            color: courseColor,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth:
+                                                MediaQuery.sizeOf(context)
+                                                    .width *
+                                                .52,
+                                          ),
+                                          child: Text(
+                                            a.courseName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: courseColor,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 7,
@@ -884,18 +943,29 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        child: Text(
-                                          a.kategori,
-                                          style: const TextStyle(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF64748B),
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth:
+                                                MediaQuery.sizeOf(context)
+                                                    .width *
+                                                .28,
+                                          ),
+                                          child: Text(
+                                            a.kategori,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF64748B),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      const Spacer(),
                                       // Quick Checkbox / Status Indicator
                                       InkWell(
                                         onTap: () => _cycleStatus(a),
@@ -907,9 +977,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: _statusBgColor(a.status),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             border: Border.all(
-                                              color: _statusTextColor(a.status).withValues(alpha: 0.3),
+                                              color: _statusTextColor(a.status)
+                                                  .withValues(alpha: 0.3),
                                               width: 1,
                                             ),
                                           ),
@@ -919,9 +992,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                               Icon(
                                                 isDone
                                                     ? Icons.check_circle_rounded
-                                                    : Icons.radio_button_unchecked_rounded,
+                                                    : Icons
+                                                          .radio_button_unchecked_rounded,
                                                 size: 13,
-                                                color: _statusTextColor(a.status),
+                                                color: _statusTextColor(
+                                                  a.status,
+                                                ),
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
@@ -929,7 +1005,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                                 style: TextStyle(
                                                   fontSize: 10.5,
                                                   fontWeight: FontWeight.w800,
-                                                  color: _statusTextColor(a.status),
+                                                  color: _statusTextColor(
+                                                    a.status,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -946,8 +1024,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                     style: TextStyle(
                                       fontSize: 14.5,
                                       fontWeight: FontWeight.w800,
-                                      color: isDone ? const Color(0xFF64748B) : const Color(0xFF0F172A),
-                                      decoration: isDone ? TextDecoration.lineThrough : null,
+                                      color: isDone
+                                          ? const Color(0xFF64748B)
+                                          : const Color(0xFF0F172A),
+                                      decoration: isDone
+                                          ? TextDecoration.lineThrough
+                                          : null,
                                       height: 1.25,
                                     ),
                                   ),
@@ -967,40 +1049,58 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                   ],
 
                                   const SizedBox(height: 12),
-                                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                  const Divider(
+                                    height: 1,
+                                    color: Color(0xFFF1F5F9),
+                                  ),
                                   const SizedBox(height: 10),
 
                                   // Bottom Row: Deadline & Link
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
                                     children: [
-                                      Row(
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
                                         children: [
                                           Icon(
                                             Icons.calendar_month_outlined,
                                             size: 14,
                                             color: _deadlineColor(a),
                                           ),
-                                          const SizedBox(width: 6),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}',
-                                                style: const TextStyle(
-                                                  fontSize: 11.5,
-                                                  color: Color(0xFF475569),
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth:
+                                                  MediaQuery.sizeOf(context)
+                                                      .width *
+                                                  .48,
+                                            ),
+                                            child: Text(
+                                              '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11.5,
+                                                color: Color(0xFF475569),
+                                                fontWeight: FontWeight.w600,
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                          const SizedBox(width: 8),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 7,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: _deadlineColor(a).withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: _deadlineColor(a)
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               _deadlineLabel(a),
@@ -1013,21 +1113,35 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                           ),
                                         ],
                                       ),
-                                      if (a.linkPengumpulan != null && a.linkPengumpulan!.isNotEmpty)
+                                      if (a.linkPengumpulan != null &&
+                                          a.linkPengumpulan!.isNotEmpty)
                                         InkWell(
-                                          onTap: () => safeLaunchUrl(a.linkPengumpulan!),
-                                          borderRadius: BorderRadius.circular(8),
+                                          onTap: () =>
+                                              safeLaunchUrl(a.linkPengumpulan!),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3.5,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFEFF6FF),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: const Color(0xFFBFDBFE),
+                                              ),
                                             ),
                                             child: const Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.link_rounded, size: 12, color: Color(0xFF2563EB)),
+                                                Icon(
+                                                  Icons.link_rounded,
+                                                  size: 12,
+                                                  color: Color(0xFF2563EB),
+                                                ),
                                                 SizedBox(width: 4),
                                                 Text(
                                                   'Link Tugas',
@@ -1125,7 +1239,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

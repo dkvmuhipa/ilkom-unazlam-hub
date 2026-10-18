@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Membuka URL eksternal dengan validasi skema yang ketat (hanya http dan https)
-/// untuk mencegah eksekusi skema berbahaya (javascript:, file:, intent:, dll).
+/// Membuka URL eksternal yang aman untuk web, telepon, dan email.
 Future<bool> safeLaunchUrl(
   String rawUrl, {
   LaunchMode mode = LaunchMode.externalApplication,
@@ -16,16 +15,19 @@ Future<bool> safeLaunchUrl(
     return false;
   }
 
-  // Izinkan hanya skema HTTP dan HTTPS
-  if (uri.scheme != 'http' && uri.scheme != 'https') {
-    debugPrint('SafeLauncher: Skema tidak diizinkan (${uri.scheme}) pada $cleanUrl');
+  const allowedSchemes = {'http', 'https', 'mailto', 'tel'};
+  if (!allowedSchemes.contains(uri.scheme) ||
+      ((uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isEmpty)) {
+    debugPrint(
+      'SafeLauncher: Skema tidak diizinkan (${uri.scheme}) pada $cleanUrl',
+    );
     return false;
   }
 
   try {
-    if (await canLaunchUrl(uri)) {
-      return await launchUrl(uri, mode: mode);
-    }
+    // Jangan mengandalkan canLaunchUrl: pada web dan beberapa konfigurasi
+    // Android, pengecekan itu dapat mengembalikan false walau URL bisa dibuka.
+    return await launchUrl(uri, mode: mode);
   } catch (e) {
     debugPrint('SafeLauncher: Gagal membuka URL ($cleanUrl): $e');
   }

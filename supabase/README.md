@@ -29,6 +29,12 @@ Then run `supabase_migrations/20261009_class_treasury_dues.sql` to store monthly
 class dues in Supabase. Students can read only their own dues status; admins and
 the class treasurer can manage the complete ledger. Treasury transactions remain
 readable by class members and writable by class officers under the existing RLS.
+Run `supabase_migrations/20261018_student_groups.sql` to enable shared class
+groups. Students can read only groups where their authenticated NIM is a member;
+class officers can manage groups in their class, and administrators can manage
+all groups. Group tables have no direct Data API access; the authenticated RPCs
+enforce membership and role checks. This migration has been applied to the
+linked `ilkomunazlam` production project.
 Do not combine these with an older copy of the schema that creates
 `USING (true)` policies.
 

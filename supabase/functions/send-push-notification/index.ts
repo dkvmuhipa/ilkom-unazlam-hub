@@ -220,9 +220,41 @@ Deno.serve(async (request: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: tokenRows, error: tokenError } = await adminClient
-    .from('user_push_tokens')
-    .select('token');
+  let tokenQuery = adminClient.from('user_push_tokens').select('token');
+
+  // Respect announcement audience filters instead of broadcasting every
+  // announcement to every registered device.
+  if (table === 'announcements') {
+    const audience = String(record.target_audience ?? 'ALL').toUpperCase();
+    const targetAngkatan = String(record.target_angkatan ?? '').trim();
+    const targetKelas = String(record.target_kelas ?? '').trim();
+    if (!['ALL', 'ANGKATAN', 'KELAS'].includes(audience)) {
+      return jsonResponse(400, { error: 'Target audiens pengumuman tidak dikenal.' });
+    }
+    if ((audience === 'ANGKATAN' && !targetAngkatan) || (audience === 'KELAS' && !targetKelas)) {
+      return jsonResponse(400, { error: 'Target pengumuman tidak lengkap.' });
+    }
+
+    let studentQuery = adminClient.from('students').select('nim').eq('is_aktif', true);
+    if (audience === 'ANGKATAN') {
+      studentQuery = studentQuery.eq('angkatan', targetAngkatan);
+    } else if (audience === 'KELAS') {
+      studentQuery = studentQuery.eq('kelas', targetKelas);
+    }
+    const { data: students, error: studentsError } = await studentQuery;
+    if (studentsError) {
+      return jsonResponse(500, { error: 'Gagal mengambil target pengumuman.', detail: studentsError.message });
+    }
+    const nims = (students ?? [])
+      .map((student) => student.nim)
+      .filter((nim): nim is string => typeof nim === 'string' && nim.length > 0);
+    if (nims.length === 0) {
+      return jsonResponse(200, { message: 'Target pengumuman belum memiliki perangkat terdaftar.', sent: 0 });
+    }
+    tokenQuery = tokenQuery.in('nim', nims);
+  }
+
+  const { data: tokenRows, error: tokenError } = await tokenQuery;
 
   if (tokenError) {
     return jsonResponse(500, { error: 'Gagal mengambil token pengguna:', detail: tokenError.message });

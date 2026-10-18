@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -22,7 +23,8 @@ class AdminBroadcastHubModal extends StatefulWidget {
     required String module,
     required String description,
     Map<String, dynamic> metadata,
-  }) onRecordAudit;
+  })
+  onRecordAudit;
 
   const AdminBroadcastHubModal({
     super.key,
@@ -42,7 +44,8 @@ class AdminBroadcastHubModal extends StatefulWidget {
       required String module,
       required String description,
       Map<String, dynamic> metadata,
-    }) onRecordAudit,
+    })
+    onRecordAudit,
   }) {
     showDialog(
       context: context,
@@ -74,7 +77,6 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
   String _selectedAngkatan = '2024';
   String _selectedKelas = '';
   bool _isPinned = true;
-  bool _sendFcmPush = true;
   bool _sendWahaBlast = false;
   bool _isWahaOnline = false;
   int _targetWaCount = 0;
@@ -87,7 +89,14 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
   List<Announcement> _announcements = [];
   bool _isLoadingHistory = false;
 
-  final List<String> _angkatanOptions = ['2021', '2022', '2023', '2024', '2025', '2026'];
+  final List<String> _angkatanOptions = [
+    '2021',
+    '2022',
+    '2023',
+    '2024',
+    '2025',
+    '2026',
+  ];
   final List<String> _categories = [
     'Penting',
     'Akademik',
@@ -133,7 +142,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
     try {
       final count = await SupabaseRepository.getPushTokenCountByTarget(
         targetAudience: _targetAudience,
-        targetAngkatan: _targetAudience == 'ANGKATAN' ? _selectedAngkatan : null,
+        targetAngkatan: _targetAudience == 'ANGKATAN'
+            ? _selectedAngkatan
+            : null,
         targetKelas: _targetAudience == 'KELAS' ? _selectedKelas : null,
       );
       if (mounted) setState(() => _targetTokenCount = count);
@@ -141,9 +152,14 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
       // Hitung juga jumlah nomor WhatsApp mahasiswa pada target
       final client = SupabaseService.client;
       if (client != null) {
-        var query = client.from('students').select('no_wa').eq('is_aktif', true);
+        var query = client
+            .from('students')
+            .select('no_wa')
+            .eq('is_aktif', true);
         if (_targetAudience == 'KELAS' && _selectedKelas.isNotEmpty) {
           query = query.eq('kelas', _selectedKelas);
+        } else if (_targetAudience == 'ANGKATAN') {
+          query = query.eq('angkatan', _selectedAngkatan);
         }
         final rows = await query;
         if (mounted) {
@@ -176,11 +192,17 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
     final body = _bodyCtrl.text.trim();
 
     if (title.isEmpty) {
-      widget.onShowMessage('Judul pengumuman tidak boleh kosong.', isError: true);
+      widget.onShowMessage(
+        'Judul pengumuman tidak boleh kosong.',
+        isError: true,
+      );
       return;
     }
     if (body.isEmpty) {
-      widget.onShowMessage('Isi pesan siaran tidak boleh kosong.', isError: true);
+      widget.onShowMessage(
+        'Isi pesan siaran tidak boleh kosong.',
+        isError: true,
+      );
       return;
     }
 
@@ -195,7 +217,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         authorName: 'Admin Program Studi',
         authorRole: 'Admin',
         targetAudience: _targetAudience,
-        targetAngkatan: _targetAudience == 'ANGKATAN' ? _selectedAngkatan : null,
+        targetAngkatan: _targetAudience == 'ANGKATAN'
+            ? _selectedAngkatan
+            : null,
         targetKelas: _targetAudience == 'KELAS' ? _selectedKelas : null,
       );
 
@@ -203,35 +227,43 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         widget.onRecordAudit(
           action: 'BROADCAST',
           module: 'PENGUMUMAN',
-          description: 'Mengirim broadcast "$title" ke target $_targetAudience (Push: $_sendFcmPush, WAHA: $_sendWahaBlast)',
+          description:
+              'Menerbitkan pengumuman "$title" ke target $_targetAudience (WAHA: $_sendWahaBlast)',
           metadata: {
             'target_audience': _targetAudience,
             'target_angkatan': _targetAngkatanValue,
             'target_kelas': _targetKelasValue,
             'kategori': _selectedCategory,
             'is_pinned': _isPinned,
-            'target_tokens': _targetTokenCount,
             'waha_blast': _sendWahaBlast,
             'waha_target_count': _targetWaCount,
           },
         );
 
         // Eksekusi Pengiriman Pesan WhatsApp via WAHA Gateway
+        var waSummary = '';
+        var waFailed = false;
         if (_sendWahaBlast) {
           try {
             final client = SupabaseService.client;
-            if (client != null) {
-              var query = client.from('students').select('nama,nim,no_wa').eq('is_aktif', true);
+            if (client == null) {
+              waFailed = true;
+              waSummary = ' WA gagal: koneksi database tidak tersedia.';
+            } else {
+              var query = client
+                  .from('students')
+                  .select('nama,nim,no_wa')
+                  .eq('is_aktif', true);
               if (_targetAudience == 'KELAS' && _selectedKelas.isNotEmpty) {
                 query = query.eq('kelas', _selectedKelas);
+              } else if (_targetAudience == 'ANGKATAN') {
+                query = query.eq('angkatan', _selectedAngkatan);
               }
               final rows = await query;
               final waList = <String>[];
-              for (final r in rows) {
-                final phone = r['no_wa']?.toString().trim();
-                if (phone != null && phone.isNotEmpty) {
-                  waList.add(phone);
-                }
+              for (final row in rows) {
+                final phone = row['no_wa']?.toString().trim();
+                if (phone != null && phone.isNotEmpty) waList.add(phone);
               }
 
               final waMessage = WahaService.formatAnnouncementMessage(
@@ -245,25 +277,52 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   createdAt: DateTime.now(),
                 ),
               );
-
-              if (_wahaTargetMode == 'GROUP') {
-                final defaultGroup = await WahaService.getDefaultGroupId();
-                if (defaultGroup != null && defaultGroup.isNotEmpty) {
-                  unawaited(WahaService.sendTextMessage(recipient: defaultGroup, text: waMessage));
+              final status = await WahaService.getSessionStatus();
+              if (!status.isConnected) {
+                waFailed = true;
+                waSummary = ' WA gagal: gateway WhatsApp sedang offline.';
+              } else if (_wahaTargetMode == 'GROUP') {
+                final groupId = await WahaService.getDefaultGroupId();
+                if (groupId == null || groupId.isEmpty) {
+                  waFailed = true;
+                  waSummary = ' WA gagal: ID grup default belum diatur.';
+                } else {
+                  final result = await WahaService.sendTextMessage(
+                    recipient: groupId,
+                    text: waMessage,
+                  );
+                  waSummary = result.success
+                      ? ' WA berhasil dikirim ke grup.'
+                      : ' WA gagal dikirim: ${result.errorMessage ?? 'kesalahan gateway'}';
+                  waFailed = !result.success;
                 }
-              } else if (waList.isNotEmpty) {
-                unawaited(WahaService.broadcastMessage(recipients: waList, text: waMessage));
+              } else if (waList.isEmpty) {
+                waFailed = true;
+                waSummary =
+                    ' WA tidak dikirim: tidak ada nomor WhatsApp pada target.';
+              } else {
+                final report = await WahaService.broadcastMessage(
+                  recipients: waList,
+                  text: waMessage,
+                );
+                waSummary =
+                    ' WA berhasil ${report.successCount}/${report.total} nomor.';
+                if (report.failureCount > 0) {
+                  waFailed = true;
+                  waSummary += ' ${report.failureCount} gagal.';
+                }
               }
             }
           } catch (e) {
+            waFailed = true;
             debugPrint('Info: Gagal dispatch WhatsApp WAHA: $e');
+            waSummary = ' WA gagal dikirim karena terjadi kesalahan.';
           }
         }
 
         widget.onShowMessage(
-          _sendWahaBlast
-              ? 'Siaran berhasil diterbitkan, push FCM aktif, dan $_targetWaCount pesan WhatsApp sedang disiarkan via WAHA!'
-              : 'Siaran berhasil dikirim & disebarkan ke $_targetTokenCount perangkat mahasiswa!',
+          'Pengumuman berhasil diterbitkan.$waSummary',
+          isError: waFailed,
         );
 
         await widget.onRefresh();
@@ -274,7 +333,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           _tabController.animateTo(1);
         }
       } else {
-        widget.onShowMessage('Gagal mengirim siaran. Periksa koneksi database.', isError: true);
+        widget.onShowMessage(
+          'Gagal mengirim siaran. Periksa koneksi database.',
+          isError: true,
+        );
       }
     } catch (e) {
       widget.onShowMessage('Terjadi kesalahan: $e', isError: true);
@@ -283,8 +345,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
     }
   }
 
-  String? get _targetAngkatanValue => _targetAudience == 'ANGKATAN' ? _selectedAngkatan : null;
-  String? get _targetKelasValue => _targetAudience == 'KELAS' ? _selectedKelas : null;
+  String? get _targetAngkatanValue =>
+      _targetAudience == 'ANGKATAN' ? _selectedAngkatan : null;
+  String? get _targetKelasValue =>
+      _targetAudience == 'KELAS' ? _selectedKelas : null;
 
   Color _getCategoryColor(String cat) {
     switch (cat.toLowerCase()) {
@@ -316,7 +380,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        width: 720,
+        width: (MediaQuery.sizeOf(context).width - 96)
+            .clamp(0.0, 720.0)
+            .toDouble(),
         constraints: BoxConstraints(maxHeight: screenSize.height * 0.88),
         child: Column(
           children: [
@@ -338,7 +404,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     decoration: BoxDecoration(
                       color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF818CF8).withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                      ),
                     ),
                     child: const Icon(
                       Icons.cell_tower_rounded,
@@ -376,7 +444,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white70,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -392,7 +463,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 unselectedLabelColor: const Color(0xFF64748B),
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                ),
                 tabs: [
                   const Tab(
                     icon: Icon(Icons.send_rounded, size: 16),
@@ -410,10 +484,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildComposeTab(isCompact),
-                  _buildHistoryTab(),
-                ],
+                children: [_buildComposeTab(isCompact), _buildHistoryTab()],
               ),
             ),
           ],
@@ -455,7 +526,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     ),
                     // Live Recipient Counter
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _targetTokenCount > 0
                             ? const Color(0xFFECFDF5)
@@ -502,16 +576,35 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _buildAudienceChip('ALL', 'Seluruh Mahasiswa (Semua Angkatan)', Icons.public_rounded),
-                    _buildAudienceChip('ANGKATAN', 'Khusus Angkatan', Icons.school_rounded),
-                    _buildAudienceChip('KELAS', 'Khusus Kelas Tertentu', Icons.meeting_room_rounded),
+                    _buildAudienceChip(
+                      'ALL',
+                      'Seluruh Mahasiswa (Semua Angkatan)',
+                      Icons.public_rounded,
+                    ),
+                    _buildAudienceChip(
+                      'ANGKATAN',
+                      'Khusus Angkatan',
+                      Icons.school_rounded,
+                    ),
+                    _buildAudienceChip(
+                      'KELAS',
+                      'Khusus Kelas Tertentu',
+                      Icons.meeting_room_rounded,
+                    ),
                   ],
                 ),
 
                 // Sub-selector jika Angkatan dipilih
                 if (_targetAudience == 'ANGKATAN') ...[
                   const SizedBox(height: 12),
-                  const Text('Pilih Angkatan Target:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                  const Text(
+                    'Pilih Angkatan Target:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 8,
@@ -524,7 +617,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                         labelStyle: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: selected ? AppColors.primary : const Color(0xFF475569),
+                          color: selected
+                              ? AppColors.primary
+                              : const Color(0xFF475569),
                         ),
                         onSelected: (val) {
                           if (val) {
@@ -538,20 +633,37 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 ],
 
                 // Sub-selector jika Kelas dipilih
-                if (_targetAudience == 'KELAS' && widget.classes.isNotEmpty) ...[
+                if (_targetAudience == 'KELAS' &&
+                    widget.classes.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text('Pilih Kelas Target:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                  const Text(
+                    'Pilih Kelas Target:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedKelas.isNotEmpty ? _selectedKelas : widget.classes.first.nama,
+                    initialValue: _selectedKelas.isNotEmpty
+                        ? _selectedKelas
+                        : widget.classes.first.nama,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     items: widget.classes.map((c) {
                       return DropdownMenuItem(
                         value: c.nama,
-                        child: Text('${c.nama} (${c.prodi} • Semester ${c.semester})'),
+                        child: Text(
+                          '${c.nama} (${c.prodi} • Semester ${c.semester})',
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -579,7 +691,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 selected: isSel,
                 label: Text(cat),
                 avatar: Icon(
-                  cat == 'Penting' ? Icons.error_outline_rounded : Icons.label_outline_rounded,
+                  cat == 'Penting'
+                      ? Icons.error_outline_rounded
+                      : Icons.label_outline_rounded,
                   size: 14,
                   color: isSel ? color : const Color(0xFF64748B),
                 ),
@@ -593,7 +707,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: isSel ? color : const Color(0xFFE2E8F0)),
+                  side: BorderSide(
+                    color: isSel ? color : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 onSelected: (val) {
                   if (val) setState(() => _selectedCategory = cat);
@@ -616,7 +732,8 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           ),
           AdminFormField(
             controller: _titleCtrl,
-            hintText: 'Contoh: [PENTING] Batas Akhir KRS Semester Ganjil 2026/2027',
+            hintText:
+                'Contoh: [PENTING] Batas Akhir KRS Semester Ganjil 2026/2027',
           ),
           const SizedBox(height: 12),
 
@@ -640,7 +757,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             maxLines: 4,
             decoration: InputDecoration(
               hintText: 'Tuliskan rincian instruksi akademik resmi kepada seluruh mahasiswa...',
-              hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+              hintStyle: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF94A3B8),
+              ),
               contentPadding: const EdgeInsets.all(12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -654,63 +774,44 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           ),
           const SizedBox(height: 14),
 
-          // E. Switches: Pin to Top & Push Notification
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Sematkan di Atas (Pin)',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                        ),
-                      ),
-                      Switch(
-                        value: _isPinned,
-                        activeThumbColor: AppColors.primary,
-                        onChanged: (v) => setState(() => _isPinned = v),
-                      ),
-                    ],
+          // Pinning can be controlled here. Push delivery is handled by the
+          // server webhook and cannot be toggled by this form.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Sematkan di Atas (Pin)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Kirim Push FCM',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                        ),
-                      ),
-                      Switch(
-                        value: _sendFcmPush,
-                        activeThumbColor: const Color(0xFF10B981),
-                        onChanged: (v) => setState(() => _sendFcmPush = v),
-                      ),
-                    ],
-                  ),
+                Switch(
+                  value: _isPinned,
+                  activeThumbColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _isPinned = v),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Notifikasi push ditangani oleh server setelah pengumuman diterbitkan. Pengiriman bergantung pada konfigurasi FCM server dan token perangkat.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF64748B),
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -718,10 +819,14 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: _sendWahaBlast ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+              color: _sendWahaBlast
+                  ? const Color(0xFFECFDF5)
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: _sendWahaBlast ? const Color(0xFFA7F3D0) : const Color(0xFFE2E8F0),
+                color: _sendWahaBlast
+                    ? const Color(0xFFA7F3D0)
+                    : const Color(0xFFE2E8F0),
               ),
             ),
             child: Column(
@@ -735,10 +840,15 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                            color: const Color(0xFF25D366)
+                                .withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.phone_android_rounded, size: 16, color: Color(0xFF059669)),
+                          child: const Icon(
+                            Icons.phone_android_rounded,
+                            size: 16,
+                            color: Color(0xFF059669),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Column(
@@ -748,13 +858,22 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                               children: [
                                 const Text(
                                   'Blast WhatsApp Otomatis (WAHA Gateway)',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E293B),
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _isWahaOnline ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                                    color: _isWahaOnline
+                                        ? const Color(0xFFDCFCE7)
+                                        : const Color(0xFFFEE2E2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -762,7 +881,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                                     style: TextStyle(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w800,
-                                      color: _isWahaOnline ? const Color(0xFF166534) : const Color(0xFF991B1B),
+                                      color: _isWahaOnline
+                                          ? const Color(0xFF166534)
+                                          : const Color(0xFF991B1B),
                                     ),
                                   ),
                                 ),
@@ -773,7 +894,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                               _targetWaCount > 0
                                   ? 'Tersedia $_targetWaCount nomor WhatsApp mahasiswa terverifikasi'
                                   : 'Kirim pesan otomatis via REST API WhatsApp',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                           ],
                         ),
@@ -802,17 +926,25 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     children: [
                       const Text(
                         'Target Kirim: ',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
                       ),
                       const SizedBox(width: 6),
                       ChoiceChip(
-                        label: Text('Japri ke Nomor Mahasiswa ($_targetWaCount Nomor)'),
+                        label: Text(
+                          'Japri ke Nomor Mahasiswa ($_targetWaCount Nomor)',
+                        ),
                         selected: _wahaTargetMode == 'JAPRI',
                         selectedColor: const Color(0xFFDCFCE7),
                         labelStyle: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: _wahaTargetMode == 'JAPRI' ? const Color(0xFF166534) : const Color(0xFF475569),
+                          color: _wahaTargetMode == 'JAPRI'
+                              ? const Color(0xFF166534)
+                              : const Color(0xFF475569),
                         ),
                         onSelected: (val) {
                           if (val) setState(() => _wahaTargetMode = 'JAPRI');
@@ -826,7 +958,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                         labelStyle: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: _wahaTargetMode == 'GROUP' ? const Color(0xFF166534) : const Color(0xFF475569),
+                          color: _wahaTargetMode == 'GROUP'
+                              ? const Color(0xFF166534)
+                              : const Color(0xFF475569),
                         ),
                         onSelected: (val) {
                           if (val) setState(() => _wahaTargetMode = 'GROUP');
@@ -843,7 +977,11 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           // F. Live Phone Lock Screen Preview (Simulation)
           const Text(
             'Pratinjau Layar Kunci Mahasiswa (Lock Screen Preview)',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF475569)),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF475569),
+            ),
           ),
           const SizedBox(height: 8),
           _buildPhoneNotificationMockup(),
@@ -859,19 +997,27 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.send_rounded, size: 18),
               label: Text(
                 _isSending
-                    ? 'Sedang Memproses Siaran & Push...'
-                    : 'Terbitkan Siaran & Broadcast ke $_targetTokenCount Perangkat',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    ? 'Sedang Menerbitkan Pengumuman...'
+                    : 'Terbitkan Pengumuman',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF4F46E5),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -883,7 +1029,11 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
   Widget _buildAudienceChip(String key, String label, IconData icon) {
     final selected = _targetAudience == key;
     return ChoiceChip(
-      avatar: Icon(icon, size: 14, color: selected ? AppColors.primary : const Color(0xFF64748B)),
+      avatar: Icon(
+        icon,
+        size: 14,
+        color: selected ? AppColors.primary : const Color(0xFF64748B),
+      ),
       label: Text(label),
       selected: selected,
       selectedColor: AppColors.primarySoft,
@@ -894,7 +1044,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFCBD5E1)),
+        side: BorderSide(
+          color: selected ? AppColors.primary : const Color(0xFFCBD5E1),
+        ),
       ),
       onSelected: (val) {
         if (val) {
@@ -922,7 +1074,11 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         ),
         child: Text(
           tag,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF475569),
+          ),
         ),
       ),
     );
@@ -930,8 +1086,12 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
 
   // Visual Mockup Notifikasi Android / iOS
   Widget _buildPhoneNotificationMockup() {
-    final title = _titleCtrl.text.trim().isEmpty ? 'Judul Pengumuman...' : _titleCtrl.text.trim();
-    final body = _bodyCtrl.text.trim().isEmpty ? 'Isi ringkasan pengumuman akan muncul di sini...' : _bodyCtrl.text.trim();
+    final title = _titleCtrl.text.trim().isEmpty
+        ? 'Judul Pengumuman...'
+        : _titleCtrl.text.trim();
+    final body = _bodyCtrl.text.trim().isEmpty
+        ? 'Isi ringkasan pengumuman akan muncul di sini...'
+        : _bodyCtrl.text.trim();
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -960,14 +1120,25 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Center(
-                  child: Text('U', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+                  child: Text(
+                    'U',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'ILKOM UNAZLAM HUB • Baru Saja',
-                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
               ),
               Container(
@@ -976,7 +1147,14 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text('FCM v1', style: TextStyle(fontSize: 9, color: Color(0xFF38BDF8), fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'FCM v1',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Color(0xFF38BDF8),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
@@ -985,14 +1163,22 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             '📢 $title',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 3),
           Text(
             body,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.3),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFFCBD5E1),
+              height: 1.3,
+            ),
           ),
         ],
       ),
@@ -1014,11 +1200,25 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.inbox_outlined, color: Color(0xFF94A3B8), size: 40),
+              const Icon(
+                Icons.inbox_outlined,
+                color: Color(0xFF94A3B8),
+                size: 40,
+              ),
               const SizedBox(height: 8),
-              const Text('Belum ada riwayat siaran.', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+              const Text(
+                'Belum ada riwayat siaran.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF475569),
+                ),
+              ),
               const SizedBox(height: 4),
-              const Text('Siaran pengumuman yang dikirimkan akan tercatat di sini.', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              const Text(
+                'Siaran pengumuman yang dikirimkan akan tercatat di sini.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _loadBroadcastHistory,
@@ -1045,7 +1245,9 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: a.isPinned ? AppColors.primary.withValues(alpha: 0.4) : const Color(0xFFE2E8F0),
+              color: a.isPinned
+                  ? AppColors.primary.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
               width: a.isPinned ? 1.5 : 1,
             ),
             boxShadow: [
@@ -1063,20 +1265,30 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: catColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       a.kategori,
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: catColor),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: catColor,
+                      ),
                     ),
                   ),
                   if (a.isPinned) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEF3C7),
                         borderRadius: BorderRadius.circular(6),
@@ -1084,9 +1296,20 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.push_pin_rounded, size: 10, color: Color(0xFFD97706)),
+                          Icon(
+                            Icons.push_pin_rounded,
+                            size: 10,
+                            color: Color(0xFFD97706),
+                          ),
                           SizedBox(width: 3),
-                          Text('PINNED', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFB45309))),
+                          Text(
+                            'PINNED',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFB45309),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1094,7 +1317,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   const Spacer(),
                   // Target Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(6),
@@ -1103,9 +1329,13 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                       a.targetAudience == 'ALL'
                           ? 'Semua Mahasiswa'
                           : (a.targetAudience == 'ANGKATAN'
-                              ? 'Angkatan ${a.targetAngkatan ?? ""}'
-                              : 'Kelas ${a.targetKelas ?? ""}'),
-                      style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                ? 'Angkatan ${a.targetAngkatan ?? ""}'
+                                : 'Kelas ${a.targetKelas ?? ""}'),
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
                     ),
                   ),
                 ],
@@ -1113,14 +1343,22 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
               const SizedBox(height: 8),
               Text(
                 a.judul,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 a.isi,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: Color(0xFF64748B),
+                  height: 1.35,
+                ),
               ),
               const SizedBox(height: 10),
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -1129,19 +1367,31 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 children: [
                   Text(
                     '${a.authorName} • ${_formatDate(a.createdAt)}',
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF94A3B8),
+                    ),
                   ),
                   const Spacer(),
                   // Toggle Pin Button
                   IconButton(
                     icon: Icon(
-                      a.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                      a.isPinned
+                          ? Icons.push_pin_rounded
+                          : Icons.push_pin_outlined,
                       size: 16,
-                      color: a.isPinned ? const Color(0xFFD97706) : const Color(0xFF94A3B8),
+                      color: a.isPinned
+                          ? const Color(0xFFD97706)
+                          : const Color(0xFF94A3B8),
                     ),
-                    tooltip: a.isPinned ? 'Lepas Sematan (Unpin)' : 'Sematkan di Atas',
+                    tooltip: a.isPinned
+                        ? 'Lepas Sematan (Unpin)'
+                        : 'Sematkan di Atas',
                     onPressed: () async {
-                      final ok = await SupabaseRepository.togglePinAnnouncement(a.id, !a.isPinned);
+                      final ok = await SupabaseRepository.togglePinAnnouncement(
+                        a.id,
+                        !a.isPinned,
+                      );
                       if (ok) {
                         await _loadBroadcastHistory();
                         await widget.onRefresh();
@@ -1150,7 +1400,11 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   ),
                   // Delete Button
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                      color: Color(0xFFEF4444),
+                    ),
                     tooltip: 'Hapus Siaran',
                     onPressed: () => _confirmDeleteAnnouncement(a),
                   ),
@@ -1168,11 +1422,18 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Pengumuman?'),
-        content: Text('Pengumuman "${a.judul}" akan dihapus dari feed seluruh mahasiswa.'),
+        content: Text(
+          'Pengumuman "${a.judul}" akan dihapus dari feed seluruh mahasiswa.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               final ok = await SupabaseRepository.deleteAnnouncement(a.id);
@@ -1186,7 +1447,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                 await _loadBroadcastHistory();
                 await widget.onRefresh();
               } else {
-                widget.onShowMessage('Gagal menghapus pengumuman.', isError: true);
+                widget.onShowMessage(
+                  'Gagal menghapus pengumuman.',
+                  isError: true,
+                );
               }
             },
             child: const Text('Hapus'),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/services/safe_launcher.dart';
 import '../../../core/services/export_service.dart';
 import '../../../models/models.dart';
 
@@ -11,11 +11,7 @@ class OfficialLetterSheet extends StatelessWidget {
   final PermissionLetter letter;
   final VoidCallback? onDelete;
 
-  const OfficialLetterSheet({
-    super.key,
-    required this.letter,
-    this.onDelete,
-  });
+  const OfficialLetterSheet({super.key, required this.letter, this.onDelete});
 
   static void show(
     BuildContext context, {
@@ -34,10 +30,8 @@ class OfficialLetterSheet extends StatelessWidget {
         minChildSize: 0.55,
         maxChildSize: 0.96,
         expand: false,
-        builder: (_, scrollController) => OfficialLetterSheet(
-          letter: letter,
-          onDelete: onDelete,
-        ),
+        builder: (_, scrollController) =>
+            OfficialLetterSheet(letter: letter, onDelete: onDelete),
       ),
     );
   }
@@ -46,23 +40,52 @@ class OfficialLetterSheet extends StatelessWidget {
     final year = letter.createdAt.year;
     final monthRoman = _toRoman(letter.createdAt.month);
     final shortId = letter.id.replaceAll(RegExp(r'\D'), '');
-    final seq = shortId.length >= 4 ? shortId.substring(shortId.length - 4) : '001';
+    final seq = shortId.length >= 4
+        ? shortId.substring(shortId.length - 4)
+        : '001';
     return '$seq/ILKOM-UNAZLAM/IZN/$monthRoman/$year';
   }
 
   static String _toRoman(int number) {
-    const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+    const roman = [
+      'I',
+      'II',
+      'III',
+      'IV',
+      'V',
+      'VI',
+      'VII',
+      'VIII',
+      'IX',
+      'X',
+      'XI',
+      'XII',
+    ];
     if (number >= 1 && number <= 12) return roman[number - 1];
     return 'X';
   }
 
+  String _escapeHtml(String value) => value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
   String _generatePrintableHtml() {
+    final studentName = _escapeHtml(letter.studentName);
+    final studentNim = _escapeHtml(letter.studentNim);
+    final courseName = _escapeHtml(letter.courseName);
+    final lecturerName = _escapeHtml(letter.dosenName);
+    final reason = _escapeHtml(letter.reason);
+    final letterDate = _escapeHtml(letter.letterDate);
+    final letterId = _escapeHtml(letter.id);
     return '''
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Surat Permohonan Izin - ${letter.studentName}</title>
+  <title>Surat Permohonan Izin - $studentName</title>
   <style>
     body {
       font-family: 'Times New Roman', Times, serif;
@@ -129,7 +152,7 @@ class OfficialLetterSheet extends StatelessWidget {
       <td width="15%">Nomor</td>
       <td width="2%">:</td>
       <td width="48%">$_letterNumber</td>
-      <td width="35%" align="right">Cilacap, ${DateFormat('dd MMMM yyyy', 'id_ID').format(letter.createdAt)}</td>
+      <td width="35%" align="right">Cilacap, ${_escapeHtml(DateFormat('dd MMMM yyyy', 'id_ID').format(letter.createdAt))}</td>
     </tr>
     <tr>
       <td>Lampiran</td>
@@ -147,8 +170,8 @@ class OfficialLetterSheet extends StatelessWidget {
 
   <div class="content">
     <p>Kepada Yth.<br>
-    <strong>Bapak/Ibu Dosen Pengampu: ${letter.dosenName}</strong><br>
-    Mata Kuliah: ${letter.courseName}<br>
+    <strong>Bapak/Ibu Dosen Pengampu: $lecturerName</strong><br>
+    Mata Kuliah: $courseName<br>
     Program Studi S1 Ilmu Komunikasi<br>
     Universitas Nahdlatul Ulama Al Ghazali<br>
     di Tempat</p>
@@ -157,14 +180,14 @@ class OfficialLetterSheet extends StatelessWidget {
     <p>Dengan hormat, saya yang bertanda tangan di bawah ini:</p>
 
     <table class="student-data">
-      <tr><td width="140">Nama Mahasiswa</td><td>:</td><td><strong>${letter.studentName}</strong></td></tr>
-      <tr><td>NIM</td><td>:</td><td>${letter.studentNim}</td></tr>
+      <tr><td width="140">Nama Mahasiswa</td><td>:</td><td><strong>$studentName</strong></td></tr>
+      <tr><td>NIM</td><td>:</td><td>$studentNim</td></tr>
       <tr><td>Program Studi</td><td>:</td><td>S1 Ilmu Komunikasi</td></tr>
-      <tr><td>Kategori Izin</td><td>:</td><td>${letter.letterType}</td></tr>
-      <tr><td>Hari / Tanggal</td><td>:</td><td>${letter.letterDate}</td></tr>
+      <tr><td>Kategori Izin</td><td>:</td><td>${_escapeHtml(letter.letterType)}</td></tr>
+      <tr><td>Hari / Tanggal</td><td>:</td><td>$letterDate</td></tr>
     </table>
 
-    <p>Bermaksud memohon izin tidak dapat mengikuti perkuliahan tatap muka pada hari dan tanggal tersebut dikarenakan: <strong>${letter.reason}</strong>.</p>
+    <p>Bermaksud memohon izin tidak dapat mengikuti perkuliahan tatap muka pada hari dan tanggal tersebut dikarenakan: <strong>$reason</strong>.</p>
 
     <p>Sebagai komitmen akademik, saya berjanji untuk mempelajari materi perkuliahan secara mandiri serta menyelesaikan tugas perkuliahan yang diberikan pada sesi tersebut.</p>
 
@@ -177,21 +200,16 @@ class OfficialLetterSheet extends StatelessWidget {
     <div class="verification-box">
       <strong>VERIFIKASI DIGITAL KAMPUS</strong><br>
       Dokumen ini diterbitkan sah melalui Portal ILKOM UNAZLAM HUB.<br>
-      ID: ${letter.id}<br>
+      ID: $letterId<br>
       Status: Tercatat & Terverifikasi
     </div>
     <div class="signature-box">
       Pemohon,<br>
-      <div class="name">${letter.studentName}</div>
-      NIM. ${letter.studentNim}
+      <div class="name">$studentName</div>
+      NIM. $studentNim
     </div>
   </div>
 
-  <script>
-    window.onload = function() {
-      // Auto trigger print dialog if requested
-    };
-  </script>
 </body>
 </html>
 ''';
@@ -200,9 +218,15 @@ class OfficialLetterSheet extends StatelessWidget {
   void _shareViaWhatsApp(BuildContext context) async {
     final text = letter.fullContent;
     final url = 'https://wa.me/?text=${Uri.encodeComponent(text)}';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final opened = await safeLaunchUrl(url);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'WhatsApp tidak dapat dibuka. Gunakan tombol Salin Teks untuk mengirim surat secara manual.',
+          ),
+        ),
+      );
     }
   }
 
@@ -216,21 +240,44 @@ class OfficialLetterSheet extends StatelessWidget {
     );
   }
 
-  void _downloadOfficialHtml(BuildContext context) {
+  Future<void> _printOfficialDocument(BuildContext context) async {
     final html = _generatePrintableHtml();
-    final fileName = 'Surat_Izin_${letter.studentNim}_${letter.createdAt.millisecondsSinceEpoch}.html';
-    ExportService.downloadFile(fileName, html);
+    final opened = ExportService.printHtml(html);
+    FileExportResult? exportResult;
+    if (!opened) {
+      final fileName =
+          'Surat_Izin_${letter.studentNim}_${letter.createdAt.millisecondsSinceEpoch}.html';
+      exportResult = await ExportService.exportFile(fileName, html);
+      if (exportResult == FileExportResult.dismissed) return;
+      if (exportResult == FileExportResult.unavailable) {
+        await Clipboard.setData(ClipboardData(text: letter.fullContent));
+      }
+    }
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Dokumen cetak resmi "$fileName" berhasil diunduh! Buka di browser untuk cetak/simpan PDF.'),
-        backgroundColor: const Color(0xFF16A34A),
+        content: Text(
+          opened
+              ? 'Dokumen dibuka pada tab cetak. Pilih Cetak atau Simpan sebagai PDF.'
+              : switch (exportResult!) {
+                  FileExportResult.downloaded => 'File HTML surat berhasil diunduh. Buka file lalu pilih Cetak atau Simpan sebagai PDF.',
+                  FileExportResult.shared =>
+                    'Pilih aplikasi untuk menyimpan atau mencetak surat.',
+                  FileExportResult.dismissed => '',
+                  FileExportResult.unavailable => 'Ekspor surat tidak tersedia. Isi surat disalin ke clipboard.',
+                },
+        ),
+        backgroundColor: opened || exportResult != FileExportResult.unavailable
+            ? const Color(0xFF16A34A)
+            : const Color(0xFF2563EB),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final qrData = 'UNAZLAM-VERIFIED|ID:${letter.id}|NIM:${letter.studentNim}|TGL:${letter.letterDate}|MK:${letter.courseName}';
+    final qrData =
+        'UNAZLAM-VERIFIED|ID:${letter.id}|NIM:${letter.studentNim}|TGL:${letter.letterDate}|MK:${letter.courseName}';
 
     return Container(
       decoration: const BoxDecoration(
@@ -245,7 +292,10 @@ class OfficialLetterSheet extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFDCFCE7),
                     borderRadius: BorderRadius.circular(10),
@@ -254,7 +304,11 @@ class OfficialLetterSheet extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.verified_rounded, size: 14, color: Color(0xFF15803D)),
+                      Icon(
+                        Icons.verified_rounded,
+                        size: 14,
+                        color: Color(0xFF15803D),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Dokumen Resmi Terverifikasi',
@@ -270,7 +324,11 @@ class OfficialLetterSheet extends StatelessWidget {
                 const Spacer(),
                 if (onDelete != null)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 20,
+                    ),
                     tooltip: 'Hapus Surat',
                     onPressed: () {
                       Navigator.pop(context);
@@ -278,7 +336,11 @@ class OfficialLetterSheet extends StatelessWidget {
                     },
                   ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: Color(0xFF64748B),
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -294,7 +356,10 @@ class OfficialLetterSheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFFCBD5E1),
+                    width: 1.2,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.04),
@@ -303,7 +368,10 @@ class OfficialLetterSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 22,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -314,7 +382,8 @@ class OfficialLetterSheet extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                              color: const Color(0xFF1E40AF)
+                                  .withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -391,21 +460,35 @@ class OfficialLetterSheet extends StatelessWidget {
                           children: [
                             Text(
                               'Nomor  : $_letterNumber',
-                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF334155),
+                              ),
                             ),
                             const Text(
                               'Lamp.  : -',
-                              style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                             const Text(
                               'Perihal: Permohonan Izin Kuliah',
-                              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
                           ],
                         ),
                         Text(
                           'Cilacap, ${DateFormat('dd MMM yyyy', 'id_ID').format(letter.createdAt)}',
-                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: Color(0xFF475569),
+                          ),
                         ),
                       ],
                     ),
@@ -422,14 +505,28 @@ class OfficialLetterSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Kepada Yth.', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                          const Text(
+                            'Kepada Yth.',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                           Text(
                             'Bapak/Ibu Dosen: ${letter.dosenName}',
-                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
                           Text(
                             'Pengampu Mata Kuliah: ${letter.courseName}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E40AF)),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E40AF),
+                            ),
                           ),
                         ],
                       ),
@@ -439,22 +536,36 @@ class OfficialLetterSheet extends StatelessWidget {
                     // Body Paragraphs
                     const Text(
                       "Assalamu'alaikum Wr. Wb.\n\nDengan hormat, saya yang bertanda tangan di bawah ini:",
-                      style: TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.45,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     const SizedBox(height: 8),
 
                     // Student Details Table Box
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
                         children: [
-                          _buildDetailRow('Nama', letter.studentName, isBold: true),
+                          _buildDetailRow(
+                            'Nama',
+                            letter.studentName,
+                            isBold: true,
+                          ),
                           _buildDetailRow('NIM', letter.studentNim),
-                          _buildDetailRow('Program Studi', 'S1 Ilmu Komunikasi'),
+                          _buildDetailRow(
+                            'Program Studi',
+                            'S1 Ilmu Komunikasi',
+                          ),
                           _buildDetailRow('Kategori Izin', letter.letterType),
                           _buildDetailRow('Hari/Tanggal', letter.letterDate),
                         ],
@@ -464,17 +575,29 @@ class OfficialLetterSheet extends StatelessWidget {
 
                     Text(
                       'Bermaksud mengajukan permohonan izin untuk tidak mengikuti kegiatan perkuliahan tatap muka dikarenakan: "${letter.reason}".',
-                      style: const TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF1E293B)),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        height: 1.45,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Sebagai tindak lanjut, saya berkomitmen untuk tetap mempelajari materi perkuliahan secara mandiri dan mengumpulkan tugas yang diberikan pada sesi tersebut.',
-                      style: TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.45,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       "Demikian surat ini saya sampaikan dengan sebenar-benarnya. Atas perhatian dan izin yang diberikan, saya ucapkan terima kasih.\n\nWassalamu'alaikum Wr. Wb.",
-                      style: TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.45,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     const SizedBox(height: 20),
 
@@ -489,7 +612,10 @@ class OfficialLetterSheet extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
+                              border: Border.all(
+                                color: const Color(0xFFCBD5E1),
+                                style: BorderStyle.solid,
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -502,7 +628,8 @@ class OfficialLetterSheet extends StatelessWidget {
                                 const SizedBox(width: 8),
                                 const Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'TERVERIFIKASI',
@@ -515,11 +642,17 @@ class OfficialLetterSheet extends StatelessWidget {
                                       SizedBox(height: 2),
                                       Text(
                                         'Portal ILKOM UNAZLAM',
-                                        style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          color: Color(0xFF64748B),
+                                        ),
                                       ),
                                       Text(
                                         'Dokumen Digital Sah',
-                                        style: TextStyle(fontSize: 8, color: Color(0xFF64748B)),
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          color: Color(0xFF64748B),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -536,7 +669,10 @@ class OfficialLetterSheet extends StatelessWidget {
                           children: [
                             const Text(
                               'Pemohon,',
-                              style: TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF475569),
+                              ),
                             ),
                             const SizedBox(height: 38),
                             Text(
@@ -550,7 +686,10 @@ class OfficialLetterSheet extends StatelessWidget {
                             ),
                             Text(
                               'NIM. ${letter.studentNim}',
-                              style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                           ],
                         ),
@@ -581,7 +720,9 @@ class OfficialLetterSheet extends StatelessWidget {
                       foregroundColor: const Color(0xFF1E40AF),
                       side: const BorderSide(color: Color(0xFF1E40AF)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -590,14 +731,16 @@ class OfficialLetterSheet extends StatelessWidget {
                 // Download HTML / Print
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _downloadOfficialHtml(context),
+                    onPressed: () => _printOfficialDocument(context),
                     icon: const Icon(Icons.print_rounded, size: 16),
                     label: const Text('Cetak / PDF'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0F172A),
                       side: const BorderSide(color: Color(0xFF94A3B8)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -613,7 +756,9 @@ class OfficialLetterSheet extends StatelessWidget {
                       backgroundColor: const Color(0xFF25D366),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -638,7 +783,10 @@ class OfficialLetterSheet extends StatelessWidget {
               style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
             ),
           ),
-          const Text(': ', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+          const Text(
+            ': ',
+            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+          ),
           Expanded(
             child: Text(
               value,

@@ -24,6 +24,52 @@ class SupabaseRepository {
   }
 
   // ====================================================================
+  // KELOMPOK TUGAS (akses anggota ditegakkan oleh RPC dan RLS database)
+  // ====================================================================
+  static Future<List<Map<String, dynamic>>> getStudentGroups() async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final rows = await client.rpc('get_student_groups');
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> createStudentGroup({
+    required String name,
+    required String courseName,
+    required String assignmentTitle,
+    required String? driveUrl,
+    required List<String> memberNims,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    await client.rpc('create_student_group', params: {
+      'p_group_name': name,
+      'p_course_name': courseName,
+      'p_assignment_title': assignmentTitle,
+      'p_drive_url': driveUrl,
+      'p_member_nims': memberNims,
+    });
+  }
+
+  static Future<void> updateStudentGroupTasks({
+    required String groupId,
+    required List<Map<String, dynamic>> tasks,
+  }) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    await client.rpc('update_student_group_tasks', params: {
+      'p_group_id': groupId,
+      'p_tasks': tasks,
+    });
+  }
+
+  static Future<void> deleteStudentGroup(String groupId) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    await client.rpc('delete_student_group', params: {'p_group_id': groupId});
+  }
+
+  // ====================================================================
   // SUPABASE REALTIME SUBSCRIPTIONS
   // ====================================================================
 
@@ -411,6 +457,17 @@ class SupabaseRepository {
     }).toList();
   }
 
+  static Future<List<Course>> getCoursesWithOverridesStrict([DateTime? targetDate]) async {
+    final client = SupabaseService.client;
+    if (client == null) throw StateError('Supabase belum dikonfigurasi.');
+    final dt = targetDate ?? DateTime.now();
+    final courses = await getCoursesStrict();
+    final dateStr = "${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+    final rows = await client.from('course_schedule_overrides').select().eq('override_date', dateStr);
+    final overrides = (rows as List).map((row) => CourseScheduleOverride.fromMap(row as Map<String, dynamic>)).fold<Map<String, CourseScheduleOverride>>({}, (map, item) => map..[item.courseId] = item);
+    return courses.map((course) => course.copyWith(override: overrides[course.id])).toList();
+  }
+
   /// Menyimpan atau memperbarui penyesuaian jadwal (override) untuk suatu sesi mata kuliah
   static Future<bool> saveCourseOverride(CourseScheduleOverride override) async {
     final client = SupabaseService.client;
@@ -507,12 +564,15 @@ class SupabaseRepository {
   // ====================================================================
   // 2. PENGUMUMAN KELAS (ANNOUNCEMENTS)
   // ====================================================================
-  static Future<List<Announcement>> getAnnouncements({bool forceRefresh = false}) async {
-    if (!forceRefresh && _cachedAnnouncements != null && _cachedAnnouncements!.isNotEmpty) {
+  static Future<List<Announcement>> getAnnouncements({bool forceRefresh = false, bool strict = false}) async {
+    if (!strict && !forceRefresh && _cachedAnnouncements != null && _cachedAnnouncements!.isNotEmpty) {
       return List<Announcement>.from(_cachedAnnouncements!);
     }
     final client = SupabaseService.client;
-    if (client == null) return _cachedAnnouncements ?? [];
+    if (client == null) {
+      if (strict) throw StateError('Supabase belum dikonfigurasi.');
+      return _cachedAnnouncements ?? [];
+    }
 
     try {
       final response = await client
@@ -543,6 +603,7 @@ class SupabaseRepository {
       return list;
     } catch (e) {
       debugPrint('Error fetch announcements dari Supabase: $e');
+      if (strict) rethrow;
       return _cachedAnnouncements ?? [];
     }
   }

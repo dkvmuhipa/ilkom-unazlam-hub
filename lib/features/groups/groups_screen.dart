@@ -30,8 +30,8 @@ class EnhancedGroupItem {
     required this.members,
     List<GroupTaskProgress>? tasks,
   }) : tasks = tasks ?? [
-          GroupTaskProgress(title: 'Riset Topik & Studi Literatur', isCompleted: true),
-          GroupTaskProgress(title: 'Penyusunan Makalah / Laporan', isCompleted: true),
+          GroupTaskProgress(title: 'Riset Topik & Studi Literatur'),
+          GroupTaskProgress(title: 'Penyusunan Makalah / Laporan'),
           GroupTaskProgress(title: 'Pembuatan Slide Presentasi', isCompleted: false),
           GroupTaskProgress(title: 'Review Akhir & Pengumpulan', isCompleted: false),
         ];
@@ -44,20 +44,21 @@ class EnhancedGroupItem {
 
 class GroupsScreen extends StatefulWidget {
   final bool canManage;
+  final String userClass;
   final VoidCallback? onBack;
 
-  const GroupsScreen({super.key, this.canManage = true, this.onBack});
+  const GroupsScreen({super.key, required this.userClass, this.canManage = false, this.onBack});
 
   @override
   State<GroupsScreen> createState() => _GroupsScreenState();
 }
 
 class _GroupsScreenState extends State<GroupsScreen> {
-  static List<EnhancedGroupItem>? _persistentGroups;
   List<EnhancedGroupItem> _groups = [];
   List<Course> _courses = [];
   List<StudentProfile> _students = [];
   bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -69,20 +70,43 @@ class _GroupsScreenState extends State<GroupsScreen> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        SupabaseRepository.getClassDirectory(),
+        SupabaseRepository.getStudentGroups(),
         SupabaseRepository.getCourses(),
+        if (widget.canManage) SupabaseRepository.getClassDirectory(),
       ]);
       if (!mounted) return;
-      final stds = (results[0] as List<StudentProfile>).where((s) => s.role != 'ADMIN').toList();
+      final groups = (results[0] as List<Map<String, dynamic>>).map((row) {
+        final memberRows = (row['members'] as List? ?? const []).cast<Map>();
+        final taskRows = (row['tasks'] as List? ?? const []).cast<Map>();
+        return EnhancedGroupItem(
+          id: row['id'].toString(),
+          namaKelompok: row['group_name']?.toString() ?? 'Kelompok',
+          courseName: row['course_name']?.toString() ?? '',
+          assignmentTitle: row['assignment_title']?.toString() ?? '',
+          linkGDrive: row['drive_url']?.toString(),
+          members: memberRows.map((m) => StudentProfile(id: m['nim']?.toString() ?? '', nim: m['nim']?.toString() ?? '', nama: m['nama']?.toString() ?? m['nim']?.toString() ?? 'Mahasiswa', email: '', noWa: '')).toList(),
+          tasks: taskRows.map((t) => GroupTaskProgress(title: t['title']?.toString() ?? '', isCompleted: t['is_completed'] == true)).toList(),
+        );
+      }).toList();
       final crs = results[1] as List<Course>;
+      final stds = widget.canManage
+          ? (results[2] as List<StudentProfile>).where((s) => s.role != 'ADMIN' && s.kelas == widget.userClass).toList()
+          : <StudentProfile>[];
       setState(() {
         _students = stds;
         _courses = crs;
-        _groups = _persistentGroups ?? [];
+        _groups = groups;
         _isLoading = false;
+        _loadError = null;
       });
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadError = 'Data kelompok belum tersedia. Pastikan migrasi Supabase kelompok sudah diterapkan.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kelompok belum dapat dimuat: $e')));
+      }
     }
   }
 
@@ -109,7 +133,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 420,
+              width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 420.0).toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,14 +178,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final title = const Text(
                         'Pilih Anggota (${4} Rekomendasi):',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
-                      ),
-                      TextButton(
+                      );
+                      final shuffleButton = TextButton(
                         onPressed: () {
                           final shuffled = List<StudentProfile>.from(nonAdminStudents)..shuffle();
                           setDialogState(() {
@@ -169,8 +192,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           });
                         },
                         child: const Text('Acak Anggota', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
-                      ),
-                    ],
+                      );
+                      if (constraints.maxWidth < 340) {
+                        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, Align(alignment: Alignment.centerRight, child: shuffleButton)]);
+                      }
+                      return Row(children: [Expanded(child: title), shuffleButton]);
+                    },
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -214,35 +241,31 @@ class _GroupsScreenState extends State<GroupsScreen> {
               child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameController.text.trim();
                 final assignment = assignmentController.text.trim();
                 final driveLink = linkController.text.trim();
                 if (name.isEmpty || assignment.isEmpty) return;
-
-                setState(() {
-                  _groups.insert(
-                    0,
-                    EnhancedGroupItem(
-                      id: 'grp_${DateTime.now().millisecondsSinceEpoch}',
-                      namaKelompok: name,
-                      courseName: selectedCourse,
-                      assignmentTitle: assignment,
-                      linkGDrive: driveLink.isNotEmpty ? driveLink : 'https://drive.google.com',
-                      members: selectedMembers.isNotEmpty
-                          ? List.from(selectedMembers)
-                          : nonAdminStudents.take(4).toList(),
-                    ),
+                if (selectedMembers.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih minimal satu anggota.')));
+                  return;
+                }
+                try {
+                  await SupabaseRepository.createStudentGroup(
+                    name: name,
+                    courseName: selectedCourse,
+                    assignmentTitle: assignment,
+                    driveUrl: driveLink.isEmpty ? null : driveLink,
+                    memberNims: selectedMembers.map((s) => s.nim).toSet().toList(),
                   );
-                });
-
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Kelompok tugas baru berhasil dibentuk! 👥'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  await _loadData();
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kelompok berhasil dibentuk.'), backgroundColor: Color(0xFF10B981)));
+                } catch (e) {
+                  if (ctx.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal membentuk kelompok: $e')));
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
@@ -280,45 +303,48 @@ class _GroupsScreenState extends State<GroupsScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          if (widget.canManage)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: TextButton.icon(
-                onPressed: _showCreateGroupDialog,
-                icon: const Icon(Icons.group_add_rounded, size: 18, color: Color(0xFF1E40AF)),
-                label: const Text('Tambah Tim', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-        ],
       ),
-      floatingActionButton: widget.canManage
-          ? FloatingActionButton.extended(
-              onPressed: _showCreateGroupDialog,
-              backgroundColor: const Color(0xFF1E40AF),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.group_add_rounded),
-              label: const Text('Tambah Kelompok', style: TextStyle(fontWeight: FontWeight.w700)),
-            )
-          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _loadError != null
+              ? EmptyStateWidget(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'Kelompok Belum Dapat Dimuat',
+                  subtitle: _loadError!,
+                  actionLabel: 'Coba Lagi',
+                  onAction: _loadData,
+                )
           : _groups.isEmpty
               ? EmptyStateWidget(
                   icon: Icons.groups_rounded,
-                  title: 'Belum Ada Kelompok Tugas',
-                  subtitle: 'Kelompok tugas dan tim proyek kelas yang dibentuk akan tampil di sini.',
+                  title: widget.canManage ? 'Belum Ada Kelompok Tugas' : 'Anda Belum Tergabung',
+                  subtitle: widget.canManage
+                      ? 'Bentuk kelompok tugas agar anggota dapat melihat progresnya.'
+                      : 'Kelompok akan tampil setelah pengurus mendaftarkan NIM Anda sebagai anggota.',
                   actionLabel: widget.canManage ? 'Tambah Kelompok' : null,
                   onAction: widget.canManage ? _showCreateGroupDialog : null,
                 )
               : ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        itemCount: _groups.length,
+                  itemCount: _groups.length + (widget.canManage ? 1 : 0),
         itemBuilder: (context, i) {
+          if (i == _groups.length) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 24),
+              child: Center(
+                child: FilledButton.icon(
+                  onPressed: _showCreateGroupDialog,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Tambah Kelompok'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E40AF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+              ),
+            );
+          }
           final group = _groups[i];
           final doneTasks = group.tasks.where((t) => t.isCompleted).length;
           final totalTasks = group.tasks.length;
@@ -374,13 +400,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFF9CA3AF)),
                         tooltip: 'Hapus Kelompok',
-                        onPressed: () {
-                          setState(() {
-                            _groups.removeWhere((g) => g.id == group.id);
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Kelompok telah dihapus.'), duration: Duration(seconds: 1)),
-                          );
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            await SupabaseRepository.deleteStudentGroup(group.id);
+                            if (!mounted) return;
+                            setState(() => _groups.removeWhere((g) => g.id == group.id));
+                            messenger.showSnackBar(const SnackBar(content: Text('Kelompok telah dihapus.'), duration: Duration(seconds: 1)));
+                          } catch (e) {
+                            if (mounted) messenger.showSnackBar(SnackBar(content: Text('Gagal menghapus kelompok: $e')));
+                          }
                         },
                       ),
                   ],
@@ -434,14 +463,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
                                 ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     final t = taskController.text.trim();
                                     if (t.isNotEmpty) {
-                                      setState(() {
-                                        group.tasks.add(GroupTaskProgress(title: t, isCompleted: false));
-                                      });
+                                      group.tasks.add(GroupTaskProgress(title: t, isCompleted: false));
+                                      await _persistTasks(group);
                                     }
-                                    Navigator.pop(ctx);
+                                    if (ctx.mounted) Navigator.pop(ctx);
                                   },
                                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E40AF), foregroundColor: Colors.white),
                                   child: const Text('Tambah'),
@@ -460,10 +488,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 const SizedBox(height: 6),
                 for (var task in group.tasks) ...[
                   InkWell(
-                    onTap: () {
-                      setState(() {
-                        task.isCompleted = !task.isCompleted;
-                      });
+                    onTap: () async {
+                      setState(() => task.isCompleted = !task.isCompleted);
+                      await _persistTasks(group);
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
@@ -545,5 +572,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _persistTasks(EnhancedGroupItem group) async {
+    try {
+      await SupabaseRepository.updateStudentGroupTasks(
+        groupId: group.id,
+        tasks: group.tasks.map((t) => {'title': t.title, 'is_completed': t.isCompleted}).toList(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan checklist: $e')));
+      await _loadData();
+    }
   }
 }

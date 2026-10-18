@@ -74,8 +74,8 @@ class StudentDashboardService {
         try {
           return await client.from('assignments').select().order('deadline');
         } catch (e) {
-          debugPrint('Info: Gagal memuat assignments ($e), fallback kosong.');
-          return <Map<String, dynamic>>[];
+          debugPrint('Gagal memuat assignments ($e).');
+          rethrow;
         }
       }(),
       () async {
@@ -85,8 +85,8 @@ class StudentDashboardService {
               .select('assignment_id,status')
               .eq('student_nim', studentNim);
         } catch (e) {
-          debugPrint('Info: Gagal memuat student_assignments ($e), fallback kosong.');
-          return <Map<String, dynamic>>[];
+          debugPrint('Gagal memuat student_assignments ($e).');
+          rethrow;
         }
       }(),
       () async {

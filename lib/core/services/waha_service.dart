@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../models/models.dart';
 
 /// Status sesi WAHA (WhatsApp HTTP API)
 enum WahaStatus {
-  working,       // Sesi aktif & terhubung ke WhatsApp
-  scanQrCode,    // Perlu scan QR code
-  starting,      // Sedang proses booting/menghubungkan
-  stopped,       // Sesi dimatikan
-  failed,        // Terjadi kegagalan engine
-  offline,       // Server WAHA tidak merespons (server mati / URL salah)
+  working, // Sesi aktif & terhubung ke WhatsApp
+  scanQrCode, // Perlu scan QR code
+  starting, // Sedang proses booting/menghubungkan
+  stopped, // Sesi dimatikan
+  failed, // Terjadi kegagalan engine
+  offline, // Server WAHA tidak merespons (server mati / URL salah)
 }
 
 /// Model data sesi WAHA
@@ -38,11 +40,11 @@ class WahaSessionInfo {
   bool get isOffline => status == WahaStatus.offline;
 
   factory WahaSessionInfo.offline([String? error]) => WahaSessionInfo(
-        name: 'default',
-        status: WahaStatus.offline,
-        statusRaw: 'OFFLINE',
-        errorMessage: error ?? 'Server WAHA tidak dapat dihubungi.',
-      );
+    name: 'default',
+    status: WahaStatus.offline,
+    statusRaw: 'OFFLINE',
+    errorMessage: error ?? 'Server WAHA tidak dapat dihubungi.',
+  );
 
   factory WahaSessionInfo.fromJson(Map<String, dynamic> json) {
     final rawStatus = (json['status'] ?? json['engine']?['state'] ?? 'STOPPED')
@@ -129,7 +131,10 @@ class AutoReminderConfig {
     this.pendingCount = 0,
   });
 
-  factory AutoReminderConfig.fromJson(Map<String, dynamic> json, [int pending = 0]) {
+  factory AutoReminderConfig.fromJson(
+    Map<String, dynamic> json, [
+    int pending = 0,
+  ]) {
     return AutoReminderConfig(
       enabled: json['enabled'] ?? true,
       komtiPhone: json['komtiPhone']?.toString() ?? '',
@@ -143,14 +148,14 @@ class AutoReminderConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        'komtiPhone': komtiPhone,
-        'komtiName': komtiName,
-        'delayMinutes': delayMinutes,
-        'hMinusOneHour': hMinusOneHour,
-        'todayHour': todayHour,
-        'autoSendIfNoReply': autoSendIfNoReply,
-      };
+    'enabled': enabled,
+    'komtiPhone': komtiPhone,
+    'komtiName': komtiName,
+    'delayMinutes': delayMinutes,
+    'hMinusOneHour': hMinusOneHour,
+    'todayHour': todayHour,
+    'autoSendIfNoReply': autoSendIfNoReply,
+  };
 }
 
 /// Layanan integrasi WAHA (WhatsApp HTTP API - devlikeapro/waha)
@@ -209,7 +214,10 @@ class WahaService {
     }
     await prefs.setString(_prefBaseUrlKey, cleanUrl);
     await prefs.setString(_prefApiKeyKey, (apiKey ?? '').trim());
-    await prefs.setString(_prefSessionNameKey, (sessionName ?? defaultSession).trim());
+    await prefs.setString(
+      _prefSessionNameKey,
+      (sessionName ?? defaultSession).trim(),
+    );
     if (defaultGroupId != null) {
       await prefs.setString(_prefDefaultGroupKey, defaultGroupId.trim());
     }
@@ -233,7 +241,7 @@ class WahaService {
     } else if (clean.startsWith('62')) {
       // Sudah format 62
     }
-    return '$clean@c.us';
+    return clean.isEmpty ? '' : '$clean@c.us';
   }
 
   /// Header HTTP request standar untuk WAHA
@@ -257,9 +265,9 @@ class WahaService {
       final headers = await _getHeaders();
 
       final uri = Uri.parse('$baseUrl/api/sessions/$session');
-      final response = await http.get(uri, headers: headers).timeout(
-        const Duration(seconds: 6),
-      );
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 6));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -295,9 +303,9 @@ class WahaService {
 
       // Coba endpoint /api/sessions/start atau /api/sessions
       final startUri = Uri.parse('$baseUrl/api/sessions/$session/start');
-      var response = await http.post(startUri, headers: headers).timeout(
-        const Duration(seconds: 10),
-      );
+      var response = await http
+          .post(startUri, headers: headers)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
@@ -306,7 +314,11 @@ class WahaService {
       // Fallback endpoint POST /api/sessions
       final createUri = Uri.parse('$baseUrl/api/sessions');
       response = await http
-          .post(createUri, headers: headers, body: jsonEncode({'name': session}))
+          .post(
+            createUri,
+            headers: headers,
+            body: jsonEncode({'name': session}),
+          )
           .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -324,9 +336,9 @@ class WahaService {
       final headers = await _getHeaders();
 
       final uri = Uri.parse('$baseUrl/api/sessions/$session/stop');
-      final response = await http.post(uri, headers: headers).timeout(
-        const Duration(seconds: 10),
-      );
+      final response = await http
+          .post(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error stopping WAHA session: $e');
@@ -342,9 +354,9 @@ class WahaService {
       final headers = await _getHeaders();
 
       final uri = Uri.parse('$baseUrl/api/sessions/$session/logout');
-      final response = await http.post(uri, headers: headers).timeout(
-        const Duration(seconds: 10),
-      );
+      final response = await http
+          .post(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error logging out WAHA session: $e');
@@ -363,9 +375,9 @@ class WahaService {
       if (apiKey.isNotEmpty) headers['X-Api-Key'] = apiKey;
 
       final uri = Uri.parse('$baseUrl/api/$session/auth/qr');
-      final response = await http.get(uri, headers: headers).timeout(
-        const Duration(seconds: 8),
-      );
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return response.bodyBytes;
@@ -387,6 +399,12 @@ class WahaService {
       final session = await getSessionName();
       final headers = await _getHeaders();
       final chatId = formatToChatId(recipient);
+      if (chatId.isEmpty) {
+        return const WahaSendResult(
+          success: false,
+          errorMessage: 'Nomor atau ID tujuan WhatsApp tidak valid.',
+        );
+      }
 
       final uri = Uri.parse('$baseUrl/api/sendText');
       final body = jsonEncode({
@@ -400,13 +418,16 @@ class WahaService {
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+        final data = response.body.trim().isEmpty
+            ? null
+            : jsonDecode(response.body);
         final id = data is Map ? data['id']?.toString() : null;
         return WahaSendResult(success: true, messageId: id);
       } else {
         return WahaSendResult(
           success: false,
-          errorMessage: 'Server WAHA merespons HTTP ${response.statusCode}: ${response.body}',
+          errorMessage:
+              'Server WAHA merespons HTTP ${response.statusCode}: ${response.body}',
         );
       }
     } catch (e) {
@@ -506,7 +527,9 @@ _Bendahara Kelas ILKOM UNAZLAM_''';
       final baseUrl = await getBaseUrl();
       final headers = await _getHeaders();
       final uri = Uri.parse('$baseUrl/api/auto-reminder/config');
-      final res = await http.get(uri, headers: headers).timeout(const Duration(seconds: 6));
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         final cfg = data['config'] as Map<String, dynamic>? ?? {};
@@ -532,11 +555,7 @@ _Bendahara Kelas ILKOM UNAZLAM_''';
       final headers = await _getHeaders();
       final uri = Uri.parse('$baseUrl/api/auto-reminder/config');
       final res = await http
-          .post(
-            uri,
-            headers: headers,
-            body: jsonEncode(config.toJson()),
-          )
+          .post(uri, headers: headers, body: jsonEncode(config.toJson()))
           .timeout(const Duration(seconds: 8));
       return res.statusCode == 200;
     } catch (_) {
@@ -558,29 +577,27 @@ _Bendahara Kelas ILKOM UNAZLAM_''';
         'komtiPhone': komtiPhone,
         'komtiName': komtiName ?? 'Ketua Kelas ILKOM',
         'courses': courses
-            .map((c) => {
-                  'id': c.id,
-                  'kode': c.kode,
-                  'nama': c.nama,
-                  'dosen': c.dosen,
-                  'dosenWa': c.dosenWa,
-                  'hari': c.hari,
-                  'jamMulai': c.effectiveJamMulai,
-                  'jamSelesai': c.effectiveJamSelesai,
-                  'ruangan': c.effectiveRuangan,
-                  'linkVirtual': c.effectiveLinkVirtual,
-                  'sks': c.sks,
-                  'isCancelledToday': c.isCancelledToday,
-                  'isRescheduled': c.isRescheduled,
-                })
+            .map(
+              (c) => {
+                'id': c.id,
+                'kode': c.kode,
+                'nama': c.nama,
+                'dosen': c.dosen,
+                'dosenWa': c.dosenWa,
+                'hari': c.hari,
+                'jamMulai': c.effectiveJamMulai,
+                'jamSelesai': c.effectiveJamSelesai,
+                'ruangan': c.effectiveRuangan,
+                'linkVirtual': c.effectiveLinkVirtual,
+                'sks': c.sks,
+                'isCancelledToday': c.isCancelledToday,
+                'isRescheduled': c.isRescheduled,
+              },
+            )
             .toList(),
       };
       final res = await http
-          .post(
-            uri,
-            headers: headers,
-            body: jsonEncode(payload),
-          )
+          .post(uri, headers: headers, body: jsonEncode(payload))
           .timeout(const Duration(seconds: 8));
       return res.statusCode == 200;
     } catch (_) {
@@ -594,12 +611,17 @@ _Bendahara Kelas ILKOM UNAZLAM_''';
       final baseUrl = await getBaseUrl();
       final headers = await _getHeaders();
       final uri = Uri.parse('$baseUrl/api/auto-reminder/trigger-test');
-      final res = await http.post(uri, headers: headers).timeout(const Duration(seconds: 10));
+      final res = await http
+          .post(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
         return jsonDecode(res.body) as Map<String, dynamic>;
       } else {
         final err = jsonDecode(res.body);
-        return {'success': false, 'error': err['error'] ?? 'Gagal memicu simulasi'};
+        return {
+          'success': false,
+          'error': err['error'] ?? 'Gagal memicu simulasi',
+        };
       }
     } catch (e) {
       return {'success': false, 'error': 'Gagal menghubungi gateway: $e'};

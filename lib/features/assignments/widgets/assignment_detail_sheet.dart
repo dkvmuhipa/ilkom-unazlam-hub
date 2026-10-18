@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -403,7 +402,9 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       builder: (dialogContext) => AlertDialog(
         title: Text('Nilai pengumpulan · $studentNim'),
         content: SizedBox(
-          width: 380,
+          width: (MediaQuery.sizeOf(context).width - 96)
+              .clamp(0.0, 380.0)
+              .toDouble(),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -530,13 +531,15 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 360,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 360.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Pilih berkas tugas atau tempel tautan Drive yang dapat dibuka dosen. Batas berkas 20 MB.',
+                    'Unggah satu berkas maksimal 20 MB atau masukkan tautan yang dapat dibuka dosen. Format: PDF, Word, PowerPoint, Excel, ZIP, PNG, dan JPG.',
                     style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
                   ),
                   const SizedBox(height: 12),
@@ -547,21 +550,11 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                             try {
                               final file = await pickAssignmentFile();
                               if (file == null) {
-                                if (!kIsWeb && ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Unggah berkas langsung didukung melalui Web. Di aplikasi mobile/desktop, cantumkan tautan Google Drive / Cloud di bawah.',
-                                      ),
-                                      backgroundColor: Color(0xFF0284C7),
-                                      duration: Duration(seconds: 4),
-                                    ),
-                                  );
-                                }
                                 return;
                               }
                               if (!ctx.mounted) return;
-                              if (file.bytes.lengthInBytes > 20 * 1024 * 1024) {
+                              if (file.bytes.lengthInBytes >
+                                  maxAssignmentFileBytes) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
                                   const SnackBar(
                                     content: Text(
@@ -576,9 +569,11 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                               debugPrint('Gagal memilih berkas tugas: $error');
                               if (ctx.mounted) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      'Berkas tidak dapat dibaca. Coba pilih berkas lain.',
+                                      error is AssignmentFileTooLarge
+                                          ? 'Ukuran berkas maksimal 20 MB. Pilih berkas yang lebih kecil.'
+                                          : 'Berkas tidak dapat dibaca. Coba pilih berkas lain.',
                                     ),
                                   ),
                                 );
@@ -682,7 +677,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'Tautan tugas berhasil dikirim. Menunggu penilaian.',
+                              'Tugas berhasil dikirim. Menunggu penilaian.',
                             ),
                             backgroundColor: Color(0xFF10B981),
                           ),
@@ -736,7 +731,9 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -762,17 +759,17 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                             ),
                           ]
                         : _availableCourses
-                            .map(
-                              (c) => DropdownMenuItem(
-                                value: c.nama,
-                                child: Text(
-                                  c.nama,
-                                  style: const TextStyle(fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c.nama,
+                                  child: Text(
+                                    c.nama,
+                                    style: const TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                            )
-                            .toList(),
+                              )
+                              .toList(),
                     onChanged: (val) {
                       if (val != null) {
                         setDialogState(() => selectedCourse = val);
@@ -902,9 +899,13 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
 
                       setDialogState(() => isSubmitting = true);
 
-                      final course = _availableCourses.where(
-                        (c) => c.nama.trim().toLowerCase() == selectedCourse.trim().toLowerCase(),
-                      ).firstOrNull;
+                      final course = _availableCourses
+                          .where(
+                            (c) =>
+                                c.nama.trim().toLowerCase() ==
+                                selectedCourse.trim().toLowerCase(),
+                          )
+                          .firstOrNull;
 
                       String resolvedCourseId = course?.id ?? a.courseId;
 
@@ -924,11 +925,14 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         a.kategori = kategori;
                         a.deadline = selectedDeadline;
                         a.deskripsi = descController.text.trim();
-                        a.linkPengumpulan = linkController.text.trim().isNotEmpty
+                        a.linkPengumpulan =
+                            linkController.text.trim().isNotEmpty
                             ? linkController.text.trim()
                             : null;
                       });
-                      final saved = await SupabaseRepository.updateAssignment(a);
+                      final saved = await SupabaseRepository.updateAssignment(
+                        a,
+                      );
                       if (!saved) {
                         setState(() {
                           a.judul = oldValues.$1;
@@ -994,10 +998,16 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
-              Icon(Icons.delete_forever_rounded, color: Color(0xFFEF4444), size: 22),
+              Icon(
+                Icons.delete_forever_rounded,
+                color: Color(0xFFEF4444),
+                size: 22,
+              ),
               SizedBox(width: 8),
               Text(
                 'Hapus Tugas?',
@@ -1086,7 +1096,15 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
     Color countdownColor;
     Color countdownBg;
 
-    if (_currentStatus == 'selesai') {
+    if (_grade != null || _currentStatus == 'dinilai') {
+      countdownText = 'Sudah dinilai';
+      countdownColor = const Color(0xFF16A34A);
+      countdownBg = const Color(0xFFDCFCE7);
+    } else if (_submissionUrl.isNotEmpty || _currentStatus == 'dikumpulkan') {
+      countdownText = 'Sudah dikumpulkan';
+      countdownColor = const Color(0xFF1E40AF);
+      countdownBg = const Color(0xFFEFF6FF);
+    } else if (_currentStatus == 'selesai') {
       countdownText = 'Tugas Selesai';
       countdownColor = const Color(0xFF16A34A);
       countdownBg = const Color(0xFFDCFCE7);
@@ -1095,7 +1113,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       countdownColor = const Color(0xFFDC2626);
       countdownBg = const Color(0xFFFEE2E2);
     } else if (daysRemaining == 0) {
-      countdownText = 'Berakhir Hari Ini';
+      countdownText = 'Kurang dari 24 jam';
       countdownColor = const Color(0xFFD97706);
       countdownBg = const Color(0xFFFEF3C7);
     } else {
@@ -1131,22 +1149,30 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
           // Header Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: courseColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                alignment: WrapAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: courseColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * .52,
                       ),
                       child: Text(
                         a.courseName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1154,18 +1180,24 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(10),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * .28,
                       ),
                       child: Text(
                         a.kategori,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
@@ -1173,41 +1205,37 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    if (widget.canManage)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          color: Color(0xFF1E40AF),
-                          size: 20,
-                        ),
-                        tooltip: 'Edit Tugas',
-                        onPressed: _showEditDialog,
-                      ),
-                    if (widget.canManage)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
-                        tooltip: 'Hapus Tugas',
-                        onPressed: _confirmDelete,
-                      ),
+                  ),
+                  if (widget.canManage)
                     IconButton(
                       icon: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF9CA3AF),
-                        size: 22,
+                        Icons.edit_outlined,
+                        color: Color(0xFF1E40AF),
+                        size: 20,
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      tooltip: 'Edit Tugas',
+                      onPressed: _showEditDialog,
                     ),
-                  ],
-                ),
-              ],
+                  if (widget.canManage)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 20,
+                      ),
+                      tooltip: 'Hapus Tugas',
+                      onPressed: _confirmDelete,
+                    ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Color(0xFF9CA3AF),
+                      size: 22,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
           ),
           const Divider(height: 1, color: Color(0xFFF3F4F6)),
@@ -1231,67 +1259,66 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Deadline Card with Countdown Badge
+                  _buildDetailFact('Mata kuliah', a.courseName),
+                  _buildDetailFact('Jenis tugas', a.kategori),
+                  _buildDetailFact(
+                    'Status pengumpulan',
+                    _grade != null
+                        ? 'Sudah dinilai'
+                        : _submissionUrl.isNotEmpty
+                        ? 'Terkirim · menunggu penilaian'
+                        : 'Belum dikumpulkan',
+                  ),
+                  const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
+                      color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: const Icon(
-                            Icons.alarm_rounded,
-                            color: Color(0xFF1E40AF),
-                            size: 22,
+                        const Text(
+                          'Tenggat pengumpulan',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Batas Waktu Pengumpulan',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF9CA3AF),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${a.deadline.day} ${_monthName(a.deadline.month)} ${a.deadline.year}, ${a.deadline.hour.toString().padLeft(2, '0')}:${a.deadline.minute.toString().padLeft(2, '0')} WITA',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1F2937),
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        Text(
+                          '${a.deadline.toLocal().day} ${_monthName(a.deadline.toLocal().month)} ${a.deadline.toLocal().year}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Pukul ${a.deadline.toLocal().hour.toString().padLeft(2, '0')}:${a.deadline.toLocal().minute.toString().padLeft(2, '0')} · waktu perangkat',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
-                            vertical: 5,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
                             color: countdownBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             countdownText,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: countdownColor,
                             ),
@@ -1301,7 +1328,6 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   // Status Selector
                   if (!widget.canManage &&
                       _currentStatus != 'dikumpulkan' &&
@@ -1347,12 +1373,14 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                         color: Color(0xFF1E40AF),
                       ),
                       SizedBox(width: 8),
-                      Text(
-                        'Petunjuk & Instruksi Tugas',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF111827),
+                      Expanded(
+                        child: Text(
+                          'Petunjuk & Instruksi Tugas',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
                         ),
                       ),
                     ],
@@ -1367,7 +1395,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       border: Border.all(color: const Color(0xFFE0E7FF)),
                     ),
                     child: Text(
-                      a.deskripsi.isNotEmpty ? a.deskripsi : 'Belum ada catatan khusus dari dosen untuk tugas ini. Pastikan mengikuti pedoman umum penulisan akademik.',
+                      a.deskripsi.isNotEmpty ? a.deskripsi : 'Instruksi tugas belum ditambahkan. Hubungi dosen atau pengurus kelas untuk memastikan format dan ketentuan pengumpulan.',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF374151),
@@ -1388,12 +1416,14 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                           color: Color(0xFF0284C7),
                         ),
                         SizedBox(width: 8),
-                        Text(
-                          'Tautan Pengumpulan Tugas',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
+                        Expanded(
+                          child: Text(
+                            'Tautan Pengumpulan Tugas',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                            ),
                           ),
                         ),
                       ],
@@ -1425,8 +1455,9 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Google Classroom / Drive',
+                                Text(
+                                  Uri.tryParse(a.linkPengumpulan!)?.host ??
+                                      'Tautan pengumpulan',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
@@ -1543,8 +1574,11 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                     ),
                     const SizedBox(height: 22),
                   ],
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Row(
                         children: [
@@ -1554,12 +1588,14 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                             color: Color(0xFF1E40AF),
                           ),
                           SizedBox(width: 8),
-                          Text(
-                            'Pengumpulan Tugas Saya',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF111827),
+                          Expanded(
+                            child: Text(
+                              'Pengumpulan Tugas Saya',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF111827),
+                              ),
                             ),
                           ),
                         ],
@@ -1605,7 +1641,10 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Icon(
                                 Icons.check_circle_rounded,
@@ -1621,7 +1660,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                   color: Color(0xFF065F46),
                                 ),
                               ),
-                              const Spacer(),
+
                               if (_submittedAt.isNotEmpty)
                                 Text(
                                   _submittedAt,
@@ -1684,52 +1723,29 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                   ] else ...[
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
+                        color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: Row(
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.info_outline_rounded,
-                            size: 16,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Anda belum mengunggah link/berkas tugas ini.',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: Color(0xFF6B7280),
-                              ),
+                          Text(
+                            'Belum ada pengumpulan',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: _showSubmitFormDialog,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E40AF),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Kirim',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Pilih Kirim Tugas untuk mengunggah berkas atau memasukkan tautan. Maksimal 20 MB per berkas. Pastikan tautan dapat dibuka oleh dosen.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.5,
+                              color: Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -1749,7 +1765,10 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Icon(
                                 Icons.grade_rounded,
@@ -1764,7 +1783,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                   color: Color(0xFF1E3A8A),
                                 ),
                               ),
-                              const Spacer(),
+
                               if (_gradedAt.isNotEmpty)
                                 Text(
                                   _gradedAt,
@@ -1802,6 +1821,26 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailFact(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value.trim().isEmpty ? 'Belum tersedia' : value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),

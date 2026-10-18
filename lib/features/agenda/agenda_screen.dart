@@ -240,7 +240,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +440,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

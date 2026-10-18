@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/services/safe_launcher.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 
@@ -60,18 +60,26 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         ? '62${cleanPhone.substring(1)}'
         : cleanPhone;
     final message = Uri.encodeComponent(
-      'Halo $name, saya teman sekelas dari S1 Ilmu Komputer UNAZLAM...',
+      'Halo $name, saya ingin menghubungi Anda melalui Portal ILKOM UNAZLAM.',
     );
     final url = 'https://wa.me/$internationalPhone?text=$message';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final opened = await safeLaunchUrl(url);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            opened ? 'Draft percakapan dibuka di WhatsApp.' : 'WhatsApp tidak dapat dibuka. Periksa aplikasi atau browser Anda.',
+          ),
+        ),
+      );
     }
   }
 
   bool _isOfficer(String jabatan) {
     final j = jabatan.toLowerCase();
-    return j.contains('ketua') || j.contains('bendahara') || j.contains('sekretaris');
+    return j.contains('ketua') ||
+        j.contains('bendahara') ||
+        j.contains('sekretaris');
   }
 
   Color _getAvatarBg(int index, String jabatan) {
@@ -122,7 +130,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     final nonAdminStudents = _students.where((s) => s.role != 'ADMIN').toList();
 
     final filtered = nonAdminStudents.where((s) {
-      final matchesSearch = s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           s.nim.contains(_searchQuery);
       if (!matchesSearch) return false;
 
@@ -134,7 +143,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       return true;
     }).toList();
 
-    final officerCount = nonAdminStudents.where((s) => _isOfficer(s.jabatan)).length;
+    final officerCount = nonAdminStudents
+        .where((s) => _isOfficer(s.jabatan))
+        .length;
     final regularCount = nonAdminStudents.length - officerCount;
 
     return Scaffold(
@@ -145,7 +156,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         scrolledUnderElevation: 0,
         leading: widget.onBack != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF1E293B),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
@@ -170,7 +184,11 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.people_alt_rounded, size: 14, color: Color(0xFF5B3DE8)),
+                const Icon(
+                  Icons.people_alt_rounded,
+                  size: 14,
+                  color: Color(0xFF5B3DE8),
+                ),
                 const SizedBox(width: 5),
                 Text(
                   '${nonAdminStudents.length} Mahasiswa',
@@ -203,10 +221,16 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   ),
                   child: TextField(
                     onChanged: (v) => setState(() => _searchQuery = v),
-                    style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: Color(0xFF0F172A),
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Cari nama atau NIM mahasiswa...',
-                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      hintStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF94A3B8),
+                      ),
                       prefixIcon: const Icon(
                         Icons.search_rounded,
                         size: 20,
@@ -214,8 +238,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
-                              onPressed: () => setState(() => _searchQuery = ''),
+                              icon: const Icon(
+                                Icons.clear_rounded,
+                                size: 18,
+                                color: Color(0xFF64748B),
+                              ),
+                              onPressed: () =>
+                                  setState(() => _searchQuery = ''),
                             )
                           : null,
                       border: InputBorder.none,
@@ -249,165 +278,194 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                     child: CircularProgressIndicator(color: Color(0xFF5B3DE8)),
                   )
                 : filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.person_search_rounded,
-                                size: 36,
-                                color: Color(0xFF94A3B8),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Tidak ditemukan "$_searchQuery"'
-                                  : 'Belum ada data mahasiswa',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF475569),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Coba gunakan kata kunci nama atau NIM yang lain.',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF1F5F9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.person_search_rounded,
+                            size: 36,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'Tidak ditemukan "$_searchQuery"'
+                              : 'Belum ada data mahasiswa',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Coba gunakan kata kunci nama atau NIM yang lain.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final s = filtered[index];
+                      final initials = _getInitials(s.nama);
+                      final avatarBg = _getAvatarBg(index, s.jabatan);
+                      final avatarTextColor = _getAvatarTextColor(
+                        index,
+                        s.jabatan,
+                      );
+                      final isOfficer = _isOfficer(s.jabatan);
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isOfficer
+                                ? const Color(0xFFC7D2FE)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final s = filtered[index];
-                          final initials = _getInitials(s.nama);
-                          final avatarBg = _getAvatarBg(index, s.jabatan);
-                          final avatarTextColor = _getAvatarTextColor(index, s.jabatan);
-                          final isOfficer = _isOfficer(s.jabatan);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isOfficer
-                                    ? const Color(0xFFC7D2FE)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                          child: InkWell(
+                            onTap: () => _showStudentDetailModal(
+                              s,
+                              initials,
+                              avatarBg,
+                              avatarTextColor,
                             ),
-                            child: Material(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(16),
-                              child: InkWell(
-                                onTap: () => _showStudentDetailModal(s, initials, avatarBg, avatarTextColor),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      // Avatar Inisial
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: avatarBg,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: isOfficer ? avatarTextColor.withValues(alpha: 0.4) : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            initials,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w800,
-                                              color: avatarTextColor,
-                                            ),
-                                          ),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  // Avatar Inisial
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: avatarBg,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isOfficer
+                                            ? avatarTextColor.withValues(
+                                                alpha: 0.4,
+                                              )
+                                            : Colors.transparent,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        initials,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                          color: avatarTextColor,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-
-                                      // Info Mahasiswa
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              s.nama,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w800,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            // Subtitle: Jika pengurus -> Badge Chip Pengurus; Jika mahasiswa biasa -> Satu warna seragam netral
-                                            if (isOfficer)
-                                              _buildOfficerBadge(s.jabatan)
-                                            else
-                                              const Text(
-                                                'Mahasiswa ILKOM 2026',
-                                                style: TextStyle(
-                                                  fontSize: 11.5,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF64748B), // SERAGAM SATU WARNA
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Aksi WhatsApp Cepat (Jika nomor tersedia)
-                                      if (s.noWa.isNotEmpty) ...[
-                                        IconButton(
-                                          onPressed: () => _openWhatsApp(s.noWa, s.nama),
-                                          icon: const Icon(
-                                            Icons.chat_bubble_outline_rounded,
-                                            size: 19,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                          tooltip: 'WhatsApp ${s.nama.split(' ').first}',
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        ),
-                                        const SizedBox(width: 4),
-                                      ],
-
-                                      const Icon(
-                                        Icons.arrow_forward_ios_rounded,
-                                        size: 13,
-                                        color: Color(0xFF94A3B8),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+
+                                  // Info Mahasiswa
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          s.nama,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        // Subtitle: Jika pengurus -> Badge Chip Pengurus; Jika mahasiswa biasa -> Satu warna seragam netral
+                                        if (isOfficer)
+                                          _buildOfficerBadge(s.jabatan)
+                                        else
+                                          const Text(
+                                            'Mahasiswa ILKOM 2026',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(
+                                                0xFF64748B,
+                                              ), // SERAGAM SATU WARNA
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Aksi WhatsApp Cepat (Jika nomor tersedia)
+                                  if (s.noWa.isNotEmpty) ...[
+                                    IconButton(
+                                      onPressed: () =>
+                                          _openWhatsApp(s.noWa, s.nama),
+                                      icon: const Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        size: 19,
+                                        color: Color(0xFF10B981),
+                                      ),
+                                      tooltip:
+                                          'WhatsApp ${s.nama.split(' ').first}',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 32,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 13,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -441,7 +499,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -540,7 +600,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 color: avatarBg,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isOfficer ? avatarTextColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+                  color: isOfficer
+                      ? avatarTextColor.withValues(alpha: 0.5)
+                      : const Color(0xFFE2E8F0),
                   width: 2,
                 ),
               ),
@@ -595,11 +657,19 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.badge_outlined, size: 18, color: Color(0xFF5B3DE8)),
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 18,
+                        color: Color(0xFF5B3DE8),
+                      ),
                       const SizedBox(width: 10),
                       const Text(
                         'NIM',
-                        style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const Spacer(),
                       SelectableText(
@@ -616,11 +686,19 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                     const Divider(height: 20, color: Color(0xFFE2E8F0)),
                     Row(
                       children: [
-                        const Icon(Icons.phone_outlined, size: 18, color: Color(0xFF10B981)),
+                        const Icon(
+                          Icons.phone_outlined,
+                          size: 18,
+                          color: Color(0xFF10B981),
+                        ),
                         const SizedBox(width: 10),
                         const Text(
                           'WhatsApp',
-                          style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         const Spacer(),
                         SelectableText(
@@ -707,7 +785,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             'Kelola Anggota: ${s.nama.split(' ').first}',
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
@@ -725,15 +805,35 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 initialValue: selectedJabatan,
                 decoration: InputDecoration(
                   labelText: 'Jabatan Pengurus',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'Ketua Kelas', child: Text('Ketua Kelas')),
-                  DropdownMenuItem(value: 'Wakil Ketua', child: Text('Wakil Ketua')),
-                  DropdownMenuItem(value: 'Bendahara', child: Text('Bendahara')),
-                  DropdownMenuItem(value: 'Sekretaris', child: Text('Sekretaris')),
-                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa')),
+                  DropdownMenuItem(
+                    value: 'Ketua Kelas',
+                    child: Text('Ketua Kelas'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Wakil Ketua',
+                    child: Text('Wakil Ketua'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Bendahara',
+                    child: Text('Bendahara'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Sekretaris',
+                    child: Text('Sekretaris'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Mahasiswa',
+                    child: Text('Mahasiswa'),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) setDialogState(() => selectedJabatan = val);
@@ -746,8 +846,13 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nomor WhatsApp',
                   hintText: '0812xxxxxxxx',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ],
@@ -755,7 +860,10 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF64748B)),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -780,7 +888,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5B3DE8),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Simpan'),
             ),

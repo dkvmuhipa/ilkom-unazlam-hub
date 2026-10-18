@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
+
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/scale_button.dart';
@@ -57,13 +59,17 @@ class _VotingScreenState extends State<VotingScreen> {
       setState(() => _isLoading = true);
     }
     try {
-      final loaded = await SupabaseRepository.getPolls(currentNim: widget.currentNim);
+      final loaded = await SupabaseRepository.getPolls(
+        currentNim: widget.currentNim,
+      );
 
       // Sinkronkan vote lokal dari SharedPreferences jika userVotedId belum terisi
       final prefs = await SharedPreferences.getInstance();
       for (final p in loaded) {
         if (p.userVotedId == null) {
-          final savedOpt = prefs.getString('poll_vote_${widget.currentNim}_${p.id}');
+          final savedOpt = prefs.getString(
+            'poll_vote_${widget.currentNim}_${p.id}',
+          );
           if (savedOpt != null) {
             p.userVotedId = savedOpt;
           }
@@ -99,17 +105,28 @@ class _VotingScreenState extends State<VotingScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
-              Icon(Icons.how_to_vote_rounded, color: Color(0xFF1E40AF), size: 22),
+              Icon(
+                Icons.how_to_vote_rounded,
+                color: Color(0xFF1E40AF),
+                size: 22,
+              ),
               SizedBox(width: 8),
-              Text('Buat Voting Kelas Baru', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              Text(
+                'Buat Voting Kelas Baru',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
             ],
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: 380,
+              width: (MediaQuery.sizeOf(context).width - 96)
+                  .clamp(0.0, 380.0)
+                  .toDouble(),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +136,9 @@ class _VotingScreenState extends State<VotingScreen> {
                     decoration: InputDecoration(
                       labelText: 'Judul Polling / Voting',
                       hintText: 'Misal: Pemilihan Tempat Makrab',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -128,11 +147,16 @@ class _VotingScreenState extends State<VotingScreen> {
                     maxLines: 2,
                     decoration: InputDecoration(
                       labelText: 'Keterangan Singkat',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Pilihan Opsi:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  const Text(
+                    'Pilihan Opsi:',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
                   const SizedBox(height: 8),
                   for (int i = 0; i < optionControllers.length; i++) ...[
                     Padding(
@@ -144,15 +168,26 @@ class _VotingScreenState extends State<VotingScreen> {
                               controller: optionControllers[i],
                               decoration: InputDecoration(
                                 hintText: 'Opsi ${i + 1}',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
                           ),
                           if (optionControllers.length > 2)
                             IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFEF4444), size: 20),
-                              onPressed: () => setDialogState(() => optionControllers.removeAt(i)),
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                color: Color(0xFFEF4444),
+                                size: 20,
+                              ),
+                              onPressed: () => setDialogState(
+                                () => optionControllers.removeAt(i),
+                              ),
                             ),
                         ],
                       ),
@@ -160,7 +195,9 @@ class _VotingScreenState extends State<VotingScreen> {
                   ],
                   if (optionControllers.length < 5)
                     TextButton.icon(
-                      onPressed: () => setDialogState(() => optionControllers.add(TextEditingController())),
+                      onPressed: () => setDialogState(
+                        () => optionControllers.add(TextEditingController()),
+                      ),
                       icon: const Icon(Icons.add, size: 16),
                       label: const Text('Tambah Opsi Lain'),
                     ),
@@ -171,15 +208,23 @@ class _VotingScreenState extends State<VotingScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF6B7280))),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 final title = titleController.text.trim();
-                final validOptions = optionControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList();
+                final validOptions = optionControllers
+                    .map((c) => c.text.trim())
+                    .where((t) => t.isNotEmpty)
+                    .toList();
                 if (title.isEmpty || validOptions.length < 2) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Judul dan minimal 2 opsi wajib diisi!')),
+                    const SnackBar(
+                      content: Text('Judul dan minimal 2 opsi wajib diisi!'),
+                    ),
                   );
                   return;
                 }
@@ -205,7 +250,9 @@ class _VotingScreenState extends State<VotingScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E40AF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Terbitkan Voting'),
             ),
@@ -236,7 +283,10 @@ class _VotingScreenState extends State<VotingScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('poll_vote_${widget.currentNim}_${poll.id}', option.id);
+      await prefs.setString(
+        'poll_vote_${widget.currentNim}_${poll.id}',
+        option.id,
+      );
     } catch (_) {}
 
     await SupabaseRepository.castPollVote(
@@ -260,7 +310,9 @@ class _VotingScreenState extends State<VotingScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Voting?'),
-        content: Text('Hapus pemungutan suara "${poll.title}" secara permanen?'),
+        content: Text(
+          'Hapus pemungutan suara "${poll.title}" secara permanen?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -268,7 +320,9 @@ class _VotingScreenState extends State<VotingScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+            ),
             child: const Text('Hapus'),
           ),
         ],
@@ -304,7 +358,10 @@ class _VotingScreenState extends State<VotingScreen> {
         scrolledUnderElevation: 0,
         leading: widget.onBack != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF111827),
+                ),
                 tooltip: 'Kembali',
                 onPressed: widget.onBack,
               )
@@ -317,263 +374,361 @@ class _VotingScreenState extends State<VotingScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          if (widget.canManage)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: TextButton.icon(
-                onPressed: _showCreatePollDialog,
-                icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF1E40AF)),
-                label: const Text('Buat Voting', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-        ],
       ),
-      floatingActionButton: widget.canManage
+      floatingActionButton: widget.canManage && _polls.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _showCreatePollDialog,
               backgroundColor: const Color(0xFF1E40AF),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Buat Voting Baru', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                'Buat Voting Baru',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             )
           : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _polls.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEFF6FF),
-                            shape: BoxShape.circle,
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEFF6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.how_to_vote_outlined,
+                        size: 32,
+                        color: Color(0xFF1E40AF),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belum Ada Voting Aktif',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pengurus kelas belum mengadakan pemungutan suara atau polling baru saat ini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (widget.canManage) ...[
+                      const SizedBox(height: 18),
+                      ElevatedButton.icon(
+                        onPressed: _showCreatePollDialog,
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Buat Voting Baru'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E40AF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 13,
                           ),
-                          child: const Icon(Icons.how_to_vote_outlined, size: 32, color: Color(0xFF1E40AF)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Belum Ada Voting Aktif',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Pengurus kelas belum mengadakan pemungutan suara atau polling baru saat ini.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _loadPolls(),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                itemCount: _polls.length,
+                itemBuilder: (context, i) {
+                  final poll = _polls[i];
+                  final total = poll.totalVotes;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: poll.isOpen
+                            ? const Color(0xFFE5E7EB)
+                            : const Color(0xFFF3F4F6),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => _loadPolls(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    itemCount: _polls.length,
-                    itemBuilder: (context, i) {
-                      final poll = _polls[i];
-                      final total = poll.totalVotes;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: poll.isOpen ? const Color(0xFFE5E7EB) : const Color(0xFFF3F4F6),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header badge & Actions
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: poll.isOpen
+                                    ? const Color(0xFFDCFCE7)
+                                    : const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: poll.isOpen
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    poll.isOpen ? 'AKTIF' : 'SELESAI',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: poll.isOpen
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Total $total Suara Mahasiswa',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF6B7280),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (widget.canManage) ...[
+                              if (poll.isOpen)
+                                InkWell(
+                                  onTap: () =>
+                                      setState(() => poll.isOpen = false),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      'Tutup',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFFF59E0B),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Color(0xFFDC2626),
+                                  size: 18,
+                                ),
+                                tooltip: 'Hapus Voting',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _deletePoll(poll),
+                              ),
+                            ],
                           ],
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header badge & Actions
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const SizedBox(height: 10),
+
+                        // Title & Description
+                        Text(
+                          poll.title,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        if (poll.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            poll.description,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF4B5563),
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+
+                        // Options List
+                        for (var opt in poll.options) ...[
+                          Builder(
+                            builder: (context) {
+                              final pct = total == 0
+                                  ? 0.0
+                                  : (opt.votes / total);
+                              final isSelected = poll.userVotedId == opt.id;
+
+                              return ScaleButton(
+                                onTap: poll.isOpen
+                                    ? () => _castVote(poll, opt)
+                                    : null,
+                                scaleDown: 0.96,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: poll.isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: isSelected
+                                        ? const Color(0xFFEFF6FF)
+                                        : const Color(0xFFF9FAFB),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF1E40AF)
+                                          : const Color(0xFFE5E7EB),
+                                      width: isSelected ? 1.5 : 1,
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: poll.isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
-                                        ),
+                                      Row(
+                                        children: [
+                                          AnimatedScale(
+                                            scale: isSelected ? 1.15 : 1.0,
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            curve: Curves.easeOutBack,
+                                            child: Icon(
+                                              isSelected
+                                                  ? Icons.check_circle_rounded
+                                                  : Icons
+                                                        .radio_button_unchecked_rounded,
+                                              size: 18,
+                                              color: isSelected
+                                                  ? const Color(0xFF1E40AF)
+                                                  : const Color(0xFF9CA3AF),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              opt.text,
+                                              style: TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.w800
+                                                    : FontWeight.w600,
+                                                color: const Color(0xFF111827),
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${opt.votes} (${(pct * 100).toStringAsFixed(0)}%)',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected
+                                                  ? const Color(0xFF1E40AF)
+                                                  : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        poll.isOpen ? 'AKTIF' : 'SELESAI',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: poll.isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                                      const SizedBox(height: 8),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(
+                                            begin: 0,
+                                            end: pct,
+                                          ),
+                                          duration: const Duration(
+                                            milliseconds: 400,
+                                          ),
+                                          curve: Curves.easeOutCubic,
+                                          builder: (context, animatedVal, _) {
+                                            return LinearProgressIndicator(
+                                              value: animatedVal,
+                                              minHeight: 6,
+                                              backgroundColor: const Color(
+                                                0xFFE5E7EB,
+                                              ),
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    isSelected
+                                                        ? const Color(
+                                                            0xFF1E40AF,
+                                                          )
+                                                        : const Color(
+                                                            0xFF9CA3AF,
+                                                          ),
+                                                  ),
+                                            );
+                                          },
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Total $total Suara Mahasiswa',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
-                                ),
-                                const Spacer(),
-                                if (widget.canManage) ...[
-                                  if (poll.isOpen)
-                                    InkWell(
-                                      onTap: () => setState(() => poll.isOpen = false),
-                                      child: const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        child: Text('Tutup', style: TextStyle(fontSize: 11, color: Color(0xFFF59E0B), fontWeight: FontWeight.w700)),
-                                      ),
-                                    ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
-                                    tooltip: 'Hapus Voting',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => _deletePoll(poll),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 10),
+                              );
+                            },
+                          ),
+                        ],
 
-                            // Title & Description
-                            Text(
-                              poll.title,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
-                            ),
-                            if (poll.description.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                poll.description,
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563), height: 1.35),
-                              ),
-                            ],
-                            const SizedBox(height: 14),
-
-                            // Options List
-                            for (var opt in poll.options) ...[
-                              Builder(
-                                builder: (context) {
-                                  final pct = total == 0 ? 0.0 : (opt.votes / total);
-                                  final isSelected = poll.userVotedId == opt.id;
-
-                                  return ScaleButton(
-                                    onTap: poll.isOpen ? () => _castVote(poll, opt) : null,
-                                    scaleDown: 0.96,
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 250),
-                                      curve: Curves.easeOutCubic,
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF9FAFB),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFFE5E7EB),
-                                          width: isSelected ? 1.5 : 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              AnimatedScale(
-                                                scale: isSelected ? 1.15 : 1.0,
-                                                duration: const Duration(milliseconds: 200),
-                                                curve: Curves.easeOutBack,
-                                                child: Icon(
-                                                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                                  size: 18,
-                                                  color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFF9CA3AF),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  opt.text,
-                                                  style: TextStyle(
-                                                    fontSize: 12.5,
-                                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                                    color: const Color(0xFF111827),
-                                                  ),
-                                                ),
-                                              ),
-                                              Text(
-                                                '${opt.votes} (${(pct * 100).toStringAsFixed(0)}%)',
-                                                style: TextStyle(
-                                                  fontSize: 11.5,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFF6B7280),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(6),
-                                            child: TweenAnimationBuilder<double>(
-                                              tween: Tween<double>(begin: 0, end: pct),
-                                              duration: const Duration(milliseconds: 400),
-                                              curve: Curves.easeOutCubic,
-                                              builder: (context, animatedVal, _) {
-                                                return LinearProgressIndicator(
-                                                  value: animatedVal,
-                                                  minHeight: 6,
-                                                  backgroundColor: const Color(0xFFE5E7EB),
-                                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                                    isSelected ? const Color(0xFF1E40AF) : const Color(0xFF9CA3AF),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-
-                            const SizedBox(height: 4),
-                            Text(
-                              'Dibuat oleh ${poll.author}',
-                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF9CA3AF), fontStyle: FontStyle.italic),
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Dibuat oleh ${poll.author}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: Color(0xFF9CA3AF),
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

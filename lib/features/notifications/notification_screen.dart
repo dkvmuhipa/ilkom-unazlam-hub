@@ -5,6 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/student_dashboard_service.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
+import '../../core/services/course_schedule_service.dart';
+import '../../core/services/notification_state.dart';
 
 class ClassNotificationItem {
   final String id;
@@ -23,6 +25,26 @@ class ClassNotificationItem {
     required this.category,
     this.isRead = false,
   });
+}
+
+List<ClassNotificationItem> buildScheduleNotificationItems(
+  List<Course> courses, DateTime date, {required bool isToday}
+) {
+  final day = CourseScheduleService.getDayName(date);
+  final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  return CourseScheduleService.getTodayCourses(courses, date).map((course) {
+    return ClassNotificationItem(
+      id: 'schedule_${dateKey}_${course.id}',
+      title: course.isCancelledToday
+          ? 'Kuliah dibatalkan: ${course.nama}'
+          : '${isToday ? 'Kuliah Hari Ini' : 'Kuliah Besok ($day)'}: ${course.nama}',
+      message: course.isCancelledToday
+          ? (course.override?.alasan ?? 'Pertemuan ini dibatalkan. Periksa jadwal untuk informasi berikutnya.')
+          : '${course.effectiveJamMulai} - ${course.effectiveJamSelesai} • ${course.isOnlineOverride ? 'Kelas daring' : course.effectiveRuangan} • ${course.dosen}',
+      time: isToday ? 'Hari ini' : 'Besok',
+      category: 'attendance',
+    );
+  }).toList();
 }
 
 class NotificationScreen extends StatefulWidget {
@@ -75,12 +97,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList('${_storageKeyPrefix}read_ids', _readIds.toList());
       await prefs.setStringList('${_storageKeyPrefix}dismissed_ids', _dismissedIds.toList());
+      NotificationState.notifyChanged();
     } catch (e) {
       debugPrint('Error saving notif prefs: $e');
     }
   }
 
   Future<void> _loadNotifications() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _loadError = null;
@@ -137,36 +161,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       }
 
-      // 3. Pengingat Jadwal Kuliah Hari Ini & Besok
-      final daysId = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-      final todayName = daysId[(now.weekday - 1) % 7];
-      final tomorrowName = daysId[now.weekday % 7];
-
-      final courses = await SupabaseRepository.getCourses();
-      final todayCourses = courses.where((c) => c.hari.toLowerCase() == todayName.toLowerCase()).toList();
-      for (final c in todayCourses) {
-        rows.add(
-          ClassNotificationItem(
-            id: 'schedule_today_${c.id}',
-            title: '📅 Kuliah Hari Ini: ${c.nama}',
-            message: 'Pukul ${c.jamMulai} - ${c.jamSelesai} WIB di ${c.ruangan} • Dosen: ${c.dosen}',
-            time: 'Hari ini',
-            category: 'attendance',
-          ),
-        );
-      }
-
-      final tomorrowCourses = courses.where((c) => c.hari.toLowerCase() == tomorrowName.toLowerCase()).toList();
-      for (final c in tomorrowCourses) {
-        rows.add(
-          ClassNotificationItem(
-            id: 'schedule_tomorrow_${c.id}',
-            title: '⏰ Pengingat Kuliah Besok ($tomorrowName)',
-            message: '${c.nama} (${c.sks} SKS) • ${c.jamMulai} WIB • ${c.ruangan}',
-            time: 'Besok',
-            category: 'attendance',
-          ),
-        );
+      for (var offset = 0; offset < 2; offset++) {
+        final date = DateTime(now.year, now.month, now.day + offset);
+        final courses = await SupabaseRepository.getCoursesWithOverridesStrict(date);
+        rows.addAll(buildScheduleNotificationItems(courses, date, isToday: offset == 0));
       }
 
       // Terapkan status tersimpan: buang yang di-dismiss, tandai yang sudah dibaca

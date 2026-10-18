@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/services/safe_launcher.dart';
 import '../../../core/widgets/qr_widget.dart';
 import '../../../core/widgets/scale_button.dart';
@@ -100,12 +101,13 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
     return '';
   }
 
-  void _sendWhatsappConfirmation() {
+  Future<void> _sendWhatsappConfirmation() async {
     final student = _selectedStudent;
     final studentName = student?.nama ?? 'Mahasiswa';
     final studentNim = student?.nim ?? '-';
     final nominalStr = _formatRupiah(widget.defaultNominal);
-    final refCode = 'INV/KAS/${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}/${studentNim.length >= 4 ? studentNim.substring(studentNim.length - 4) : '2026'}';
+    final refCode =
+        'INV/KAS/${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}/${studentNim.length >= 4 ? studentNim.substring(studentNim.length - 4) : '2026'}';
 
     final message = Uri.encodeComponent(
       'Halo Bendahara Kelas ILKOM UNAZLAM,\n\n'
@@ -120,11 +122,24 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
     );
 
     final rawPhone = _getBendaharaPhone().replaceAll(RegExp(r'\D'), '');
-    final phone = rawPhone.startsWith('0') ? '62${rawPhone.substring(1)}' : rawPhone;
+    final phone = rawPhone.startsWith('0')
+        ? '62${rawPhone.substring(1)}'
+        : rawPhone;
     final url = phone.isNotEmpty
         ? 'https://wa.me/$phone?text=$message'
         : 'https://wa.me/?text=$message';
-    safeLaunchUrl(url);
+    final opened = await safeLaunchUrl(url);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            opened
+                ? 'Draft konfirmasi dibuka di WhatsApp. Lampirkan bukti transfer sebelum mengirim.'
+                : 'WhatsApp tidak dapat dibuka. Salin rincian dan kirim secara manual.',
+          ),
+        ),
+      );
+    }
   }
 
   void _copyToClipboard(String text, String label) {
@@ -134,7 +149,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text('$label berhasil disalin ke clipboard!'),
           ],
@@ -223,7 +242,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFF64748B),
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -248,7 +270,9 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 9),
                         decoration: BoxDecoration(
-                          color: _activeTab == 0 ? Colors.white : Colors.transparent,
+                          color: _activeTab == 0
+                              ? Colors.white
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: _activeTab == 0
                               ? [
@@ -294,7 +318,9 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 9),
                         decoration: BoxDecoration(
-                          color: _activeTab == 1 ? Colors.white : Colors.transparent,
+                          color: _activeTab == 1
+                              ? Colors.white
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: _activeTab == 1
                               ? [
@@ -377,7 +403,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
             children: [
               // QRIS Standard Header Tag
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
@@ -387,7 +416,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified_rounded, color: Color(0xFF86EFAC), size: 14),
+                    Icon(
+                      Icons.verified_rounded,
+                      color: Color(0xFF86EFAC),
+                      size: 14,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'QRIS RESMI KAS KELAS UNAZLAM',
@@ -412,10 +445,14 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+                      border: Border.all(
+                        color: const Color(0xFFCBD5E1),
+                        width: 1.5,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1E40AF).withValues(alpha: 0.08),
+                          color: const Color(0xFF1E40AF)
+                              .withValues(alpha: 0.08),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -472,7 +509,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(8),
@@ -549,7 +589,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
               ScaleButton(
                 onTap: () => _copyToClipboard(rekeningNomor, 'Nomor Rekening'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
@@ -557,7 +600,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.copy_rounded, size: 14, color: Color(0xFF334155)),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 14,
+                        color: Color(0xFF334155),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Salin',
@@ -628,7 +675,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   'Nominal Transfer',
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
@@ -636,7 +686,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.copy_rounded, size: 14, color: Color(0xFF334155)),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 14,
+                        color: Color(0xFF334155),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Salin Rp',
@@ -666,7 +720,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 18),
+              Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFFD97706),
+                size: 18,
+              ),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -728,8 +786,12 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
     final studentName = student?.nama ?? 'Mahasiswa';
     final studentNim = student?.nim ?? '-';
     final nominalStr = _formatRupiah(widget.defaultNominal);
-    final refCode = 'INV/KAS/${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}/${studentNim.length >= 4 ? studentNim.substring(studentNim.length - 4) : '2026'}';
-    final nowFormatted = DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(DateTime.now());
+    final refCode =
+        'INV/KAS/${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}/${studentNim.length >= 4 ? studentNim.substring(studentNim.length - 4) : '2026'}';
+    final nowFormatted = DateFormat(
+      'dd MMMM yyyy, HH:mm',
+      'id_ID',
+    ).format(DateTime.now());
 
     final receiptText =
         '========================================\n'
@@ -825,7 +887,10 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
             children: [
               // Top Serrated / Header Strip
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 18,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1E1B4B),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
@@ -921,11 +986,19 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Color(0xFFE2E8F0),
+                    ),
                     const SizedBox(height: 12),
 
                     // Student Info
-                    _buildReceiptRow('Nama Mahasiswa', studentName, isBold: true),
+                    _buildReceiptRow(
+                      'Nama Mahasiswa',
+                      studentName,
+                      isBold: true,
+                    ),
                     const SizedBox(height: 6),
                     _buildReceiptRow('NIM', studentNim),
                     const SizedBox(height: 6),
@@ -953,7 +1026,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                     const SizedBox(height: 6),
                     _buildReceiptRow('Biaya Platform Admin', 'Rp 0 (Gratis)'),
                     const SizedBox(height: 10),
-                    const Divider(height: 1, thickness: 1.5, color: Color(0xFFCBD5E1)),
+                    const Divider(
+                      height: 1,
+                      thickness: 1.5,
+                      color: Color(0xFFCBD5E1),
+                    ),
                     const SizedBox(height: 10),
 
                     // Total Highlight
@@ -1028,10 +1105,15 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
               // Bottom Notice Strip
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 16,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(18),
+                  ),
                 ),
                 child: const Text(
                   'Struk elektronik ini merupakan tanda bukti tagihan sah kelas ILKOM UNAZLAM.',
@@ -1064,7 +1146,11 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.copy_rounded, size: 16, color: Color(0xFF334155)),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 16,
+                        color: Color(0xFF334155),
+                      ),
                       SizedBox(width: 6),
                       Text(
                         'Salin Struk',

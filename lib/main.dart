@@ -460,7 +460,12 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         userName: currentUser.nama,
         onBack: _goBack,
       ), // 8: Kas Kelas
-      GroupsScreen(onBack: _goBack), // 9: Kelompok Praktikum
+      GroupsScreen(
+        key: ValueKey('groups_${currentUser.nim}'),
+        userClass: currentUser.kelas,
+        canManage: currentUser.canManageAgenda,
+        onBack: _goBack,
+      ), // 9: Kelompok Praktikum
       ResourcesScreen(
         canManage:
             currentUser.isAdmin ||
@@ -478,6 +483,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         onBack: _goBack,
       ), // 12: Voting & Polling
       LettersScreen(
+        student: currentUser,
         studentName: currentUser.nama,
         studentNim: currentUser.nim,
         onBack: _goBack,
@@ -502,11 +508,10 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
           index: _currentIndex,
           children: List.generate(screens.length, (i) {
             return _loadedTabs.contains(i)
-                ? screens[i]
+                ? TickerMode(enabled: i == _currentIndex, child: screens[i])
                 : const SizedBox.shrink();
           }),
         );
-
 
         return PopScope(
           canPop: _currentIndex == 0 && _navigationHistory.length <= 1,

@@ -125,8 +125,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
       final students = widget.canManage
           ? classStudents
           : classStudents
-              .where((student) => student.nim == widget.userNim)
-              .toList();
+                .where((student) => student.nim == widget.userNim)
+                .toList();
       final dues = List<Map<String, dynamic>>.from(results[2] as List);
 
       if (!mounted) return;
@@ -208,10 +208,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
 
   void _resetToCurrentMonth() {
     setState(() {
-      _selectedPeriod = DateTime(
-        DateTime.now().year,
-        DateTime.now().month,
-      );
+      _selectedPeriod = DateTime(DateTime.now().year, DateTime.now().month);
     });
     _loadTreasury();
   }
@@ -321,7 +318,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     if (!widget.canManage || s.noWa.trim().isEmpty) return;
 
     final nominalStr = _formatRupiah(_iuranNominal[s.nim] ?? 20000);
-    final rawMessage = 'Halo *${s.nama}* (NIM: ${s.nim}),\n\n'
+    final rawMessage =
+        'Halo *${s.nama}* (NIM: ${s.nim}),\n\n'
         'Kami mengingatkan tagihan iuran kas kelas periode $_periodLabel sebesar $nominalStr belum tercatat lunas.\n\n'
         'Pembayaran dapat dilakukan melalui scan QRIS resmi kelas atau transfer ke Bank Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM UNAZLAM 2026.\n\n'
         'Setelah transfer, silakan kirim bukti ke nomor ini. Terima kasih! 🙏✨';
@@ -330,11 +328,16 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     try {
       final wahaStatus = await WahaService.getSessionStatus();
       if (wahaStatus.isConnected) {
-        final res = await WahaService.sendTextMessage(recipient: s.noWa, text: rawMessage);
+        final res = await WahaService.sendTextMessage(
+          recipient: s.noWa,
+          text: rawMessage,
+        );
         if (res.success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Pesan pengingat kas otomatis berhasil dikirim ke WhatsApp ${s.nama}! 📨✨'),
+              content: Text(
+                'Pesan pengingat kas otomatis berhasil dikirim ke WhatsApp ${s.nama}! 📨✨',
+              ),
               backgroundColor: const Color(0xFF10B981),
             ),
           );
@@ -350,12 +353,27 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
         : cleanPhone;
     final message = Uri.encodeComponent(rawMessage);
     final url = 'https://wa.me/$internationalPhone?text=$message';
-    safeLaunchUrl(url);
+    final opened = await safeLaunchUrl(url);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            opened
+                ? 'Draft pengingat dibuka di WhatsApp. Tekan Kirim untuk mengirim pesan.'
+                : 'WhatsApp tidak dapat dibuka. Salin pesan dan kirim secara manual.',
+          ),
+        ),
+      );
+    }
   }
 
   void _copyDuesBroadcast() {
-    final unPaid = _students.where((s) => (_iuranStatus[s.nim] ?? false) == false).toList();
-    final paid = _students.where((s) => (_iuranStatus[s.nim] ?? false) == true).toList();
+    final unPaid = _students
+        .where((s) => (_iuranStatus[s.nim] ?? false) == false)
+        .toList();
+    final paid = _students
+        .where((s) => (_iuranStatus[s.nim] ?? false) == true)
+        .toList();
 
     final buffer = StringBuffer();
     buffer.writeln('*📢 REKAP IURAN KAS KELAS ILKOM UNAZLAM*');
@@ -374,19 +392,27 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
         buffer.writeln('${i + 1}. ${s.nama} (${s.nim}) - $nominal');
       }
       buffer.writeln('\n💡 *Info Pembayaran Kas:*');
-      buffer.writeln('• Rek Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM 2026');
+      buffer.writeln(
+        '• Rek Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM 2026',
+      );
       buffer.writeln('• Atau scan QRIS melalui Aplikasi ILKOM UNAZLAM Hub');
       buffer.writeln('• Kirim bukti transfer ke nomor Bendahara Kelas');
     } else {
-      buffer.writeln('\n🎉 *Alhamdulillah, semua mahasiswa telah melunasi kas untuk periode ini!*');
+      buffer.writeln(
+        '\n🎉 *Alhamdulillah, semua mahasiswa telah melunasi kas untuk periode ini!*',
+      );
     }
-    buffer.writeln('\n_Terima kasih atas kerja sama dan partisipasi aktif semuanya! 🙏_');
+    buffer.writeln(
+      '\n_Terima kasih atas kerja sama dan partisipasi aktif semuanya! 🙏_',
+    );
 
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Teks rekap tagihan berhasil disalin! Siap dikirim ke grup WhatsApp kelas. 📋'),
+        content: Text(
+          'Teks rekap tagihan berhasil disalin! Siap dikirim ke grup WhatsApp kelas. 📋',
+        ),
         backgroundColor: Color(0xFF10B981),
       ),
     );
@@ -420,8 +446,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     final color = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
     final amountFormatted =
         '${isIncome ? "+" : "-"}${_formatRupiah(tx.nominal)}';
-    final dateFormatted =
-        DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(tx.tanggal);
+    final dateFormatted = DateFormat(
+      'dd MMMM yyyy, HH:mm',
+      'id_ID',
+    ).format(tx.tanggal);
 
     final receiptText =
         '========================================\n'
@@ -514,7 +542,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Color(0xFF64748B),
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                 ],
@@ -528,7 +559,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFFCBD5E1),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
@@ -585,7 +619,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Color(0xFFE2E8F0),
+                    ),
                     const SizedBox(height: 14),
 
                     // Key-Values
@@ -617,8 +655,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                           SnackBar(
                             content: const Row(
                               children: [
-                                Icon(Icons.check_circle_rounded,
-                                    color: Colors.white, size: 18),
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 SizedBox(width: 8),
                                 Text('Rincian transaksi berhasil disalin!'),
                               ],
@@ -642,8 +683,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.copy_rounded,
-                                size: 16, color: Color(0xFF334155)),
+                            Icon(
+                              Icons.copy_rounded,
+                              size: 16,
+                              color: Color(0xFF334155),
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Salin Rincian',
@@ -684,8 +728,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.share_rounded,
-                                color: Colors.white, size: 16),
+                            Icon(
+                              Icons.share_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Bagikan ke WA',
@@ -709,8 +756,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     );
   }
 
-  Widget _buildReceiptRow(String label, String value,
-      {bool isMonospace = false}) {
+  Widget _buildReceiptRow(
+    String label,
+    String value, {
+    bool isMonospace = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -813,7 +863,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ? ScaleButton(
               onTap: _showAddTransactionModal,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
@@ -848,76 +901,73 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _loadError != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.cloud_off_outlined,
-                          size: 36,
-                          color: AppColors.error,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Data kas gagal dimuat dari Supabase.',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _loadError!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textSub,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        OutlinedButton.icon(
-                          onPressed: _loadTreasury,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Coba lagi'),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_outlined,
+                      size: 36,
+                      color: AppColors.error,
                     ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => _loadTreasury(silent: true),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Data kas gagal dimuat dari Supabase.',
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Ultra-Modern Fintech Balance Card
-                        _buildFintechBalanceCard(),
-                        const SizedBox(height: 16),
-
-                        // Period Switcher Banner
-                        _buildPeriodSwitcher(),
-                        const SizedBox(height: 16),
-
-                        // Tab Switcher: Transaksi Kas vs Iuran Mahasiswa
-                        _buildTabSwitcher(),
-                        const SizedBox(height: 16),
-
-                        // Tab Body
-                        if (_activeTab == 'iuran') ...[
-                          _buildIuranMahasiswaSection(),
-                        ] else ...[
-                          _buildTransaksiSection(
-                            transactions,
-                            availableCategories,
-                          ),
-                        ],
-                      ],
+                    const SizedBox(height: 6),
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.textSub,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: _loadTreasury,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Coba lagi'),
+                    ),
+                  ],
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _loadTreasury(silent: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Ultra-Modern Fintech Balance Card
+                    _buildFintechBalanceCard(),
+                    const SizedBox(height: 16),
+
+                    // Period Switcher Banner
+                    _buildPeriodSwitcher(),
+                    const SizedBox(height: 16),
+
+                    // Tab Switcher: Transaksi Kas vs Iuran Mahasiswa
+                    _buildTabSwitcher(),
+                    const SizedBox(height: 16),
+
+                    // Tab Body
+                    if (_activeTab == 'iuran') ...[
+                      _buildIuranMahasiswaSection(),
+                    ] else ...[
+                      _buildTransaksiSection(transactions, availableCategories),
+                    ],
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -1101,7 +1151,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
 
                 // Amount Text
                 Text(
-                  _hideBalance ? 'Rp • • • • • • • •' : _formatRupiah(totalSaldo),
+                  _hideBalance
+                      ? 'Rp • • • • • • • •'
+                      : _formatRupiah(totalSaldo),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -1170,7 +1222,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Pemasukan',
@@ -1226,7 +1279,8 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Pengeluaran',
@@ -1455,8 +1509,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
 
   Widget _buildTabSwitcher() {
     final txCount = _transactions.length;
-    final lunasCount =
-        _students.where((s) => _iuranStatus[s.nim] ?? false).length;
+    final lunasCount = _students
+        .where((s) => _iuranStatus[s.nim] ?? false)
+        .length;
     final totalCount = _students.length;
 
     return Container(
@@ -1544,8 +1599,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color:
-                      _activeTab == 'iuran' ? Colors.white : Colors.transparent,
+                  color: _activeTab == 'iuran'
+                      ? Colors.white
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: _activeTab == 'iuran'
                       ? [
@@ -1631,7 +1687,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -1680,7 +1740,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF1E40AF) : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFF1E40AF)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
@@ -1695,7 +1757,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         fontWeight: isSelected
                             ? FontWeight.w800
                             : FontWeight.w600,
-                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -1844,9 +1908,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           borderRadius: BorderRadius.circular(18),
           child: Container(
             decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(color: color, width: 4),
-              ),
+              border: Border(left: BorderSide(color: color, width: 4)),
             ),
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -2007,11 +2069,13 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
 
   Widget _buildIuranMahasiswaSection() {
     final students = _students;
-    final lunasCount =
-        students.where((s) => _iuranStatus[s.nim] ?? false).length;
+    final lunasCount = students
+        .where((s) => _iuranStatus[s.nim] ?? false)
+        .length;
     final totalCount = students.length;
-    final pctLunas =
-        totalCount > 0 ? (lunasCount / totalCount).clamp(0.0, 1.0) : 0.0;
+    final pctLunas = totalCount > 0
+        ? (lunasCount / totalCount).clamp(0.0, 1.0)
+        : 0.0;
 
     final totalTerkumpul = students.fold<int>(
       0,
@@ -2186,7 +2250,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.search_rounded, size: 16, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.search_rounded,
+                size: 16,
+                color: Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -2223,7 +2291,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF1E40AF) : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFF1E40AF)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
@@ -2238,7 +2308,9 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         fontWeight: isSelected
                             ? FontWeight.w800
                             : FontWeight.w600,
-                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -2250,7 +2322,10 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
               ScaleButton(
                 onTap: _copyDuesBroadcast,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFECFDF5),
                     borderRadius: BorderRadius.circular(16),
@@ -2259,7 +2334,11 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.share_rounded, size: 12, color: Color(0xFF059669)),
+                      Icon(
+                        Icons.share_rounded,
+                        size: 12,
+                        color: Color(0xFF059669),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Rekap WA',

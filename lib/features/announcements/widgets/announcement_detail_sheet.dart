@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/services/supabase_repository.dart';
+import '../../../core/services/safe_launcher.dart';
 import '../../../models/models.dart';
 import 'announcement_form_dialog.dart';
 import 'announcement_helper.dart';
@@ -21,17 +22,26 @@ class AnnouncementDetailSheet extends StatelessWidget {
   });
 
   Future<void> _shareToWhatsApp(BuildContext context) async {
-    final formattedDate = AnnouncementHelper.formatFullDate(announcement.createdAt);
-    final text = '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n'
+    final formattedDate = AnnouncementHelper.formatFullDate(
+      announcement.createdAt,
+    );
+    final text =
+        '📢 *PENGUMUMAN ILKOM UNAZLAM*\n\n'
         '*${announcement.judul}*\n\n'
         '${announcement.isi}\n\n'
         '🗓️ _Diposting: ${formattedDate}_\n'
         '👤 _Oleh: ${announcement.authorName} (${announcement.authorRole})_';
 
     final url = 'https://wa.me/?text=${Uri.encodeComponent(text)}';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final opened = await safeLaunchUrl(url);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'WhatsApp tidak dapat dibuka. Salin teks pengumuman lalu kirim secara manual.',
+          ),
+        ),
+      );
     }
   }
 
@@ -52,13 +62,18 @@ class AnnouncementDetailSheet extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               final nav = Navigator.of(context);
-              final saved = await SupabaseRepository.deleteAnnouncement(announcement.id);
+              final saved = await SupabaseRepository.deleteAnnouncement(
+                announcement.id,
+              );
               if (ctx.mounted) Navigator.pop(ctx);
               if (!saved) {
                 messenger.showSnackBar(
@@ -81,7 +96,9 @@ class AnnouncementDetailSheet extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Hapus'),
           ),
@@ -130,11 +147,17 @@ class AnnouncementDetailSheet extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: style.backgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: style.borderColor, width: 0.8),
+                        border: Border.all(
+                          color: style.borderColor,
+                          width: 0.8,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -156,15 +179,25 @@ class AnnouncementDetailSheet extends StatelessWidget {
                     if (announcement.isPinned) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4.5,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF2F2),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
+                          border: Border.all(
+                            color: const Color(0xFFFECACA),
+                            width: 0.8,
+                          ),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.push_pin_rounded, size: 12, color: Color(0xFFDC2626)),
+                            Icon(
+                              Icons.push_pin_rounded,
+                              size: 12,
+                              color: Color(0xFFDC2626),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Disematkan',
@@ -306,7 +339,11 @@ class AnnouncementDetailSheet extends StatelessWidget {
                   // Timestamp Row
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         fullDate,
@@ -351,12 +388,15 @@ class AnnouncementDetailSheet extends StatelessWidget {
                             HapticFeedback.lightImpact();
                             Clipboard.setData(
                               ClipboardData(
-                                text: '${announcement.judul}\n\n${announcement.isi}',
+                                text:
+                                    '${announcement.judul}\n\n${announcement.isi}',
                               ),
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Teks pengumuman berhasil disalin ke clipboard!'),
+                                content: Text(
+                                  'Teks pengumuman berhasil disalin ke clipboard!',
+                                ),
                                 duration: Duration(seconds: 2),
                               ),
                             );
