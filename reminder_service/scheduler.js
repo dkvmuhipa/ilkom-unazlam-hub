@@ -72,8 +72,8 @@ class Scheduler {
   }
   configResult() {
     const pending = Object.values(this.state.jobs).filter(x => x.status === 'pending');
-    return { config: this.state.config, pendingCount: pending.length,
-      pendingReminders: pending.map(x => ({ id: x.id, courseName: x.course.nama, scenario: x.scenario, scheduledAt: x.scheduledAt })),
+    return { config: this.state.config, replyCodeDigits: 4, pendingCount: pending.length,
+      pendingReminders: pending.map(x => ({ id: x.code || x.id, courseName: x.course.nama, scenario: x.scenario, scheduledAt: x.scheduledAt })),
       syncedAt: this.state.syncedAt, timeZone: this.timeZone };
   }
   configure(input) {
@@ -102,14 +102,22 @@ class Scheduler {
     const id = createHash('sha256').update(`${course.id}|${scenario}|${date}|${test ? 'test' : 'live'}`).digest('hex').slice(0, 12);
     if (this.state.jobs[id]) return false;
     const config = this.state.config;
-    const job = { id, course: { ...course }, scenario, date, test, status: 'prompting',
+    const usedCodes = new Set(Object.values(this.state.jobs).map(job => job.code));
+    let code;
+    const start = parseInt(id.slice(0, 8), 16) % 10000;
+    for (let offset = 0; offset < 10000; offset++) {
+      const candidate = String((start + offset) % 10000).padStart(4, '0');
+      if (!usedCodes.has(candidate)) { code = candidate; break; }
+    }
+    if (!code) throw new Error('Kode pengingat habis; hubungi administrator.');
+    const job = { id, code, course: { ...course }, scenario, date, test, status: 'prompting',
       komtiPhone: config.komtiPhone, senderName: config.komtiName,
       autoSendIfNoReply: !test && config.autoSendIfNoReply,
       scheduledAt: new Date(this.now().getTime() + config.delayMinutes * 60000).toISOString() };
     this.state.jobs[id] = job; this.persist(); // Claim before network I/O.
     try {
       await this.send(job.komtiPhone,
-        `${test ? '[SIMULASI — tidak mengirim ke dosen]\n' : ''}Pengingat ${scenario}: ${course.nama}\nDosen: ${course.dosen}\nJadwal: ${course.hari}, ${course.jamMulai}–${course.jamSelesai} (${this.timeZone})\nRuangan: ${course.ruangan}\n\nBalas KIRIM ${id} atau BATAL ${id}.\n${job.autoSendIfNoReply ? `Batas tunggu ${config.delayMinutes} menit sebelum pengiriman otomatis.` : 'Pesan hanya dikirim setelah konfirmasi Komti.'}`);
+        `${test ? '[SIMULASI — tidak mengirim ke dosen]\n' : ''}Pengingat ${scenario}: ${course.nama}\nDosen: ${course.dosen}\nJadwal: ${course.hari}, ${course.jamMulai}–${course.jamSelesai} (${this.timeZone})\nRuangan: ${course.ruangan}\n\nBalas KIRIM ${code} atau BATAL ${code}.\n${job.autoSendIfNoReply ? `Batas tunggu ${config.delayMinutes} menit sebelum pengiriman otomatis.` : 'Pesan hanya dikirim setelah konfirmasi Komti.'}`);
       this.record(job, 'pending'); return true;
     } catch (error) {
       this.record(job, 'uncertain'); throw error;
@@ -128,11 +136,14 @@ class Scheduler {
     }
   }
   async reply(sender, text, eventId) {
-    const match = /^(KIRIM|BATAL)\s+([a-f0-9]{12})$/i.exec(String(text).trim());
+    const match = /^(KIRIM|BATAL)\s+(\d{4}|[a-f0-9]{12})$/i.exec(String(text).trim());
     if (!match) return;
     let normalized;
     try { normalized = phone(sender); } catch { return; }
-    const job = this.state.jobs[match[2].toLowerCase()];
+    const token = match[2].toLowerCase();
+    const job = token.length === 4
+      ? Object.values(this.state.jobs).find(item => item.code === token)
+      : this.state.jobs[token];
     if (!job || job.status !== 'pending' || normalized !== job.komtiPhone) return;
     if (!this.state.config.enabled && !job.test) return;
     if (match[1].toUpperCase() === 'BATAL') this.record(job, 'cancelled');

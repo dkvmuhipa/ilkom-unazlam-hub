@@ -23,6 +23,23 @@ test('Timezone is independent of host and Indonesian phone normalizes exactly', 
   assert.equal(phone('081234567890'), '6281234567890');
   assert.throws(() => phone('123'));
 });
+
+test('Four digit reply codes remain unique across restart and completed jobs', async t => {
+  const sends = []; const f = setup(t, async (...args) => sends.push(args));
+  await f.scheduler.create(course, 'Hari-H', 'code-one', true);
+  const first = Object.values(f.scheduler.state.jobs)[0];
+  assert.match(first.code, /^\d{4}$/);
+  assert.ok(sends[0][1].includes(`KIRIM ${first.code}`));
+  await f.scheduler.reply('6281111111111@c.us', `BATAL ${first.code}`);
+  const restarted = new Scheduler(f.args);
+  await restarted.create(course, 'Hari-H', 'code-two', true);
+  const second = Object.values(restarted.state.jobs).find(x => x.id !== first.id);
+  assert.notEqual(second.code, first.code);
+  await restarted.reply('6281111111111@c.us', `KIRIM ${first.code}`);
+  assert.equal(second.status, 'pending');
+  await restarted.reply('6281111111111@c.us', `KIRIM ${second.code}`);
+  assert.equal(second.status, 'sent');
+});
 test('A scheduled reminder survives restart and sends at most once', async t => {
   const sends = []; const fixture = setup(t, async (...args) => sends.push(args));
   await Promise.all([fixture.scheduler.tick(), fixture.scheduler.tick()]);
@@ -36,15 +53,15 @@ test('A scheduled reminder survives restart and sends at most once', async t => 
 test('Only the correct Komti and exact job can confirm; duplicate replies are harmless', async t => {
   const sends = []; const { scheduler } = setup(t, async (...args) => sends.push(args));
   await scheduler.tick(); const job = Object.values(scheduler.state.jobs)[0];
-  await scheduler.reply('628222222222@c.us', `KIRIM ${job.id}`); assert.equal(sends.length, 1);
+  await scheduler.reply('628222222222@c.us', `KIRIM ${job.code}`); assert.equal(sends.length, 1);
   await scheduler.reply('6281111111111@c.us', 'KIRIM'); assert.equal(sends.length, 1);
-  await Promise.all([scheduler.reply('6281111111111@c.us', `KIRIM ${job.id}`), scheduler.reply('6281111111111@c.us', `KIRIM ${job.id}`)]);
+  await Promise.all([scheduler.reply('6281111111111@c.us', `KIRIM ${job.code}`), scheduler.reply('6281111111111@c.us', `KIRIM ${job.code}`)]);
   assert.equal(sends.length, 2);
 });
 test('Cancellation and disabled feature prevent timeout sends', async t => {
   const sends = []; const f = setup(t, async (...args) => sends.push(args));
   await f.scheduler.tick(); const job = Object.values(f.scheduler.state.jobs)[0];
-  await f.scheduler.reply('6281111111111@c.us', `BATAL ${job.id}`);
+  await f.scheduler.reply('6281111111111@c.us', `BATAL ${job.code}`);
   f.setTime('2026-10-19T06:32:00+08:00'); await f.scheduler.tick(); assert.equal(sends.length, 1);
   f.scheduler.configure({ enabled: false });
   await f.scheduler.create(course, 'H-1', '2026-10-20'); assert.equal(sends.length, 1);
@@ -61,7 +78,7 @@ test('Simulation never sends to a lecturer, including confirmation', async t => 
   await f.scheduler.create(course, 'Hari-H', 'test', true);
   const job = Object.values(f.scheduler.state.jobs)[0];
   assert.equal(job.autoSendIfNoReply, false);
-  await f.scheduler.reply('6281111111111@c.us', `KIRIM ${job.id}`);
+  await f.scheduler.reply('6281111111111@c.us', `KIRIM ${job.code}`);
   assert.equal(sends.length, 2); assert.ok(sends.every(x => x[0] === '6281111111111'));
 });
 test('Stale course snapshots do not create unattended reminders', async t => {
@@ -108,7 +125,7 @@ test('Gateway requires API auth and webhook secret, advertises capability, and p
   await service.scheduler.create(course, 'Hari-H', 'test-webhook', true);
   const job = Object.values(service.scheduler.state.jobs).find(x => x.test);
   const event = { event: 'message', session: 'default', engine: 'NOWEB', payload: {
-    from: '987654321@lid', fromMe: false, body: `KIRIM ${job.id}`,
+    from: '987654321@lid', fromMe: false, body: `KIRIM ${job.code}`,
     _data: { key: { remoteJid: '987654321@lid', remoteJidAlt: '6281111111111@s.whatsapp.net', fromMe: false } },
   } };
   const webhook = value => fetch(`${base}/webhooks/waha`, { method: 'POST',
