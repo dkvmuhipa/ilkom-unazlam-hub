@@ -57,8 +57,11 @@ test('Ambiguous network failures are persisted and not retried on restart', asyn
 });
 test('Simulation never sends to a lecturer, including confirmation', async t => {
   const sends = []; const f = setup(t, async (...args) => sends.push(args));
+  f.scheduler.configure({ enabled: false });
   await f.scheduler.create(course, 'Hari-H', 'test', true);
-  const job = Object.values(f.scheduler.state.jobs)[0]; await f.scheduler.deliver(job);
+  const job = Object.values(f.scheduler.state.jobs)[0];
+  assert.equal(job.autoSendIfNoReply, false);
+  await f.scheduler.reply('6281111111111@c.us', `KIRIM ${job.id}`);
   assert.equal(sends.length, 2); assert.ok(sends.every(x => x[0] === '6281111111111'));
 });
 test('Stale course snapshots do not create unattended reminders', async t => {

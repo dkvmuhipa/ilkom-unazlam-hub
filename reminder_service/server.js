@@ -36,7 +36,7 @@ function createService(env = process.env, fetchImpl = fetch) {
   });
   let ticking = false;
   async function tick() {
-    if (ticking || !scheduler.state.config.enabled) return;
+    if (ticking) return;
     ticking = true;
     try {
       if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -86,7 +86,7 @@ function createService(env = process.env, fetchImpl = fetch) {
       if (url.pathname === '/api/auto-reminder/history' && req.method === 'GET') return json(200, scheduler.state.history);
       if (url.pathname === '/api/auto-reminder/trigger-test' && req.method === 'POST') {
         const course = scheduler.state.courses[0];
-        if (!course || !scheduler.state.config.enabled) return json(400, { error: 'Aktifkan pengingat dan sinkronkan jadwal terlebih dahulu.' });
+        if (!course || !scheduler.state.config.komtiPhone) return json(400, { error: 'Isi nomor Komti dan sinkronkan jadwal terlebih dahulu.' });
         const created = await scheduler.create(course, 'Hari-H', scheduler.now().toISOString(), true);
         return json(200, { success: created, message: 'Simulasi dikirim hanya ke Komti; tidak ada pesan uji coba ke dosen.' });
       }

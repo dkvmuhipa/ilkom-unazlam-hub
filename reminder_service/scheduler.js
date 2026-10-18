@@ -97,14 +97,14 @@ class Scheduler {
     this.persist();
   }
   async create(course, scenario, date, test = false) {
-    if (!this.state.config.enabled) return false;
+    if (!this.state.config.enabled && !test) return false;
     if (!course.dosenWa && !test) return false;
     const id = createHash('sha256').update(`${course.id}|${scenario}|${date}|${test ? 'test' : 'live'}`).digest('hex').slice(0, 12);
     if (this.state.jobs[id]) return false;
     const config = this.state.config;
     const job = { id, course: { ...course }, scenario, date, test, status: 'prompting',
       komtiPhone: config.komtiPhone, senderName: config.komtiName,
-      autoSendIfNoReply: config.autoSendIfNoReply,
+      autoSendIfNoReply: !test && config.autoSendIfNoReply,
       scheduledAt: new Date(this.now().getTime() + config.delayMinutes * 60000).toISOString() };
     this.state.jobs[id] = job; this.persist(); // Claim before network I/O.
     try {
@@ -116,7 +116,7 @@ class Scheduler {
     }
   }
   async deliver(job) {
-    if (job.status !== 'pending' || !this.state.config.enabled) return;
+    if (job.status !== 'pending' || (!this.state.config.enabled && !job.test)) return;
     this.record(job, 'sending');
     try {
       const c = job.course;
@@ -128,13 +128,13 @@ class Scheduler {
     }
   }
   async reply(sender, text, eventId) {
-    if (!this.state.config.enabled) return;
     const match = /^(KIRIM|BATAL)\s+([a-f0-9]{12})$/i.exec(String(text).trim());
     if (!match) return;
     let normalized;
     try { normalized = phone(sender); } catch { return; }
     const job = this.state.jobs[match[2].toLowerCase()];
     if (!job || job.status !== 'pending' || normalized !== job.komtiPhone) return;
+    if (!this.state.config.enabled && !job.test) return;
     if (match[1].toUpperCase() === 'BATAL') this.record(job, 'cancelled');
     else await this.deliver(job);
   }
