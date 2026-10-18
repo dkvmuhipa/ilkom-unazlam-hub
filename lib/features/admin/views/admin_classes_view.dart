@@ -53,6 +53,18 @@ class AdminClassesView extends StatefulWidget {
 
 class _AdminClassesViewState extends State<AdminClassesView> {
   String _classSearchQuery = '';
+  final _newClassName = TextEditingController();
+  final _newClassCapacity = TextEditingController(text: '30');
+  String _newClassProdi = 'Ilmu Komunikasi';
+  String _newClassSemester = 'Semester 1';
+  String? _newClassYear;
+
+  @override
+  void dispose() {
+    _newClassName.dispose();
+    _newClassCapacity.dispose();
+    super.dispose();
+  }
 
   String _getInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -109,7 +121,12 @@ class _AdminClassesViewState extends State<AdminClassesView> {
     if (existing != null && !years.contains(existing.academicYear)) {
       years.insert(0, existing.academicYear);
     }
-    if (years.isEmpty) years.add('2026/2027');
+    if (years.isEmpty) {
+      widget.onShowMessage('Tambahkan tahun akademik terlebih dahulu.', isError: true);
+      name.dispose();
+      capacity.dispose();
+      return;
+    }
     var prodi = existing?.prodi ?? prodis.first;
     var semester = existing?.semester ?? 1;
     var year = existing?.academicYear ?? years.first;
@@ -185,7 +202,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
 
   void _showClassDetail(ClassItem cls) {
     final classStudents = widget.managedAccounts
-        .where((s) => !s.isAdmin && (s.kelas.toLowerCase() == cls.nama.toLowerCase() || s.semester == cls.semester))
+        .where((s) => !s.isAdmin && s.kelas.toLowerCase() == cls.nama.toLowerCase())
         .toList();
     final classCourses = widget.courses;
 
@@ -332,10 +349,10 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                       final logs = await SupabaseRepository.getAttendanceLogs();
                       final csv = ExportService.exportAttendanceCsv(
                         courseName: cls.nama,
-                        logs: logs,
-                        students: widget.managedAccounts,
+                        logs: logs.where((row) => classStudents.any((student) => student.nim == row['student_nim'])).toList(),
+                        students: classStudents,
                       );
-                      if (context.mounted) {
+                      if (mounted) {
                         ExportService.showExportSheet(
                           context,
                           title: 'Presensi ${cls.nama}',
@@ -441,11 +458,11 @@ class _AdminClassesViewState extends State<AdminClassesView> {
   }
 
   Widget _buildTambahKelasForm() {
-    final namaController = TextEditingController(text: 'Ilmu Komunikasi');
-    final kapasitasController = TextEditingController(text: '30');
-    String selectedProdi = 'Ilmu Komunikasi';
-    String selectedSemester = 'Semester 1';
-    String selectedTA = '2026/2027';
+    final years = widget.academicYears.map((year) => year.tahun).toSet().toList();
+    if (years.isEmpty) return const Center(child: Text('Tambahkan tahun akademik sebelum membuat kelas.'));
+    if (!years.contains(_newClassYear)) {
+      _newClassYear = widget.academicYears.firstWhere((year) => year.isAktif, orElse: () => widget.academicYears.first).tahun;
+    }
 
     return StatefulBuilder(
       builder: (ctx, setFormState) => Column(
@@ -454,7 +471,6 @@ class _AdminClassesViewState extends State<AdminClassesView> {
             title: 'Tambah Kelas',
             showSearch: false,
             onBack: widget.onBack,
-            onSearch: () {},
           ),
           Expanded(
             child: ListView(
@@ -462,26 +478,26 @@ class _AdminClassesViewState extends State<AdminClassesView> {
               children: [
                 const AdminFormLabel('Nama Kelas'),
                 AdminFormField(
-                  controller: namaController,
+                  controller: _newClassName,
                   hintText: 'Contoh: Ilmu Komunikasi',
                 ),
                 const SizedBox(height: 14),
                 const AdminFormLabel('Program Studi'),
                 AdminDropdownField<String>(
-                  value: selectedProdi,
+                  value: _newClassProdi,
                   items: const [
                     'Ilmu Komunikasi',
                     'Ilmu Pemerintahan',
                     'Hubungan Internasional',
                   ],
                   onChanged: (val) {
-                    if (val != null) setFormState(() => selectedProdi = val);
+                    if (val != null) setFormState(() => _newClassProdi = val);
                   },
                 ),
                 const SizedBox(height: 14),
                 const AdminFormLabel('Semester'),
                 AdminDropdownField<String>(
-                  value: selectedSemester,
+                  value: _newClassSemester,
                   items: const [
                     'Semester 1',
                     'Semester 2',
@@ -493,22 +509,22 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                     'Semester 8',
                   ],
                   onChanged: (val) {
-                    if (val != null) setFormState(() => selectedSemester = val);
+                    if (val != null) setFormState(() => _newClassSemester = val);
                   },
                 ),
                 const SizedBox(height: 14),
                 const AdminFormLabel('Tahun Akademik'),
                 AdminDropdownField<String>(
-                  value: selectedTA,
-                  items: const ['2026/2027', '2025/2026', '2024/2025'],
+                  value: _newClassYear!,
+                  items: years,
                   onChanged: (val) {
-                    if (val != null) setFormState(() => selectedTA = val);
+                    if (val != null) setFormState(() => _newClassYear = val);
                   },
                 ),
                 const SizedBox(height: 14),
                 const AdminFormLabel('Kapasitas Mahasiswa'),
                 AdminFormField(
-                  controller: kapasitasController,
+                  controller: _newClassCapacity,
                   hintText: 'Contoh: 30',
                   keyboardType: TextInputType.number,
                 ),
@@ -516,11 +532,11 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                 ElevatedButton(
                   onPressed: () {
                     final semNum = int.tryParse(
-                          selectedSemester.replaceAll(RegExp(r'[^0-9]'), ''),
+                          _newClassSemester.replaceAll(RegExp(r'[^0-9]'), ''),
                         ) ??
                         1;
-                    final name = namaController.text.trim();
-                    final kap = int.tryParse(kapasitasController.text);
+                    final name = _newClassName.text.trim();
+                    final kap = int.tryParse(_newClassCapacity.text);
                     if (name.isEmpty || kap == null || kap < 1) {
                       widget.onShowMessage(
                         'Nama kelas dan kapasitas harus diisi dengan benar.',
@@ -531,9 +547,9 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                     _saveClass(
                       id: null,
                       name: name,
-                      prodi: selectedProdi,
+                      prodi: _newClassProdi,
                       semester: semNum,
-                      year: selectedTA,
+                      year: _newClassYear!,
                       capacity: kap,
                     );
                   },
@@ -570,7 +586,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
         AdminAppBar(
           title: 'Data Kelas',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: ListView(
@@ -636,7 +652,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                 return Column(
                   children: filteredClasses.map((cls) {
                     final studentCount = widget.managedAccounts
-                        .where((s) => !s.isAdmin && (s.kelas.toLowerCase() == cls.nama.toLowerCase() || s.semester == cls.semester))
+                        .where((s) => !s.isAdmin && s.kelas.toLowerCase() == cls.nama.toLowerCase())
                         .length;
 
                 return Container(

@@ -14,6 +14,7 @@ import '../widgets/admin_common_widgets.dart';
 class AdminAttendanceMatrixView extends StatefulWidget {
   final List<Course> courses;
   final List<ClassItem> classes;
+  final String academicYear;
   final List<StudentProfile> managedAccounts;
   final VoidCallback onBack;
   final void Function(String message, {bool isError}) onShowMessage;
@@ -28,6 +29,7 @@ class AdminAttendanceMatrixView extends StatefulWidget {
     super.key,
     required this.courses,
     required this.classes,
+    this.academicYear = 'Belum ditetapkan',
     required this.managedAccounts,
     required this.onBack,
     required this.onShowMessage,
@@ -281,7 +283,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
       courseName: _selectedCourse!.nama,
       dosenName: _selectedCourse!.dosen,
       semester: '${_selectedCourse!.semester}',
-      tahunAkademik: '2026/2027',
+      tahunAkademik: widget.academicYear,
       students: _filteredStudents,
       matrixData: _matrixData,
       totalMeetingsHeld: _maxMeetingsHeld,
@@ -327,7 +329,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
     bapText.writeln('Dosen Pengampu  : ${_selectedCourse!.dosen}');
     bapText.writeln('Hari / Waktu    : ${_selectedCourse!.hari}, ${_selectedCourse!.jamMulai} - ${_selectedCourse!.jamSelesai} WITA');
     bapText.writeln('Ruangan         : ${_selectedCourse!.ruangan}');
-    bapText.writeln('Semester / T.A. : Semester ${_selectedCourse!.semester} / 2026-2027');
+    bapText.writeln('Semester / T.A. : Semester ${_selectedCourse!.semester} / ${widget.academicYear}');
     bapText.writeln('Sesi Terlaksana : $_maxMeetingsHeld dari 16 Pertemuan');
     bapText.writeln('Ambang Batas    : Minimal $_thresholdPercent% Kehadiran');
     bapText.writeln('Rekapitulasi    : $eligibleCount Mahasiswa Layak UAS | $blockedCount Mahasiswa Dicekal UAS');

@@ -187,10 +187,10 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
                       final students = results[1] as List<StudentProfile>;
                       final csv = ExportService.exportAttendanceCsv(
                         courseName: c.nama,
-                        logs: logs,
+                        logs: logs.where((row) => row['course_id']?.toString() == c.id).toList(),
                         students: students,
                       );
-                      if (context.mounted) {
+                      if (mounted) {
                         ExportService.showExportSheet(
                           context,
                           title: 'Presensi ${c.nama}',
@@ -324,7 +324,7 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
         AdminAppBar(
           title: 'Mata Kuliah',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: ListView(

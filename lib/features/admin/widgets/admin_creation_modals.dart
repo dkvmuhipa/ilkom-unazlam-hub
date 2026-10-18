@@ -175,7 +175,7 @@ class AdminCreationModals {
                     module: 'TUGAS',
                     description: 'Merilis tugas "${titleCtrl.text.trim()}" untuk $selectedCourseName.',
                   );
-                  onShowMessage('Tugas baru berhasil dirilis & notifikasi push dikirimkan!');
+                  onShowMessage('Tugas baru berhasil dirilis. Pengiriman notifikasi mengikuti konfigurasi layanan.');
                   await onRefresh();
                 } else {
                   onShowMessage('Gagal merilis tugas.', isError: true);

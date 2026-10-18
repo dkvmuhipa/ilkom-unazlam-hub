@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/export_service.dart';
+import '../widgets/admin_student_summary.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
@@ -146,7 +146,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
         AdminAppBar(
           title: 'Detail Mahasiswa',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: ListView(
@@ -301,7 +301,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                       _buildDetailRow(
                         Icons.format_list_numbered,
                         'Semester',
-                        '${s.semester} (Satu)',
+                        '${s.semester}',
                       ),
                       const Divider(height: 18),
                       _buildDetailRow(
@@ -387,7 +387,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                               ),
                             ),
                             child: Text(
-                              '${widget.courses.length} MK Terdaftar',
+                              '${widget.courses.length} MK di Sistem',
                               style: const TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
@@ -399,7 +399,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Daftar Mata Kuliah Semester Ini:',
+                        'Daftar Mata Kuliah di Sistem:',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 12.5,
@@ -475,233 +475,10 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                   ),
                 ),
               ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Ringkasan Kehadiran & Akademik',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13.5,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFA7F3D0),
-                                ),
-                              ),
-                              child: const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Tingkat Kehadiran',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      color: Color(0xFF065F46),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '92%',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF059669),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Kategori: Sangat Baik',
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      color: Color(0xFF047857),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF0FDF4),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFBBF7D0),
-                                ),
-                              ),
-                              child: const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Iuran Kas Kelas',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      color: Color(0xFF166534),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Lunas',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF16A34A),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Bulan Oktober 2026',
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      color: Color(0xFF15803D),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Aksi Rekap Mahasiswa:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          final csv = ExportService.exportPersonalAttendanceCsv(
-                            studentNim: s.nim,
-                            studentName: s.nama,
-                            history: [],
-                          );
-                          ExportService.showExportSheet(
-                            context,
-                            title: 'Presensi ${s.nama}',
-                            fileName: 'presensi_${s.nim}.csv',
-                            content: csv,
-                            subtitle: 'Rekap Presensi Individual',
-                          );
-                        },
-                        icon: const Icon(Icons.checklist_rtl_rounded, size: 16),
-                        label: const Text('Ekspor Rekap Presensi Mahasiswa'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.primary),
-                          minimumSize: const Size.fromHeight(40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          final now = DateTime.now();
-                          final dummyGrades = [
-                            StudentCourseGrade(
-                              id: '1',
-                              studentNim: s.nim,
-                              courseId: 'c1',
-                              courseCode: 'IK101',
-                              courseName: 'Pengantar Ilmu Komunikasi',
-                              sks: 3,
-                              semester: 1,
-                              academicYear: '2026/2027',
-                              letterGrade: 'A',
-                              numericScore: 88,
-                              updatedAt: now,
-                            ),
-                            StudentCourseGrade(
-                              id: '2',
-                              studentNim: s.nim,
-                              courseId: 'c2',
-                              courseCode: 'IK102',
-                              courseName: 'Teori Komunikasi',
-                              sks: 3,
-                              semester: 1,
-                              academicYear: '2026/2027',
-                              letterGrade: 'A-',
-                              numericScore: 82,
-                              updatedAt: now,
-                            ),
-                            StudentCourseGrade(
-                              id: '3',
-                              studentNim: s.nim,
-                              courseId: 'c3',
-                              courseCode: 'IK103',
-                              courseName: 'Komunikasi Antarpribadi',
-                              sks: 3,
-                              semester: 1,
-                              academicYear: '2026/2027',
-                              letterGrade: 'B+',
-                              numericScore: 78,
-                              updatedAt: now,
-                            ),
-                            StudentCourseGrade(
-                              id: '4',
-                              studentNim: s.nim,
-                              courseId: 'c4',
-                              courseCode: 'IK104',
-                              courseName: 'Dasar-Dasar Jurnalistik',
-                              sks: 3,
-                              semester: 1,
-                              academicYear: '2026/2027',
-                              letterGrade: 'A',
-                              numericScore: 90,
-                              updatedAt: now,
-                            ),
-                          ];
-                          final csv = ExportService.exportKhsCsv(
-                            student: s,
-                            grades: dummyGrades,
-                            gpa: 3.75,
-                            totalSks: 12,
-                          );
-                          ExportService.showExportSheet(
-                            context,
-                            title: 'KHS ${s.nama}',
-                            fileName: 'khs_${s.nim}.csv',
-                            content: csv,
-                            subtitle: 'Kartu Hasil Studi (KHS)',
-                          );
-                        },
-                        icon: const Icon(Icons.school_outlined, size: 16),
-                        label: const Text('Ekspor Kartu Hasil Studi (KHS)'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0284C7),
-                          side: const BorderSide(color: Color(0xFF0284C7)),
-                          minimumSize: const Size.fromHeight(40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                AdminStudentSummary(
+                  key: ValueKey(s.nim),
+                  student: s,
+                  onShowMessage: widget.onShowMessage,
                 ),
               ],
               const SizedBox(height: 24),
@@ -810,7 +587,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
         AdminAppBar(
           title: 'Data Mahasiswa',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: Column(

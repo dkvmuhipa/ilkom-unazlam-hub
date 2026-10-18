@@ -55,7 +55,7 @@ class _AdminLecturersViewState extends State<AdminLecturersView> {
       children: [
         AdminAppBar(
           title: 'Data Dosen',
-          onSearch: () {},
+          showSearch: false,
           onBack: widget.onBack,
         ),
         Expanded(

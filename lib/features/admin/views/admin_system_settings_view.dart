@@ -146,7 +146,7 @@ class AdminSystemSettingsView extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              '• Firebase Cloud Messaging (FCM v1) Terintegrasi\n• Supabase Database Webhook & Edge Function Aktif\n• Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
+              'Notifikasi push memerlukan izin perangkat, token FCM, serta webhook dan Edge Function yang aktif. Jumlah token terdaftar belum memastikan notifikasi sampai ke perangkat.',
               style: TextStyle(
                 fontSize: 11.5,
                 height: 1.4,
@@ -181,7 +181,7 @@ class AdminSystemSettingsView extends StatelessWidget {
     final activeYear = academicYears
         .firstWhere(
           (y) => y.isAktif,
-          orElse: () => AcademicYearItem(tahun: '2026/2027', isAktif: true),
+          orElse: () => AcademicYearItem(tahun: 'Belum ditetapkan', isAktif: false),
         )
         .tahun;
 
@@ -298,8 +298,9 @@ class AdminSystemSettingsView extends StatelessWidget {
             onPressed: () async {
               try {
                 final client = SupabaseService.client;
-                if (client == null)
+                if (client == null) {
                   throw Exception('Supabase belum terhubung.');
+                }
                 final tables = [
                   'students',
                   'courses',
@@ -398,7 +399,6 @@ class AdminSystemSettingsView extends StatelessWidget {
           title: 'Pengaturan Sistem',
           showSearch: false,
           onBack: onBack,
-          onSearch: () {},
         ),
         Expanded(
           child: ListView(

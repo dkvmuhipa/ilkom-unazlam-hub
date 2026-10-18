@@ -356,7 +356,7 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
         AdminAppBar(
           title: 'Manajemen Akun',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: ListView(

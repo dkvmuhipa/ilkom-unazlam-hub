@@ -112,6 +112,18 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
   WahaSessionInfo _sessionInfo = WahaSessionInfo.offline();
   Uint8List? _qrCodeBytes;
   Timer? _qrPollingTimer;
+  bool _isCheckingStatus = false;
+  bool _autoConfigLoaded = false;
+  String? _message;
+  bool _messageIsError = false;
+
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    setState(() {
+      _message = message;
+      _messageIsError = isError;
+    });
+  }
 
   @override
   void initState() {
@@ -155,7 +167,6 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     final sess = await WahaService.getSessionName();
     final group = await WahaService.getDefaultGroupId();
     final isCloud = await WahaService.isCloudMode();
-    final autoCfg = await WahaService.getAutoReminderConfig();
 
     if (mounted) {
       setState(() {
@@ -165,65 +176,62 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         _defaultGroupCtrl.text = group ?? '';
         _isCloudMode = isCloud;
 
-        _autoConfig = autoCfg;
-        _autoEnabled = autoCfg.enabled;
-        _komtiPhoneCtrl.text = autoCfg.komtiPhone;
-        _delayMinutesCtrl.text = autoCfg.delayMinutes.toString();
-        _hMinusOneCtrl.text = autoCfg.hMinusOneHour;
-        _todayHourCtrl.text = autoCfg.todayHour;
       });
       await _checkStatus();
     }
   }
 
-  Future<void> _checkStatus() async {
-    if (!mounted) return;
-    setState(() => _isLoadingStatus = true);
-
-    final info = await WahaService.getSessionStatus();
-    if (!mounted) return;
-
-    setState(() {
-      _sessionInfo = info;
-      _isLoadingStatus = false;
-    });
-
-    if (info.needsScanQr) {
-      _fetchQrCode();
-      _startQrPolling();
-    } else {
-      _qrPollingTimer?.cancel();
-      _qrCodeBytes = null;
+  Future<void> _checkStatus({bool showLoading = true}) async {
+    if (!mounted || _isCheckingStatus) return;
+    _isCheckingStatus = true;
+    if (showLoading) setState(() => _isLoadingStatus = true);
+    try {
+      final info = await WahaService.getSessionStatus();
+      if (!mounted) return;
+      final becameConnected = info.isConnected && !_sessionInfo.isConnected;
+      final becameFailed = info.status == WahaStatus.failed &&
+          _sessionInfo.status != WahaStatus.failed;
+      setState(() {
+        _sessionInfo = info;
+        _isLoadingStatus = false;
+        if (!info.needsScanQr) _qrCodeBytes = null;
+      });
+      if (becameConnected) {
+        _showMessage('WhatsApp berhasil ditautkan ke akun kampus!');
+      } else if (becameFailed) {
+        _showMessage('Sesi WhatsApp gagal. Tekan Pulihkan Sesi WhatsApp untuk mencoba kembali.', isError: true);
+      }
+      if (info.needsScanQr) await _fetchQrCode();
+      if (info.supportsAutoReminder && !_autoConfigLoaded) {
+        final config = await WahaService.getAutoReminderConfig();
+        if (!mounted) return;
+        setState(() {
+          _autoConfigLoaded = true;
+          _autoConfig = config;
+          _autoEnabled = config.enabled;
+          _komtiPhoneCtrl.text = config.komtiPhone;
+          _delayMinutesCtrl.text = config.delayMinutes.toString();
+          _hMinusOneCtrl.text = config.hMinusOneHour;
+          _todayHourCtrl.text = config.todayHour;
+        });
+      }
+      if (mounted) _startQrPolling();
+    } finally {
+      _isCheckingStatus = false;
     }
   }
 
   void _startQrPolling() {
-    _qrPollingTimer?.cancel();
-    _qrPollingTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
-      if (!mounted) return;
-      final info = await WahaService.getSessionStatus();
-      if (!mounted) return;
-
-      if (info.status != _sessionInfo.status) {
-        setState(() => _sessionInfo = info);
-        if (info.isConnected) {
-          _qrPollingTimer?.cancel();
-          widget.onShowMessage('WhatsApp berhasil ditautkan ke akun kampus! 🎉');
-          return;
-        }
-      }
-
-      if (info.needsScanQr) {
-        await _fetchQrCode();
-      } else {
-        _qrPollingTimer?.cancel();
-      }
+    if (_qrPollingTimer?.isActive ?? false) return;
+    // Keep watching through QR -> STARTING -> WORKING, and later disconnects.
+    _qrPollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _checkStatus(showLoading: false);
     });
   }
 
   Future<void> _fetchQrCode() async {
     final bytes = await WahaService.getQrCodeBytes();
-    if (mounted && bytes != null) {
+    if (mounted && bytes != null && _sessionInfo.needsScanQr) {
       setState(() => _qrCodeBytes = bytes);
     }
   }
@@ -231,11 +239,12 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
   Future<void> _handleSaveConfig() async {
     final url = _urlCtrl.text.trim();
     if (url.isEmpty) {
-      widget.onShowMessage('URL server WAHA tidak boleh kosong.', isError: true);
+      _showMessage('URL server WAHA tidak boleh kosong.', isError: true);
       return;
     }
 
     setState(() => _isSavingConfig = true);
+    _autoConfigLoaded = false;
     await WahaService.saveSettings(
       baseUrl: url,
       apiKey: _apiKeyCtrl.text.trim(),
@@ -244,7 +253,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
       isCloudMode: _isCloudMode,
     );
 
-    widget.onShowMessage('Konfigurasi WAHA berhasil disimpan!');
+    _showMessage('Konfigurasi WAHA berhasil disimpan!');
     setState(() => _isSavingConfig = false);
     await _checkStatus();
   }
@@ -255,11 +264,11 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     if (mounted) {
       setState(() => _isActionRunning = false);
       if (ok) {
-        widget.onShowMessage('Memulai sesi WhatsApp di WAHA...');
+        _showMessage('Memulai sesi WhatsApp di WAHA...');
         await Future.delayed(const Duration(milliseconds: 1500));
         await _checkStatus();
       } else {
-        widget.onShowMessage('Gagal memulai sesi. Pastikan server WAHA aktif.', isError: true);
+        _showMessage('Gagal memulai sesi. Pastikan server WAHA aktif.', isError: true);
       }
     }
   }
@@ -306,10 +315,10 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     if (mounted) {
       setState(() => _isActionRunning = false);
       if (ok) {
-        widget.onShowMessage('Sesi WhatsApp berhasil diputuskan.');
+        _showMessage('Sesi WhatsApp berhasil diputuskan.');
         await _checkStatus();
       } else {
-        widget.onShowMessage('Gagal logout sesi WAHA.', isError: true);
+        _showMessage('Gagal logout sesi WAHA.', isError: true);
       }
     }
   }
@@ -319,11 +328,11 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     final text = _testMessageCtrl.text.trim();
 
     if (phone.isEmpty) {
-      widget.onShowMessage('Masukkan nomor WhatsApp tujuan uji coba.', isError: true);
+      _showMessage('Masukkan nomor WhatsApp tujuan uji coba.', isError: true);
       return;
     }
     if (text.isEmpty) {
-      widget.onShowMessage('Pesan uji coba tidak boleh kosong.', isError: true);
+      _showMessage('Pesan uji coba tidak boleh kosong.', isError: true);
       return;
     }
 
@@ -333,9 +342,9 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     setState(() => _isSendingTest = false);
 
     if (res.success) {
-      widget.onShowMessage('Pesan uji coba WhatsApp BERHASIL terkirim ke $phone! 📨✨');
+      _showMessage('Pesan uji coba WhatsApp BERHASIL terkirim ke $phone! 📨✨');
     } else {
-      widget.onShowMessage(res.errorMessage ?? 'Gagal mengirim pesan uji coba.', isError: true);
+      _showMessage(res.errorMessage ?? 'Gagal mengirim pesan uji coba.', isError: true);
     }
   }
 
@@ -364,6 +373,38 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
           children: [
             // Header
             _buildModalHeader(tokens),
+
+            if (_message != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(
+                      color: (_messageIsError ? Colors.red : Colors.green)
+                          .withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _messageIsError ? Icons.error_outline : Icons.info_outline,
+                          color: _messageIsError ? Colors.red : Colors.green,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_message!, style: TextStyle(color: tokens.textMain, fontSize: 12))),
+                        IconButton(
+                          tooltip: 'Tutup notifikasi',
+                          onPressed: () => setState(() => _message = null),
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
             // Status Bar Card
             Padding(
@@ -492,12 +533,14 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                             ),
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            statusPillLabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: statusPillText,
+                          Flexible(
+                            child: Text(
+                              statusPillLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: statusPillText,
+                              ),
                             ),
                           ),
                         ],
@@ -571,7 +614,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         textCol = const Color(0xFFEF4444);
         icon = Icons.cloud_off_rounded;
         statusTitle = _sessionInfo.isOffline ? 'SERVER WAHA OFFLINE' : 'ENGINE GAGAL';
-        statusDesc = _sessionInfo.errorMessage ?? 'Pastikan gateway WAHA di laptop (port 3000) sudah berjalan.';
+        statusDesc = _sessionInfo.errorMessage ?? 'Engine sesi gagal atau terputus. Pulihkan sesi, lalu pindai QR kembali jika diminta.';
         break;
     }
 
@@ -708,13 +751,13 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: tokens.borderCol),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 20,
+                      runSpacing: 12,
                       children: [
                         _buildStatItem('Engine', 'Baileys REST', tokens),
-                        Container(width: 1, height: 26, color: tokens.borderCol),
                         _buildStatItem('Sesi', _sessionInfo.name, tokens),
-                        Container(width: 1, height: 26, color: tokens.borderCol),
                         _buildStatItem('Kecepatan', '750ms Throttle', tokens),
                       ],
                     ),
@@ -856,7 +899,11 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                   Text(
                     _sessionInfo.isOffline
                         ? 'Server WAHA Belum Dapat Dihubungi'
-                        : 'Sesi WhatsApp Sedang Berhenti',
+                        : _sessionInfo.status == WahaStatus.failed
+                            ? 'Sesi WhatsApp Gagal'
+                            : _sessionInfo.status == WahaStatus.starting
+                                ? 'Sesi WhatsApp Sedang Dimulai'
+                                : 'Sesi WhatsApp Sedang Berhenti',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: tokens.textMain),
                   ),
                   const SizedBox(height: 6),
@@ -875,7 +922,12 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                       FilledButton.icon(
                         onPressed: _isActionRunning ? null : _handleStartSession,
                         icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                        label: const Text('Mulai Sesi WhatsApp', style: TextStyle(fontWeight: FontWeight.w700)),
+                        label: Text(
+                          _sessionInfo.status == WahaStatus.failed
+                              ? 'Pulihkan Sesi WhatsApp'
+                              : 'Mulai Sesi WhatsApp',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF059669),
                           foregroundColor: Colors.white,
@@ -904,10 +956,11 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
 
   Widget _buildStatItem(String label, String value, _ModalThemeTokens tokens) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: TextStyle(fontSize: 10.5, color: tokens.textSub, fontWeight: FontWeight.w600)),
         const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: tokens.textMain)),
+        Text(value, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: tokens.textMain)),
       ],
     );
   }
@@ -1341,6 +1394,20 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
   // TAB 4: OTOMATISASI PENGINGAT DOSEN (KOMBINASI CERDAS)
   // ===========================================================================
   Widget _buildAutoReminderTab(_ModalThemeTokens tokens) {
+    if (!_sessionInfo.supportsAutoReminder) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(22),
+        child: Text(
+          _sessionInfo.isOffline
+              ? 'Hubungkan server untuk memeriksa dukungan pengingat otomatis.'
+              : 'Server ini belum mendukung pengingat otomatis dosen. '
+                  'Fitur ini memerlukan gateway ILKOM dengan scheduler pengingat. '
+                  'WAHA Core mendukung tautan WhatsApp dan pengiriman pesan, '
+                  'tetapi tidak menyediakan endpoint auto-reminder.',
+          style: TextStyle(color: tokens.textMain, fontSize: 13, height: 1.5),
+        ),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(22),
       child: Column(
@@ -1403,19 +1470,22 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: tokens.borderCol),
             ),
-            child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                'Aktifkan Otomatisasi Pengingat Dosen',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: tokens.textMain),
+            child: Material(
+              type: MaterialType.transparency,
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  'Aktifkan Otomatisasi Pengingat Dosen',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: tokens.textMain),
+                ),
+                subtitle: Text(
+                  'Scheduler di server WAHA akan memeriksa jadwal kuliah H-1 dan Hari-H secara berkala',
+                  style: TextStyle(fontSize: 11, color: tokens.textSub),
+                ),
+                value: _autoEnabled,
+                activeThumbColor: const Color(0xFF059669),
+                onChanged: (val) => setState(() => _autoEnabled = val),
               ),
-              subtitle: Text(
-                'Scheduler di server WAHA akan memeriksa jadwal kuliah H-1 dan Hari-H secara berkala',
-                style: TextStyle(fontSize: 11, color: tokens.textSub),
-              ),
-              value: _autoEnabled,
-              activeThumbColor: const Color(0xFF059669),
-              onChanged: (val) => setState(() => _autoEnabled = val),
             ),
           ),
           const SizedBox(height: 16),
@@ -1476,7 +1546,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Jam Pengingat H-1 (WIB)',
+                      'Jam Pengingat H-1 (WITA)',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: tokens.fieldLabel),
                     ),
                     const SizedBox(height: 6),
@@ -1503,7 +1573,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Jam Pengingat Hari-H (WIB)',
+                      'Jam Pengingat Hari-H (WITA)',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: tokens.fieldLabel),
                     ),
                     const SizedBox(height: 6),
@@ -1551,7 +1621,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '• Balas "KIRIM" : Pesan langsung terkirim seketika ke WhatsApp dosen.\n• Balas "BATAL" : Membatalkan pengiriman pengingat.\n• Tanpa Balasan  : Otomatis terkirim ke dosen setelah waktu tunggu selesai.',
+                  '• Balas "KIRIM <kode>" : Pesan langsung terkirim seketika ke WhatsApp dosen.\n• Balas "BATAL <kode>" : Membatalkan pengiriman pengingat.\n• Tanpa Balasan  : Otomatis terkirim ke dosen setelah waktu tunggu selesai.',
                   style: TextStyle(fontSize: 11, color: tokens.textSub, height: 1.45),
                 ),
               ],
@@ -1637,9 +1707,9 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         if (ok) _autoConfig = cfg;
       });
       if (ok) {
-        widget.onShowMessage('Pengaturan pengingat otomatis berhasil disimpan!');
+        _showMessage('Pengaturan pengingat otomatis berhasil disimpan!');
       } else {
-        widget.onShowMessage('Gagal menyimpan ke server WAHA.', isError: true);
+        _showMessage('Gagal menyimpan ke server WAHA.', isError: true);
       }
     }
   }
@@ -1657,22 +1727,22 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
       if (mounted) {
         setState(() => _isSyncingCourses = false);
         if (ok) {
-          widget.onShowMessage('Berhasil menyinkronkan ${courses.length} mata kuliah ke server gateway!');
+          _showMessage('Berhasil menyinkronkan ${courses.length} mata kuliah ke server gateway!');
         } else {
-          widget.onShowMessage('Gagal menyinkronkan mata kuliah ke gateway.', isError: true);
+          _showMessage('Gagal menyinkronkan mata kuliah ke gateway.', isError: true);
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSyncingCourses = false);
-        widget.onShowMessage('Gagal mengambil data jadwal: $e', isError: true);
+        _showMessage('Gagal mengambil data jadwal: $e', isError: true);
       }
     }
   }
 
   Future<void> _triggerTestSimulation() async {
     if (!_sessionInfo.isConnected) {
-      widget.onShowMessage('Server WAHA belum terhubung ke WhatsApp. Scan QR terlebih dahulu.', isError: true);
+      _showMessage('Server WAHA belum terhubung ke WhatsApp. Scan QR terlebih dahulu.', isError: true);
       return;
     }
     setState(() => _isTestingAutoReminder = true);
@@ -1680,9 +1750,9 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
     if (mounted) {
       setState(() => _isTestingAutoReminder = false);
       if (res['success'] == true) {
-        widget.onShowMessage(res['message']?.toString() ?? 'Simulasi berhasil dipicu!');
+        _showMessage(res['message']?.toString() ?? 'Simulasi berhasil dipicu!');
       } else {
-        widget.onShowMessage(res['error']?.toString() ?? 'Gagal memicu simulasi pengingat.', isError: true);
+        _showMessage(res['error']?.toString() ?? 'Gagal memicu simulasi pengingat.', isError: true);
       }
     }
   }

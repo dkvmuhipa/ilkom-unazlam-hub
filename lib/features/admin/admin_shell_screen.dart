@@ -149,6 +149,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _loadManagedAccounts(),
         _loadPushTokensCount(),
       ]);
+      if (_academicLoadError != null || _accountLoadError != null) {
+        throw StateError(_academicLoadError ?? _accountLoadError!);
+      }
       if (mounted) {
         _showAdminMessage(
           'Seluruh modul dan data admin berhasil disinkronkan!',
@@ -157,8 +160,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     } catch (e) {
       if (mounted) {
         _showAdminMessage(
-          'Sinkronisasi selesai dengan beberapa data offline.',
-          isError: false,
+          'Sebagian data gagal disinkronkan. Periksa koneksi dan coba lagi.',
+          isError: true,
         );
       }
     } finally {
@@ -171,9 +174,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     if (client == null) {
       return {
         'attendance': 'Belum terhubung ke Supabase',
-        'treasury': 'Rp 0',
-        'assignments': '0 tugas tercatat',
-        'students': '${_managedAccounts.length} akun mahasiswa',
+        'treasury': 'Belum terhubung ke Supabase',
+        'assignments': 'Belum terhubung ke Supabase',
+        'students': 'Belum terhubung ke Supabase',
       };
     }
 
@@ -181,23 +184,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     List<Map<String, dynamic>> cash = [];
     List<dynamic> assignments = [];
     List<dynamic> students = [];
+    final failed = <String>{};
 
     try {
       final res = await client.from('attendance_logs').select('status');
       attendance = List<Map<String, dynamic>>.from(res as List);
-    } catch (_) {}
+    } catch (_) { failed.add('attendance'); }
 
     try {
       final res = await client
           .from('treasury_transactions')
           .select('nominal,is_pemasukan');
       cash = List<Map<String, dynamic>>.from(res as List);
-    } catch (_) {}
+    } catch (_) { failed.add('treasury'); }
 
     try {
       final res = await client.from('assignments').select('id');
       assignments = List<dynamic>.from(res as List);
-    } catch (_) {}
+    } catch (_) { failed.add('assignments'); }
 
     try {
       final res = await client
@@ -206,7 +210,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           .eq('is_aktif', true)
           .neq('role', 'ADMIN');
       students = List<dynamic>.from(res as List);
-    } catch (_) {}
+    } catch (_) { failed.add('students'); }
 
     final present = attendance
         .where(
@@ -226,14 +230,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
 
     return {
-      'attendance': attendanceRate == null
+      'attendance': failed.contains('attendance') ? 'Kehadiran gagal dimuat' : attendanceRate == null
           ? 'Kehadiran: Belum ada sesi'
           : 'Kehadiran tercatat: $attendanceRate% (${attendance.length} catatan)',
-      'treasury':
+      'treasury': failed.contains('treasury') ? 'Saldo kas gagal dimuat' :
           'Saldo dari ${cash.length} transaksi: Rp ${balance < 0 ? '-' : ''}$formattedBalance',
-      'assignments': '${assignments.length} tugas aktif tercatat',
-      'students':
-          '${students.isNotEmpty ? students.length : _managedAccounts.where((s) => s.isAktif).length} akun mahasiswa aktif',
+      'assignments': failed.contains('assignments') ? 'Data tugas gagal dimuat' : '${assignments.length} tugas tercatat',
+      'students': failed.contains('students') ? 'Data mahasiswa gagal dimuat' : '${students.length} akun mahasiswa aktif',
     };
   }
 
@@ -266,10 +269,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     } on AdminAcademicException catch (error) {
       if (mounted) setState(() => _academicLoadError = error.message);
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _academicLoadError = 'Data akademik gagal dimuat: $error',
         );
+      }
     } finally {
       if (mounted) setState(() => _isLoadingAcademicData = false);
     }
@@ -1142,7 +1146,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1157,7 +1161,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Tahun Akademik 2026/2027 Ganjil aktif • Database Supabase',
+                        _academicYears.any((year) => year.isAktif)
+                            ? 'Tahun Akademik ${_academicYears.firstWhere((year) => year.isAktif).tahun} aktif'
+                            : 'Tahun akademik aktif belum ditetapkan',
                         style: TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11,
@@ -2023,6 +2029,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   // ==========================================
   Widget _buildMatriksPresensi() {
     return AdminAttendanceMatrixView(
+      academicYear: _academicYears.where((year) => year.isAktif).firstOrNull?.tahun ?? 'Belum ditetapkan',
       courses: _courses,
       classes: _classes,
       managedAccounts: _managedAccounts,

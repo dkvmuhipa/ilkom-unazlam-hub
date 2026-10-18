@@ -38,7 +38,7 @@ class AdminAcademicYearView extends StatelessWidget {
       children: [
         AdminAppBar(
           title: 'Tahun Akademik',
-          onSearch: () {},
+          showSearch: false,
           onBack: onBack,
         ),
         Expanded(

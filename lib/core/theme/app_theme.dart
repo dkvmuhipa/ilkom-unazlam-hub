@@ -108,7 +108,7 @@ class AppTheme {
         letterSpacing: 0.8,
         color: AppColors.textMuted,
       ),
-    );
+    ).apply(fontFamilyFallback: const ['NotoEmoji']);
   }
 
   static ThemeData get lightTheme {

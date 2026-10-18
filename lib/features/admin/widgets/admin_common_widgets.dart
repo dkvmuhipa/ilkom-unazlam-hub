@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/constants/app_colors.dart';
 
 class AdminAppBar extends StatelessWidget {
@@ -46,15 +47,23 @@ class AdminAppBar extends StatelessWidget {
               ),
             ),
           ),
-          if (showSearch)
+          if (showSearch && onSearch != null)
             IconButton(
-              icon: const Icon(Icons.search_rounded, color: Color(0xFF0F172A), size: 20),
-              onPressed: onSearch ?? () {},
+              icon: const Icon(
+                Icons.search_rounded,
+                color: Color(0xFF0F172A),
+                size: 20,
+              ),
+              onPressed: onSearch,
             ),
           if (!showSearch && onSearch != null)
             IconButton(
               tooltip: 'Muat ulang',
-              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A), size: 20),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: Color(0xFF0F172A),
+                size: 20,
+              ),
               onPressed: onSearch,
             ),
         ],
@@ -67,11 +76,7 @@ class AdminSearchBox extends StatelessWidget {
   final String hintText;
   final ValueChanged<String>? onChanged;
 
-  const AdminSearchBox({
-    super.key,
-    required this.hintText,
-    this.onChanged,
-  });
+  const AdminSearchBox({super.key, required this.hintText, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
