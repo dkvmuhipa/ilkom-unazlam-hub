@@ -104,4 +104,21 @@ test('Gateway requires API auth and webhook secret, advertises capability, and p
   assert.deepEqual((await response.json()).capabilities, ['auto-reminder']);
   assert.equal(forwarded[0].options.headers['X-Api-Key'], 'upstream');
   assert.equal((await fetch(`${base}/api/sessions/other`, { headers: { 'X-Api-Key': 'gateway' } })).status, 404);
+  service.scheduler.configure({ enabled: false, komtiPhone: '6281111111111' });
+  await service.scheduler.create(course, 'Hari-H', 'test-webhook', true);
+  const job = Object.values(service.scheduler.state.jobs).find(x => x.test);
+  const event = { event: 'message', session: 'default', engine: 'NOWEB', payload: {
+    from: '987654321@lid', fromMe: false, body: `KIRIM ${job.id}`,
+    _data: { key: { remoteJid: '987654321@lid', remoteJidAlt: '6281111111111@s.whatsapp.net', fromMe: false } },
+  } };
+  const webhook = value => fetch(`${base}/webhooks/waha`, { method: 'POST',
+    headers: { 'X-Webhook-Secret': 'webhook', 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
+  const group = structuredClone(event); group.payload.from = '123@g.us';
+  await webhook(group); assert.equal(job.status, 'pending');
+  const mismatch = structuredClone(event); mismatch.payload._data.key.remoteJid = 'other@lid';
+  await webhook(mismatch); assert.equal(job.status, 'pending');
+  await webhook(event); assert.equal(job.status, 'sent');
+  const sent = forwarded.filter(x => x.url.endsWith('/api/sendText'));
+  assert.equal(sent.length, 2);
+  assert.ok(sent.every(x => JSON.parse(x.options.body).chatId === '6281111111111@c.us'));
 });

@@ -35,6 +35,7 @@ function createService(env = process.env, fetchImpl = fetch) {
     },
   });
   let ticking = false;
+  let lastWebhook = null;
   async function tick() {
     if (ticking) return;
     ticking = true;
@@ -64,14 +65,25 @@ function createService(env = process.env, fetchImpl = fetch) {
       if (url.pathname === '/webhooks/waha' && req.method === 'POST') {
         if (!equal(req.headers['x-webhook-secret'], env.WEBHOOK_SECRET)) return json(401, { error: 'Unauthorized' });
         const event = await body(req);
+        lastWebhook = { receivedAt: new Date().toISOString(), outcome: 'ignored' };
         if (event.session === session && event.event === 'message' && event.payload?.fromMe === false) {
           // Resolve hidden IDs through WAHA, never interpret LID digits as a phone.
           let sender = event.payload.from;
           if (typeof sender === 'string' && /^\d+@lid$/.test(sender)) {
-            const mapping = await request(`/api/${encodeURIComponent(session)}/lids/${encodeURIComponent(sender)}`);
-            sender = mapping.ok ? (await mapping.json()).pn : null;
+            // NOWEB can include the verified alternate phone JID in the same
+            // authenticated direct-message envelope, even with store disabled.
+            const key = event.payload._data?.key;
+            const alternate = event.engine === 'NOWEB' && key?.remoteJid === sender && key.fromMe === false
+              ? key.remoteJidAlt : null;
+            if (typeof alternate === 'string' && /^\d+@(c\.us|s\.whatsapp\.net)$/.test(alternate)) sender = alternate;
+            else {
+              const mapping = await request(`/api/${encodeURIComponent(session)}/lids/${encodeURIComponent(sender)}`);
+              sender = mapping.ok ? (await mapping.json()).pn : null;
+            }
+            if (!sender) lastWebhook.outcome = 'unresolved_sender';
           }
           if (typeof sender === 'string' && /@(c\.us|s\.whatsapp\.net)$/.test(sender)) {
+            lastWebhook.outcome = phone(sender) === scheduler.state.config.komtiPhone ? 'komti_received' : 'other_sender';
             await scheduler.reply(sender, event.payload.body, event.id);
           }
         }
@@ -79,7 +91,7 @@ function createService(env = process.env, fetchImpl = fetch) {
       }
       if (!equal(req.headers['x-api-key'], env.GATEWAY_API_KEY)) return json(401, { error: 'Unauthorized' });
       if (url.pathname === '/api/auto-reminder/config') {
-        if (req.method === 'GET') return json(200, scheduler.configResult());
+        if (req.method === 'GET') return json(200, { ...scheduler.configResult(), lastWebhook });
         if (req.method === 'POST') return json(200, { success: true, ...scheduler.configure(await body(req)) });
       }
       if (url.pathname === '/api/auto-reminder/sync-courses' && req.method === 'POST') return json(200, scheduler.sync(await body(req)));
