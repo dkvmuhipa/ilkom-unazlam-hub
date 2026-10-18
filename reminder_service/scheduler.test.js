@@ -65,6 +65,25 @@ test('Stale course snapshots do not create unattended reminders', async t => {
   const sends = []; const f = setup(t, async (...args) => sends.push(args));
   f.setTime('2026-10-26T06:30:00+08:00'); await f.scheduler.tick(); assert.equal(sends.length, 0);
 });
+test('Live cancellation removes a pending reminder before its timeout', async t => {
+  const sends = []; const f = setup(t, async (...args) => sends.push(args));
+  f.scheduler.sync({ courses: [{ ...course, targetDate: '2026-10-19' }] });
+  await f.scheduler.tick();
+  f.scheduler.sync({ courses: [] });
+  f.setTime('2026-10-19T06:32:00+08:00');
+  await f.scheduler.tick();
+  assert.equal(sends.length, 1);
+  assert.equal(Object.values(f.scheduler.state.jobs)[0].status, 'cancelled');
+});
+test('Pending delivery uses the latest time and room from Supabase sync', async t => {
+  const sends = []; const f = setup(t, async (...args) => sends.push(args));
+  f.scheduler.sync({ courses: [{ ...course, targetDate: '2026-10-19' }] });
+  await f.scheduler.tick();
+  f.scheduler.sync({ courses: [{ ...course, targetDate: '2026-10-19', jamMulai: '09:00', ruangan: 'B' }] });
+  f.setTime('2026-10-19T06:32:00+08:00');
+  await f.scheduler.tick();
+  assert.match(sends[1][1], /09:00/); assert.match(sends[1][1], /Ruangan: B/);
+});
 test('Gateway requires API auth and webhook secret, advertises capability, and proxies fixed session', async t => {
   const f = setup(t); const forwarded = [];
   const service = createService({ WAHA_UPSTREAM_URL: 'https://waha.example', WAHA_UPSTREAM_API_KEY: 'upstream',
