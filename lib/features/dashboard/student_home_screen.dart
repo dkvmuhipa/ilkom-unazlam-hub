@@ -352,7 +352,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           const SizedBox(height: 14),
                         ],
 
-                        // 5. Gojek-style "Academic Wallet" Card (Status Presensi & Kas Kelas)
+                        // 5. Studio Clearance & Academic Deck (Status Presensi & Kas Kelas)
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 150),
                           child: _buildAcademicWalletCard(
@@ -365,7 +365,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         ),
                         const SizedBox(height: 18),
 
-                        // 6. Gojek-style 8 App Services Grid (2 Baris x 4 Kolom)
+                        // 6. Segmented Studio Control Dock (Konsol Modul Ilkom)
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 200),
                           child: _buildServicesGrid(context, student, isDark),
@@ -407,7 +407,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   }
 
   // ==========================================
-  // 1. GREETING & CONTEXT HEADER
+  // 1. DIGITAL PRESS PASS & BROADCAST HEADER
   // ==========================================
   Widget _buildGreetingHeader(
     BuildContext context,
@@ -421,72 +421,72 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final timeCtx = _getTimeContext();
 
+    final bool hasLiveSession = AttendanceScreen.currentSession != null &&
+        !AttendanceScreen.currentSession!.isExpired;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  AnimatedBuilder(
-                    animation: _livePulseAnimation,
-                    builder: (context, child) => Container(
-                      width: 7,
-                      height: 7,
+        // Top Broadcast Signal & Digital Press Pass Credential
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Live Pulsing Broadcast Beacon: ● ON AIR or ● STANDBY
+            final beaconWidget = AnimatedBuilder(
+              animation: _livePulseAnimation,
+              builder: (context, child) {
+                final signalColor = hasLiveSession
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF10B981);
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6.5,
+                      height: 6.5,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981)
-                            .withValues(alpha: _livePulseAnimation.value),
+                        color: signalColor.withValues(
+                          alpha: _livePulseAnimation.value,
+                        ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withValues(
-                              alpha: _livePulseAnimation.value * 0.6,
+                            color: signalColor.withValues(
+                              alpha: _livePulseAnimation.value * 0.7,
                             ),
                             blurRadius: 4,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 7),
-                  Icon(
-                    timeCtx['icon'] as IconData,
-                    size: 13,
-                    color: timeCtx['color'] as Color,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      dateStr.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 4),
+                    Text(
+                      hasLiveSession ? 'ON AIR' : 'STANDBY',
                       style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                        color: textSub,
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                        color: signalColor,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            ScaleButton(
+                  ],
+                );
+              },
+            );
+
+            // Press Credential Badge: Crew • Smt X (Tab 15 KHS/Akademik)
+            final credentialBadgeWidget = ScaleButton(
               scaleDown: 0.94,
               onTap: () => widget.onNavigateTab(15), // KHS & Akademik
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: 6.5,
+                  vertical: 3.5,
                 ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xFF1E293B)
                       : const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
                         ? const Color(0xFF334155)
@@ -498,29 +498,108 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
-                      Icons.school_rounded,
-                      size: 12,
+                      Icons.badge_rounded,
+                      size: 11,
                       color: AppColors.primary,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Semester ${student.semester}',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: isDark
-                            ? const Color(0xFFE2E8F0)
-                            : const Color(0xFF1E40AF),
-                        letterSpacing: -0.1,
+                    const SizedBox(width: 3),
+                    Flexible(
+                      child: Text(
+                        'Crew • Smt ${student.semester}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFF1E40AF),
+                          letterSpacing: -0.1,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            );
+
+            // On compact screens (< 420px), stack beacon & badge on line 1, and 'PRESS PASS // S1 ILKOM' on line 2
+            // to ensure 100% zero overflow even with 1.5x+ accessibility font scaling.
+            if (constraints.maxWidth < 420) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      beaconWidget,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: credentialBadgeWidget,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'PRESS PASS // S1 ILKOM',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 9.0,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: textSub,
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            // On wide screens (>= 420px), keep the unified single-line broadcast strip
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      beaconWidget,
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 1,
+                        height: 9,
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFCBD5E1),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'PRESS PASS // S1 ILKOM',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9.0,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: textSub,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: credentialBadgeWidget,
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 6),
+
+        // Personalized Newsroom Greeting
         Row(
           children: [
             Expanded(
@@ -528,7 +607,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${timeCtx['greeting']}, $firstName 👋',
+                    '${timeCtx['greeting']}, $firstName 🎙️',
                     style: TextStyle(
                       fontSize: 21,
                       fontWeight: FontWeight.w900,
@@ -537,15 +616,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                       height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    timeCtx['subtitle'] as String,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: textSub,
-                      letterSpacing: -0.1,
-                    ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(
+                        timeCtx['icon'] as IconData,
+                        size: 12,
+                        color: timeCtx['color'] as Color,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${timeCtx['subtitle']} • ${dateStr.toUpperCase()}',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: textSub,
+                            letterSpacing: 0.1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -777,7 +870,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   }
 
   // ==========================================
-  // 3. ACADEMIC WALLET CARD (COLLEGIATE PASS & QUICK ACTIONS)
+  // 3. STUDIO CLEARANCE & ACADEMIC DECK
   // ==========================================
   Widget _buildAcademicWalletCard(
     BuildContext context,
@@ -787,9 +880,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     bool isDark,
   ) {
     final isEligible = attendancePercent != null && attendancePercent >= 75;
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF141224) : Colors.white;
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
+        ? const Color(0xFF2C2844)
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
@@ -800,221 +893,295 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         color: cardBg,
         gradient: LinearGradient(
           colors: isDark
-              ? [const Color(0xFF1E1C2B), const Color(0xFF161524)]
+              ? [const Color(0xFF161427), const Color(0xFF110F20)]
               : [Colors.white, const Color(0xFFF8FAFC)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A)
-                .withValues(alpha: isDark ? 0.3 : 0.04),
-            blurRadius: 10,
+                .withValues(alpha: isDark ? 0.35 : 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Sisi Kiri: Status Kehadiran & Status Iuran Kas Kelas
-          Expanded(
-            flex: 5,
-            child: ScaleButton(
-              scaleDown: 0.97,
-              onTap: () => widget.onNavigateTab(5), // Presensi
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+          // Header Strip: Studio Clearance Tag + Micro Status Pill
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
                   children: [
-                    // Baris 1: Status Presensi UAS & Kehadiran
-                    Row(
-                      children: [
-                        attendancePercent == null
-                            ? SoftPillBadge.neutral(
-                                label: 'Presensi Baru',
-                                fontSize: 9.5,
-                              )
-                            : (isEligible
-                                  ? SoftPillBadge.success(
-                                      label: 'UAS Aman $attendancePercent%',
-                                      fontSize: 9.5,
-                                      showDot: true,
-                                    )
-                                  : SoftPillBadge.warning(
-                                      label:
-                                          'Pantau Presensi $attendancePercent%',
-                                      fontSize: 9.5,
-                                      showDot: true,
-                                    )),
-                      ],
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 13,
+                      color: isDark ? const Color(0xFF818CF8) : AppColors.primary,
                     ),
-                    const SizedBox(height: 4),
-
-                    // Baris 2: Nilai / Status Utama
-                    Text(
-                      attendancePercent == null
-                          ? 'Belum Ada Presensi'
-                          : '$hadirCount Hadir • $attendancePercent%',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w900,
-                        color: textMain,
-                        letterSpacing: -0.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // Baris Progress Bar Presensi UAS
-                    if (attendancePercent != null) ...[
-                      const SizedBox(height: 5),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (attendancePercent / 100).clamp(0.0, 1.0),
-                          minHeight: 5.0,
-                          backgroundColor: isDark
-                              ? const Color(0xFF26223D)
-                              : const Color(0xFFE2E8F0),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            attendancePercent >= 75
-                                ? const Color(0xFF10B981)
-                                : (attendancePercent >= 60
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFFEF4444)),
-                          ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        'STUDIO CLEARANCE // AKADEMIK',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                    ] else ...[
-                      const SizedBox(height: 3),
-                    ],
-
-                    // Baris 3: Status Iuran Kas Pribadi (Paket 1 Real Data)
-                    ScaleButton(
-                      scaleDown: 0.95,
-                      onTap: () => widget.onNavigateTab(8), // Buka Kas
-                      child: Row(
-                        children: [
-                          Icon(
-                            _isKasLunas == true
-                                ? Icons.verified_rounded
-                                : (_isKasLunas == false
-                                      ? Icons.error_rounded
-                                      : Icons.account_balance_wallet_rounded),
-                            size: 13,
-                            color: _isKasLunas == true
-                                ? const Color(0xFF10B981)
-                                : (_isKasLunas == false
-                                      ? const Color(0xFFEF4444)
-                                      : const Color(0xFF0D9488)),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              _isKasLunas == true
-                                  ? 'Kas: Lunas ✨'
-                                  : (_isKasLunas == false
-                                        ? 'Kas: ${_formatCurrency(_kasNominal)}'
-                                        : (_currentPeriodLabel.isNotEmpty
-                                              ? 'Iuran: $_currentPeriodLabel'
-                                              : 'Cek status kas')),
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                color: _isKasLunas == true
-                                    ? (isDark
-                                          ? const Color(0xFF4ADE80)
-                                          : const Color(0xFF059669))
-                                    : (_isKasLunas == false
-                                          ? const Color(0xFFEF4444)
-                                          : textSub),
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(width: 6),
+              attendancePercent == null
+                  ? SoftPillBadge.neutral(
+                      label: 'Presensi Baru',
+                      fontSize: 9.0,
+                    )
+                  : (isEligible
+                      ? SoftPillBadge.success(
+                          label: 'UAS Aman $attendancePercent%',
+                          fontSize: 9.0,
+                          showDot: true,
+                        )
+                      : SoftPillBadge.warning(
+                          label: 'Pantau Presensi $attendancePercent%',
+                          fontSize: 9.0,
+                          showDot: true,
+                        )),
+            ],
           ),
+          const SizedBox(height: 8),
 
           // Divider Tipis Elegan
           Container(
-            height: 48,
-            width: 1,
-            color: borderColor,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
+            height: 1,
+            color: borderColor.withValues(alpha: 0.6),
           ),
+          const SizedBox(height: 8),
 
-          // Sisi Kanan: 4 Aksi Cepat Ikonis (Presensi, Kas, KHS, Izin)
-          Expanded(
-            flex: 7,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: _buildGojekActionItem(
-                    icon: Icons.how_to_reg_rounded,
-                    label: 'Presensi',
-                    color: AppColors.cyan,
-                    textColor: textMain,
-                    onTap: () {
-                      if (AttendanceScreen.currentSession != null &&
-                          !AttendanceScreen.currentSession!.isExpired &&
-                          !student.canManageAttendance) {
-                        AttendanceScreen.showStudentScanner(
-                          context,
-                          userNim: student.nim,
-                          onSuccess: _loadDashboard,
-                        );
-                      } else {
-                        widget.onNavigateTab(5); // Presensi
-                      }
-                    },
+          // Body Row: Status Kehadiran/Kas (Kiri) & 4 Studio Controls (Kanan)
+          Row(
+            children: [
+              // Sisi Kiri: Status Kehadiran & Status Iuran Kas Kelas
+              Expanded(
+                flex: 5,
+                child: ScaleButton(
+                  scaleDown: 0.97,
+                  onTap: () => widget.onNavigateTab(5), // Presensi
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Persentase & Status Sesi
+                        Row(
+                          children: [
+                            Text(
+                              attendancePercent == null
+                                  ? '0%'
+                                  : '$attendancePercent%',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: textMain,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                attendancePercent == null
+                                    ? 'Belum Ada Sesi'
+                                    : '$hadirCount Sesi Hadir',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: textSub,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Progress Bar Presensi UAS
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: attendancePercent == null
+                                ? 0.0
+                                : (attendancePercent / 100).clamp(0.0, 1.0),
+                            minHeight: 4.5,
+                            backgroundColor: isDark
+                                ? const Color(0xFF26223D)
+                                : const Color(0xFFE2E8F0),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              (attendancePercent ?? 0) >= 75
+                                  ? const Color(0xFF10B981)
+                                  : ((attendancePercent ?? 0) >= 60
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFFEF4444)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+
+                        // Status Iuran Kas Kelas (Real Data)
+                        ScaleButton(
+                          scaleDown: 0.95,
+                          onTap: () => widget.onNavigateTab(8), // Buka Kas
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E1A34)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF2E274A)
+                                    : const Color(0xFFE2E8F0),
+                                width: 0.6,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _isKasLunas == true
+                                      ? Icons.verified_rounded
+                                      : (_isKasLunas == false
+                                          ? Icons.error_rounded
+                                          : Icons.account_balance_wallet_rounded),
+                                  size: 11.5,
+                                  color: _isKasLunas == true
+                                      ? const Color(0xFF10B981)
+                                      : (_isKasLunas == false
+                                          ? const Color(0xFFEF4444)
+                                          : const Color(0xFF0D9488)),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    _isKasLunas == true
+                                        ? 'Kas: Lunas ✨'
+                                        : (_isKasLunas == false
+                                            ? 'Kas: ${_formatCurrency(_kasNominal)}'
+                                            : (_currentPeriodLabel.isNotEmpty
+                                                ? 'Iuran: $_currentPeriodLabel'
+                                                : 'Cek status kas')),
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      color: _isKasLunas == true
+                                          ? (isDark
+                                              ? const Color(0xFF4ADE80)
+                                              : const Color(0xFF059669))
+                                          : (_isKasLunas == false
+                                              ? const Color(0xFFEF4444)
+                                              : textSub),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: _buildGojekActionItem(
-                    icon: Icons.account_balance_wallet_rounded,
-                    label: 'Kas',
-                    color: AppColors.teal,
-                    textColor: textMain,
-                    onTap: () => widget.onNavigateTab(8), // Kas Kelas
-                  ),
+              ),
+
+              // Divider Vertikal Elegan
+              Container(
+                height: 54,
+                width: 1,
+                color: borderColor,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+
+              // Sisi Kanan: 4 Aksi Cepat Studio Deck (Presensi, Kas, KHS, Izin)
+              Expanded(
+                flex: 7,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: _buildGojekActionItem(
+                        icon: Icons.qr_code_scanner_rounded,
+                        label: 'Presensi',
+                        color: AppColors.cyan,
+                        textColor: textMain,
+                        onTap: () {
+                          if (AttendanceScreen.currentSession != null &&
+                              !AttendanceScreen.currentSession!.isExpired &&
+                              !student.canManageAttendance) {
+                            AttendanceScreen.showStudentScanner(
+                              context,
+                              userNim: student.nim,
+                              onSuccess: _loadDashboard,
+                            );
+                          } else {
+                            widget.onNavigateTab(5); // Presensi
+                          }
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildGojekActionItem(
+                        icon: Icons.account_balance_wallet_rounded,
+                        label: 'Kas',
+                        color: AppColors.teal,
+                        textColor: textMain,
+                        onTap: () => widget.onNavigateTab(8), // Kas Kelas
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildGojekActionItem(
+                        icon: Icons.analytics_rounded,
+                        label: 'KHS',
+                        color: AppColors.primary,
+                        textColor: textMain,
+                        onTap: () => widget.onNavigateTab(
+                          15,
+                        ), // KHS & Transkrip Nilai (Tab 15)
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildGojekActionItem(
+                        icon: Icons.assignment_turned_in_rounded,
+                        label: 'Izin',
+                        color: AppColors.rose,
+                        textColor: textMain,
+                        onTap: () => widget.onNavigateTab(
+                          13,
+                        ), // Surat Izin & Dispensasi (Tab 13)
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _buildGojekActionItem(
-                    icon: Icons.school_rounded,
-                    label: 'KHS',
-                    color: AppColors.primary,
-                    textColor: textMain,
-                    onTap: () => widget.onNavigateTab(
-                      15,
-                    ), // KHS & Transkrip Nilai (Tab 15)
-                  ),
-                ),
-                Expanded(
-                  child: _buildGojekActionItem(
-                    icon: Icons.description_rounded,
-                    label: 'Izin',
-                    color: AppColors.rose,
-                    textColor: textMain,
-                    onTap: () => widget.onNavigateTab(
-                      13,
-                    ), // Surat Izin & Dispensasi (Tab 13)
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1042,15 +1209,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               ColorfulIconBox(
                 icon: icon,
                 color: color,
-                size: 38,
-                iconSize: 19,
-                radius: 12,
+                size: 36,
+                iconSize: 18,
+                radius: 11,
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: textColor,
                   letterSpacing: -0.15,
@@ -1394,7 +1561,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   }
 
   // ==========================================
-  // 5. 8 SERVICES GRID (ALA MENU GOJEK)
+  // 5. SEGMENTED STUDIO CONTROL DOCK (NEWSROOM & BROADCAST)
   // ==========================================
   Widget _buildServicesGrid(
     BuildContext context,
@@ -1405,17 +1572,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     final borderColor = isDark
         ? const Color(0xFF2E2C3D)
         : const Color(0xFFE2E8F0);
+    final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     final services = [
       _ServiceItem(
-        title: 'Materi Kuliah',
+        title: 'Materi',
+        subtitle: 'Slide & Modul',
         icon: Icons.menu_book_rounded,
         color: AppColors.cyan,
         bgColor: isDark ? const Color(0xFF162D3D) : const Color(0xFFE0F2FE),
         tabIndex: 10, // Gudang Materi & E-Book
       ),
       _ServiceItem(
-        title: 'Agenda Kelas',
+        title: 'Agenda',
+        subtitle: 'Jadwal Kuliah',
         icon: Icons.event_note_rounded,
         color: AppColors.emerald,
         bgColor: isDark ? const Color(0xFF152F24) : const Color(0xFFECFDF5),
@@ -1423,6 +1594,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       _ServiceItem(
         title: 'Kelompok',
+        subtitle: 'Praktikum',
         icon: Icons.group_work_rounded,
         color: AppColors.teal,
         bgColor: isDark ? const Color(0xFF163230) : const Color(0xFFF0FDFA),
@@ -1430,13 +1602,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       _ServiceItem(
         title: 'Voting',
+        subtitle: 'Suara Kelas',
         icon: Icons.how_to_vote_rounded,
         color: AppColors.violet,
         bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
         tabIndex: 12, // Voting & Polling
       ),
       _ServiceItem(
-        title: 'Pengumuman',
+        title: 'Warta',
+        subtitle: 'Pengumuman',
         icon: Icons.campaign_rounded,
         color: AppColors.rose,
         bgColor: isDark ? const Color(0xFF341E1E) : const Color(0xFFFEF2F2),
@@ -1445,6 +1619,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       _ServiceItem(
         title: 'Surat Izin',
+        subtitle: 'Dispensasi',
         icon: Icons.mark_email_read_rounded,
         color: AppColors.amber,
         bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
@@ -1452,6 +1627,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       _ServiceItem(
         title: 'Audit Log',
+        subtitle: 'Rekam Jejak',
         icon: Icons.history_rounded,
         color: const Color(0xFF6366F1),
         bgColor: isDark ? const Color(0xFF232244) : const Color(0xFFEEF2FF),
@@ -1459,6 +1635,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       _ServiceItem(
         title: 'Lainnya',
+        subtitle: 'Katalog 12+',
         icon: Icons.grid_view_rounded,
         color: const Color(0xFF64748B),
         bgColor: isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9),
@@ -1467,7 +1644,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
@@ -1482,22 +1659,239 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Console Dock
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4.5),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.dashboard_customize_rounded,
+                          size: 13,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'KONSOL MODUL ILKOM',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.7,
+                                      color: textMain,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 1.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF162D3D)
+                                        : const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    '8 MODUL',
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.cyan,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'Channel perkuliahan & redaksi warta kelas',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                color: textSub,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                ScaleButton(
+                  scaleDown: 0.94,
+                  onTap: () => _showMoreServicesModal(context, isDark),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF181628)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: borderColor.withValues(alpha: 0.8),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Semua',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFFE2E8F0)
+                                : const Color(0xFF334155),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 10,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // CHANNEL A // PRODUKSI & KULIAH
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: AppColors.cyan,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    'CHANNEL A // PRODUKSI & KULIAH',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                      color: textSub,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
           Row(
             children: services
                 .take(4)
                 .map((item) => Expanded(
-                      child: _buildServiceIcon(context, item, isDark),
+                      child: _buildServiceIcon(
+                        context,
+                        item,
+                        isDark,
+                        textMain,
+                        textSub,
+                      ),
                     ))
                 .toList(),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
+
+          // Micro divider
+          Container(
+            height: 1,
+            color: borderColor.withValues(alpha: 0.6),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          const SizedBox(height: 8),
+
+          // CHANNEL B // REDAKSI & BIRO KELAS
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: AppColors.rose,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    'CHANNEL B // REDAKSI & BIRO KELAS',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                      color: textSub,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
           Row(
             children: services
                 .skip(4)
                 .take(4)
                 .map((item) => Expanded(
-                      child: _buildServiceIcon(context, item, isDark),
+                      child: _buildServiceIcon(
+                        context,
+                        item,
+                        isDark,
+                        textMain,
+                        textSub,
+                      ),
                     ))
                 .toList(),
           ),
@@ -1510,6 +1904,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     BuildContext context,
     _ServiceItem item,
     bool isDark,
+    Color textMain,
+    Color textSub,
   ) {
     return Semantics(
       button: true,
@@ -1523,8 +1919,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             widget.onNavigateTab(item.tabIndex);
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2.5),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161424) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: isDark ? const Color(0xFF28243C) : const Color(0xFFEEF2F6),
+              width: 0.8,
+            ),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1534,9 +1939,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   ColorfulIconBox(
                     icon: item.icon,
                     color: item.color,
-                    size: 46,
-                    iconSize: 22,
-                    radius: 14,
+                    backgroundColor: item.bgColor,
+                    size: 36,
+                    iconSize: 18,
+                    radius: 10,
                   ),
                   if (item.showBadge)
                     Positioned(
@@ -1549,7 +1955,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           color: const Color(0xFFEF4444),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark ? const Color(0xFF1E1C2B) : Colors.white,
+                            color: isDark
+                                ? const Color(0xFF161424)
+                                : Colors.white,
                             width: 1.5,
                           ),
                         ),
@@ -1557,19 +1965,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     ),
                 ],
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 5),
               Text(
                 item.title,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? const Color(0xFFF1F5F9)
-                      : const Color(0xFF0F172A),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: textMain,
                   letterSpacing: -0.15,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                item.subtitle ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w600,
+                  color: textSub,
                 ),
               ),
             ],

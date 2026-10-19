@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class ServiceItem {
   final String title;
+  final String? subtitle;
   final IconData icon;
   final Color color;
   final Color bgColor;
@@ -11,6 +12,7 @@ class ServiceItem {
 
   ServiceItem({
     required this.title,
+    this.subtitle,
     required this.icon,
     required this.color,
     required this.bgColor,
