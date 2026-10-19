@@ -1561,6 +1561,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   // 5B. COMPACT HERO CAROUSEL BANNER (GOJEK / TOKOPEDIA STYLE)
   // ==========================================
   Widget _buildHeroBannerCarousel() {
+    final hadir = _attendance
+        .where((row) => '${row['status']}'.toLowerCase() == 'hadir')
+        .length;
+    final attendancePercent = _attendance.isEmpty
+        ? null
+        : (hadir * 100 / _attendance.length).round();
+
     return HomeBannerCarousel(
       todayCourses: _todayCourses,
       upcomingCourses: _upcomingCourses,
@@ -1571,6 +1578,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       latestAnnouncement: _announcement,
       hasLoadError: _loadError != null,
       onNavigateTab: widget.onNavigateTab,
+      isKasLunas: _isKasLunas,
+      kasNominal: _kasNominal,
+      currentPeriodLabel: _currentPeriodLabel,
+      attendancePercent: attendancePercent,
     );
   }
 
