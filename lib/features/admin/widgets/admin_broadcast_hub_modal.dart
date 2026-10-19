@@ -380,7 +380,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        width: (MediaQuery.sizeOf(context).width - 96)
+        width: (MediaQuery.sizeOf(context).width - (isCompact ? 24 : 64))
             .clamp(0.0, 720.0)
             .toDouble(),
         constraints: BoxConstraints(maxHeight: screenSize.height * 0.88),
@@ -419,22 +419,22 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
-                          children: [
-                            Text(
-                              'BROADCAST COMMAND HUB',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
+                        const Text(
+                          'BROADCAST COMMAND HUB',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Pusat Kendali Pengumuman & Notifikasi Push FCM Langsung',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.white.withValues(alpha: 0.7),
@@ -513,8 +513,11 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     const Text(
                       'Target Penerima Siaran',
@@ -833,76 +836,85 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF25D366)
-                                .withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF25D366)
+                                  .withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.phone_android_rounded,
+                              size: 16,
+                              color: Color(0xFF059669),
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.phone_android_rounded,
-                            size: 16,
-                            color: Color(0xFF059669),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Blast WhatsApp Otomatis (WAHA Gateway)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _isWahaOnline
-                                        ? const Color(0xFFDCFCE7)
-                                        : const Color(0xFFFEE2E2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _isWahaOnline ? 'ONLINE' : 'OFFLINE',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      color: _isWahaOnline
-                                          ? const Color(0xFF166534)
-                                          : const Color(0xFF991B1B),
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: [
+                                    const Text(
+                                      'Blast WhatsApp Otomatis (WAHA Gateway)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1E293B),
+                                      ),
                                     ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _isWahaOnline
+                                            ? const Color(0xFFDCFCE7)
+                                            : const Color(0xFFFEE2E2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        _isWahaOnline ? 'ONLINE' : 'OFFLINE',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w800,
+                                          color: _isWahaOnline
+                                              ? const Color(0xFF166534)
+                                              : const Color(0xFF991B1B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _targetWaCount > 0
+                                      ? 'Tersedia $_targetWaCount nomor WhatsApp mahasiswa terverifikasi'
+                                      : 'Kirim pesan otomatis via REST API WhatsApp',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _targetWaCount > 0
-                                  ? 'Tersedia $_targetWaCount nomor WhatsApp mahasiswa terverifikasi'
-                                  : 'Kirim pesan otomatis via REST API WhatsApp',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Switch(
                       value: _sendWahaBlast,
                       activeThumbColor: const Color(0xFF25D366),
@@ -922,7 +934,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   const SizedBox(height: 8),
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
                       const Text(
                         'Target Kirim: ',
@@ -932,7 +947,6 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                           color: Color(0xFF475569),
                         ),
                       ),
-                      const SizedBox(width: 6),
                       ChoiceChip(
                         label: Text(
                           'Japri ke Nomor Mahasiswa ($_targetWaCount Nomor)',
@@ -950,7 +964,6 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                           if (val) setState(() => _wahaTargetMode = 'JAPRI');
                         },
                       ),
-                      const SizedBox(width: 6),
                       ChoiceChip(
                         label: const Text('Grup WA Resmi Kelas'),
                         selected: _wahaTargetMode == 'GROUP',
@@ -1261,60 +1274,67 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 4,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: catColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      a.kategori,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: catColor,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: catColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          a.kategori,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: catColor,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (a.isPinned) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.push_pin_rounded,
+                                size: 10,
+                                color: Color(0xFFD97706),
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                'PINNED',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFB45309),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (a.isPinned) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.push_pin_rounded,
-                            size: 10,
-                            color: Color(0xFFD97706),
-                          ),
-                          SizedBox(width: 3),
-                          Text(
-                            'PINNED',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFFB45309),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
                   // Target Badge
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1365,14 +1385,18 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Text(
-                    '${a.authorName} • ${_formatDate(a.createdAt)}',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF94A3B8),
+                  Expanded(
+                    child: Text(
+                      '${a.authorName} • ${_formatDate(a.createdAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF94A3B8),
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   // Toggle Pin Button
                   IconButton(
                     icon: Icon(
