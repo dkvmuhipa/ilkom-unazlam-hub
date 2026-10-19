@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/saas_components.dart';
@@ -88,7 +88,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
             boxShadow: AppColors.softShadow,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
+          child: AdaptiveDialogBody(
             mainAxisSize: MainAxisSize.min,
             children: [
               GlassModalHeader(
@@ -181,7 +181,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
                           children: [
                             Text(
                               'SEMESTER AKTIF'.toUpperCase(),
-                              style: GoogleFonts.plusJakartaSans(
+                              style: TextStyle(fontFamily: 'Poppins',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.9,
@@ -189,7 +189,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
                               ),
                             ),
                             const SizedBox(height: 7),
-                            DropdownButtonFormField<int>(
+                            DropdownButtonFormField<int>(isExpanded: true,
                               initialValue: _semester,
                               decoration: InputDecoration(
                                 prefixIcon: const Padding(
@@ -204,7 +204,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
                                       value: semester,
                                       child: Text(
                                         'Semester $semester',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: TextStyle(fontFamily: 'Poppins',
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w600,
                                         ),

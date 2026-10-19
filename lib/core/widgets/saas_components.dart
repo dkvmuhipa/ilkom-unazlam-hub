@@ -2,9 +2,28 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../constants/app_colors.dart';
+
+/// Allows the whole dialog, including its actions, to scroll above the keyboard.
+class AdaptiveDialogBody extends StatelessWidget {
+  final List<Widget> children;
+  final MainAxisSize mainAxisSize;
+  final CrossAxisAlignment crossAxisAlignment;
+  const AdaptiveDialogBody({super.key, required this.children,
+    this.mainAxisSize = MainAxisSize.min,
+    this.crossAxisAlignment = CrossAxisAlignment.center});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    final compact = !constraints.hasBoundedHeight ||
+        constraints.maxHeight < 560 * MediaQuery.textScalerOf(context).scale(1);
+    final body = Column(mainAxisSize: mainAxisSize, crossAxisAlignment: crossAxisAlignment,
+      children: compact ? children.map((child) => child is Flexible ? child.child : child).toList() : children);
+    return compact && constraints.hasBoundedHeight ? SingleChildScrollView(child: body) : body;
+  });
+}
 
 // ============================================================================
 // 1. SOFT PILL BADGE (Emerald, Amber, Rose, Navy, Slate)
@@ -151,13 +170,15 @@ class SoftPillBadge extends StatelessWidget {
             Icon(icon, size: fontSize + 1, color: text),
             const SizedBox(width: 4.5),
           ],
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w800,
-              color: text,
-              letterSpacing: 0.1,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(fontFamily: 'Poppins',
+                fontSize: fontSize,
+                fontWeight: FontWeight.w800,
+                color: text,
+                letterSpacing: 0.1,
+              ),
             ),
           ),
         ],
@@ -283,7 +304,7 @@ class SaaSAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initials,
-        style: GoogleFonts.plusJakartaSans(
+        style: TextStyle(fontFamily: 'Poppins',
           color: theme['text'],
           fontWeight: FontWeight.w900,
           fontSize: fontSize,
@@ -530,7 +551,7 @@ class GlassModalHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: TextStyle(fontFamily: 'Poppins',
                     fontSize: 18,
                     fontWeight: FontWeight.w900, // font-black
                     letterSpacing: -0.5, // tracking-tight
@@ -541,7 +562,7 @@ class GlassModalHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: TextStyle(fontFamily: 'Poppins',
                       fontSize: 12.5,
                       color: AppColors.textSub,
                       height: 1.4,
@@ -612,11 +633,11 @@ class SaaSInputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Label form kecil kapital: text-xs uppercase tracking-wider text-gray-400
-        Row(
+        Wrap(crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
               label.toUpperCase(),
-              style: GoogleFonts.plusJakartaSans(
+              style: TextStyle(fontFamily: 'Poppins',
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.9,
@@ -627,7 +648,7 @@ class SaaSInputField extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '*',
-                style: GoogleFonts.plusJakartaSans(
+                style: TextStyle(fontFamily: 'Poppins',
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: AppColors.error,
@@ -646,7 +667,7 @@ class SaaSInputField extends StatelessWidget {
           onChanged: onChanged,
           maxLines: maxLines,
           textCapitalization: textCapitalization,
-          style: GoogleFonts.plusJakartaSans(
+          style: TextStyle(fontFamily: 'Poppins',
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textMain,
@@ -655,7 +676,7 @@ class SaaSInputField extends StatelessWidget {
             hintText: hintText,
             helperText: helperText,
             helperMaxLines: 2,
-            helperStyle: GoogleFonts.plusJakartaSans(
+            helperStyle: TextStyle(fontFamily: 'Poppins',
               fontSize: 11,
               color: AppColors.textSub,
             ),
@@ -769,7 +790,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
     final progress = (_currentStep + 1) / totalSteps;
     final activeStepData = widget.steps[_currentStep];
 
-    return Column(
+    return AdaptiveDialogBody(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -838,7 +859,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
                                     ? const Icon(Icons.check, size: 12, color: Colors.white)
                                     : Text(
                                         '${index + 1}',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: TextStyle(fontFamily: 'Poppins',
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w800,
                                           color: Colors.white,
@@ -852,7 +873,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
                                 widget.steps[index].title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: TextStyle(fontFamily: 'Poppins',
                                   fontSize: 11,
                                   fontWeight: isActive || isCompleted
                                       ? FontWeight.w800
@@ -889,7 +910,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
             padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
             child: Text(
               activeStepData.subtitle!,
-              style: GoogleFonts.plusJakartaSans(
+              style: TextStyle(fontFamily: 'Poppins',
                 fontSize: 12.5,
                 color: AppColors.textSub,
                 height: 1.4,
@@ -911,7 +932,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
         // Stepper Navigation Footer Buttons
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-          child: Row(
+          child: OverflowBar(alignment: MainAxisAlignment.end, spacing: 12, overflowSpacing: 8,
             children: [
               if (_currentStep > 0) ...[
                 OutlinedButton.icon(
@@ -925,7 +946,7 @@ class _SaaSStepperState extends State<SaaSStepper> {
                   child: const Text('Batal'),
                 ),
               ],
-              const Spacer(),
+
               ElevatedButton.icon(
                 onPressed: widget.isSubmitting ? null : _nextStep,
                 icon: widget.isSubmitting
@@ -995,7 +1016,7 @@ class SaaSDataTableToolbar extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: TextStyle(fontFamily: 'Poppins',
                         fontSize: 20,
                         fontWeight: FontWeight.w900, // font-black
                         letterSpacing: -0.6, // tracking-tight
@@ -1006,7 +1027,7 @@ class SaaSDataTableToolbar extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         subtitle!,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: TextStyle(fontFamily: 'Poppins',
                           fontSize: 12.5,
                           color: AppColors.textSub,
                         ),
@@ -1033,13 +1054,13 @@ class SaaSDataTableToolbar extends StatelessWidget {
                   child: TextField(
                     controller: searchController,
                     onChanged: onSearchChanged,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: TextStyle(fontFamily: 'Poppins',
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                     decoration: InputDecoration(
                       hintText: searchHint,
-                      hintStyle: GoogleFonts.plusJakartaSans(
+                      hintStyle: TextStyle(fontFamily: 'Poppins',
                         fontSize: 13,
                         color: AppColors.textMuted,
                       ),
@@ -1134,7 +1155,7 @@ Widget saasHeaderCell(String label, {int flex = 1, TextAlign align = TextAlign.l
     child: Text(
       label.toUpperCase(),
       textAlign: align,
-      style: GoogleFonts.plusJakartaSans(
+      style: TextStyle(fontFamily: 'Poppins',
         fontSize: 10.5,
         fontWeight: FontWeight.w800, // font-black / extra bold
         letterSpacing: 0.9, // tracking-wider

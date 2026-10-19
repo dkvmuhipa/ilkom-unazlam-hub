@@ -497,10 +497,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           // Header: Clean Tech Console Bar + Right Action Tools (Responsive)
           LayoutBuilder(
             builder: (context, headerConstraints) {
-              final isNarrow = headerConstraints.maxWidth < 620;
+              final isNarrow = headerConstraints.maxWidth < 760 * MediaQuery.textScalerOf(context).scale(1);
 
-              final actionTools = Row(
-                mainAxisSize: MainAxisSize.min,
+              final actionTools = Wrap(alignment: WrapAlignment.end, runSpacing: 8,
                 children: [
                   // Tombol Sinkronisasi Data Master
                   Tooltip(
@@ -701,10 +700,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [actionTools],
-                    ),
+                    Align(alignment: Alignment.centerRight, child: actionTools),
                     const SizedBox(height: 10),
                     titleSection,
                   ],
@@ -1214,8 +1210,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(spacing: 8, runSpacing: 8,
               children: [
                 ColorfulIconBox(
                   icon: icon,

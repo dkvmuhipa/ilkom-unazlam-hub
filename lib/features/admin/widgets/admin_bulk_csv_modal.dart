@@ -1,6 +1,7 @@
+import 'admin_common_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/bulk_csv_service.dart';
@@ -11,6 +12,7 @@ import '../../../core/services/supabase_repository.dart';
 enum BulkImportType { students, courses }
 
 class AdminBulkCsvModal extends StatefulWidget {
+  final bool fullPage;
   final BulkImportType initialType;
   final Future<void> Function() onReload;
   final void Function(String message, {bool isError}) onShowMessage;
@@ -24,6 +26,7 @@ class AdminBulkCsvModal extends StatefulWidget {
 
   const AdminBulkCsvModal({
     super.key,
+    this.fullPage = false,
     this.initialType = BulkImportType.students,
     required this.onReload,
     required this.onShowMessage,
@@ -43,17 +46,11 @@ class AdminBulkCsvModal extends StatefulWidget {
     })
     onRecordAudit,
   }) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AdminBulkCsvModal(
-        initialType: initialType,
-        onReload: onReload,
-        onShowMessage: onShowMessage,
-        onRecordAudit: onRecordAudit,
-      ),
-    );
+    return Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Scaffold(
+      body: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1100),
+        child: AdminBulkCsvModal(fullPage: true, initialType: initialType, onReload: onReload,
+          onShowMessage: onShowMessage, onRecordAudit: onRecordAudit)))),
+    )));
   }
 
   @override
@@ -281,7 +278,7 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
     final isCompact = media.size.width < 600;
 
     return Container(
-      height: media.size.height * 0.92,
+      height: widget.fullPage ? double.infinity : media.size.height * 0.92,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -337,7 +334,7 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                     children: [
                       Text(
                         'Bulk Ingestion Hub',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: TextStyle(fontFamily: 'Poppins',
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF0F172A),
@@ -444,7 +441,7 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
               color: isSelected ? AppColors.primary : const Color(0xFF64748B),
             ),
             const SizedBox(width: 8),
-            Text(
+            Flexible(child: Text(
               title,
               style: TextStyle(
                 fontSize: 12.5,
@@ -453,7 +450,7 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
                     ? const Color(0xFF0F172A)
                     : const Color(0xFF64748B),
               ),
-            ),
+            )),
           ],
         ),
       ),
@@ -601,7 +598,7 @@ class _AdminBulkCsvModalState extends State<AdminBulkCsvModal> {
         const SizedBox(height: 16),
 
         // Text Area for Copy-Paste
-        Row(
+        AdminAdaptiveRow(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(

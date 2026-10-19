@@ -1,3 +1,5 @@
+import 'admin_common_widgets.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,13 +10,14 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/services/waha_service.dart';
 import '../../../models/models.dart';
 import '../models/admin_models.dart';
-import 'admin_common_widgets.dart';
+
 
 /// Modal Pusat Komando Siaran Notifikasi (Broadcast Command Hub)
 /// Memfasilitasi Admin untuk mengirim pengumuman instan & push notifikasi FCM
 /// dengan penargetan audiens (Semua / Angkatan / Kelas), preview lockscreen,
 /// serta pemantauan riwayat siaran.
 class AdminBroadcastHubModal extends StatefulWidget {
+  final bool fullPage;
   final List<ClassItem> classes;
   final Future<void> Function() onRefresh;
   final void Function(String message, {bool isError}) onShowMessage;
@@ -28,6 +31,7 @@ class AdminBroadcastHubModal extends StatefulWidget {
 
   const AdminBroadcastHubModal({
     super.key,
+    this.fullPage = false,
     required this.classes,
     required this.onRefresh,
     required this.onShowMessage,
@@ -47,16 +51,11 @@ class AdminBroadcastHubModal extends StatefulWidget {
     })
     onRecordAudit,
   }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AdminBroadcastHubModal(
-        classes: classes,
-        onRefresh: onRefresh,
-        onShowMessage: onShowMessage,
-        onRecordAudit: onRecordAudit,
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Scaffold(
+      body: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1100),
+        child: AdminBroadcastHubModal(fullPage: true, classes: classes, onRefresh: onRefresh,
+          onShowMessage: onShowMessage, onRecordAudit: onRecordAudit)))),
+    )));
   }
 
   @override
@@ -374,16 +373,16 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
 
     return Dialog(
       backgroundColor: Colors.white,
-      insetPadding: EdgeInsets.symmetric(
+      insetPadding: widget.fullPage ? EdgeInsets.zero : EdgeInsets.symmetric(
         horizontal: isCompact ? 12 : 32,
         vertical: 24,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        width: (MediaQuery.sizeOf(context).width - 96)
+        width: widget.fullPage ? double.infinity : (MediaQuery.sizeOf(context).width - 96)
             .clamp(0.0, 720.0)
             .toDouble(),
-        constraints: BoxConstraints(maxHeight: screenSize.height * 0.88),
+        constraints: BoxConstraints(maxHeight: screenSize.height * (widget.fullPage ? 1 : 0.88)),
         child: Column(
           children: [
             // 1. Header Konsol Modern (Dark Indigo)
@@ -419,7 +418,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        const Wrap(
                           children: [
                             Text(
                               'BROADCAST COMMAND HUB',
@@ -513,7 +512,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                AdminAdaptiveRow(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
@@ -832,10 +831,10 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                AdminAdaptiveRow(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    AdminAdaptiveRow(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
@@ -854,7 +853,7 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(spacing: 8, runSpacing: 8,
                               children: [
                                 const Text(
                                   'Blast WhatsApp Otomatis (WAHA Gateway)',

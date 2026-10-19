@@ -46,10 +46,12 @@ class _ModalThemeTokens {
 }
 
 class AdminWahaGatewayModal extends StatefulWidget {
+  final bool fullPage;
   final void Function(String message, {bool isError}) onShowMessage;
 
   const AdminWahaGatewayModal({
     super.key,
+    this.fullPage = false,
     required this.onShowMessage,
   });
 
@@ -57,11 +59,11 @@ class AdminWahaGatewayModal extends StatefulWidget {
     required BuildContext context,
     required void Function(String message, {bool isError}) onShowMessage,
   }) {
-    return showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AdminWahaGatewayModal(onShowMessage: onShowMessage),
-    );
+    return Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => Scaffold(body: SafeArea(child: Center(child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1100),
+        child: AdminWahaGatewayModal(fullPage: true, onShowMessage: onShowMessage))))),
+    ));
   }
 
   @override
@@ -358,7 +360,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
       backgroundColor: tokens.cardBg,
       surfaceTintColor: Colors.transparent,
       elevation: 16,
-      insetPadding: EdgeInsets.symmetric(
+      insetPadding: widget.fullPage ? EdgeInsets.zero : EdgeInsets.symmetric(
         horizontal: isCompact ? 12 : 32,
         vertical: 24,
       ),
@@ -367,8 +369,8 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         side: BorderSide(color: tokens.borderCol),
       ),
       child: Container(
-        width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 760.0).toDouble(),
-        constraints: BoxConstraints(maxHeight: screenSize.height * 0.90),
+        width: widget.fullPage ? double.infinity : (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 760.0).toDouble(),
+        constraints: BoxConstraints(maxHeight: screenSize.height * (widget.fullPage ? 1 : 0.90)),
         child: Column(
           children: [
             // Header

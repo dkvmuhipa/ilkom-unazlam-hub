@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -64,14 +65,6 @@ class _AdminClassesViewState extends State<AdminClassesView> {
     _newClassName.dispose();
     _newClassCapacity.dispose();
     super.dispose();
-  }
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : 'M';
   }
 
   Future<void> _saveClass({
@@ -201,262 +194,43 @@ class _AdminClassesViewState extends State<AdminClassesView> {
   }
 
   void _showClassDetail(ClassItem cls) {
-    final classStudents = widget.managedAccounts
-        .where((s) => !s.isAdmin && s.kelas.toLowerCase() == cls.nama.toLowerCase())
-        .toList();
-    final classCourses = widget.courses;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, scrollController) => ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.groups_rounded, color: AppColors.primary, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        cls.nama,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
-                      ),
-                      Text(
-                        '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Kapasitas', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${cls.kapasitas} Kursi',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Mahasiswa Aktif', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${classStudents.length} Mahasiswa',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF059669),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Mata Kuliah', style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${classCourses.length} MK',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      final logs = await SupabaseRepository.getAttendanceLogs();
-                      final csv = ExportService.exportAttendanceCsv(
-                        courseName: cls.nama,
-                        logs: logs.where((row) => classStudents.any((student) => student.nim == row['student_nim'])).toList(),
-                        students: classStudents,
-                      );
-                      if (mounted) {
-                        ExportService.showExportSheet(
-                          context,
-                          title: 'Presensi ${cls.nama}',
-                          fileName: 'presensi_${cls.nama.replaceAll(' ', '_')}.csv',
-                          content: csv,
-                          subtitle: 'Daftar Presensi Kelas',
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.download_rounded, size: 16),
-                    label: const Text('Ekspor Presensi', style: TextStyle(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showClassDialog(existing: cls);
-                    },
-                    icon: const Icon(Icons.edit_rounded, size: 16),
-                    label: const Text('Edit Kelas', style: TextStyle(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Mahasiswa Terdaftar (${classStudents.length})',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF111827)),
-            ),
-            const SizedBox(height: 10),
-            if (classStudents.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Belum ada mahasiswa yang terdaftar di kelas ini.',
-                  style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
-                ),
-              )
-            else
-              ...classStudents.map(
-                (s) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: AppColors.primarySoft,
-                        child: Text(
-                          _getInitials(s.nama),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              s.nama,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12.5,
-                                color: Color(0xFF111827),
-                              ),
-                            ),
-                            Text('NIM ${s.nim} • ${s.jabatan}', style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9CA3AF)),
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          widget.onNavigate('detail_mahasiswa', student: s);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+    final students = widget.managedAccounts.where((student) => !student.isAdmin && student.kelas.toLowerCase() == cls.nama.toLowerCase()).toList();
+    final courses = widget.courses.where((course) => course.semester == cls.semester).toList();
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
+      pageLabel: 'Detail Kelas', title: cls.nama,
+      subtitle: '${cls.prodi} • Semester ${cls.semester} • ${cls.academicYear}', icon: Icons.groups_outlined,
+      onEdit: () { Navigator.pop(detailContext); _showClassDialog(existing: cls); },
+      actions: [AdminDetailAction('Ekspor presensi', Icons.download_outlined, () async {
+        try {
+          final logs = await SupabaseRepository.getAttendanceLogsStrict();
+          final csv = ExportService.exportAttendanceCsv(courseName: cls.nama,
+            logs: logs.where((row) => students.any((student) => student.nim == row['student_nim'])).toList(), students: students);
+          if (!detailContext.mounted) return;
+          ExportService.showExportSheet(detailContext, title: 'Presensi ${cls.nama}',
+            fileName: 'presensi_${cls.nama.replaceAll(' ', '_')}.csv', content: csv, subtitle: 'Rekap kelas');
+        } catch (error) {
+          if (detailContext.mounted) ScaffoldMessenger.of(detailContext).showSnackBar(SnackBar(content: Text('Ekspor gagal: $error')));
+        }
+      })],
+      tabs: [
+        AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Informasi kelas', children: [
+          AdminDetailFields({'Program studi': cls.prodi, 'Semester': '${cls.semester}', 'Tahun akademik': cls.academicYear,
+            'Kapasitas': '${cls.kapasitas} kursi', 'Mahasiswa terdaftar': '${students.length} mahasiswa'}),
+        ])),
+        AdminDetailTab('Mahasiswa', AdminDetailSection(title: 'Mahasiswa terdaftar', children: [
+          if (students.isEmpty) const Text('Belum ada mahasiswa yang terdaftar di kelas ini.'),
+          for (final student in students) ListTile(contentPadding: EdgeInsets.zero,
+            title: Text(student.nama), subtitle: Text('NIM ${student.nim}'), trailing: const Icon(Icons.chevron_right),
+            onTap: () { Navigator.pop(detailContext); widget.onNavigate('detail_mahasiswa', student: student); }),
+        ])),
+        AdminDetailTab('Mata Kuliah', AdminDetailSection(title: 'Mata kuliah semester ${cls.semester}', children: [
+          if (courses.isEmpty) const Text('Belum ada mata kuliah untuk semester ini.'),
+          for (final course in courses) ListTile(contentPadding: EdgeInsets.zero,
+            title: Text(course.nama), subtitle: Text('${course.kode} • ${course.sks} SKS\n${course.dosen}')),
+        ])),
+      ],
+    )));
   }
-
   Widget _buildTambahKelasForm() {
     final years = widget.academicYears.map((year) => year.tahun).toSet().toList();
     if (years.isEmpty) return const Center(child: Text('Tambahkan tahun akademik sebelum membuat kelas.'));

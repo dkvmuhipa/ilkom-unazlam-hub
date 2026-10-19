@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/admin_account_service.dart';
@@ -103,7 +103,7 @@ class _CreateStudentAccountDialogState
             boxShadow: AppColors.softShadow,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
+          child: AdaptiveDialogBody(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Modal Header with Soft Glassmorphism style
@@ -171,7 +171,7 @@ class _CreateStudentAccountDialogState
                                     children: [
                                       Text(
                                         'SEMESTER AKTIF'.toUpperCase(),
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: TextStyle(fontFamily: 'Poppins',
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.9,
@@ -179,7 +179,7 @@ class _CreateStudentAccountDialogState
                                         ),
                                       ),
                                       const SizedBox(height: 7),
-                                      DropdownButtonFormField<int>(
+                                      DropdownButtonFormField<int>(isExpanded: true,
                                         initialValue: _semester,
                                         decoration: InputDecoration(
                                           prefixIcon: const Padding(
@@ -193,7 +193,7 @@ class _CreateStudentAccountDialogState
                                                   value: sem,
                                                   child: Text(
                                                     'Semester $sem',
-                                                    style: GoogleFonts.plusJakartaSans(
+                                                    style: TextStyle(fontFamily: 'Poppins',
                                                       fontSize: 13.5,
                                                       fontWeight: FontWeight.w600,
                                                     ),
@@ -279,7 +279,7 @@ class _CreateStudentAccountDialogState
                                   Expanded(
                                     child: Text(
                                       'Akun akan otomatis diberi hak akses peran Mahasiswa pada sistem.',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: TextStyle(fontFamily: 'Poppins',
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primaryDark,
@@ -368,7 +368,7 @@ class _CreateStudentAccountDialogState
                                   Expanded(
                                     child: Text(
                                       'Sampaikan kata sandi ini kepada mahasiswa secara langsung. Mahasiswa diwajibkan memperbarui kata sandi setelah login pertama kali.',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: TextStyle(fontFamily: 'Poppins',
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.amberText,

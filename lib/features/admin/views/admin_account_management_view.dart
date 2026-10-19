@@ -380,7 +380,7 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Wrap(runSpacing: 8,
                 children: ['Semua', 'Admin', 'Mahasiswa'].map((f) {
                   final isSel = _accountFilter == f;
                   return Padding(
