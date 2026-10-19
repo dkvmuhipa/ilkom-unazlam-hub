@@ -7,6 +7,7 @@ class ServiceItem {
   final Color bgColor;
   final int tabIndex;
   final bool isMore;
+  final bool showBadge;
 
   ServiceItem({
     required this.title,
@@ -15,6 +16,7 @@ class ServiceItem {
     required this.bgColor,
     this.tabIndex = 0,
     this.isMore = false,
+    this.showBadge = false,
   });
 }
 

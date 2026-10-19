@@ -787,7 +787,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     bool isDark,
   ) {
     final isEligible = attendancePercent != null && attendancePercent >= 75;
-    final cardBg = isDark ? const Color(0xFF161524) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
     final borderColor = isDark
         ? const Color(0xFF2E2C3D)
         : const Color(0xFFE2E8F0);
@@ -800,12 +800,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         color: cardBg,
         gradient: LinearGradient(
           colors: isDark
-              ? [const Color(0xFF1E1C2B), const Color(0xFF151422)]
+              ? [const Color(0xFF1E1C2B), const Color(0xFF161524)]
               : [Colors.white, const Color(0xFFF8FAFC)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -876,7 +876,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: (attendancePercent / 100).clamp(0.0, 1.0),
-                          minHeight: 4.5,
+                          minHeight: 5.0,
                           backgroundColor: isDark
                               ? const Color(0xFF26223D)
                               : const Color(0xFFE2E8F0),
@@ -902,7 +902,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         children: [
                           Icon(
                             _isKasLunas == true
-                                ? Icons.check_circle_rounded
+                                ? Icons.verified_rounded
                                 : (_isKasLunas == false
                                       ? Icons.error_rounded
                                       : Icons.account_balance_wallet_rounded),
@@ -917,7 +917,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           Expanded(
                             child: Text(
                               _isKasLunas == true
-                                  ? 'Kas: Lunas'
+                                  ? 'Kas: Lunas ✨'
                                   : (_isKasLunas == false
                                         ? 'Kas: ${_formatCurrency(_kasNominal)}'
                                         : (_currentPeriodLabel.isNotEmpty
@@ -949,7 +949,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
 
           // Divider Tipis Elegan
           Container(
-            height: 44,
+            height: 48,
             width: 1,
             color: borderColor,
             margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -1050,7 +1050,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: textColor,
                   letterSpacing: -0.15,
@@ -1441,6 +1441,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         color: AppColors.rose,
         bgColor: isDark ? const Color(0xFF341E1E) : const Color(0xFFFEF2F2),
         tabIndex: 7, // Pengumuman
+        showBadge: _unreadNotificationCount > 0,
       ),
       _ServiceItem(
         title: 'Surat Izin',
@@ -1466,7 +1467,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
@@ -1483,19 +1484,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: services
                 .take(4)
-                .map((item) => _buildServiceIcon(context, item, isDark))
+                .map((item) => Expanded(
+                      child: _buildServiceIcon(context, item, isDark),
+                    ))
                 .toList(),
           ),
           const SizedBox(height: 14),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: services
                 .skip(4)
                 .take(4)
-                .map((item) => _buildServiceIcon(context, item, isDark))
+                .map((item) => Expanded(
+                      child: _buildServiceIcon(context, item, isDark),
+                    ))
                 .toList(),
           ),
         ],
@@ -1511,46 +1514,65 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     return Semantics(
       button: true,
       label: 'Layanan ${item.title}',
-      child: SizedBox(
-        width: 74,
-        child: ScaleButton(
-          scaleDown: 0.90,
-          onTap: () {
-            if (item.isMore) {
-              _showMoreServicesModal(context, isDark);
-            } else {
-              widget.onNavigateTab(item.tabIndex);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ColorfulIconBox(
-                  icon: item.icon,
-                  color: item.color,
-                  size: 46,
-                  iconSize: 22,
-                  radius: 14,
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  item.title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isDark
-                        ? const Color(0xFFF1F5F9)
-                        : const Color(0xFF0F172A),
-                    letterSpacing: -0.15,
+      child: ScaleButton(
+        scaleDown: 0.90,
+        onTap: () {
+          if (item.isMore) {
+            _showMoreServicesModal(context, isDark);
+          } else {
+            widget.onNavigateTab(item.tabIndex);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ColorfulIconBox(
+                    icon: item.icon,
+                    color: item.color,
+                    size: 46,
+                    iconSize: 22,
+                    radius: 14,
                   ),
+                  if (item.showBadge)
+                    Positioned(
+                      top: -1,
+                      right: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF1E1C2B) : Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                item.title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? const Color(0xFFF1F5F9)
+                      : const Color(0xFF0F172A),
+                  letterSpacing: -0.15,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -2191,91 +2213,103 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               // Aksi Cepat Bawah: WA Dosen 1-Tap & Virtual Link
               Row(
                 children: [
-                  if (course.dosen.trim().isNotEmpty) ...[
-                    ScaleButton(
-                      scaleDown: 0.92,
-                      onTap: () => _openLecturerReminder(course),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF25D366)
-                              .withValues(alpha: isDark ? 0.2 : 0.12),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(
-                            color: const Color(0xFF25D366)
-                                .withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              size: 12,
-                              color: Color(0xFF16A34A),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (course.dosen.trim().isNotEmpty) ...[
+                            ScaleButton(
+                              scaleDown: 0.92,
+                              onTap: () => _openLecturerReminder(course),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366)
+                                      .withValues(alpha: isDark ? 0.2 : 0.12),
+                                  borderRadius: BorderRadius.circular(7),
+                                  border: Border.all(
+                                    color: const Color(0xFF25D366)
+                                        .withValues(alpha: 0.3),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 12,
+                                      color: Color(0xFF16A34A),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'WA Dosen',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              'WA Dosen',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF15803D),
+                            const SizedBox(width: 6),
+                          ],
+                          if (course.linkVirtual != null &&
+                              course.linkVirtual!.trim().isNotEmpty) ...[
+                            ScaleButton(
+                              scaleDown: 0.92,
+                              onTap: () =>
+                                  _openVirtualClass(course.linkVirtual!),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0284C7)
+                                      .withValues(alpha: isDark ? 0.2 : 0.12),
+                                  borderRadius: BorderRadius.circular(7),
+                                  border: Border.all(
+                                    color: const Color(0xFF0284C7)
+                                        .withValues(alpha: 0.3),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.videocam_rounded,
+                                      size: 12,
+                                      color: Color(0xFF0284C7),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Virtual Meet',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0369A1),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                  ],
-                  if (course.linkVirtual != null &&
-                      course.linkVirtual!.trim().isNotEmpty) ...[
-                    ScaleButton(
-                      scaleDown: 0.92,
-                      onTap: () => _openVirtualClass(course.linkVirtual!),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7)
-                              .withValues(alpha: isDark ? 0.2 : 0.12),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(
-                            color: const Color(0xFF0284C7)
-                                .withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.videocam_rounded,
-                              size: 12,
-                              color: Color(0xFF0284C7),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Virtual Meet',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0369A1),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
+                  ),
+                  const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(

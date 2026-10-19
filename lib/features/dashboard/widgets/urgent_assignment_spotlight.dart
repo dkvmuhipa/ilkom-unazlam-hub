@@ -230,15 +230,50 @@ class _UrgentAssignmentSpotlightState extends State<UrgentAssignmentSpotlight>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.assignment.courseName,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: textSub,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    widget.assignment.courseName,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: textSub,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (widget.assignment.kategori.trim().isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF26223D)
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF3B3358)
+                                            : const Color(0xFFE2E8F0),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      widget.assignment.kategori,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: textSub,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -296,24 +331,31 @@ class _UrgentAssignmentSpotlightState extends State<UrgentAssignmentSpotlight>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.event_available_rounded,
-                            size: 14,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            formattedDeadline,
-                            style: TextStyle(
-                              fontSize: 11.5,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.event_available_rounded,
+                              size: 14,
                               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                formattedDeadline,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       ScaleButton(
                         scaleDown: 0.92,
                         onTap: () {
