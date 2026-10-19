@@ -102,7 +102,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     _studentsChannel = SupabaseRepository.subscribeToStudents(() {
       if (mounted) {
         unawaited(_loadManagedAccounts());
-        setState(() => _reportFuture = _loadReportSnapshot());
+        setState(() {
+          _reportFuture = _loadReportSnapshot();
+        });
       }
     });
     _auditLogsChannel = SupabaseRepository.subscribeToAuditLogs(() {
@@ -1571,13 +1573,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         metadata: metadata,
       );
       if (_currentView == 'audit_logs' && mounted) {
-        setState(() => _auditFuture = AdminAuditService.list());
+        setState(() {
+          _auditFuture = AdminAuditService.list();
+        });
       }
     }());
   }
 
   void _loadAuditLogs() {
-    setState(() => _auditFuture = AdminAuditService.list());
+    setState(() {
+      _auditFuture = AdminAuditService.list();
+    });
   }
 
   Future<bool> _confirmDelete(String message) async =>
@@ -2026,7 +2032,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     return AdminReportsView(
       reportFuture: _reportFuture,
       managedAccounts: _managedAccounts,
-      onRefresh: () => setState(() => _reportFuture = _loadReportSnapshot()),
+      onRefresh: () {
+        setState(() {
+          _reportFuture = _loadReportSnapshot();
+        });
+      },
       onBack: () => _navigateTo('dashboard'),
       onNavigate: _navigateTo,
     );
