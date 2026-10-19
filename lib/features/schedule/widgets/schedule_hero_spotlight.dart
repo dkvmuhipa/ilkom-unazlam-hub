@@ -195,9 +195,9 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF064E3B), // Deep Forest Emerald
-              Color(0xFF047857), // Emerald Green
-              Color(0xFF059669), // Vivid Mint
+              Color(0xFF58138A), // UNAZLAM Logo Deep Purple
+              Color(0xFF6D28D9), // UNAZLAM Royal Purple
+              Color(0xFF7C3AED), // UNAZLAM Violet
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -205,7 +205,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF059669).withValues(alpha: 0.35),
+              color: const Color(0xFF6D28D9).withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -387,7 +387,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                               vertical: 5.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF86EFAC),
+                              color: const Color(0xFFF59E0B),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Row(
@@ -396,7 +396,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                                 Icon(
                                   Icons.videocam_rounded,
                                   size: 13,
-                                  color: Color(0xFF064E3B),
+                                  color: Color(0xFF58138A),
                                 ),
                                 SizedBox(width: 4),
                                 Text(
@@ -404,7 +404,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF064E3B),
+                                    color: Color(0xFF58138A),
                                   ),
                                 ),
                               ],
@@ -428,14 +428,14 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF064E3B),
+                                color: Color(0xFF58138A),
                               ),
                             ),
                             SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_rounded,
                               size: 13,
-                              color: Color(0xFF064E3B),
+                              color: Color(0xFF58138A),
                             ),
                           ],
                         ),
@@ -472,9 +472,9 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF0F172A), // Slate 900
-              Color(0xFF1E1B4B), // Indigo 950
-              Color(0xFF6D28D9), // Royal Blue
+              Color(0xFF58138A), // UNAZLAM Logo Deep Purple
+              Color(0xFF6D28D9), // UNAZLAM Royal Purple
+              Color(0xFF7C3AED), // UNAZLAM Bright Violet
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -503,10 +503,10 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFF60A5FA).withValues(alpha: 0.4),
+                        color: const Color(0xFFFBBF24).withValues(alpha: 0.45),
                       ),
                     ),
                     child: const Row(
@@ -515,7 +515,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                         Icon(
                           Icons.upcoming_rounded,
                           size: 13,
-                          color: Color(0xFF93C5FD),
+                          color: Color(0xFFFDE68A),
                         ),
                         SizedBox(width: 5),
                         Text(
@@ -523,7 +523,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFFDDD6FE),
+                            color: Colors.white,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -536,7 +536,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                       vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -544,7 +544,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                       style: const TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF86EFAC),
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -599,7 +599,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -652,11 +652,8 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
+                              color: const Color(0xFFF59E0B),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
-                              ),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -664,25 +661,49 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                                 Icon(
                                   Icons.videocam_rounded,
                                   size: 12,
-                                  color: Color(0xFFBAE6FD),
+                                  color: Color(0xFF58138A),
                                 ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Link Meet',
                                   style: TextStyle(
                                     fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFFBAE6FD),
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF58138A),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 13,
-                        color: Colors.white70,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Lihat Detail',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF58138A),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 13,
+                              color: Color(0xFF58138A),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -700,19 +721,13 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1E293B), // Slate 800
-            Color(0xFF334155), // Slate 700
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.08),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -721,13 +736,13 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFEDE9FE),
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.check_circle_outline_rounded,
-              color: Color(0xFF86EFAC),
+              Icons.check_circle_rounded,
+              color: Color(0xFF6D28D9),
               size: 24,
             ),
           ),
@@ -739,19 +754,19 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                 const Text(
                   'Semua Kelas Hari Ini Selesai! 🎉',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
+                    color: Color(0xFF0F172A),
+                    fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   nextDayInfo != null
                       ? 'Kuliah berikutnya: ${nextDayInfo.dayLabel} (${nextDayInfo.courses.length} MK)'
                       : 'Waktunya istirahat atau belajar mandiri.',
                   style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

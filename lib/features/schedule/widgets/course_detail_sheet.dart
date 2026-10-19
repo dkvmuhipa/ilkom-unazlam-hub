@@ -714,7 +714,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isOnlineClass || c.isOnlineOverride
-                                    ? const Color(0xFFF5F3FF)
+                                    ? const Color(0xFFEDE9FE)
                                     : (isHybridClass
                                         ? const Color(0xFFF3E8FF)
                                         : const Color(0xFFECFDF5)),
@@ -727,7 +727,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                         ? Icons.sensors_rounded
                                         : Icons.meeting_room_outlined),
                                 color: isOnlineClass || c.isOnlineOverride
-                                    ? const Color(0xFF2563EB)
+                                    ? const Color(0xFF6D28D9)
                                     : (isHybridClass
                                         ? const Color(0xFF7C3AED)
                                         : const Color(0xFF059669)),
@@ -793,8 +793,8 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF2563EB),
-                                    Color(0xFF6D28D9),
+                                    Color(0xFF58138A),
+                                    Color(0xFF7C3AED),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),

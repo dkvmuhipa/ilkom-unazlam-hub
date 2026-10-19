@@ -49,7 +49,7 @@ class ScheduleDaySelector extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? const LinearGradient(
-                          colors: [Color(0xFF6D28D9), Color(0xFF4338CA)],
+                          colors: [Color(0xFF58138A), Color(0xFF7C3AED)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )

@@ -19,13 +19,13 @@ class CourseTimelineCard extends StatelessWidget {
 
   Color _getCourseAccentColor(String courseName) {
     final colors = [
-      const Color(0xFF6D28D9), // Royal Blue
-      const Color(0xFF0284C7), // Sky Blue
-      const Color(0xFF0D9488), // Teal
-      const Color(0xFFD97706), // Amber
-      const Color(0xFF7C3AED), // Violet
-      const Color(0xFF2563EB), // Indigo Blue
+      const Color(0xFF6D28D9), // UNAZLAM Royal Purple
+      const Color(0xFF7C3AED), // UNAZLAM Violet
+      const Color(0xFF58138A), // UNAZLAM Deep Purple
+      const Color(0xFFD97706), // Amber Gold
+      const Color(0xFFF59E0B), // Warm Gold
       const Color(0xFF059669), // Emerald
+      const Color(0xFF0D9488), // Teal
     ];
     return colors[courseName.hashCode.abs() % colors.length];
   }
@@ -107,8 +107,8 @@ class CourseTimelineCard extends StatelessWidget {
     String label;
 
     if (isOnline) {
-      bgColor = const Color(0xFFF5F3FF);
-      textColor = const Color(0xFF2563EB);
+      bgColor = const Color(0xFFEDE9FE);
+      textColor = const Color(0xFF6D28D9);
       icon = Icons.videocam_rounded;
       label = 'Online (Virtual)';
     } else if (isHybrid) {
@@ -117,8 +117,8 @@ class CourseTimelineCard extends StatelessWidget {
       icon = Icons.sensors_rounded;
       label = 'Hybrid';
     } else if (isLab) {
-      bgColor = const Color(0xFFEEF2FF);
-      textColor = const Color(0xFF4F46E5);
+      bgColor = const Color(0xFFFEF3C7);
+      textColor = const Color(0xFFD97706);
       icon = Icons.computer_rounded;
       label = 'Praktikum Lab';
     } else {
@@ -492,7 +492,7 @@ class CourseTimelineCard extends StatelessWidget {
                                   : Icons.location_on_outlined,
                               size: 13,
                               color: c.isOnlineOverride
-                                  ? const Color(0xFF2563EB)
+                                  ? const Color(0xFF6D28D9)
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 4),

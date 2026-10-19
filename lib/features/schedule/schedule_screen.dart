@@ -469,7 +469,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             // Option 1: Calendar (.ics)
             _buildExportOptionTile(
               icon: Icons.edit_calendar_rounded,
-              color: const Color(0xFF2563EB),
+              color: const Color(0xFF6D28D9),
               title: 'Ekspor ke Kalender Ponsel (.ics)',
               subtitle: 'Google Calendar, Apple Calendar, Outlook (Otomatis mingguan)',
               onTap: () async {
@@ -776,7 +776,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
+                    colors: [Color(0xFF58138A), Color(0xFF7C3AED)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [

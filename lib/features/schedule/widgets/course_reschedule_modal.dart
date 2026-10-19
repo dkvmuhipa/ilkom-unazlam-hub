@@ -464,7 +464,7 @@ class _CourseRescheduleModalState extends State<CourseRescheduleModal> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _buildStatusChip('RESCHEDULED', '⏰ Jam Berubah', const Color(0xFF3B82F6)),
+                      _buildStatusChip('RESCHEDULED', '⏰ Jam Berubah', const Color(0xFF6D28D9)),
                       _buildStatusChip('ONLINE', '💻 Kuliah Daring', const Color(0xFF10B981)),
                       _buildStatusChip('ROOM_CHANGE', '📍 Pindah Ruang', const Color(0xFFF59E0B)),
                       _buildStatusChip('CANCELLED', '🚫 Ditiadakan', const Color(0xFFEF4444)),

@@ -324,7 +324,7 @@ class _LecturerReminderModalContentState
                 height: 44,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
+                    colors: [Color(0xFF58138A), Color(0xFF7C3AED)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -748,7 +748,7 @@ class _LecturerReminderModalContentState
                             children: [
                               const Icon(
                                 Icons.bolt_rounded,
-                                color: Color(0xFF2563EB),
+                                color: Color(0xFF6D28D9),
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
@@ -759,7 +759,7 @@ class _LecturerReminderModalContentState
                                   fontWeight: FontWeight.w700,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1E293B),
+                                      : const Color(0xFF0F172A),
                                 ),
                               ),
                             ],
