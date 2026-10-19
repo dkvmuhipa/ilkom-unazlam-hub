@@ -91,6 +91,7 @@ class AdminAcademicService {
 
   static Future<void> saveClass({
     String? id,
+    String? oldNama,
     required String nama,
     required String prodi,
     required int semester,
@@ -131,6 +132,16 @@ class AdminAcademicService {
         if (idx != -1) {
           _localClasses[idx] = {'id': id, ...payload};
         }
+        // Pembaruan kaskade ke tabel mahasiswa jika nama kelas berubah
+        final cleanOld = oldNama?.trim();
+        final cleanNew = nama.trim();
+        if (cleanOld != null && cleanOld.isNotEmpty && cleanOld != cleanNew) {
+          try {
+            await client.from('students').update({'kelas': cleanNew}).eq('kelas', cleanOld);
+          } catch (cascadeError) {
+            debugPrint('Warning: gagal update kaskade nama kelas mahasiswa: $cascadeError');
+          }
+        }
       }
     } catch (error) {
       debugPrint('Error save class di Supabase: $error');
@@ -149,6 +160,43 @@ class AdminAcademicService {
     } catch (error) {
       debugPrint('Error delete class di Supabase: $error');
       throw AdminAcademicException('Gagal menghapus kelas dari Supabase: $error');
+    }
+  }
+
+  /// Memasukkan banyak mahasiswa ke dalam kelas tertentu secara massal (Batch Update)
+  static Future<int> assignStudentsToClass({
+    required String targetClass,
+    required List<String> studentNims,
+  }) async {
+    if (studentNims.isEmpty) return 0;
+    final client = _client;
+    if (client == null) return studentNims.length;
+
+    try {
+      await client
+          .from('students')
+          .update({'kelas': targetClass.trim()})
+          .inFilter('nim', studentNims);
+      return studentNims.length;
+    } catch (error) {
+      debugPrint('Error bulk assign students to class: $error');
+      throw AdminAcademicException('Gagal memasukkan mahasiswa ke kelas: $error');
+    }
+  }
+
+  /// Mengeluarkan mahasiswa dari kelas (mengosongkan atribut kelas)
+  static Future<void> removeStudentFromClass(String nim) async {
+    final client = _client;
+    if (client == null) return;
+
+    try {
+      await client
+          .from('students')
+          .update({'kelas': ''})
+          .eq('nim', nim);
+    } catch (error) {
+      debugPrint('Error removing student from class: $error');
+      throw AdminAcademicException('Gagal mengeluarkan mahasiswa dari kelas: $error');
     }
   }
 

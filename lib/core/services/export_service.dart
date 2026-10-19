@@ -102,8 +102,10 @@ class ExportService {
             noWa: '',
           ),
         );
+        final courseFromLog = (log['courses'] is Map ? log['courses']['nama_mk'] : null)?.toString();
+        final effectiveCourse = (courseFromLog != null && courseFromLog.isNotEmpty) ? courseFromLog : courseName;
         buffer.writeln(
-          '${i + 1},"$nim","${student.nama}","${student.prodi}","$status","$courseName","$time"',
+          '${i + 1},"$nim","${student.nama}","${student.prodi}","$status","$effectiveCourse","$time"',
         );
       }
     } else if (activeStudents.isNotEmpty) {

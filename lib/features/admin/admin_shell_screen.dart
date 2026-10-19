@@ -586,43 +586,56 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   const SizedBox(width: 8),
                   // Bell Notification Icon
                   Tooltip(
-                    message: 'Notifikasi Sistem',
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0F172A)
-                                    .withValues(alpha: 0.03),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
+                    message: 'Notifikasi Sistem & Log Aktivitas',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          setState(() {
+                            _currentView = 'audit_logs';
+                            _selectedStudent = null;
+                            _loadAuditLogs();
+                          });
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF0F172A)
+                                        .withValues(alpha: 0.03),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: Color(0xFF334155),
-                            size: 18,
-                          ),
-                        ),
-                        Positioned(
-                          right: 7,
-                          top: 7,
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
-                              shape: BoxShape.circle,
+                              child: const Icon(
+                                Icons.notifications_none_rounded,
+                                color: Color(0xFF334155),
+                                size: 18,
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              right: 7,
+                              top: 7,
+                              child: Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -1753,7 +1766,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final profile = await showGlassModal<StudentProfile>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const CreateStudentAccountDialog(),
+      builder: (_) => CreateStudentAccountDialog(classes: _classes),
     );
     if (profile == null || !mounted) return;
 

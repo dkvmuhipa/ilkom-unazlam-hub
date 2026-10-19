@@ -239,6 +239,29 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
           },
         );
 
+        // Trigger push notifikasi FCM secara langsung ke Edge Function
+        try {
+          final client = SupabaseService.client;
+          if (client != null) {
+            unawaited(client.functions.invoke(
+              'send-push-notification',
+              body: {
+                'table': 'announcements',
+                'record': {
+                  'judul': title,
+                  'isi': body,
+                  'kategori': _selectedCategory,
+                  'target_audience': _targetAudience,
+                  'target_angkatan': _targetAngkatanValue,
+                  'target_kelas': _targetKelasValue,
+                },
+              },
+            ));
+          }
+        } catch (fcmErr) {
+          debugPrint('Info: Direct FCM push trigger: $fcmErr');
+        }
+
         // Eksekusi Pengiriman Pesan WhatsApp via WAHA Gateway
         var waSummary = '';
         var waFailed = false;
