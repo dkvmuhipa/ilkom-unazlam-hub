@@ -139,16 +139,16 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           destination: 1,
           accentColor: isNow
               ? const Color(0xFF10B981)
-              : const Color(0xFF3B82F6),
+              : const Color(0xFF8B5CF6),
           buttonTextColor: isNow
               ? const Color(0xFF065F46)
-              : const Color(0xFF1E3A8A),
+              : const Color(0xFF58138A),
           lightGradientColors: isNow
               ? const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)]
-              : const [Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF3B82F6)],
+              : const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
           darkGradientColors: isNow
               ? const [Color(0xFF0A2E20), Color(0xFF104431), Color(0xFF14563E)]
-              : const [Color(0xFF121538), Color(0xFF1B1E4E), Color(0xFF252668)],
+              : const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
         ),
       );
     } else {
@@ -167,10 +167,10 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           action: 'Lihat jadwal',
           icon: Icons.school_rounded,
           destination: 1,
-          accentColor: const Color(0xFF6366F1),
-          buttonTextColor: const Color(0xFF312E81),
-          lightGradientColors: const [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF4F46E5)],
-          darkGradientColors: const [Color(0xFF151433), Color(0xFF1E1C48), Color(0xFF2A2466)],
+          accentColor: const Color(0xFFF59E0B),
+          buttonTextColor: const Color(0xFF58138A),
+          lightGradientColors: const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+          darkGradientColors: const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
         ),
       );
     }

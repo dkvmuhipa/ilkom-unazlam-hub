@@ -1021,7 +1021,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(
                                 Icons.school_rounded,
-                                color: Color(0xFF5B3DE8),
+                                color: AppColors.primary,
                                 size: 32,
                               ),
                         ),
@@ -1035,7 +1035,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF5B3DE8),
+                              color: AppColors.primary,
                               letterSpacing: -0.2,
                             ),
                           ),

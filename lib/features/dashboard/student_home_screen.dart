@@ -513,7 +513,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           fontWeight: FontWeight.w800,
                           color: isDark
                               ? const Color(0xFFE2E8F0)
-                              : const Color(0xFF1E40AF),
+                              : AppColors.primary,
                           letterSpacing: -0.1,
                         ),
                       ),
@@ -1384,11 +1384,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF),
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1435,15 +1435,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [const Color(0xFF1E3A8A), const Color(0xFF312E81)],
+              ? [const Color(0xFF4C1D95), const Color(0xFF58138A)]
+              : [const Color(0xFF58138A), const Color(0xFF7C3AED)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A8A)
+            color: const Color(0xFF58138A)
                 .withValues(alpha: isDark ? 0.35 : 0.18),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -1540,7 +1540,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   Icon(
                     Icons.qr_code_2_rounded,
                     size: 14,
-                    color: Color(0xFF1E3A8A),
+                    color: Color(0xFF58138A),
                   ),
                   SizedBox(width: 4),
                   Text(
@@ -1548,7 +1548,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E3A8A),
+                      color: Color(0xFF58138A),
                     ),
                   ),
                 ],
