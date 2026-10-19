@@ -301,19 +301,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         vertical: 16,
                       ),
                       children: [
-                        // 1. Header Ucapan & Konteks Waktu
+                        // 1. Top Bar Bersih & Terpadu (Avatar + Halo + Search + Notif)
                         FadeSlideEntrance(
                           delay: Duration.zero,
-                          child: _buildGreetingHeader(context, student, isDark),
+                          child: _buildUnifiedTopBar(context, student, isDark),
                         ),
-                        const SizedBox(height: 12),
-
-                        // 2. Pencarian, notifikasi, dan profil tetap dekat bagian atas.
-                        FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 35),
-                          child: _buildTopBar(context, student, isDark),
-                        ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
 
                         // Hero diletakkan tepat di bawah pintasan utama.
                         FadeSlideEntrance(
@@ -407,252 +400,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   }
 
   // ==========================================
-  // 1. DIGITAL PRESS PASS & BROADCAST HEADER
+  // 1. TOP BAR BERSIH & TERPADU (MINIMALIST SWISS STYLE)
   // ==========================================
-  Widget _buildGreetingHeader(
-    BuildContext context,
-    StudentProfile student,
-    bool isDark,
-  ) {
-    final now = DateTime.now();
-    final dateStr = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(now);
-    final firstName = student.nama.trim().split(' ').first;
-    final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final timeCtx = _getTimeContext();
-
-    final bool hasLiveSession = AttendanceScreen.currentSession != null &&
-        !AttendanceScreen.currentSession!.isExpired;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Top Broadcast Signal & Digital Press Pass Credential
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Live Pulsing Broadcast Beacon: ● ON AIR or ● STANDBY
-            final beaconWidget = AnimatedBuilder(
-              animation: _livePulseAnimation,
-              builder: (context, child) {
-                final signalColor = hasLiveSession
-                    ? const Color(0xFFEF4444)
-                    : const Color(0xFF10B981);
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6.5,
-                      height: 6.5,
-                      decoration: BoxDecoration(
-                        color: signalColor.withValues(
-                          alpha: _livePulseAnimation.value,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: signalColor.withValues(
-                              alpha: _livePulseAnimation.value * 0.7,
-                            ),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      hasLiveSession ? 'ON AIR' : 'STANDBY',
-                      style: TextStyle(
-                        fontSize: 9.0,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.6,
-                        color: signalColor,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-
-            // Press Credential Badge: Crew • Smt X (Tab 15 KHS/Akademik)
-            final credentialBadgeWidget = ScaleButton(
-              scaleDown: 0.94,
-              onTap: () => widget.onNavigateTab(15), // KHS & Akademik
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6.5,
-                  vertical: 3.5,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFC7D2FE),
-                    width: 0.8,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.badge_rounded,
-                      size: 11,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 3),
-                    Flexible(
-                      child: Text(
-                        'Crew • Smt ${student.semester}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? const Color(0xFFE2E8F0)
-                              : AppColors.primary,
-                          letterSpacing: -0.1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-
-            // On compact screens (< 420px), stack beacon & badge on line 1, and 'PRESS PASS // S1 ILKOM' on line 2
-            // to ensure 100% zero overflow even with 1.5x+ accessibility font scaling.
-            if (constraints.maxWidth < 420) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      beaconWidget,
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: credentialBadgeWidget,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'PRESS PASS // S1 ILKOM',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 9.0,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: textSub,
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            // On wide screens (>= 420px), keep the unified single-line broadcast strip
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      beaconWidget,
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 1,
-                        height: 9,
-                        color: isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFCBD5E1),
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          'PRESS PASS // S1 ILKOM',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 9.0,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            color: textSub,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: credentialBadgeWidget,
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 6),
-
-        // Personalized Newsroom Greeting
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${timeCtx['greeting']}, $firstName 🎙️',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      color: textMain,
-                      letterSpacing: -0.5,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Icon(
-                        timeCtx['icon'] as IconData,
-                        size: 12,
-                        color: timeCtx['color'] as Color,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${timeCtx['subtitle']} • ${dateStr.toUpperCase()}',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: textSub,
-                            letterSpacing: 0.1,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // ==========================================
-  // 2. TOP BAR: COMMAND SEARCH BAR + NOTIF + AVATAR
-  // ==========================================
-  Widget _buildTopBar(
+  Widget _buildUnifiedTopBar(
     BuildContext context,
     StudentProfile student,
     bool isDark,
@@ -661,85 +411,167 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     final borderColor = isDark
         ? const Color(0xFF2E2C3D)
         : const Color(0xFFE2E8F0);
-    final isCompact = MediaQuery.sizeOf(context).width < 600;
+    final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final firstName = student.nama.trim().split(' ').first;
+    final timeCtx = _getTimeContext();
+    final greeting = timeCtx['greeting'] ?? 'Halo';
 
-    return Row(
-      children: [
-        // Search Bar (Spotlight Command Bar) with Bouncy Touch
-        Expanded(
-          child: ScaleButton(
-            scaleDown: 0.98,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6D28D9).withValues(alpha: isDark ? 0.15 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Avatar Profil Mahasiswa dengan Status Online
+          ScaleButton(
+            scaleDown: 0.92,
+            onTap: () => widget.onNavigateTab(4), // Profil
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SaaSAvatar(
+                  name: student.nama,
+                  avatarUrl: student.avatarUrl,
+                  size: 42,
+                  radius: 13,
+                ),
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardBg, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Identitas Mahasiswa & Salam
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$greeting, $firstName 🎙️',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: textMain,
+                    letterSpacing: -0.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Wrap(
+                  spacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'PRESS PASS // S1 ILKOM',
+                      style: TextStyle(
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                        color: textSub,
+                      ),
+                    ),
+                    Text(
+                      '•',
+                      style: TextStyle(fontSize: 8.5, color: textSub),
+                    ),
+                    Text(
+                      'Crew • Smt ${student.semester}',
+                      style: const TextStyle(
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Action 1: Search Button
+          ScaleButton(
+            scaleDown: 0.92,
             onTap: () => UniversalSearchModal.show(
               context,
               onNavigateTab: widget.onNavigateTab,
             ),
             child: Container(
-              height: 46,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(14),
+                color: isDark ? const Color(0xFF262438) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(11),
                 border: Border.all(color: borderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F172A)
-                        .withValues(alpha: isDark ? 0.25 : 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: Row(
+              child: const Icon(
+                Icons.search_rounded,
+                size: 19,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // Action 2: Notifications Bell Button
+          ScaleButton(
+            scaleDown: 0.92,
+            onTap: () => widget.onNavigateTab(7), // Pengumuman / Notif
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF262438) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: borderColor),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
                   Icon(
-                    Icons.search_rounded,
-                    color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
-                    size: 20,
+                    _unreadNotificationCount > 0
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_none_rounded,
+                    size: 19,
+                    color: _unreadNotificationCount > 0
+                        ? AppColors.primary
+                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isCompact
-                          ? 'Cari tugas, jadwal, info...'
-                          : 'Cari matkul, tugas, dosen, info...',
-                      style: TextStyle(
-                        color: isDark
-                            ? const Color(0xFF64748B)
-                            : const Color(0xFF94A3B8),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (!isCompact)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF262E3D)
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFFE2E8F0),
-                        ),
-                      ),
-                      child: Text(
-                        'Cari',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
+                  if (_unreadNotificationCount > 0)
+                    Positioned(
+                      top: 7,
+                      right: 7,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
                         ),
                       ),
                     ),
@@ -747,127 +579,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-
-        // Tombol Notifikasi (Sleek Squircle) with Animated Pulse when Unread
-        ScaleButton(
-          scaleDown: 0.92,
-          onTap: () => widget.onNavigateTab(11), // Notifikasi
-          child: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A)
-                      .withValues(alpha: isDark ? 0.25 : 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  _unreadNotificationCount > 0
-                      ? Icons.notifications_active_rounded
-                      : Icons.notifications_none_rounded,
-                  color: _unreadNotificationCount > 0
-                      ? AppColors.primary
-                      : (isDark
-                            ? const Color(0xFFE2E8F0)
-                            : const Color(0xFF334155)),
-                  size: 20,
-                ),
-                if (_unreadNotificationCount > 0)
-                  Positioned(
-                    right: 7,
-                    top: 7,
-                    child: AnimatedBuilder(
-                      animation: _livePulseAnimation,
-                      builder: (context, child) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1.5,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 15,
-                          minHeight: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: cardBg, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFEF4444).withValues(
-                                alpha: _livePulseAnimation.value * 0.5,
-                              ),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: child,
-                      ),
-                      child: Center(
-                        child: Text(
-                          _unreadNotificationCount > 9
-                              ? '9+'
-                              : '$_unreadNotificationCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w900,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // Avatar Profil Mahasiswa dengan Online Dot Indicator
-        ScaleButton(
-          scaleDown: 0.92,
-          onTap: () => widget.onNavigateTab(4), // Profil
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              SaaSAvatar(
-                name: student.nama,
-                avatarUrl: student.avatarUrl,
-                size: 46,
-                radius: 14,
-              ),
-              Positioned(
-                right: -1,
-                bottom: -1,
-                child: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: cardBg, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 
   // ==========================================
   // 3. STUDIO CLEARANCE & ACADEMIC DECK
@@ -1660,31 +1376,24 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
         color: cardBg,
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF17152B), const Color(0xFF100E1E)]
-              : [Colors.white, const Color(0xFFF8FAFC)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A)
-                .withValues(alpha: isDark ? 0.35 : 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF6D28D9)
+                .withValues(alpha: isDark ? 0.20 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Console Dock
+          // Header Console Dock (Minimalist & Clean)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Row(
@@ -1694,26 +1403,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(5.5),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(9),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: const Color(0xFFEDE9FE),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.dashboard_customize_rounded,
-                          size: 13.5,
-                          color: Colors.white,
+                          size: 15,
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1722,74 +1420,26 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 6,
-                              runSpacing: 2,
-                              children: [
-                                Text(
-                                  'KONSOL MODUL ILKOM',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.6,
-                                    color: textMain,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981)
-                                        .withValues(alpha: isDark ? 0.2 : 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: const Color(0xFF10B981)
-                                          .withValues(alpha: 0.3),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 4.5,
-                                        height: 4.5,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF10B981),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3.5),
-                                      const Flexible(
-                                        child: Text(
-                                          '8 MODUL',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w900,
-                                            color: Color(0xFF059669),
-                                            letterSpacing: 0.4,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
                             Text(
-                              'Master Studio Control Deck · Produksi & Redaksi',
+                              'KONSOL MODUL ILKOM',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                                color: textMain,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Layanan & modul perkuliahan',
                               style: TextStyle(
-                                fontSize: 9.5,
+                                fontSize: 10,
                                 color: textSub,
                                 fontWeight: FontWeight.w500,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -1797,26 +1447,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 ScaleButton(
                   scaleDown: 0.94,
                   onTap: () => _showMoreServicesModal(context, isDark),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4.5,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF1E1B38)
-                          : const Color(0xFFEEF2FF),
+                          : const Color(0xFFEDE9FE),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF383259)
-                            : const Color(0xFFC7D2FE),
-                        width: 0.8,
-                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1824,20 +1468,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         Text(
                           'Semua',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w800,
                             color: isDark
                                 ? const Color(0xFFA5B4FC)
-                                : const Color(0xFF4338CA),
+                                : AppColors.primary,
                           ),
                         ),
                         const SizedBox(width: 3),
                         Icon(
                           Icons.arrow_forward_rounded,
-                          size: 10.5,
+                          size: 11,
                           color: isDark
                               ? const Color(0xFFA5B4FC)
-                              : const Color(0xFF4338CA),
+                              : AppColors.primary,
                         ),
                       ],
                     ),
@@ -1846,74 +1490,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // CHANNEL A // PRODUKSI & KULIAH (BUS 01)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFF06B6D4)
-                  .withValues(alpha: isDark ? 0.12 : 0.07),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF06B6D4)
-                    .withValues(alpha: isDark ? 0.28 : 0.20),
-                width: 0.8,
+          // CHANNEL A // PRODUKSI & KULIAH
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Text(
+              'CHANNEL A // PRODUKSI & KULIAH',
+              style: TextStyle(
+                fontSize: 9.0,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                color: textSub,
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 5.5,
-                  height: 5.5,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF06B6D4),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF06B6D4),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    'CHANNEL A // PRODUKSI & KULIAH',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                      color: isDark
-                          ? const Color(0xFF38BDF8)
-                          : const Color(0xFF0284C7),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF06B6D4)
-                        .withValues(alpha: isDark ? 0.22 : 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'BUS 01',
-                    style: TextStyle(
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark
-                          ? const Color(0xFF7DD3FC)
-                          : const Color(0xFF0369A1),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
           const SizedBox(height: 6),
@@ -1931,82 +1520,25 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     ))
                 .toList(),
           ),
-          const SizedBox(height: 10),
-
-          // Micro divider
+          const SizedBox(height: 12),
           Container(
             height: 1,
             color: borderColor.withValues(alpha: 0.6),
             margin: const EdgeInsets.symmetric(horizontal: 4),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
-          // CHANNEL B // REDAKSI & BIRO KELAS (BUS 02)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF43F5E)
-                  .withValues(alpha: isDark ? 0.12 : 0.07),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFFF43F5E)
-                    .withValues(alpha: isDark ? 0.28 : 0.20),
-                width: 0.8,
+          // CHANNEL B // REDAKSI & BIRO KELAS
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Text(
+              'CHANNEL B // REDAKSI & BIRO KELAS',
+              style: TextStyle(
+                fontSize: 9.0,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                color: textSub,
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 5.5,
-                  height: 5.5,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF43F5E),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFFF43F5E),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    'CHANNEL B // REDAKSI & BIRO KELAS',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                      color: isDark
-                          ? const Color(0xFFFB7185)
-                          : const Color(0xFFE11D48),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF43F5E)
-                        .withValues(alpha: isDark ? 0.22 : 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'BUS 02',
-                    style: TextStyle(
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark
-                          ? const Color(0xFFFDA4AF)
-                          : const Color(0xFFBE123C),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
           const SizedBox(height: 6),
@@ -2037,12 +1569,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     Color textMain,
     Color textSub,
   ) {
-    final gradientColors = item.gradientColors ?? [item.color, item.color];
-    final glowColor = item.glowColor ?? item.color;
-
     return Semantics(
       button: true,
-      label: 'Layanan ${item.title}',
+      label: 'Layanan ',
       child: ScaleButton(
         scaleDown: 0.90,
         onTap: () {
@@ -2052,68 +1581,32 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             widget.onNavigateTab(item.tabIndex);
           }
         },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2.0),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161427) : Colors.white,
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [
-                      const Color(0xFF1C1932),
-                      item.bgColor.withValues(alpha: 0.28),
-                    ]
-                  : [
-                      Colors.white,
-                      item.bgColor.withValues(alpha: 0.45),
-                    ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark
-                  ? item.color.withValues(alpha: 0.35)
-                  : item.color.withValues(alpha: 0.24),
-              width: 0.9,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: glowColor.withValues(alpha: isDark ? 0.16 : 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Dual-Tone Gradient Icon Box with Glowing Depth
+              // Clean Modern Apple/Fintech Rounded Icon
               Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: gradientColors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                      color: item.bgColor.withValues(alpha: isDark ? 0.35 : 0.7),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: item.color.withValues(alpha: isDark ? 0.25 : 0.15),
+                        width: 1,
                       ),
-                      borderRadius: BorderRadius.circular(11),
-                      boxShadow: [
-                        BoxShadow(
-                          color: glowColor.withValues(alpha: isDark ? 0.38 : 0.28),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: Icon(
-                      item.icon,
-                      color: Colors.white,
-                      size: 18,
+                    child: Center(
+                      child: Icon(
+                        item.icon,
+                        color: item.color,
+                        size: 22,
+                      ),
                     ),
                   ),
                   if (item.showBadge)
@@ -2127,63 +1620,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           color: const Color(0xFFEF4444),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF161427)
-                                : Colors.white,
+                            color: isDark ? const Color(0xFF141224) : Colors.white,
                             width: 1.5,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0xFFEF4444),
-                              blurRadius: 4,
-                            ),
-                          ],
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
 
-              // Title (Bold, crisp)
+              // Title (Clean, crisp typography)
               Text(
                 item.title,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
                   color: textMain,
-                  letterSpacing: -0.15,
-                ),
-              ),
-              const SizedBox(height: 2),
-
-              // Subtitle as Studio Tape Micro-Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1.0),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? item.color.withValues(alpha: 0.18)
-                      : item.bgColor.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  item.subtitle ?? '',
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.w800,
-                    color: isDark
-                        ? item.color
-                        : (item.color == const Color(0xFFF59E0B)
-                            ? const Color(0xFFB45309)
-                            : item.color),
-                    letterSpacing: -0.1,
-                  ),
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -2192,6 +1649,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
     );
   }
+
 
   // ==========================================
   // 5B. COMPACT HERO CAROUSEL BANNER (GOJEK / TOKOPEDIA STYLE)

@@ -80,6 +80,9 @@ void main() {
 
         // 5. Zero unhandled layout exceptions
         final err = tester.takeException();
+        if (err != null) {
+          debugPrint('Layout exception: $err');
+        }
         expect(err, isNull);
       });
     }
