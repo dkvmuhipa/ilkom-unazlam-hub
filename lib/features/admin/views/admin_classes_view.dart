@@ -227,23 +227,36 @@ class _AdminClassesViewState extends State<AdminClassesView> {
             'Kapasitas': '${cls.kapasitas} kursi', 'Mahasiswa terdaftar': '${students.length} mahasiswa'}),
         ])),
         AdminDetailTab('Mahasiswa', AdminDetailSection(title: 'Mahasiswa terdaftar (${students.length}/${cls.kapasitas})', children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: const Text('Pilih & Masukkan Mahasiswa Sekaligus'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  onPressed: () => _showBulkAssignStudentsDialog(cls, detailContext),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_add_alt_1_rounded, size: 18),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Pilih & Masukkan Mahasiswa Sekaligus',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                onPressed: () => _showBulkAssignStudentsDialog(cls, detailContext),
               ),
             ),
-          ),
           if (students.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
@@ -271,6 +284,8 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     icon: const Icon(Icons.person_remove_outlined, color: Colors.redAccent, size: 20),
                     tooltip: 'Keluarkan dari kelas',
                     onPressed: () async {
@@ -376,6 +391,8 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                             children: [
                               Text(
                                 'Kelola Rombel: ${cls.nama}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -385,6 +402,8 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                               const SizedBox(height: 2),
                               Text(
                                 '${cls.prodi} • Semester ${cls.semester} • Kapasitas ${cls.kapasitas}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
                               ),
                             ],
@@ -467,6 +486,8 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                                       },
                                 child: Text(
                                   allFilteredSelected ? 'Batalkan Semua (${filtered.length})' : 'Pilih Semua (${filtered.length})',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                                 ),
                               ),
@@ -528,6 +549,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                                 subtitle: Wrap(
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   spacing: 6,
+                                  runSpacing: 4,
                                   children: [
                                     Text('NIM ${s.nim} • Sem. ${s.semester}', style: const TextStyle(fontSize: 12)),
                                     if (wasAlreadyInClass)
@@ -556,20 +578,22 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                   ),
                   const Divider(height: 1),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         TextButton(
                           onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
                           child: const Text('Batal'),
                         ),
-                        const SizedBox(width: 12),
                         FilledButton(
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
                           onPressed: isSaving
                               ? null
@@ -614,8 +638,12 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                                   }
                                 },
                           child: isSaving
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : Text('Simpan (${selectedNims.length} Mahasiswa)'),
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Text(
+                                  'Simpan (${selectedNims.length} Mahasiswa)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                         ),
                       ],
                     ),

@@ -266,6 +266,33 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+
+  testWidgets('classes bulk assign modal fits narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: 'Poppins'),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
+          child: child!,
+        ),
+        home: Scaffold(body: pages['classes']!()),
+      ),
+    );
+    await tester.tap(find.text('Ilmu Komunikasi').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Mahasiswa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pilih & Masukkan Mahasiswa Sekaligus'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   for (final dialog in dialogs.entries) {
     testWidgets('${dialog.key} fits small screen with keyboard', (
       tester,
