@@ -9,6 +9,8 @@ class ServiceItem {
   final int tabIndex;
   final bool isMore;
   final bool showBadge;
+  final List<Color>? gradientColors;
+  final Color? glowColor;
 
   ServiceItem({
     required this.title,
@@ -19,6 +21,8 @@ class ServiceItem {
     this.tabIndex = 0,
     this.isMore = false,
     this.showBadge = false,
+    this.gradientColors,
+    this.glowColor,
   });
 }
 

@@ -1568,10 +1568,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     StudentProfile student,
     bool isDark,
   ) {
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF141224) : Colors.white;
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
-        : const Color(0xFFE2E8F0);
+        ? const Color(0xFF2C2746)
+        : const Color(0xFFCBD5E1);
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
@@ -1580,40 +1580,50 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         title: 'Materi',
         subtitle: 'Slide & Modul',
         icon: Icons.menu_book_rounded,
-        color: AppColors.cyan,
-        bgColor: isDark ? const Color(0xFF162D3D) : const Color(0xFFE0F2FE),
+        color: const Color(0xFF06B6D4), // Cyan
+        gradientColors: const [Color(0xFF06B6D4), Color(0xFF0284C7)],
+        glowColor: const Color(0xFF06B6D4),
+        bgColor: isDark ? const Color(0xFF0E2533) : const Color(0xFFE0F7FA),
         tabIndex: 10, // Gudang Materi & E-Book
       ),
       _ServiceItem(
         title: 'Agenda',
         subtitle: 'Jadwal Kuliah',
         icon: Icons.event_note_rounded,
-        color: AppColors.emerald,
-        bgColor: isDark ? const Color(0xFF152F24) : const Color(0xFFECFDF5),
+        color: const Color(0xFF10B981), // Emerald
+        gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
+        glowColor: const Color(0xFF10B981),
+        bgColor: isDark ? const Color(0xFF0C2B20) : const Color(0xFFE8F5E9),
         tabIndex: 6, // Agenda Kelas
       ),
       _ServiceItem(
         title: 'Kelompok',
         subtitle: 'Praktikum',
         icon: Icons.group_work_rounded,
-        color: AppColors.teal,
-        bgColor: isDark ? const Color(0xFF163230) : const Color(0xFFF0FDFA),
+        color: const Color(0xFF14B8A6), // Teal
+        gradientColors: const [Color(0xFF14B8A6), Color(0xFF0D9488)],
+        glowColor: const Color(0xFF14B8A6),
+        bgColor: isDark ? const Color(0xFF0C2B29) : const Color(0xFFE0F2F1),
         tabIndex: 9, // Kelompok Praktikum
       ),
       _ServiceItem(
         title: 'Voting',
         subtitle: 'Suara Kelas',
         icon: Icons.how_to_vote_rounded,
-        color: AppColors.violet,
-        bgColor: isDark ? const Color(0xFF2B2144) : AppColors.primarySoft,
+        color: const Color(0xFF8B5CF6), // Violet
+        gradientColors: const [Color(0xFFA855F7), Color(0xFF7C3AED)],
+        glowColor: const Color(0xFF8B5CF6),
+        bgColor: isDark ? const Color(0xFF231538) : const Color(0xFFF3E8FF),
         tabIndex: 12, // Voting & Polling
       ),
       _ServiceItem(
         title: 'Warta',
         subtitle: 'Pengumuman',
         icon: Icons.campaign_rounded,
-        color: AppColors.rose,
-        bgColor: isDark ? const Color(0xFF341E1E) : const Color(0xFFFEF2F2),
+        color: const Color(0xFFF43F5E), // Rose
+        gradientColors: const [Color(0xFFFB7185), Color(0xFFE11D48)],
+        glowColor: const Color(0xFFF43F5E),
+        bgColor: isDark ? const Color(0xFF2C131D) : const Color(0xFFFFE4E6),
         tabIndex: 7, // Pengumuman
         showBadge: _unreadNotificationCount > 0,
       ),
@@ -1621,24 +1631,30 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         title: 'Surat Izin',
         subtitle: 'Dispensasi',
         icon: Icons.mark_email_read_rounded,
-        color: AppColors.amber,
-        bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
+        color: const Color(0xFFF59E0B), // Amber
+        gradientColors: const [Color(0xFFFBBF24), Color(0xFFD97706)],
+        glowColor: const Color(0xFFF59E0B),
+        bgColor: isDark ? const Color(0xFF2B2010) : const Color(0xFFFEF3C7),
         tabIndex: 13, // Surat Izin & Dispensasi
       ),
       _ServiceItem(
         title: 'Audit Log',
         subtitle: 'Rekam Jejak',
         icon: Icons.history_rounded,
-        color: const Color(0xFF6366F1),
-        bgColor: isDark ? const Color(0xFF232244) : const Color(0xFFEEF2FF),
+        color: const Color(0xFF6366F1), // Indigo
+        gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
+        glowColor: const Color(0xFF6366F1),
+        bgColor: isDark ? const Color(0xFF181838) : const Color(0xFFE0E7FF),
         tabIndex: 14, // Audit Log Aktivitas
       ),
       _ServiceItem(
         title: 'Lainnya',
         subtitle: 'Katalog 12+',
         icon: Icons.grid_view_rounded,
-        color: const Color(0xFF64748B),
-        bgColor: isDark ? const Color(0xFF242232) : const Color(0xFFF1F5F9),
+        color: const Color(0xFF64748B), // Slate
+        gradientColors: const [Color(0xFF94A3B8), Color(0xFF475569)],
+        glowColor: const Color(0xFF64748B),
+        bgColor: isDark ? const Color(0xFF1B1B28) : const Color(0xFFF1F5F9),
         isMore: true,
       ),
     ];
@@ -1647,14 +1663,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF17152B), const Color(0xFF100E1E)]
+              : [Colors.white, const Color(0xFFF8FAFC)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A)
-                .withValues(alpha: isDark ? 0.25 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+                .withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1671,66 +1694,95 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(4.5),
+                        padding: const EdgeInsets.all(5.5),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF1E293B)
-                              : const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(8),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(9),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: const Icon(
                           Icons.dashboard_customize_rounded,
-                          size: 13,
-                          color: AppColors.primary,
+                          size: 13.5,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 2,
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    'KONSOL MODUL ILKOM',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.7,
-                                      color: textMain,
-                                    ),
+                                Text(
+                                  'KONSOL MODUL ILKOM',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.6,
+                                    color: textMain,
                                   ),
                                 ),
-                                const SizedBox(width: 5),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1.5,
+                                    horizontal: 6,
+                                    vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF162D3D)
-                                        : const Color(0xFFE0F2FE),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    '8 MODUL',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.cyan,
-                                      letterSpacing: 0.4,
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: isDark ? 0.2 : 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.3),
+                                      width: 0.8,
                                     ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 4.5,
+                                        height: 4.5,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF10B981),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3.5),
+                                      const Flexible(
+                                        child: Text(
+                                          '8 MODUL',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF059669),
+                                            letterSpacing: 0.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                             Text(
-                              'Channel perkuliahan & redaksi warta kelas',
+                              'Master Studio Control Deck · Produksi & Redaksi',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1751,16 +1803,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   onTap: () => _showMoreServicesModal(context, isDark),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 9,
+                      vertical: 4.5,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF181628)
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
+                          ? const Color(0xFF1E1B38)
+                          : const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: borderColor.withValues(alpha: 0.8),
+                        color: isDark
+                            ? const Color(0xFF383259)
+                            : const Color(0xFFC7D2FE),
                         width: 0.8,
                       ),
                     ),
@@ -1771,19 +1825,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           'Semua',
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             color: isDark
-                                ? const Color(0xFFE2E8F0)
-                                : const Color(0xFF334155),
+                                ? const Color(0xFFA5B4FC)
+                                : const Color(0xFF4338CA),
                           ),
                         ),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: 3),
                         Icon(
                           Icons.arrow_forward_rounded,
-                          size: 10,
+                          size: 10.5,
                           color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
+                              ? const Color(0xFFA5B4FC)
+                              : const Color(0xFF4338CA),
                         ),
                       ],
                     ),
@@ -1794,20 +1848,37 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           ),
           const SizedBox(height: 10),
 
-          // CHANNEL A // PRODUKSI & KULIAH
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+          // CHANNEL A // PRODUKSI & KULIAH (BUS 01)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06B6D4)
+                  .withValues(alpha: isDark ? 0.12 : 0.07),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF06B6D4)
+                    .withValues(alpha: isDark ? 0.28 : 0.20),
+                width: 0.8,
+              ),
+            ),
             child: Row(
               children: [
                 Container(
-                  width: 5,
-                  height: 5,
+                  width: 5.5,
+                  height: 5.5,
                   decoration: const BoxDecoration(
-                    color: AppColors.cyan,
+                    color: Color(0xFF06B6D4),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF06B6D4),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     'CHANNEL A // PRODUKSI & KULIAH',
@@ -1815,9 +1886,30 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                      color: isDark
+                          ? const Color(0xFF38BDF8)
+                          : const Color(0xFF0284C7),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF06B6D4)
+                        .withValues(alpha: isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'BUS 01',
+                    style: TextStyle(
+                      fontSize: 7.5,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.7,
-                      color: textSub,
+                      color: isDark
+                          ? const Color(0xFF7DD3FC)
+                          : const Color(0xFF0369A1),
                     ),
                   ),
                 ),
@@ -1847,22 +1939,39 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             color: borderColor.withValues(alpha: 0.6),
             margin: const EdgeInsets.symmetric(horizontal: 4),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
-          // CHANNEL B // REDAKSI & BIRO KELAS
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+          // CHANNEL B // REDAKSI & BIRO KELAS (BUS 02)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF43F5E)
+                  .withValues(alpha: isDark ? 0.12 : 0.07),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFFF43F5E)
+                    .withValues(alpha: isDark ? 0.28 : 0.20),
+                width: 0.8,
+              ),
+            ),
             child: Row(
               children: [
                 Container(
-                  width: 5,
-                  height: 5,
+                  width: 5.5,
+                  height: 5.5,
                   decoration: const BoxDecoration(
-                    color: AppColors.rose,
+                    color: Color(0xFFF43F5E),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFF43F5E),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     'CHANNEL B // REDAKSI & BIRO KELAS',
@@ -1870,9 +1979,30 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                      color: isDark
+                          ? const Color(0xFFFB7185)
+                          : const Color(0xFFE11D48),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF43F5E)
+                        .withValues(alpha: isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'BUS 02',
+                    style: TextStyle(
+                      fontSize: 7.5,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.7,
-                      color: textSub,
+                      color: isDark
+                          ? const Color(0xFFFDA4AF)
+                          : const Color(0xFFBE123C),
                     ),
                   ),
                 ),
@@ -1907,6 +2037,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     Color textMain,
     Color textSub,
   ) {
+    final gradientColors = item.gradientColors ?? [item.color, item.color];
+    final glowColor = item.glowColor ?? item.color;
+
     return Semantics(
       button: true,
       label: 'Layanan ${item.title}',
@@ -1920,29 +2053,68 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           }
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2.5),
+          margin: const EdgeInsets.symmetric(horizontal: 2.0),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161424) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(
-              color: isDark ? const Color(0xFF28243C) : const Color(0xFFEEF2F6),
-              width: 0.8,
+            color: isDark ? const Color(0xFF161427) : Colors.white,
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      const Color(0xFF1C1932),
+                      item.bgColor.withValues(alpha: 0.28),
+                    ]
+                  : [
+                      Colors.white,
+                      item.bgColor.withValues(alpha: 0.45),
+                    ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark
+                  ? item.color.withValues(alpha: 0.35)
+                  : item.color.withValues(alpha: 0.24),
+              width: 0.9,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: glowColor.withValues(alpha: isDark ? 0.16 : 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Dual-Tone Gradient Icon Box with Glowing Depth
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  ColorfulIconBox(
-                    icon: item.icon,
-                    color: item.color,
-                    backgroundColor: item.bgColor,
-                    size: 36,
-                    iconSize: 18,
-                    radius: 10,
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: gradientColors,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(11),
+                      boxShadow: [
+                        BoxShadow(
+                          color: glowColor.withValues(alpha: isDark ? 0.38 : 0.28),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      item.icon,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                   if (item.showBadge)
                     Positioned(
@@ -1956,16 +2128,24 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: isDark
-                                ? const Color(0xFF161424)
+                                ? const Color(0xFF161427)
                                 : Colors.white,
                             width: 1.5,
                           ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0xFFEF4444),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 5),
+
+              // Title (Bold, crisp)
               Text(
                 item.title,
                 textAlign: TextAlign.center,
@@ -1978,16 +2158,32 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   letterSpacing: -0.15,
                 ),
               ),
-              const SizedBox(height: 1),
-              Text(
-                item.subtitle ?? '',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w600,
-                  color: textSub,
+              const SizedBox(height: 2),
+
+              // Subtitle as Studio Tape Micro-Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1.0),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? item.color.withValues(alpha: 0.18)
+                      : item.bgColor.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  item.subtitle ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 7.5,
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? item.color
+                        : (item.color == const Color(0xFFF59E0B)
+                            ? const Color(0xFFB45309)
+                            : item.color),
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
             ],

@@ -79,7 +79,8 @@ void main() {
         expect(selectedTab, 15);
 
         // 5. Zero unhandled layout exceptions
-        expect(tester.takeException(), isNull);
+        final err = tester.takeException();
+        expect(err, isNull);
       });
     }
   }

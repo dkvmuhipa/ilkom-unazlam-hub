@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 
 class HomeBannerCarousel extends StatefulWidget {
@@ -44,7 +45,9 @@ class _HeroSlide {
   final IconData icon;
   final int destination;
   final Color accentColor;
-  final List<Color> gradientColors;
+  final Color buttonTextColor;
+  final List<Color> lightGradientColors;
+  final List<Color> darkGradientColors;
 
   const _HeroSlide({
     required this.label,
@@ -55,7 +58,9 @@ class _HeroSlide {
     required this.icon,
     required this.destination,
     this.accentColor = const Color(0xFF4F46E5),
-    this.gradientColors = const [Color(0xFFEFF6FF), Color(0xFFF5F3FF)],
+    this.buttonTextColor = const Color(0xFF1E3A8A),
+    this.lightGradientColors = const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+    this.darkGradientColors = const [Color(0xFF161936), Color(0xFF222659)],
   });
 }
 
@@ -105,7 +110,9 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           icon: Icons.cloud_off_rounded,
           destination: 1,
           accentColor: Color(0xFF64748B),
-          gradientColors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)],
+          buttonTextColor: Color(0xFF334155),
+          lightGradientColors: [Color(0xFF334155), Color(0xFF475569)],
+          darkGradientColors: [Color(0xFF1E293B), Color(0xFF0F172A)],
         ),
       );
     } else if (activeClass != null) {
@@ -127,11 +134,17 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           icon: isNow ? Icons.timelapse_rounded : Icons.calendar_month_rounded,
           destination: 1,
           accentColor: isNow
-              ? const Color(0xFF059669)
-              : const Color(0xFF4F46E5),
-          gradientColors: isNow
-              ? const [Color(0xFFECFDF5), Color(0xFFD1FAE5)]
-              : const [Color(0xFFEEF2FF), Color(0xFFE0E7FF)],
+              ? const Color(0xFF10B981)
+              : const Color(0xFF3B82F6),
+          buttonTextColor: isNow
+              ? const Color(0xFF065F46)
+              : const Color(0xFF1E3A8A),
+          lightGradientColors: isNow
+              ? const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)]
+              : const [Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF3B82F6)],
+          darkGradientColors: isNow
+              ? const [Color(0xFF0A2E20), Color(0xFF104431), Color(0xFF14563E)]
+              : const [Color(0xFF121538), Color(0xFF1B1E4E), Color(0xFF252668)],
         ),
       );
     } else {
@@ -150,8 +163,10 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           action: 'Lihat jadwal',
           icon: Icons.school_rounded,
           destination: 1,
-          accentColor: const Color(0xFF4F46E5),
-          gradientColors: const [Color(0xFFEEF2FF), Color(0xFFF5F3FF)],
+          accentColor: const Color(0xFF6366F1),
+          buttonTextColor: const Color(0xFF312E81),
+          lightGradientColors: const [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF4F46E5)],
+          darkGradientColors: const [Color(0xFF151433), Color(0xFF1E1C48), Color(0xFF2A2466)],
         ),
       );
     }
@@ -184,10 +199,16 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           destination: 2,
           accentColor: isOverdue
               ? const Color(0xFFEF4444)
-              : const Color(0xFFD97706),
-          gradientColors: isOverdue
-              ? const [Color(0xFFFEF2F2), Color(0xFFFEE2E2)]
-              : const [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+              : const Color(0xFFF59E0B),
+          buttonTextColor: isOverdue
+              ? const Color(0xFF991B1B)
+              : const Color(0xFFB45309),
+          lightGradientColors: isOverdue
+              ? const [Color(0xFF991B1B), Color(0xFFDC2626), Color(0xFFEF4444)]
+              : const [Color(0xFFB45309), Color(0xFFD97706), Color(0xFFEA580C)],
+          darkGradientColors: isOverdue
+              ? const [Color(0xFF361217), Color(0xFF4C151F), Color(0xFF651B2A)]
+              : const [Color(0xFF361F0E), Color(0xFF4A2B11), Color(0xFF633A14)],
         ),
       );
     }
@@ -216,11 +237,17 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
               : Icons.account_balance_wallet_rounded,
           destination: 8,
           accentColor: isLunas
-              ? const Color(0xFF059669)
-              : const Color(0xFFEF4444),
-          gradientColors: isLunas
-              ? const [Color(0xFFECFDF5), Color(0xFFD1FAE5)]
-              : const [Color(0xFFFFF1F2), Color(0xFFFFE4E6)],
+              ? const Color(0xFF10B981)
+              : const Color(0xFFF43F5E),
+          buttonTextColor: isLunas
+              ? const Color(0xFF065F46)
+              : const Color(0xFF9F1239),
+          lightGradientColors: isLunas
+              ? const [Color(0xFF065F46), Color(0xFF059669), Color(0xFF10B981)]
+              : const [Color(0xFF9F1239), Color(0xFFBE123C), Color(0xFFE11D48)],
+          darkGradientColors: isLunas
+              ? const [Color(0xFF0B2B20), Color(0xFF103D2E), Color(0xFF15533F)]
+              : const [Color(0xFF361019), Color(0xFF4C1422), Color(0xFF66172D)],
         ),
       );
     }
@@ -245,11 +272,17 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
               : Icons.fact_check_rounded,
           destination: 5,
           accentColor: isWarning
-              ? const Color(0xFFEA580C)
-              : const Color(0xFF0284C7),
-          gradientColors: isWarning
-              ? const [Color(0xFFFFF7ED), Color(0xFFFFEDD5)]
-              : const [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
+              ? const Color(0xFFF97316)
+              : const Color(0xFF06B6D4),
+          buttonTextColor: isWarning
+              ? const Color(0xFFC2410C)
+              : const Color(0xFF0369A1),
+          lightGradientColors: isWarning
+              ? const [Color(0xFFC2410C), Color(0xFFEA580C), Color(0xFFF97316)]
+              : const [Color(0xFF0369A1), Color(0xFF0284C7), Color(0xFF0EA5E9)],
+          darkGradientColors: isWarning
+              ? const [Color(0xFF39160A), Color(0xFF501E0D), Color(0xFF6B260F)]
+              : const [Color(0xFF0A2536), Color(0xFF0E354D), Color(0xFF124769)],
         ),
       );
     }
@@ -267,8 +300,10 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           action: 'Lihat pengumuman',
           icon: Icons.campaign_rounded,
           destination: 7,
-          accentColor: const Color(0xFF7C3AED),
-          gradientColors: const [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+          accentColor: const Color(0xFFA855F7),
+          buttonTextColor: const Color(0xFF5B21B6),
+          lightGradientColors: const [Color(0xFF5B21B6), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+          darkGradientColors: const [Color(0xFF26103D), Color(0xFF361556), Color(0xFF481B74)],
         ),
       );
     }
@@ -288,7 +323,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   Widget build(BuildContext context) {
     final slides = _slides();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final height = 146.0 +
+    final height = 152.0 +
         (MediaQuery.textScalerOf(context).scale(14) - 14).clamp(0, 32) * 5;
 
     return Column(
@@ -302,6 +337,14 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
             onPageChanged: (page) => setState(() => _index = page),
             itemBuilder: (context, index) {
               final slide = slides[index];
+              final gradient = LinearGradient(
+                colors: isDark
+                    ? slide.darkGradientColors
+                    : slide.lightGradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              );
+
               return Semantics(
                 container: true,
                 label: 'Informasi ${index + 1} dari ${slides.length}',
@@ -309,182 +352,221 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                   color: Colors.transparent,
                   child: Ink(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1C2B) : null,
-                      gradient: isDark
-                          ? LinearGradient(
-                              colors: [
-                                const Color(0xFF1E1C2B),
-                                slide.accentColor.withValues(alpha: 0.12),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : LinearGradient(
-                              colors: slide.gradientColors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: gradient,
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF2E2C3D)
-                            : slide.accentColor.withValues(alpha: 0.22),
-                        width: 1,
+                        color: Colors.white.withValues(alpha: isDark ? 0.20 : 0.35),
+                        width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: slide.accentColor.withValues(
-                            alpha: isDark ? 0.08 : 0.05,
-                          ),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                          color: (isDark ? slide.accentColor : Colors.black)
+                              .withValues(alpha: isDark ? 0.35 : 0.14),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: InkWell(
                       onTap: () => widget.onNavigateTab(slide.destination),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      borderRadius: BorderRadius.circular(20),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Stack(
                           children: [
-                            // Baris Atas: Icon Badge & Label & Status Pill
-                            Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: slide.accentColor.withValues(
-                                      alpha: isDark ? 0.22 : 0.12,
-                                    ),
-                                    borderRadius: BorderRadius.circular(7),
-                                  ),
-                                  child: Icon(
-                                    slide.icon,
-                                    color: slide.accentColor,
-                                    size: 14,
+                            // 1. Ambient Glow Aura
+                            Positioned(
+                              right: -30,
+                              top: -30,
+                              child: Container(
+                                width: 130,
+                                height: 130,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.white.withValues(
+                                        alpha: isDark ? 0.12 : 0.22,
+                                      ),
+                                      Colors.transparent,
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    slide.label,
+                              ),
+                            ),
+
+                            // 2. Translucent Studio Watermark Icon
+                            Positioned(
+                              right: -10,
+                              bottom: -15,
+                              child: Icon(
+                                slide.icon,
+                                size: 104,
+                                color: Colors.white.withValues(
+                                  alpha: isDark ? 0.08 : 0.13,
+                                ),
+                              ),
+                            ),
+
+                            // 3. Main Content Layer
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Baris Atas: Icon Badge & Eyebrow Label & Status Pill
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.22),
+                                          borderRadius: BorderRadius.circular(7),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: 0.35),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          slide.icon,
+                                          color: Colors.white,
+                                          size: 13.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          slide.label,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      if (slide.badge != null) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7.5,
+                                            vertical: 2.5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.25),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.white.withValues(alpha: 0.4),
+                                              width: 0.8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            slide.badge!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 8.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              letterSpacing: 0.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 7),
+
+                                  // Judul Utama (High-contrast, bold)
+                                  Text(
+                                    slide.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2.5),
+
+                                  // Detail Informasi
+                                  Text(
+                                    slide.detail,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: slide.accentColor,
-                                      letterSpacing: 0.3,
+                                      fontSize: 11.5,
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withValues(alpha: 0.88),
                                     ),
                                   ),
-                                ),
-                                if (slide.badge != null) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: slide.accentColor.withValues(
-                                        alpha: isDark ? 0.2 : 0.12,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: slide.accentColor.withValues(
-                                          alpha: 0.25,
+
+                                  const Spacer(),
+
+                                  // Baris Bawah: Tombol Aksi Langsung (Tactile White Pill)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Flexible(
+                                        child: ScaleButton(
+                                          scaleDown: 0.94,
+                                          onTap: () => widget.onNavigateTab(slide.destination),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4.5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.18),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    slide.action,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: slide.buttonTextColor,
+                                                      letterSpacing: -0.1,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 11.5,
+                                                  color: slide.buttonTextColor,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
-                                        width: 0.8,
                                       ),
-                                    ),
-                                    child: Text(
-                                      slide.badge!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 8.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: slide.accentColor,
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
+                                    ],
                                   ),
                                 ],
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-
-                            // Judul Utama
-                            Text(
-                              slide.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                                color: isDark
-                                    ? const Color(0xFFF1F5F9)
-                                    : const Color(0xFF1E293B),
-                                letterSpacing: -0.2,
                               ),
-                            ),
-                            const SizedBox(height: 2),
-
-                            // Detail Informasi
-                            Text(
-                              slide.detail,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                height: 1.3,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF64748B),
-                              ),
-                            ),
-
-                            const Spacer(),
-
-                            // Baris Bawah: Tombol Aksi Langsung
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Flexible(
-                                  child: TextButton.icon(
-                                    onPressed: () =>
-                                        widget.onNavigateTab(slide.destination),
-                                    icon: const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 13,
-                                    ),
-                                    label: Text(
-                                      slide.action,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: slide.accentColor,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 0,
-                                      ),
-                                      minimumSize: const Size(0, 26),
-                                      visualDensity: VisualDensity.compact,
-                                      textStyle: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
                         ),
