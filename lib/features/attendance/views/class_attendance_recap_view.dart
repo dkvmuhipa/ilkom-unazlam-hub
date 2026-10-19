@@ -101,7 +101,7 @@ class ClassAttendanceRecapView extends StatelessWidget {
                     value: '${activeStudents.length}',
                     subtitle: 'Mahasiswa Terdaftar',
                     icon: Icons.groups_rounded,
-                    color: const Color(0xFF1E40AF),
+                    color: const Color(0xFF6D28D9),
                     isDark: isDark,
                   ),
                 ),
@@ -242,14 +242,14 @@ class ClassAttendanceRecapView extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: const Color(0xFF1E40AF)
+                    backgroundColor: const Color(0xFF6D28D9)
                         .withValues(alpha: 0.1),
                     child: Text(
                       s.nama.isNotEmpty ? s.nama[0] : 'M',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                     ),
                   ),

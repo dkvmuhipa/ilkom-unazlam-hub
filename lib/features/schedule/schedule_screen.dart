@@ -383,7 +383,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -445,7 +445,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Icon(
                   Icons.ios_share_rounded,
-                  color: Color(0xFF1E40AF),
+                  color: Color(0xFF6D28D9),
                   size: 22,
                 ),
                 SizedBox(width: 10),
@@ -776,12 +776,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                    colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.35),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -834,7 +834,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   border: InputBorder.none,
                   prefixIcon: const Icon(
                     Icons.search_rounded,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                     size: 20,
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
@@ -960,7 +960,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           const Icon(
                             Icons.calendar_month_rounded,
                             size: 15,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -985,7 +985,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
+                              color: const Color(0xFFF5F3FF),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
@@ -993,7 +993,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                               ),
                             ),
                           ),
@@ -1021,13 +1021,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: const BoxDecoration(
-                                color: Color(0xFFEFF6FF),
+                                color: Color(0xFFF5F3FF),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.event_available_rounded,
                                 size: 36,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -1073,7 +1073,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E40AF),
+                                        color: const Color(0xFF6D28D9),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(

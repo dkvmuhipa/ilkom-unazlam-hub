@@ -883,12 +883,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                    colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.35),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -998,7 +998,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
           colors: [
             Color(0xFF0F172A), // Midnight Dark
             Color(0xFF1E1B4B), // Deep Indigo
-            Color(0xFF1E40AF), // Royal Blue
+            Color(0xFF6D28D9), // Royal Blue
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1006,7 +1006,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E40AF).withValues(alpha: 0.35),
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1353,7 +1353,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                               Icon(
                                 Icons.qr_code_2_rounded,
                                 size: 16,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                               ),
                               SizedBox(width: 6),
                               Text(
@@ -1361,7 +1361,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 12,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                             ],
@@ -1484,7 +1484,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: const Color(0xFFF5F3FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
@@ -1563,7 +1563,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       Icons.receipt_long_rounded,
                       size: 16,
                       color: _activeTab == 'transaksi'
-                          ? const Color(0xFF1E40AF)
+                          ? const Color(0xFF6D28D9)
                           : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 6),
@@ -1575,7 +1575,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                             ? FontWeight.w800
                             : FontWeight.w600,
                         color: _activeTab == 'transaksi'
-                            ? const Color(0xFF1E40AF)
+                            ? const Color(0xFF6D28D9)
                             : const Color(0xFF64748B),
                       ),
                     ),
@@ -1587,7 +1587,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _activeTab == 'transaksi'
-                            ? const Color(0xFFDBEAFE)
+                            ? const Color(0xFFEDE9FE)
                             : const Color(0xFFE2E8F0),
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -1597,7 +1597,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                           color: _activeTab == 'transaksi'
-                              ? const Color(0xFF1E40AF)
+                              ? const Color(0xFF6D28D9)
                               : const Color(0xFF64748B),
                         ),
                       ),
@@ -1634,7 +1634,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       Icons.groups_rounded,
                       size: 16,
                       color: _activeTab == 'iuran'
-                          ? const Color(0xFF1E40AF)
+                          ? const Color(0xFF6D28D9)
                           : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 6),
@@ -1646,7 +1646,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                             ? FontWeight.w800
                             : FontWeight.w600,
                         color: _activeTab == 'iuran'
-                            ? const Color(0xFF1E40AF)
+                            ? const Color(0xFF6D28D9)
                             : const Color(0xFF64748B),
                       ),
                     ),
@@ -1755,12 +1755,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF1E40AF)
+                          ? const Color(0xFF6D28D9)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF1E40AF)
+                            ? const Color(0xFF6D28D9)
                             : const Color(0xFFE2E8F0),
                       ),
                     ),
@@ -1815,7 +1815,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                           size: 14,
                           color: cat == 'Semua Kategori'
                               ? const Color(0xFF64748B)
-                              : const Color(0xFF1E40AF),
+                              : const Color(0xFF6D28D9),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -2041,7 +2041,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                                 Icon(
                                   Icons.edit_outlined,
                                   size: 16,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                                 SizedBox(width: 8),
                                 Text('Edit', style: TextStyle(fontSize: 12.5)),
@@ -2157,7 +2157,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                     '$lunasCount dari $totalCount Mahasiswa (${(pctLunas * 100).toInt()}%)',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF1E40AF),
+                      color: Color(0xFF6D28D9),
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -2321,12 +2321,12 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF1E40AF)
+                              ? const Color(0xFF6D28D9)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF1E40AF)
+                                ? const Color(0xFF6D28D9)
                                 : const Color(0xFFE2E8F0),
                           ),
                         ),
@@ -2361,7 +2361,7 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
                       ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                          colors: [Color(0xFF2563EB), Color(0xFF6D28D9)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [

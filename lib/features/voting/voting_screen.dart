@@ -112,7 +112,7 @@ class _VotingScreenState extends State<VotingScreen> {
             children: [
               Icon(
                 Icons.how_to_vote_rounded,
-                color: Color(0xFF1E40AF),
+                color: Color(0xFF6D28D9),
                 size: 22,
               ),
               SizedBox(width: 8),
@@ -248,7 +248,7 @@ class _VotingScreenState extends State<VotingScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -378,7 +378,7 @@ class _VotingScreenState extends State<VotingScreen> {
       floatingActionButton: widget.canManage && _polls.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _showCreatePollDialog,
-              backgroundColor: const Color(0xFF1E40AF),
+              backgroundColor: const Color(0xFF6D28D9),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
               label: const Text(
@@ -400,13 +400,13 @@ class _VotingScreenState extends State<VotingScreen> {
                       width: 64,
                       height: 64,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEFF6FF),
+                        color: Color(0xFFF5F3FF),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.how_to_vote_outlined,
                         size: 32,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -435,7 +435,7 @@ class _VotingScreenState extends State<VotingScreen> {
                         icon: const Icon(Icons.add_rounded),
                         label: const Text('Buat Voting Baru'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E40AF),
+                          backgroundColor: const Color(0xFF6D28D9),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -615,12 +615,12 @@ class _VotingScreenState extends State<VotingScreen> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? const Color(0xFFEFF6FF)
+                                        ? const Color(0xFFF5F3FF)
                                         : const Color(0xFFF9FAFB),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isSelected
-                                          ? const Color(0xFF1E40AF)
+                                          ? const Color(0xFF6D28D9)
                                           : const Color(0xFFE5E7EB),
                                       width: isSelected ? 1.5 : 1,
                                     ),
@@ -644,7 +644,7 @@ class _VotingScreenState extends State<VotingScreen> {
                                                         .radio_button_unchecked_rounded,
                                               size: 18,
                                               color: isSelected
-                                                  ? const Color(0xFF1E40AF)
+                                                  ? const Color(0xFF6D28D9)
                                                   : const Color(0xFF9CA3AF),
                                             ),
                                           ),
@@ -667,7 +667,7 @@ class _VotingScreenState extends State<VotingScreen> {
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w700,
                                               color: isSelected
-                                                  ? const Color(0xFF1E40AF)
+                                                  ? const Color(0xFF6D28D9)
                                                   : const Color(0xFF6B7280),
                                             ),
                                           ),
@@ -696,7 +696,7 @@ class _VotingScreenState extends State<VotingScreen> {
                                                   AlwaysStoppedAnimation<Color>(
                                                     isSelected
                                                         ? const Color(
-                                                            0xFF1E40AF,
+                                                            0xFF6D28D9,
                                                           )
                                                         : const Color(
                                                             0xFF9CA3AF,

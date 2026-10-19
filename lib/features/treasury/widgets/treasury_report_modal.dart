@@ -79,12 +79,12 @@ class TreasuryReportModal extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: const Color(0xFFF5F3FF),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.analytics_rounded,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                     size: 22,
                   ),
                 ),
@@ -153,8 +153,8 @@ class TreasuryReportModal extends StatelessWidget {
                         child: _buildLaporanStatCard(
                           'Saldo Kas Bersih',
                           _formatRupiah(saldo),
-                          const Color(0xFF1E40AF),
-                          const Color(0xFFEFF6FF),
+                          const Color(0xFF6D28D9),
+                          const Color(0xFFF5F3FF),
                           Icons.account_balance_wallet_rounded,
                         ),
                       ),
@@ -211,7 +211,7 @@ class TreasuryReportModal extends StatelessWidget {
                           }
                           final maxTotal = totals.values.reduce((a, b) => a > b ? a : b);
                           const colors = [
-                            Color(0xFF1E40AF),
+                            Color(0xFF6D28D9),
                             Color(0xFF0284C7),
                             Color(0xFFF59E0B),
                             Color(0xFF10B981),
@@ -260,7 +260,7 @@ class TreasuryReportModal extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E40AF),
+                      backgroundColor: const Color(0xFF6D28D9),
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(

@@ -474,7 +474,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
             colors: [
               Color(0xFF0F172A), // Slate 900
               Color(0xFF1E1B4B), // Indigo 950
-              Color(0xFF1E40AF), // Royal Blue
+              Color(0xFF6D28D9), // Royal Blue
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -482,7 +482,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E40AF).withValues(alpha: 0.35),
+              color: const Color(0xFF6D28D9).withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -523,7 +523,7 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFFBFDBFE),
+                            color: Color(0xFFDDD6FE),
                             letterSpacing: 0.5,
                           ),
                         ),

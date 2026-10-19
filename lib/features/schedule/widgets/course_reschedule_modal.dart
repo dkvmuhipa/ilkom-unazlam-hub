@@ -324,12 +324,12 @@ class _CourseRescheduleModalState extends State<CourseRescheduleModal> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.edit_calendar_rounded,
-                        color: Color(0xFF1D4ED8),
+                        color: Color(0xFF6D28D9),
                         size: 20,
                       ),
                     ),

@@ -261,7 +261,7 @@ class SaaSAvatar extends StatelessWidget {
   }) : borderRadius = radius ?? borderRadius;
 
   static const List<Map<String, Color>> _palette = [
-    {'bg': Color(0xFFEFF6FF), 'text': Color(0xFF1E40AF), 'border': Color(0xFFBFDBFE)}, // Royal Blue
+    {'bg': Color(0xFFF5F3FF), 'text': Color(0xFF6D28D9), 'border': Color(0xFFDDD6FE)}, // Royal Blue
     {'bg': Color(0xFFECFDF5), 'text': Color(0xFF065F46), 'border': Color(0xFFA7F3D0)}, // Emerald
     {'bg': Color(0xFFFFFBEB), 'text': Color(0xFF92400E), 'border': Color(0xFFFDE68A)}, // Amber
     {'bg': Color(0xFFF5F3FF), 'text': Color(0xFF6D28D9), 'border': Color(0xFFDDD6FE)}, // Violet

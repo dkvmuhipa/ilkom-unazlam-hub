@@ -47,7 +47,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
 
   final Map<String, Color> _courseColors = {
     'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
-    'Pendidikan Pancasila': const Color(0xFF1E40AF),
+    'Pendidikan Pancasila': const Color(0xFF6D28D9),
     'Ilmu Kealaman Dasar *': const Color(0xFF0284C7),
     'Dasar-Dasar Ilmu Komunikasi': const Color(0xFFEF4444),
     'Pendidikan Agama Islam *': const Color(0xFF10B981),
@@ -260,7 +260,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                     if (!snapshot.hasData) {
                       return const Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                         ),
                       );
                     }
@@ -303,7 +303,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                 backgroundColor: Color(0xFFEDE9FE),
                                 child: Icon(
                                   Icons.person_outline_rounded,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -358,7 +358,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                   onPressed: () => _openLink(link),
                                   icon: const Icon(
                                     Icons.open_in_new_rounded,
-                                    color: Color(0xFF1E40AF),
+                                    color: Color(0xFF6D28D9),
                                   ),
                                 ),
                               IconButton(
@@ -370,7 +370,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                 ),
                                 icon: const Icon(
                                   Icons.rate_review_outlined,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                             ],
@@ -519,7 +519,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
             children: [
               Icon(
                 Icons.drive_folder_upload_rounded,
-                color: Color(0xFF1E40AF),
+                color: Color(0xFF6D28D9),
                 size: 22,
               ),
               SizedBox(width: 8),
@@ -685,7 +685,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -721,7 +721,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
           ),
           title: const Row(
             children: [
-              Icon(Icons.edit_note_rounded, color: Color(0xFF1E40AF), size: 22),
+              Icon(Icons.edit_note_rounded, color: Color(0xFF6D28D9), size: 22),
               SizedBox(width: 8),
               Text(
                 'Edit Tugas',
@@ -968,7 +968,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1086,7 +1086,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final a = widget.assignment;
-    final courseColor = _courseColors[a.courseName] ?? const Color(0xFF1E40AF);
+    final courseColor = _courseColors[a.courseName] ?? const Color(0xFF6D28D9);
 
     final now = DateTime.now();
     final difference = a.deadline.difference(now);
@@ -1102,8 +1102,8 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       countdownBg = const Color(0xFFDCFCE7);
     } else if (_submissionUrl.isNotEmpty || _currentStatus == 'dikumpulkan') {
       countdownText = 'Sudah dikumpulkan';
-      countdownColor = const Color(0xFF1E40AF);
-      countdownBg = const Color(0xFFEFF6FF);
+      countdownColor = const Color(0xFF6D28D9);
+      countdownBg = const Color(0xFFF5F3FF);
     } else if (_currentStatus == 'selesai') {
       countdownText = 'Tugas Selesai';
       countdownColor = const Color(0xFF16A34A);
@@ -1118,7 +1118,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
       countdownBg = const Color(0xFFFEF3C7);
     } else {
       countdownText = 'Sisa $daysRemaining Hari Lagi';
-      countdownColor = const Color(0xFF1E40AF);
+      countdownColor = const Color(0xFF6D28D9);
       countdownBg = const Color(0xFFEDE9FE);
     }
 
@@ -1210,7 +1210,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                     IconButton(
                       icon: const Icon(
                         Icons.edit_outlined,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                         size: 20,
                       ),
                       tooltip: 'Edit Tugas',
@@ -1370,7 +1370,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       Icon(
                         Icons.menu_book_rounded,
                         size: 18,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                       SizedBox(width: 8),
                       Expanded(
@@ -1501,7 +1501,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                           ElevatedButton(
                             onPressed: () => _openLink(a.linkPengumpulan!),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E40AF),
+                              backgroundColor: const Color(0xFF6D28D9),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -1532,7 +1532,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFDDD6FE)),
                       ),
@@ -1585,7 +1585,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                           Icon(
                             Icons.drive_folder_upload_rounded,
                             size: 18,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                           SizedBox(width: 8),
                           Expanded(
@@ -1611,7 +1611,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                               ? Icons.edit_note_rounded
                               : Icons.upload_file_rounded,
                           size: 16,
-                          color: const Color(0xFF1E40AF),
+                          color: const Color(0xFF6D28D9),
                         ),
                         label: Text(
                           _grade != null
@@ -1622,7 +1622,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                         ),
                       ),
@@ -1758,9 +1758,9 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1772,7 +1772,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                             children: [
                               const Icon(
                                 Icons.grade_rounded,
-                                color: Color(0xFF1D4ED8),
+                                color: Color(0xFF6D28D9),
                                 size: 18,
                               ),
                               const SizedBox(width: 7),
@@ -1780,7 +1780,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                 'Nilai ${_grade!.toStringAsFixed(_grade! % 1 == 0 ? 0 : 1)} / 100',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1E3A8A),
+                                  color: Color(0xFF58138A),
                                 ),
                               ),
 
@@ -1789,7 +1789,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                                   _gradedAt,
                                   style: const TextStyle(
                                     fontSize: 10,
-                                    color: Color(0xFF1D4ED8),
+                                    color: Color(0xFF6D28D9),
                                   ),
                                 ),
                             ],
@@ -1800,7 +1800,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                               _feedback,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF1E3A8A),
+                                color: Color(0xFF58138A),
                               ),
                             ),
                           ],
@@ -1813,7 +1813,7 @@ class _AssignmentDetailSheetState extends State<AssignmentDetailSheet> {
                       'Tugas telah dikirim dan sedang menunggu penilaian.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF1D4ED8),
+                        color: Color(0xFF6D28D9),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

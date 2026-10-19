@@ -95,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           loadingBuilder: (ctx, child, progress) {
             if (progress == null) return child;
             return Container(
-              color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+              color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
               child: Center(
                 child: SizedBox(
                   width: 20,
@@ -135,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       errorBuilder: (context, error, stackTrace) => Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF1E40AF), Color(0xFF4338CA)],
+            colors: [Color(0xFF6D28D9), Color(0xFF4338CA)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -584,8 +584,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   _buildMenuItem(
                     icon: Icons.lock_reset_rounded,
-                    iconColor: const Color(0xFF1E40AF),
-                    iconBg: const Color(0xFFEFF6FF),
+                    iconColor: const Color(0xFF6D28D9),
+                    iconBg: const Color(0xFFF5F3FF),
                     title: 'Ubah Kata Sandi Akun',
                     subtitle: 'Ganti kata sandi login akun Anda',
                     onTap: _changePassword,

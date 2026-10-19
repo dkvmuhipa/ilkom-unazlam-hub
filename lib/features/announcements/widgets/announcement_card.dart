@@ -42,8 +42,8 @@ class AnnouncementCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
-          splashColor: const Color(0xFF1E40AF).withValues(alpha: 0.05),
-          highlightColor: const Color(0xFF1E40AF).withValues(alpha: 0.02),
+          splashColor: const Color(0xFF6D28D9).withValues(alpha: 0.05),
+          highlightColor: const Color(0xFF6D28D9).withValues(alpha: 0.02),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

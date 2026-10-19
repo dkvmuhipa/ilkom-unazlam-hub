@@ -382,14 +382,14 @@ class OfficialLetterSheet extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E40AF)
+                              color: const Color(0xFF6D28D9)
                                   .withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.school_rounded,
                               size: 26,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -420,7 +420,7 @@ class OfficialLetterSheet extends StatelessWidget {
                               fontFamily: 'serif',
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -525,7 +525,7 @@ class OfficialLetterSheet extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                             ),
                           ),
                         ],
@@ -717,8 +717,8 @@ class OfficialLetterSheet extends StatelessWidget {
                     icon: const Icon(Icons.copy_rounded, size: 16),
                     label: const Text('Salin Teks'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1E40AF),
-                      side: const BorderSide(color: Color(0xFF1E40AF)),
+                      foregroundColor: const Color(0xFF6D28D9),
+                      side: const BorderSide(color: Color(0xFF6D28D9)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

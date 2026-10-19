@@ -263,13 +263,13 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF1E3A8A)),
+                    child: CircularProgressIndicator(color: Color(0xFF58138A)),
                   )
                 : filtered.isEmpty
                 ? _buildEmptyState()
                 : RefreshIndicator(
                     onRefresh: () => _loadAnnouncements(silent: true),
-                    color: const Color(0xFF1E3A8A),
+                    color: const Color(0xFF58138A),
                     child: ListView(
                       padding: const EdgeInsets.only(bottom: 90),
                       children: [
@@ -334,7 +334,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
               (filtered.isNotEmpty || _searchQuery.trim().isNotEmpty)
           ? FloatingActionButton.extended(
               onPressed: _openCreateDialog,
-              backgroundColor: const Color(0xFF1E3A8A),
+              backgroundColor: const Color(0xFF58138A),
               foregroundColor: Colors.white,
               elevation: 4,
               icon: const Icon(Icons.add_rounded, size: 20),
@@ -359,16 +359,16 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: const Color(0xFFF5F3FF),
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFDBEAFE), width: 2),
+                border: Border.all(color: const Color(0xFFEDE9FE), width: 2),
               ),
               child: Icon(
                 hasSearch
                     ? Icons.search_off_rounded
                     : Icons.notifications_none_rounded,
                 size: 40,
-                color: const Color(0xFF1E3A8A),
+                color: const Color(0xFF58138A),
               ),
             ),
             const SizedBox(height: 20),
@@ -399,8 +399,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: const Text('Hapus Pencarian'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1E3A8A),
-                  side: const BorderSide(color: Color(0xFFBFDBFE)),
+                  foregroundColor: const Color(0xFF58138A),
+                  side: const BorderSide(color: Color(0xFFDDD6FE)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

@@ -66,7 +66,7 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
         icon: Icons.calendar_month_rounded,
         label: 'Jadwal Kuliah',
         color: AppColors.primary,
-        bgColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+        bgColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F3FF),
         tabIndex: 1,
       ),
       _ServiceModalData(

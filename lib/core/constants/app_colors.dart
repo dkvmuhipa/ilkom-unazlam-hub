@@ -82,7 +82,7 @@ class AppColors {
   static const Color errorSoft = Color(0xFFFFF1F2); // Rose 50
 
   static const Color info = Color(0xFF2563EB);
-  static const Color infoSoft = Color(0xFFEFF6FF);
+  static const Color infoSoft = Color(0xFFF5F3FF);
 
   // Modern Typography (Slate Hierarchy)
   static const Color textMain = Color(0xFF0F172A); // Slate 900
@@ -97,7 +97,7 @@ class AppColors {
 
   // Modern Vibrant Gradients
   static const LinearGradient blueGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+    colors: [Color(0xFF2563EB), Color(0xFF6D28D9)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

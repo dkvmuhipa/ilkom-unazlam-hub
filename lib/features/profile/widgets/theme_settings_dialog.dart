@@ -14,7 +14,7 @@ class ThemeSettingsDialog {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             title: Row(
               children: [
-                const Icon(Icons.palette_outlined, color: Color(0xFF1E40AF), size: 22),
+                const Icon(Icons.palette_outlined, color: Color(0xFF6D28D9), size: 22),
                 const SizedBox(width: 10),
                 Text(
                   'Tema Tampilan',
@@ -91,11 +91,11 @@ class ThemeSettingsDialog {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF1E40AF).withValues(alpha: 0.12)
+              ? const Color(0xFF6D28D9).withValues(alpha: 0.12)
               : (isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1E40AF) : (isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0)),
+            color: isSelected ? const Color(0xFF6D28D9) : (isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0)),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -127,7 +127,7 @@ class ThemeSettingsDialog {
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF1E40AF), size: 18),
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF6D28D9), size: 18),
           ],
         ),
       ),

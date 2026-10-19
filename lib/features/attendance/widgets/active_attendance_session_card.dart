@@ -111,7 +111,7 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                     ]
                   : [
                       isUrgent ? const Color(0xFFFFF1F2) : const Color(0xFFF0FDF4),
-                      isUrgent ? const Color(0xFFFFF7ED) : const Color(0xFFEFF6FF),
+                      isUrgent ? const Color(0xFFFFF7ED) : const Color(0xFFF5F3FF),
                     ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -252,7 +252,7 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E40AF).withValues(alpha: widget.isDark ? 0.3 : 0.1),
+                        color: const Color(0xFF6D28D9).withValues(alpha: widget.isDark ? 0.3 : 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -260,7 +260,7 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: widget.isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF),
+                          color: widget.isDark ? const Color(0xFF93C5FD) : const Color(0xFF6D28D9),
                         ),
                       ),
                     ),
@@ -298,7 +298,7 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                             color: widget.isDark ? const Color(0xFF1E1E2E) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: widget.isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFBFDBFE),
+                              color: widget.isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFDDD6FE),
                             ),
                           ),
                           child: Row(
@@ -415,14 +415,14 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.people_alt_rounded, size: 13, color: Color(0xFF1E40AF)),
+                          const Icon(Icons.people_alt_rounded, size: 13, color: Color(0xFF6D28D9)),
                           const SizedBox(width: 5),
                           Text(
                             '${session.attendedNims.length} Mahasiswa Hadir',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                             ),
                           ),
                         ],
@@ -486,12 +486,12 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                                colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
                               ),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
+                                  color: const Color(0xFF6D28D9).withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -643,7 +643,7 @@ class _ActiveAttendanceSessionCardState extends State<ActiveAttendanceSessionCar
                                 color: widget.isDark ? const Color(0xFF1E1E2E) : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: widget.isDark ? const Color(0xFF3B82F6) : const Color(0xFFBFDBFE),
+                                  color: widget.isDark ? const Color(0xFF3B82F6) : const Color(0xFFDDD6FE),
                                 ),
                               ),
                               alignment: Alignment.center,

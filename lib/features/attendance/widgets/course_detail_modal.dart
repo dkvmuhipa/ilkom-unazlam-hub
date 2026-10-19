@@ -51,7 +51,7 @@ class CourseDetailModal {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E40AF),
+                      color: const Color(0xFF6D28D9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 20),
@@ -236,7 +236,7 @@ class CourseDetailModal {
                         stBg = isDark ? const Color(0xFF713F12) : const Color(0xFFFFFBEB);
                       } else if (status == 'Sakit') {
                         stColor = const Color(0xFF3B82F6);
-                        stBg = isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF);
+                        stBg = isDark ? const Color(0xFF58138A) : const Color(0xFFF5F3FF);
                       } else if (status == 'Alpa') {
                         stColor = const Color(0xFFEF4444);
                         stBg = isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEF2F2);
@@ -341,8 +341,8 @@ class CourseDetailModal {
                       icon: const Icon(Icons.assignment_turned_in_outlined, size: 16),
                       label: const Text('Ajukan Izin / Sakit Matkul Ini', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E40AF),
-                        side: const BorderSide(color: Color(0xFF1E40AF)),
+                        foregroundColor: const Color(0xFF6D28D9),
+                        side: const BorderSide(color: Color(0xFF6D28D9)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),

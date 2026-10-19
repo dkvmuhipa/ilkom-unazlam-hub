@@ -872,7 +872,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
         letter = 'I';
         break;
       case 'sakit':
-        bg = const Color(0xFFDBEAFE);
+        bg = const Color(0xFFEDE9FE);
         fg = const Color(0xFF2563EB);
         letter = 'S';
         break;

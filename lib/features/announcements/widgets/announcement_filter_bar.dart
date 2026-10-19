@@ -105,12 +105,12 @@ class AnnouncementFilterBar extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFF1E3A8A) // UNAZLAM Deep Navy Blue
+                            ? const Color(0xFF58138A) // UNAZLAM Deep Navy Blue
                             : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isSelected
-                              ? const Color(0xFF1E3A8A)
+                              ? const Color(0xFF58138A)
                               : const Color(0xFFE2E8F0),
                           width: 1,
                         ),

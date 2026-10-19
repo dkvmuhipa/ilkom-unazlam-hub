@@ -158,7 +158,7 @@ class _SplashWavesPainter extends CustomPainter {
     // 2. Royal Purple front curved ribbon
     final purplePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
+        colors: [Color(0xFF6D28D9), Color(0xFF755BF7)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))

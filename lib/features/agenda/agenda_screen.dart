@@ -119,7 +119,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
       date: parsedDate,
       title: row['title']?.toString() ?? 'Agenda kelas',
       course: row['course']?.toString() ?? 'Kegiatan Kelas',
-      color: Color((row['color_value'] as num?)?.toInt() ?? 0xFF1E40AF),
+      color: Color((row['color_value'] as num?)?.toInt() ?? 0xFF6D28D9),
     );
   }
 
@@ -213,7 +213,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
         DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day,
       ),
     );
-    Color selectedColor = const Color(0xFF1E40AF);
+    Color selectedColor = const Color(0xFF6D28D9);
     bool isSaving = false;
 
     showDialog(
@@ -228,7 +228,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
             children: [
               Icon(
                 Icons.event_available_rounded,
-                color: Color(0xFF1E40AF),
+                color: Color(0xFF6D28D9),
                 size: 22,
               ),
               SizedBox(width: 8),
@@ -303,7 +303,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                   Row(
                     children:
                         [
-                          const Color(0xFF1E40AF),
+                          const Color(0xFF6D28D9),
                           const Color(0xFFF59E0B),
                           const Color(0xFF10B981),
                           const Color(0xFFEF4444),
@@ -406,7 +406,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                       );
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -475,7 +475,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                   Row(
                     children:
                         [
-                          const Color(0xFF1E40AF),
+                          const Color(0xFF6D28D9),
                           const Color(0xFFF59E0B),
                           const Color(0xFF10B981),
                           const Color(0xFFEF4444),
@@ -566,7 +566,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                       );
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -650,7 +650,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
       floatingActionButton: widget.canManage
           ? FloatingActionButton.extended(
               onPressed: _showAddAgendaDialog,
-              backgroundColor: const Color(0xFF1E40AF),
+              backgroundColor: const Color(0xFF6D28D9),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded, size: 20),
               label: const Text(
@@ -824,13 +824,13 @@ class _AgendaScreenState extends State<AgendaScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEFF6FF),
+                        color: Color(0xFFF5F3FF),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.event_busy_rounded,
                         size: 32,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -897,7 +897,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
             margin: const EdgeInsets.symmetric(vertical: 3),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF1E40AF)
+                  ? const Color(0xFF6D28D9)
                   : (hasEvent ? const Color(0xFFFEF3C7) : Colors.transparent),
               shape: BoxShape.circle,
             ),
@@ -1037,7 +1037,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                       Icon(
                         Icons.edit_outlined,
                         size: 18,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                       SizedBox(width: 8),
                       Text(

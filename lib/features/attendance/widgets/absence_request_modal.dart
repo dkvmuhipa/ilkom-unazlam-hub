@@ -152,7 +152,7 @@ class AbsenceRequestModal {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: selectedStatus == 'Sakit'
-                                ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFDBEAFE))
+                                ? (isDark ? const Color(0xFF58138A) : const Color(0xFFEDE9FE))
                                 : (isDark ? const Color(0xFF2E2E3E) : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -268,7 +268,7 @@ class AbsenceRequestModal {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 15, color: Color(0xFF1E40AF)),
+                      const Icon(Icons.info_outline_rounded, size: 15, color: Color(0xFF6D28D9)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

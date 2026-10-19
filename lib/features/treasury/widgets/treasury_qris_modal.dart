@@ -227,7 +227,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                      colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -316,7 +316,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                               Icons.qr_code_scanner_rounded,
                               size: 15,
                               color: _activeTab == 0
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
@@ -328,7 +328,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                                     ? FontWeight.w800
                                     : FontWeight.w600,
                                 color: _activeTab == 0
-                                    ? const Color(0xFF1E40AF)
+                                    ? const Color(0xFF6D28D9)
                                     : const Color(0xFF64748B),
                               ),
                             ),
@@ -364,7 +364,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                               Icons.receipt_long_rounded,
                               size: 15,
                               color: _activeTab == 1
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
@@ -376,7 +376,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                                     ? FontWeight.w800
                                     : FontWeight.w600,
                                 color: _activeTab == 1
-                                    ? const Color(0xFF1E40AF)
+                                    ? const Color(0xFF6D28D9)
                                     : const Color(0xFF64748B),
                               ),
                             ),
@@ -476,7 +476,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1E40AF)
+                          color: const Color(0xFF6D28D9)
                               .withValues(alpha: 0.08),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
@@ -576,7 +576,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: const Color(0xFFF5F3FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -997,7 +997,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             fontFamily: 'monospace',
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                         ),
                         Text(
@@ -1076,7 +1076,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                         ),
                       ],

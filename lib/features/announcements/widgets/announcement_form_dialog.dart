@@ -228,7 +228,7 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
@@ -321,7 +321,7 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF1E3A8A)),
+                          const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF58138A)),
                           const SizedBox(width: 8),
                           const Text(
                             'Identitas Penerbit Warta *',
@@ -454,10 +454,10 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                         duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFFF1F5F9),
+                          color: isSelected ? const Color(0xFF58138A) : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFFE2E8F0),
+                            color: isSelected ? const Color(0xFF58138A) : const Color(0xFFE2E8F0),
                           ),
                         ),
                         child: Text(
@@ -592,7 +592,7 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _handleSubmit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
+                          backgroundColor: const Color(0xFF58138A),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -642,7 +642,7 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFEFF6FF) : Colors.white,
+          color: isActive ? const Color(0xFFF5F3FF) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
@@ -654,7 +654,7 @@ class _AnnouncementFormDialogState extends State<AnnouncementFormDialog> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? const Color(0xFF1E40AF) : const Color(0xFF475569),
+            color: isActive ? const Color(0xFF6D28D9) : const Color(0xFF475569),
           ),
         ),
       ),

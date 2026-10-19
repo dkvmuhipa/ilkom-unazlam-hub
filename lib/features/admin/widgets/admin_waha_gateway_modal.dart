@@ -594,7 +594,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         statusDesc = 'Buka tab "Tautan WhatsApp (QR)" untuk memindai dari aplikasi WhatsApp di HP.';
         break;
       case WahaStatus.starting:
-        bg = tokens.isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.3) : const Color(0xFFEFF6FF);
+        bg = tokens.isDark ? const Color(0xFF58138A).withValues(alpha: 0.3) : const Color(0xFFF5F3FF);
         border = const Color(0xFF3B82F6).withValues(alpha: 0.5);
         textCol = const Color(0xFF3B82F6);
         icon = Icons.hourglass_top_rounded;

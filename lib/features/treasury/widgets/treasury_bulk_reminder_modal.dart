@@ -269,7 +269,7 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                      colors: [Color(0xFF2563EB), Color(0xFF6D28D9)],
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -549,9 +549,9 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F3FF),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFBFDBFE)),
+          border: Border.all(color: const Color(0xFFDDD6FE)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,7 +572,7 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                     ),
                   ],
@@ -582,7 +582,7 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                   ),
                 ),
               ],
@@ -593,7 +593,7 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
               child: LinearProgressIndicator(
                 value: pct,
                 minHeight: 6,
-                backgroundColor: const Color(0xFFDBEAFE),
+                backgroundColor: const Color(0xFFEDE9FE),
                 valueColor:
                     const AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
               ),
@@ -982,7 +982,7 @@ class _TreasuryBulkReminderModalState extends State<TreasuryBulkReminderModal> {
                   decoration: BoxDecoration(
                     gradient: canSend
                         ? const LinearGradient(
-                            colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                            colors: [Color(0xFF2563EB), Color(0xFF6D28D9)],
                           )
                         : null,
                     color: canSend

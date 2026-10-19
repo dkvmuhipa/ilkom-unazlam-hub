@@ -457,8 +457,8 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFF60A5FA),
         onPrimary: Color(0xFF0F172A),
-        primaryContainer: Color(0xFF1E3A8A),
-        onPrimaryContainer: Color(0xFFDBEAFE),
+        primaryContainer: Color(0xFF58138A),
+        onPrimaryContainer: Color(0xFFEDE9FE),
         secondary: Color(0xFFFBBF24),
         onSecondary: Color(0xFF451A03),
         secondaryContainer: Color(0xFF78350F),
@@ -586,7 +586,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: const Color(0xFF1E3A8A),
+        indicatorColor: const Color(0xFF58138A),
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),

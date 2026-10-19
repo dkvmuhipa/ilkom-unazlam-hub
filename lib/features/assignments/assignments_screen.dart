@@ -128,7 +128,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
   final Map<String, Color> _courseColors = {
     'Pendidikan Kewarganegaraan': const Color(0xFFF59E0B),
-    'Pendidikan Pancasila': const Color(0xFF1E40AF),
+    'Pendidikan Pancasila': const Color(0xFF6D28D9),
     'Ilmu Kealaman Dasar': const Color(0xFF0284C7),
     'Dasar-Dasar Ilmu Komunikasi': const Color(0xFFEF4444),
     'Pendidikan Agama Islam': const Color(0xFF10B981),
@@ -251,7 +251,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       case 'dinilai':
         return const Color(0xFFDCFCE7);
       case 'dikumpulkan':
-        return const Color(0xFFEFF6FF);
+        return const Color(0xFFF5F3FF);
       default:
         return const Color(0xFFF3F4F6);
     }
@@ -287,7 +287,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           ),
           title: const Row(
             children: [
-              Icon(Icons.add_task_rounded, color: Color(0xFF1E40AF), size: 22),
+              Icon(Icons.add_task_rounded, color: Color(0xFF6D28D9), size: 22),
               SizedBox(width: 8),
               Text(
                 'Tambah Tugas Baru',
@@ -519,7 +519,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       );
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -667,7 +667,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                 size: 15,
                                 color: c == 'Semua Mata Kuliah'
                                     ? const Color(0xFF64748B)
-                                    : const Color(0xFF1E40AF),
+                                    : const Color(0xFF6D28D9),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -763,7 +763,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                             ],
@@ -776,7 +776,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                               minHeight: 5,
                               backgroundColor: const Color(0xFFE2E8F0),
                               valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF1E40AF),
+                                Color(0xFF6D28D9),
                               ),
                             ),
                           ),
@@ -849,7 +849,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                       final a = filteredList[index];
                       final courseColor =
                           _courseColors[a.courseName] ??
-                          const Color(0xFF1E40AF);
+                          const Color(0xFF6D28D9);
                       final isDone =
                           a.status == 'selesai' || a.status == 'dinilai';
 
@@ -1127,11 +1127,11 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                                               vertical: 3.5,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFEFF6FF),
+                                              color: const Color(0xFFF5F3FF),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                color: const Color(0xFFBFDBFE),
+                                                color: const Color(0xFFDDD6FE),
                                               ),
                                             ),
                                             child: const Row(
@@ -1207,7 +1207,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
+                  colors: [Color(0xFF6D28D9), Color(0xFF755BF7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -1217,7 +1217,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

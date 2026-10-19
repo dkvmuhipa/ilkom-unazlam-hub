@@ -19,7 +19,7 @@ class CourseTimelineCard extends StatelessWidget {
 
   Color _getCourseAccentColor(String courseName) {
     final colors = [
-      const Color(0xFF1E40AF), // Royal Blue
+      const Color(0xFF6D28D9), // Royal Blue
       const Color(0xFF0284C7), // Sky Blue
       const Color(0xFF0D9488), // Teal
       const Color(0xFFD97706), // Amber
@@ -107,7 +107,7 @@ class CourseTimelineCard extends StatelessWidget {
     String label;
 
     if (isOnline) {
-      bgColor = const Color(0xFFEFF6FF);
+      bgColor = const Color(0xFFF5F3FF);
       textColor = const Color(0xFF2563EB);
       icon = Icons.videocam_rounded;
       label = 'Online (Virtual)';

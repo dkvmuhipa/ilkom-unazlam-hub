@@ -60,8 +60,8 @@ class _HeroSlide {
     required this.icon,
     required this.destination,
     this.accentColor = const Color(0xFF4F46E5),
-    this.buttonTextColor = const Color(0xFF1E3A8A),
-    this.lightGradientColors = const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+    this.buttonTextColor = const Color(0xFF58138A),
+    this.lightGradientColors = const [Color(0xFF58138A), Color(0xFF3B82F6)],
     this.darkGradientColors = const [Color(0xFF161936), Color(0xFF222659)],
     // ignore: unused_element_parameter
     this.gradientColors,
