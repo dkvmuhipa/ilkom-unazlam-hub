@@ -10,6 +10,7 @@ import '../../core/services/supabase_repository.dart';
 import '../../core/services/waha_service.dart';
 import '../../core/widgets/scale_button.dart';
 import '../../models/models.dart';
+import 'widgets/treasury_bulk_reminder_modal.dart';
 import 'widgets/treasury_qris_modal.dart';
 import 'widgets/treasury_report_modal.dart';
 import 'widgets/treasury_transaction_modal.dart';
@@ -314,15 +315,28 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
     );
   }
 
+  void _showBulkReminderModal() {
+    TreasuryBulkReminderModal.show(
+      context,
+      students: _students,
+      iuranStatus: _iuranStatus,
+      iuranNominal: _iuranNominal,
+      periodLabel: _periodLabel,
+      onRefresh: () => _loadTreasury(silent: true),
+    );
+  }
+
   Future<void> _openWhatsAppReminder(StudentProfile s) async {
     if (!widget.canManage || s.noWa.trim().isEmpty) return;
 
-    final nominalStr = _formatRupiah(_iuranNominal[s.nim] ?? 20000);
-    final rawMessage =
-        'Halo *${s.nama}* (NIM: ${s.nim}),\n\n'
-        'Kami mengingatkan tagihan iuran kas kelas periode $_periodLabel sebesar $nominalStr belum tercatat lunas.\n\n'
-        'Pembayaran dapat dilakukan melalui scan QRIS resmi kelas atau transfer ke Bank Mandiri: 123-00-1098273-1 a.n. BENDAHARA ILKOM UNAZLAM 2026.\n\n'
-        'Setelah transfer, silakan kirim bukti ke nomor ini. Terima kasih! 🙏✨';
+    final nominal = _iuranNominal[s.nim] ?? 20000;
+    final rawMessage = WahaService.formatTreasuryReminderMessage(
+      studentName: s.nama,
+      studentNim: s.nim,
+      unpaidMonthsCount: 1,
+      totalAmount: nominal,
+      periodLabel: _periodLabel,
+    );
 
     // 1. Coba kirim otomatis jika WAHA Gateway aktif
     try {
@@ -2277,80 +2291,144 @@ class _TreasuryScreenState extends State<TreasuryScreen> {
         ),
         const SizedBox(height: 10),
 
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.spaceBetween,
           children: [
-            ...['Semua', 'Lunas', 'Belum Lunas'].map((filter) {
-              final isSelected = filter == _duesFilter;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ScaleButton(
-                  onTap: () => setState(() => _duesFilter = filter),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF1E40AF)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF1E40AF)
-                            : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: Text(
-                      filter,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: isSelected
-                            ? FontWeight.w800
-                            : FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-            const Spacer(),
-            if (widget.canManage)
-              ScaleButton(
-                onTap: _copyDuesBroadcast,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.share_rounded,
-                        size: 12,
-                        color: Color(0xFF059669),
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Rekap WA',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF059669),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...['Semua', 'Lunas', 'Belum Lunas'].map((filter) {
+                  final isSelected = filter == _duesFilter;
+                  String label = filter;
+                  if (filter == 'Semua') {
+                    label = 'Semua (${students.length})';
+                  } else if (filter == 'Lunas') {
+                    label = 'Lunas ($lunasCount)';
+                  } else if (filter == 'Belum Lunas') {
+                    label = 'Belum (${totalCount - lunasCount})';
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ScaleButton(
+                      onTap: () => setState(() => _duesFilter = filter),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF1E40AF)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF1E40AF)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: isSelected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF64748B),
+                          ),
                         ),
                       ),
-                    ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+            if (widget.canManage)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleButton(
+                    onTap: _showBulkReminderModal,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2563EB)
+                                .withValues(alpha: 0.25),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.send_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Tagih WAHA',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  ScaleButton(
+                    onTap: _copyDuesBroadcast,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.share_rounded,
+                            size: 12,
+                            color: Color(0xFF059669),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Rekap WA',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF059669),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
