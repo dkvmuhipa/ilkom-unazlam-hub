@@ -48,6 +48,8 @@ class _HeroSlide {
   final Color buttonTextColor;
   final List<Color> lightGradientColors;
   final List<Color> darkGradientColors;
+  // ignore: unused_field
+  final List<Color>? gradientColors;
 
   const _HeroSlide({
     required this.label,
@@ -61,6 +63,8 @@ class _HeroSlide {
     this.buttonTextColor = const Color(0xFF1E3A8A),
     this.lightGradientColors = const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
     this.darkGradientColors = const [Color(0xFF161936), Color(0xFF222659)],
+    // ignore: unused_element_parameter
+    this.gradientColors,
   });
 }
 
