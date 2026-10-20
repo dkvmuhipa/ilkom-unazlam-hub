@@ -501,7 +501,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             builder: (context, headerConstraints) {
               final isNarrow = headerConstraints.maxWidth < 760 * MediaQuery.textScalerOf(context).scale(1);
 
-              final actionTools = Wrap(alignment: WrapAlignment.end, runSpacing: 8,
+              final actionTools = Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   // Tombol Sinkronisasi Data Master
                   Tooltip(
@@ -541,7 +545,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   // Mode Mahasiswa Preview Button
                   InkWell(
                     onTap: widget.onSwitchToStudentView,
@@ -585,7 +588,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   // Bell Notification Icon
                   Tooltip(
                     message: 'Notifikasi Sistem & Log Aktivitas',
@@ -735,61 +737,91 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 20),
 
-          // 4 Stat Cards in 2x2 Grid (Modern Clean SaaS)
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  count: '${_classes.length}',
-                  label: 'Kelas Aktif',
-                  icon: Icons.meeting_room_outlined,
-                  color: AppColors.primary,
-                  badgeText: 'FISIP',
-                  badgeVariant: SoftPillVariant.blue,
-                  onTap: () => _navigateTo('kelas'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  count: '$activeStudentsCount',
-                  label: 'Mahasiswa',
-                  icon: Icons.people_outline_rounded,
-                  color: AppColors.cyan,
-                  badgeText: 'Aktif 100%',
-                  badgeVariant: SoftPillVariant.cyan,
-                  onTap: () => _navigateTo('mahasiswa'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  count: '${_lecturers.length}',
-                  label: 'Dosen Pengajar',
-                  icon: Icons.badge_outlined,
-                  color: AppColors.emerald,
-                  badgeText: 'Dosen FISIP',
-                  badgeVariant: SoftPillVariant.emerald,
-                  onTap: () => _navigateTo('dosen'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  count: '${_courses.length}',
-                  label: 'Mata Kuliah',
-                  icon: Icons.menu_book_rounded,
-                  color: AppColors.amber,
-                  badgeText: 'Ganjil 26/27',
-                  badgeVariant: SoftPillVariant.amber,
-                  onTap: () => _navigateTo('matakuliah'),
-                ),
-              ),
-            ],
+          // 4 Stat Cards in Responsive Layout (4 cols on wide screens, 2x2 on mobile with uniform heights)
+          LayoutBuilder(
+            builder: (context, cardConstraints) {
+              final isWide = cardConstraints.maxWidth >= 768;
+
+              final card1 = _buildStatCard(
+                count: '${_classes.length}',
+                label: 'Kelas Aktif',
+                icon: Icons.meeting_room_outlined,
+                color: AppColors.primary,
+                badgeText: 'FISIP',
+                badgeVariant: SoftPillVariant.blue,
+                onTap: () => _navigateTo('kelas'),
+              );
+              final card2 = _buildStatCard(
+                count: '$activeStudentsCount',
+                label: 'Mahasiswa',
+                icon: Icons.people_outline_rounded,
+                color: AppColors.cyan,
+                badgeText: 'Aktif 100%',
+                badgeVariant: SoftPillVariant.cyan,
+                onTap: () => _navigateTo('mahasiswa'),
+              );
+              final card3 = _buildStatCard(
+                count: '${_lecturers.length}',
+                label: 'Dosen Pengajar',
+                icon: Icons.badge_outlined,
+                color: AppColors.emerald,
+                badgeText: 'Dosen FISIP',
+                badgeVariant: SoftPillVariant.emerald,
+                onTap: () => _navigateTo('dosen'),
+              );
+              final card4 = _buildStatCard(
+                count: '${_courses.length}',
+                label: 'Mata Kuliah',
+                icon: Icons.menu_book_rounded,
+                color: AppColors.amber,
+                badgeText: 'Ganjil 26/27',
+                badgeVariant: SoftPillVariant.amber,
+                onTap: () => _navigateTo('matakuliah'),
+              );
+
+              if (isWide) {
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: card1),
+                      const SizedBox(width: 12),
+                      Expanded(child: card2),
+                      const SizedBox(width: 12),
+                      Expanded(child: card3),
+                      const SizedBox(width: 12),
+                      Expanded(child: card4),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: card1),
+                        const SizedBox(width: 12),
+                        Expanded(child: card2),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: card3),
+                        const SizedBox(width: 12),
+                        Expanded(child: card4),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -865,11 +897,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF94A3B8),
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -884,178 +917,153 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 22),
 
-          // Section "Aksi Cepat Admin"
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+          // Section "Aksi Cepat Terintegrasi"
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Aksi Cepat Terintegrasi',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 10),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  Widget buildToolButton({
+                    required VoidCallback onTap,
+                    required IconData icon,
+                    required String label,
+                    required Color color,
+                    required Color bg,
+                    required Color border,
+                  }) {
+                    return InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: bg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: border),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icon, size: 13, color: color),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  final waBtn = buildToolButton(
+                    onTap: _showWahaGatewayDialog,
+                    icon: Icons.phone_android_rounded,
+                    label: 'WA Gateway',
+                    color: const Color(0xFF059669),
+                    bg: const Color(0xFFECFDF5),
+                    border: const Color(0xFFA7F3D0),
+                  );
+
+                  final csvBtn = buildToolButton(
+                    onTap: () => _showBulkCsvModal(),
+                    icon: Icons.file_upload_outlined,
+                    label: 'Import CSV',
+                    color: AppColors.primary,
+                    bg: const Color(0xFFEEF2FF),
+                    border: const Color(0xFFC7D2FE),
+                  );
+
+                  final exportBtn = buildToolButton(
+                    onTap: _showQuickExportModal,
+                    icon: Icons.download_rounded,
+                    label: 'Ekspor Data',
+                    color: const Color(0xFF0F172A),
+                    bg: Colors.white,
+                    border: const Color(0xFFE2E8F0),
+                  );
+
+                  return Row(
+                    children: [
+                      Expanded(child: waBtn),
+                      const SizedBox(width: 8),
+                      Expanded(child: csvBtn),
+                      const SizedBox(width: 8),
+                      Expanded(child: exportBtn),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Aksi Cepat Terintegrasi',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.3,
+                Expanded(
+                  child: _buildQuickActionButton(
+                    icon: Icons.campaign_rounded,
+                    label: 'Pengumuman',
+                    subtitle: 'Kirim Push',
+                    color: AppColors.primary,
+                    onTap: _showBroadcastAnnouncementDialog,
                   ),
                 ),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    InkWell(
-                      onTap: _showWahaGatewayDialog,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFA7F3D0)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.phone_android_rounded,
-                              size: 13,
-                              color: Color(0xFF059669),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'WA Gateway',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF059669),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => _showBulkCsvModal(),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFC7D2FE)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.file_upload_outlined,
-                              size: 13,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Import CSV',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: _showQuickExportModal,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.download_rounded,
-                              size: 13,
-                              color: Color(0xFF0F172A),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Ekspor Data',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildQuickActionButton(
+                    icon: Icons.table_chart_rounded,
+                    label: 'Matriks BAP',
+                    subtitle: 'Presensi 16 Sesi',
+                    color: const Color(0xFF10B981),
+                    onTap: () => _navigateTo('matriks_presensi'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildQuickActionButton(
+                    icon: Icons.post_add_rounded,
+                    label: 'Tugas Baru',
+                    subtitle: 'Rilis & Notif',
+                    color: AppColors.cyan,
+                    onTap: _showCreateAssignmentDialog,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildQuickActionButton(
+                    icon: Icons.person_add_rounded,
+                    label: 'Mahasiswa',
+                    subtitle: 'Undang Akun',
+                    color: AppColors.emerald,
+                    onTap: _showCreateStudentAccountDialog,
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.campaign_rounded,
-                  label: 'Pengumuman',
-                  subtitle: 'Kirim Push',
-                  color: AppColors.primary,
-                  onTap: _showBroadcastAnnouncementDialog,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.table_chart_rounded,
-                  label: 'Matriks BAP',
-                  subtitle: 'Presensi 16 Sesi',
-                  color: const Color(0xFF10B981),
-                  onTap: () => _navigateTo('matriks_presensi'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.post_add_rounded,
-                  label: 'Tugas Baru',
-                  subtitle: 'Rilis & Notif',
-                  color: AppColors.cyan,
-                  onTap: _showCreateAssignmentDialog,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.person_add_rounded,
-                  label: 'Mahasiswa',
-                  subtitle: 'Undang Akun',
-                  color: AppColors.emerald,
-                  onTap: _showCreateStudentAccountDialog,
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 22),
 
@@ -1204,7 +1212,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1224,21 +1232,33 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Wrap(spacing: 8, runSpacing: 8,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ColorfulIconBox(
                   icon: icon,
                   color: color,
-                  size: 38,
-                  iconSize: 19,
-                  radius: 11,
+                  size: 36,
+                  iconSize: 18,
+                  radius: 10,
                 ),
                 if (badgeText != null)
-                  SoftPillBadge(
-                    label: badgeText,
-                    variant: badgeVariant,
-                    fontSize: 10,
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: SoftPillBadge(
+                        label: badgeText,
+                        variant: badgeVariant,
+                        fontSize: 9.5,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3.5,
+                        ),
+                      ),
+                    ),
                   )
                 else
                   Container(
@@ -1258,23 +1278,33 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.6,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  count,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
