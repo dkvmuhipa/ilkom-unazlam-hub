@@ -45,37 +45,7 @@ jobs:
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           else
-            cat > android/app/google-services.json << 'EOF'
-{
-  "project_info": {
-    "project_number": "180107237233",
-    "project_id": "ilkom-unazlam-hub",
-    "storage_bucket": "ilkom-unazlam-hub.firebasestorage.app"
-  },
-  "client": [
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:180107237233:android:dummyappid12345",
-        "android_client_info": {
-          "package_name": "com.gellonatech.class_manager"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "ci_build_dummy_placeholder_key"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    }
-  ],
-  "configuration_version": "1"
-}
-EOF
+            cp android/app/google-services.json.example android/app/google-services.json
           fi
 
       - name: Build Release APK
