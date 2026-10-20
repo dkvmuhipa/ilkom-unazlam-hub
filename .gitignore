@@ -60,3 +60,5 @@ android/key.properties
 node_modules/
 **/node_modules/
 waha_gateway/sessions/
+
+*.apk
