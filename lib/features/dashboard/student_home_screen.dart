@@ -53,6 +53,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   bool _todayHasClasses = false;
   bool _todayClassesFinished = false;
   int _scheduleViewMode = 0; // 0 = Hari Ini, 1 = Mendatang
+  final PageController _coursePageController = PageController();
+  int _currentCoursePage = 0;
   bool? _isKasLunas;
   int _kasNominal = 0;
   String _currentPeriodLabel = '';
@@ -112,6 +114,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     SupabaseRepository.unsubscribeChannel(_assignmentsChannel);
     SupabaseRepository.unsubscribeChannel(_studentAssignmentsChannel);
     NotificationState.revision.removeListener(_refreshUnreadBadge);
+    _coursePageController.dispose();
     _livePulseController.dispose();
     super.dispose();
   }
@@ -1227,7 +1230,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         title: 'Hari Ini (${_todayCourses.length})',
                         isSelected: _scheduleViewMode == 0,
                         isDark: isDark,
-                        onTap: () => setState(() => _scheduleViewMode = 0),
+                        onTap: () {
+                          setState(() {
+                            _scheduleViewMode = 0;
+                            _currentCoursePage = 0;
+                          });
+                          if (_coursePageController.hasClients) {
+                            _coursePageController.jumpToPage(0);
+                          }
+                        },
                       ),
                       const SizedBox(width: 8),
                       _buildSchedulePillButton(
@@ -1235,7 +1246,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                             'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
                         isSelected: _scheduleViewMode == 1,
                         isDark: isDark,
-                        onTap: () => setState(() => _scheduleViewMode = 1),
+                        onTap: () {
+                          setState(() {
+                            _scheduleViewMode = 1;
+                            _currentCoursePage = 0;
+                          });
+                          if (_coursePageController.hasClients) {
+                            _coursePageController.jumpToPage(0);
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -1243,7 +1262,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                 const SizedBox(height: 8),
               ],
 
-              // Course Horizontal Carousel / Single Card / Free Day Card
+              // Course Horizontal Slider / Single Card / Free Day Card (Pas di dalam kartu, tidak keluar tepi)
               SizedBox(
                 height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
                 child: displayCourses.isEmpty
@@ -1255,22 +1274,75 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                             isUpcomingDay: isShowingUpcoming,
                             isFullWidth: true,
                           )
-                        : ListView(
-                            scrollDirection: Axis.horizontal,
-                            clipBehavior: Clip.none,
-                            children: displayCourses.map(
-                              (c) => Padding(
-                                padding: const EdgeInsets.only(right: 10),
-                                child: _buildCourseHorizontalCard(
-                                  c,
-                                  isDark,
-                                  isUpcomingDay: isShowingUpcoming,
-                                  isFullWidth: false,
-                                ),
-                              ),
-                            ).toList(),
+                        : PageView.builder(
+                            controller: _coursePageController,
+                            itemCount: displayCourses.length,
+                            onPageChanged: (idx) {
+                              setState(() => _currentCoursePage = idx);
+                            },
+                            itemBuilder: (context, index) {
+                              return _buildCourseHorizontalCard(
+                                displayCourses[index],
+                                isDark,
+                                isUpcomingDay: isShowingUpcoming,
+                                isFullWidth: true,
+                              );
+                            },
                           )),
               ),
+              if (displayCourses.length > 1) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Kuliah ${(_currentCoursePage + 1).clamp(1, displayCourses.length)} dari ${displayCourses.length} • Geser untuk lainnya',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: textSub,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(displayCourses.length, (i) {
+                        final isSelected = i == _currentCoursePage;
+                        return ScaleButton(
+                          scaleDown: 0.9,
+                          onTap: () {
+                            if (_coursePageController.hasClients) {
+                              _coursePageController.animateToPage(
+                                i,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                            width: isSelected ? 16 : 6,
+                            height: 5.5,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? const Color(0xFF383254)
+                                      : const Color(0xFFCBD5E1)),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         );
