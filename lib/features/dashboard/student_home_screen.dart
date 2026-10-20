@@ -308,16 +308,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // 2. Dynamic Priority Card (Now & Next - Centerpiece Konsep 1)
-                        FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 50),
-                          child: _buildDynamicPriorityCard(
-                            context,
-                            student,
-                            isDark,
+                        // 2. Banner Presensi Aktif (Hanya muncul jika ada sesi QR berlangsung)
+                        if (AttendanceScreen.currentSession != null &&
+                            !AttendanceScreen.currentSession!.isExpired) ...[
+                          FadeSlideEntrance(
+                            delay: const Duration(milliseconds: 50),
+                            child: _buildDynamicPriorityCard(
+                              context,
+                              student,
+                              isDark,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 14),
+                          const SizedBox(height: 14),
+                        ],
 
                         // 3. Ringkasan Akademik & Kas Terpadu
                         FadeSlideEntrance(
@@ -332,30 +335,37 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // 4. Hero Banner Carousel
+                        // 4. Jadwal Kuliah Hari Ini (Satu-satunya Informasi Jadwal di Beranda)
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 150),
-                          child: _buildHeroBannerCarousel(),
+                          child: _buildTodayActivitiesSection(context, isDark),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
 
-                        // 5. Error Alert jika gagal fetch
-                        if (_loadError != null) ...[
-                          _buildLoadError(isDark),
-                          const SizedBox(height: 14),
-                        ],
-
-                        // 6. Grid 8 Layanan Akademik Minimalis
+                        // 5. Grid 8 Layanan Akademik Minimalis
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 200),
                           child: _buildServicesGrid(context, student, isDark),
                         ),
                         const SizedBox(height: 18),
 
-                        // 7. WIDGET TUGAS MENDESAK & COUNTDOWN DEADLINE (Paket C)
+                        // 6. Hero Banner Carousel
+                        FadeSlideEntrance(
+                          delay: const Duration(milliseconds: 250),
+                          child: _buildHeroBannerCarousel(),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // 7. Error Alert jika gagal fetch
+                        if (_loadError != null) ...[
+                          _buildLoadError(isDark),
+                          const SizedBox(height: 14),
+                        ],
+
+                        // 8. WIDGET TUGAS MENDESAK & COUNTDOWN DEADLINE (Paket C)
                         if (_pendingAssignments.isNotEmpty) ...[
                           FadeSlideEntrance(
-                            delay: const Duration(milliseconds: 250),
+                            delay: const Duration(milliseconds: 300),
                             child: _buildUrgentAssignmentSpotlightSection(
                               context,
                               isDark,
@@ -363,13 +373,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           ),
                           const SizedBox(height: 20),
                         ],
-
-                        // 8. Carousel "Aktivitas Hari Ini" (Jadwal Kuliah Real-Time)
-                        FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 300),
-                          child: _buildTodayActivitiesSection(context, isDark),
-                        ),
-                        const SizedBox(height: 20),
 
                         // 9. Banner Pengumuman Terkini
                         FadeSlideEntrance(
@@ -767,304 +770,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       );
     }
 
-    // KASUS 2: Ada Kuliah Hari Ini & Belum Selesai (Now & Next Focus)
-    if (_todayCourses.isNotEmpty && !_todayClassesFinished) {
-      final Course activeCourse = _todayCourses.first;
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1B38) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF2E274A)
-                : const Color(0xFFE2E8F0),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6D28D9)
-                  .withValues(alpha: isDark ? 0.15 : 0.05),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF281C48)
-                        : const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.schedule_rounded,
-                        size: 13,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Kuliah Hari Ini',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? const Color(0xFFDDD6FE)
-                              : AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${activeCourse.effectiveJamMulai} - ${activeCourse.effectiveJamSelesai}',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: isDark
-                        ? const Color(0xFFFBBF24)
-                        : const Color(0xFFD97706),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              activeCourse.nama,
-              style: TextStyle(
-                fontSize: 15.5,
-                fontWeight: FontWeight.w800,
-                color:
-                    isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                letterSpacing: -0.3,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${activeCourse.ruangan.isNotEmpty ? activeCourse.ruangan : "Ruang Belum Diatur"} • ${activeCourse.dosen}',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color:
-                    isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ScaleButton(
-                  scaleDown: 0.94,
-                  onTap: () => _openLecturerReminder(activeCourse),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF282540)
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.notifications_active_rounded,
-                          size: 13,
-                          color: isDark
-                              ? const Color(0xFFCBD5E1)
-                              : const Color(0xFF475569),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Ingatkan Dosen',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? const Color(0xFFCBD5E1)
-                                : const Color(0xFF475569),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ScaleButton(
-                  scaleDown: 0.94,
-                  onTap: () => widget.onNavigateTab(6), // Tab Agenda
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF2E2452)
-                          : const Color(0xFFEDE9FE),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Detail Jadwal',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: isDark
-                                ? const Color(0xFFDDD6FE)
-                                : AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 13,
-                          color: isDark
-                              ? const Color(0xFFDDD6FE)
-                              : AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    // KASUS 3: Kuliah Hari Ini Selesai atau Hari Libur (Status Tenang)
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B192E) : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFF2A2744)
-              : const Color(0xFFE2E8F0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                const Color(0xFF6D28D9).withValues(alpha: isDark ? 0.12 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF262040)
-                  : const Color(0xFFF5F3FF),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Icon(
-              Icons.celebration_rounded,
-              size: 21,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _todayClassesFinished
-                      ? 'Semua Kuliah Hari Ini Selesai 🎉'
-                      : 'Tidak Ada Jadwal Kuliah Hari Ini',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: isDark
-                        ? const Color(0xFFF1F5F9)
-                        : const Color(0xFF0F172A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _nextActiveDayLabel.isNotEmpty
-                      ? _nextActiveDayLabel
-                      : 'Gunakan waktu untuk persiapan atau istirahat',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          ScaleButton(
-            scaleDown: 0.94,
-            onTap: () => widget.onNavigateTab(6),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF282540)
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Jadwal',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? const Color(0xFFDDD6FE)
-                          : AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 12,
-                    color: isDark
-                        ? const Color(0xFFDDD6FE)
-                        : AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
 
