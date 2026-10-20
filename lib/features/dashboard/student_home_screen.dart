@@ -322,23 +322,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           const SizedBox(height: 14),
                         ],
 
-                        // 3. Ringkasan Akademik & Kas Terpadu
+                        // 3. Ringkasan Akademik & Jadwal Kuliah Terpadu
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 100),
-                          child: _buildAcademicWalletCard(
+                          child: _buildUnifiedAcademicScheduleCard(
                             context,
                             student,
                             attendancePercent,
                             hadir,
                             isDark,
                           ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // 4. Jadwal Kuliah Hari Ini (Satu-satunya Informasi Jadwal di Beranda)
-                        FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 150),
-                          child: _buildTodayActivitiesSection(context, isDark),
                         ),
                         const SizedBox(height: 18),
 
@@ -397,9 +390,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     StudentProfile student,
     bool isDark,
   ) {
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF1A1829) : const Color(0xFFF8FAFC);
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
+        ? const Color(0xFF2E2B42)
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
@@ -775,9 +768,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
 
 
   // ==========================================
-  // 3. STUDIO CLEARANCE & ACADEMIC DECK
+  // 3. RINGKASAN AKADEMIK & JADWAL KULIAH TERPADU
   // ==========================================
-  Widget _buildAcademicWalletCard(
+  Widget _buildUnifiedAcademicScheduleCard(
     BuildContext context,
     StudentProfile student,
     int? attendancePercent,
@@ -791,6 +784,30 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final now = DateTime.now();
+    const dayNames = [
+      '',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu',
+    ];
+    final todayName = (now.weekday >= 1 && now.weekday <= 7)
+        ? dayNames[now.weekday]
+        : '';
+
+    // Tentukan mode tampilan: Jika hari ini tidak ada kuliah, lewati & langsung tampilkan jadwal mendatang!
+    final bool isShowingUpcoming = _scheduleViewMode == 1 || !_todayHasClasses;
+    final List<Course> displayCourses = isShowingUpcoming
+        ? _upcomingCourses
+        : _todayCourses;
+    final String currentDayLabel = isShowingUpcoming
+        ? (_nextActiveDayLabel.isNotEmpty ? _nextActiveDayLabel : 'Mendatang')
+        : todayName;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -816,6 +833,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Strip: Studio Clearance Tag + Micro Status Pill
           Row(
@@ -1084,6 +1102,194 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                 ),
               ),
             ],
+          ),
+
+          // Divider Pemisah Elegan antara Ringkasan dan Jadwal
+          const SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: borderColor.withValues(alpha: 0.6),
+          ),
+          const SizedBox(height: 10),
+
+          // Subheader Jadwal Kuliah & Tombol Semua
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 13,
+                      color: isDark ? const Color(0xFFA78BFA) : AppColors.primary,
+                    ),
+                    Text(
+                      isShowingUpcoming
+                          ? 'Jadwal Mendatang'
+                          : 'Jadwal Kuliah Hari Ini',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: textMain,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF26223D)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF3B3358)
+                              : const Color(0xFFE2E8F0),
+                          width: 0.7,
+                        ),
+                      ),
+                      child: Text(
+                        currentDayLabel,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFA78BFA)
+                              : AppColors.primary,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ScaleButton(
+                scaleDown: 0.92,
+                onTap: () => widget.onNavigateTab(1), // Jadwal
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Semua',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Subtitle / Smart Day-Skip Notification / Tab Switcher
+          if (!_todayHasClasses) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.fast_forward_rounded,
+                    size: 13,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: textSub,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (_upcomingCourses.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              child: Row(
+                children: [
+                  _buildSchedulePillButton(
+                    title: 'Hari Ini (${_todayCourses.length})',
+                    isSelected: _scheduleViewMode == 0,
+                    isDark: isDark,
+                    onTap: () => setState(() => _scheduleViewMode = 0),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildSchedulePillButton(
+                    title:
+                        'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
+                    isSelected: _scheduleViewMode == 1,
+                    isDark: isDark,
+                    onTap: () => setState(() => _scheduleViewMode = 1),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+
+          // Course Horizontal Carousel / Single Card / Free Day Card
+          SizedBox(
+            height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
+            child: displayCourses.isEmpty
+                ? _buildFreeDayHorizontalCard(isDark, isFullWidth: true)
+                : (displayCourses.length == 1
+                    ? _buildCourseHorizontalCard(
+                        displayCourses.single,
+                        isDark,
+                        isUpcomingDay: isShowingUpcoming,
+                        isFullWidth: true,
+                      )
+                    : ListView(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        children: displayCourses.map(
+                          (c) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: _buildCourseHorizontalCard(
+                              c,
+                              isDark,
+                              isUpcomingDay: isShowingUpcoming,
+                              isFullWidth: false,
+                            ),
+                          ),
+                        ).toList(),
+                      )),
           ),
         ],
       ),
@@ -1522,226 +1728,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     );
   }
 
-  // ==========================================
-  // 7. AKTIVITAS HARI INI & JADWAL MENDATANG (SMART DAY SKIP & CAROUSEL)
-  // ==========================================
-  Widget _buildTodayActivitiesSection(BuildContext context, bool isDark) {
-    final now = DateTime.now();
-    const dayNames = [
-      '',
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu',
-    ];
-    final todayName = (now.weekday >= 1 && now.weekday <= 7)
-        ? dayNames[now.weekday]
-        : '';
-
-    final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-    // Tentukan mode tampilan: Jika hari ini tidak ada kuliah, lewati & langsung tampilkan jadwal mendatang!
-    final bool isShowingUpcoming = _scheduleViewMode == 1 || !_todayHasClasses;
-    final List<Course> displayCourses = isShowingUpcoming
-        ? _upcomingCourses
-        : _todayCourses;
-    final String currentDayLabel = isShowingUpcoming
-        ? (_nextActiveDayLabel.isNotEmpty ? _nextActiveDayLabel : 'Mendatang')
-        : todayName;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header Bar: Title, Badge, & Lihat Semua
-        Row(
-          children: [
-            Expanded(
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  Text(
-                    isShowingUpcoming
-                        ? 'Jadwal Mendatang'
-                        : 'Jadwal Kuliah Hari Ini',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: textMain,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF26223D)
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF3B3358)
-                            : const Color(0xFFE2E8F0),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      currentDayLabel,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: isDark
-                            ? const Color(0xFFA78BFA)
-                            : AppColors.primary,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            ScaleButton(
-              scaleDown: 0.92,
-              onTap: () => widget.onNavigateTab(1), // Jadwal
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Semua',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 13,
-                      color: AppColors.primary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        // Subtitle / Smart Day-Skip Notification / Tab Switcher
-        if (!_todayHasClasses) ...[
-          // Hari ini tidak ada perkuliahan -> hari kosong dilewati secara cerdas!
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE2E8F0),
-                width: 0.9,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.fast_forward_rounded,
-                  size: 14,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: textSub,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ] else if (_upcomingCourses.isNotEmpty) ...[
-          // Hari ini ada kuliah, dan ada juga jadwal aktif hari berikutnya -> berikan switcher
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              child: Row(
-                children: [
-                  _buildSchedulePillButton(
-                    title: 'Hari Ini (${_todayCourses.length})',
-                    isSelected: _scheduleViewMode == 0,
-                    isDark: isDark,
-                    onTap: () => setState(() => _scheduleViewMode = 0),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildSchedulePillButton(
-                    title:
-                        'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
-                    isSelected: _scheduleViewMode == 1,
-                    isDark: isDark,
-                    onTap: () => setState(() => _scheduleViewMode = 1),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-
-        // Horizontal Carousel Jadwal Kuliah Real-Time
-        SizedBox(
-          height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
-          child: displayCourses.length == 1
-              ? SizedBox(
-                  width: double.infinity,
-                  child: _buildCourseHorizontalCard(
-                    displayCourses.single,
-                    isDark,
-                    isUpcomingDay: isShowingUpcoming,
-                  ),
-                )
-              : ListView(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (displayCourses.isEmpty)
-                      _buildFreeDayHorizontalCard(isDark)
-                    else
-                      ...displayCourses.map(
-                        (c) => Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: _buildCourseHorizontalCard(
-                            c,
-                            isDark,
-                            isUpcomingDay: isShowingUpcoming,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSchedulePillButton({
     required String title,
     required bool isSelected,
@@ -1793,11 +1779,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     Course course,
     bool isDark, {
     bool isUpcomingDay = false,
+    bool isFullWidth = false,
   }) {
     final now = DateTime.now();
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF1A1829) : const Color(0xFFF8FAFC);
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
+        ? const Color(0xFF2E2B42)
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
@@ -1893,11 +1880,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           );
         },
         child: Container(
-          width: 280,
+          width: isFullWidth ? double.infinity : 280,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: cardBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: activeBorder,
               width: (isLiveNow || isUpcomingSoon || hasOverride) ? 1.4 : 1.0,
@@ -2228,20 +2215,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     );
   }
 
-  Widget _buildFreeDayHorizontalCard(bool isDark) {
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+  Widget _buildFreeDayHorizontalCard(bool isDark, {bool isFullWidth = false}) {
+    final cardBg = isDark ? const Color(0xFF1A1829) : const Color(0xFFF8FAFC);
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
+        ? const Color(0xFF2E2B42)
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Container(
-      width: 280,
+      width: isFullWidth ? double.infinity : 280,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
@@ -2305,9 +2292,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
   // ==========================================
   Widget _buildAnnouncementBanner(BuildContext context, bool isDark) {
     final item = _announcement;
-    final cardBg = isDark ? const Color(0xFF1E1C2B) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF1A1829) : const Color(0xFFF8FAFC);
     final borderColor = isDark
-        ? const Color(0xFF2E2C3D)
+        ? const Color(0xFF2E2B42)
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
