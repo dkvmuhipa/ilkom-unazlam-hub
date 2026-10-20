@@ -82,10 +82,11 @@ class _LettersScreenState extends State<LettersScreen>
         });
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _courseLoadError = 'Daftar mata kuliah gagal dimuat. Coba lagi atau lengkapi nama mata kuliah dan dosen.',
         );
+      }
     }
   }
 
@@ -223,12 +224,13 @@ ${widget.studentName}
       if (saved == null) throw StateError('Surat gagal disimpan.');
       return saved;
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Surat gagal disimpan. Silakan coba lagi.'),
           ),
         );
+      }
       return null;
     } finally {
       _saving = false;

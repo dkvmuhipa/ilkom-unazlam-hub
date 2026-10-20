@@ -72,7 +72,7 @@ void main() {
           for (var index = 0; index < 15; index++) {
             await tester.pump(const Duration(milliseconds: 100));
           }
-          if (page.key == 'WhatsApp')
+          if (page.key == 'WhatsApp') {
             expect(
               tester
                   .widget<AdminWahaGatewayModal>(
@@ -81,7 +81,8 @@ void main() {
                   .fullPage,
               isTrue,
             );
-          if (page.key == 'Pengumuman')
+          }
+          if (page.key == 'Pengumuman') {
             expect(
               tester
                   .widget<AdminBroadcastHubModal>(
@@ -90,13 +91,15 @@ void main() {
                   .fullPage,
               isTrue,
             );
-          if (page.key == 'Impor')
+          }
+          if (page.key == 'Impor') {
             expect(
               tester
                   .widget<AdminBulkCsvModal>(find.byType(AdminBulkCsvModal))
                   .fullPage,
               isTrue,
             );
+          }
           expect(tester.takeException(), isNull);
           tester.state<NavigatorState>(find.byType(Navigator)).pop();
           await tester.pumpAndSettle();

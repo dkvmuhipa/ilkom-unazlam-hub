@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -30,9 +31,9 @@ Future<PickedAssignmentFile?> pickAssignmentFile() {
           bytes: Uint8List.view(result),
         ),
       );
-    } else {
-      completer.completeError(StateError('Berkas gagal dibaca oleh browser.'));
+      return;
     }
+    completer.complete(null);
   });
   input.click();
   return completer.future;
