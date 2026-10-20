@@ -38,7 +38,7 @@ class AdminAcademicYearView extends StatelessWidget {
       children: [
         AdminAppBar(
           title: 'Tahun Akademik',
-          onSearch: () {},
+          showSearch: false,
           onBack: onBack,
         ),
         Expanded(
@@ -107,7 +107,7 @@ class AdminAcademicYearView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: Row(
+                  child: AdminAdaptiveRow(
                     children: [
                       Text(
                         ta.tahun,

@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../widgets/admin_common_widgets.dart';
@@ -197,37 +198,19 @@ class _AdminAuditLogViewState extends State<AdminAuditLogView> {
   }
 
   void _showAuditDetails(Map<String, dynamic> row) {
-    final metadata = row['metadata'];
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Detail Aktivitas'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(row['description']?.toString() ?? '-'),
-              const SizedBox(height: 12),
-              Text('Admin: ${row['user_name'] ?? '-'} (${row['user_identifier'] ?? '-'})'),
-              Text('Modul: ${row['target_module'] ?? '-'}'),
-              Text('Tindakan: ${row['action_type'] ?? '-'}'),
-              if (metadata != null) ...[
-                const SizedBox(height: 12),
-                const Text('Metadata', style: TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                SelectableText(
-                  const JsonEncoder.withIndent('  ').convert(metadata),
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AdminDetailPage(
+      pageLabel: 'Detail Aktivitas', title: row['description']?.toString() ?? 'Aktivitas admin',
+      subtitle: row['target_module']?.toString() ?? '', icon: Icons.history_outlined,
+      tabs: [
+        AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Informasi aktivitas', children: [
+          AdminDetailFields({'Admin': row['user_name']?.toString() ?? '-', 'Identitas': row['user_identifier']?.toString() ?? '-',
+            'Modul': row['target_module']?.toString() ?? '-', 'Tindakan': row['action_type']?.toString() ?? '-'}),
+        ])),
+        AdminDetailTab('Data Tambahan', AdminDetailSection(title: 'Data pendukung', children: [
+          SelectableText(row['metadata'] == null ? 'Tidak ada data tambahan.' : const JsonEncoder.withIndent('  ').convert(row['metadata']),
+            style: const TextStyle(fontSize: 14, height: 1.7)),
+        ])),
+      ],
+    )));
   }
 }

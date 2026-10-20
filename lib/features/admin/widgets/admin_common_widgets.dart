@@ -1,6 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+
 import '../../../core/constants/app_colors.dart';
+
+/// Keeps related content in a row on wide panels and stacks it on small ones.
+class AdminAdaptiveRow extends StatelessWidget {
+  final List<Widget> children;
+  final double breakpoint;
+  final MainAxisAlignment mainAxisAlignment;
+  final MainAxisSize mainAxisSize;
+  final CrossAxisAlignment crossAxisAlignment;
+
+  const AdminAdaptiveRow({super.key, required this.children, this.breakpoint = 560,
+    this.mainAxisAlignment = MainAxisAlignment.start,
+    this.mainAxisSize = MainAxisSize.max,
+    this.crossAxisAlignment = CrossAxisAlignment.center});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    if (constraints.maxWidth >= breakpoint * scale) {
+      return Row(mainAxisAlignment: mainAxisAlignment, mainAxisSize: mainAxisSize,
+        crossAxisAlignment: crossAxisAlignment, children: children);
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 8,
+      mainAxisSize: MainAxisSize.min, children: children.where((child) => child is! Spacer).map((child) {
+        if (child is Flexible) return child.child;
+        if (child is SizedBox && child.width != null) {
+          return child.child == null ? SizedBox(height: child.width) : child.child!;
+        }
+        return Align(alignment: Alignment.centerLeft, child: child);
+      }).toList());
+  });
+}
 
 class AdminAppBar extends StatelessWidget {
   final String title;
@@ -46,15 +78,23 @@ class AdminAppBar extends StatelessWidget {
               ),
             ),
           ),
-          if (showSearch)
+          if (showSearch && onSearch != null)
             IconButton(
-              icon: const Icon(Icons.search_rounded, color: Color(0xFF0F172A), size: 20),
-              onPressed: onSearch ?? () {},
+              icon: const Icon(
+                Icons.search_rounded,
+                color: Color(0xFF0F172A),
+                size: 20,
+              ),
+              onPressed: onSearch,
             ),
           if (!showSearch && onSearch != null)
             IconButton(
               tooltip: 'Muat ulang',
-              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A), size: 20),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: Color(0xFF0F172A),
+                size: 20,
+              ),
               onPressed: onSearch,
             ),
         ],
@@ -67,11 +107,7 @@ class AdminSearchBox extends StatelessWidget {
   final String hintText;
   final ValueChanged<String>? onChanged;
 
-  const AdminSearchBox({
-    super.key,
-    required this.hintText,
-    this.onChanged,
-  });
+  const AdminSearchBox({super.key, required this.hintText, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -85,14 +121,14 @@ class AdminSearchBox extends StatelessWidget {
       ),
       child: TextField(
         onChanged: onChanged,
-        style: GoogleFonts.plusJakartaSans(
+        style: TextStyle(fontFamily: 'Poppins',
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textMain,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.plusJakartaSans(
+          hintStyle: TextStyle(fontFamily: 'Poppins',
             fontSize: 13,
             color: AppColors.textMuted,
           ),
@@ -122,7 +158,7 @@ class AdminFormLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 7),
       child: Text(
         label.toUpperCase(),
-        style: GoogleFonts.plusJakartaSans(
+        style: TextStyle(fontFamily: 'Poppins',
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.9,
@@ -156,14 +192,14 @@ class AdminFormField extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: GoogleFonts.plusJakartaSans(
+        style: TextStyle(fontFamily: 'Poppins',
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textMain,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.plusJakartaSans(
+          hintStyle: TextStyle(fontFamily: 'Poppins',
             fontSize: 13,
             color: AppColors.textMuted,
           ),
@@ -205,7 +241,7 @@ class AdminDropdownField<T> extends StatelessWidget {
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
-          style: GoogleFonts.plusJakartaSans(
+          style: TextStyle(fontFamily: 'Poppins',
             fontSize: 13.5,
             color: AppColors.textMain,
             fontWeight: FontWeight.w600,

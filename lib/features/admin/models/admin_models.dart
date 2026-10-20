@@ -1,4 +1,10 @@
 class ClassItem {
+  static const List<String> availableProdis = [
+    'Ilmu Komunikasi',
+    'Ilmu Pemerintahan',
+    'Hubungan Internasional',
+  ];
+
   final String? id;
   final String nama;
   final String prodi;

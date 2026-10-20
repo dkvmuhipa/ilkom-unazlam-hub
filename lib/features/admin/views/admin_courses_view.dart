@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -65,176 +66,37 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
     return colors[index % colors.length];
   }
 
-  void _showCourseDetail(Course c) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        c.nama,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
-                      ),
-                      Text(
-                        '${c.kode} • ${c.sks} SKS • Semester 1',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline, size: 16, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 8),
-                      const Text('Dosen Pengampu:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
-                      const Spacer(),
-                      Expanded(
-                        child: Text(
-                          c.dosen,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 8),
-                      const Text('Jadwal:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
-                      const Spacer(),
-                      Text(
-                        '${c.hari}, ${c.jamMulai} - ${c.jamSelesai}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.meeting_room_outlined, size: 16, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 8),
-                      const Text('Ruangan:', style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280))),
-                      const Spacer(),
-                      Text(c.ruangan, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      final results = await Future.wait([
-                        SupabaseRepository.getAttendanceLogs(),
-                        SupabaseRepository.getClassDirectory(),
-                      ]);
-                      final logs = results[0] as List<Map<String, dynamic>>;
-                      final students = results[1] as List<StudentProfile>;
-                      final csv = ExportService.exportAttendanceCsv(
-                        courseName: c.nama,
-                        logs: logs,
-                        students: students,
-                      );
-                      if (context.mounted) {
-                        ExportService.showExportSheet(
-                          context,
-                          title: 'Presensi ${c.nama}',
-                          fileName: 'presensi_${c.kode}.csv',
-                          content: csv,
-                          subtitle: 'Rekap Presensi Mata Kuliah',
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.download_rounded, size: 16),
-                    label: const Text('Ekspor Presensi'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showCourseDialog(existing: c);
-                    },
-                    icon: const Icon(Icons.edit_rounded, size: 16),
-                    label: const Text('Edit Matkul'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  void _showCourseDetail(Course course) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
+      pageLabel: 'Detail Mata Kuliah', title: course.nama,
+      subtitle: '${course.kode} • ${course.sks} SKS • Semester ${course.semester}',
+      icon: Icons.menu_book_outlined,
+      onEdit: () { Navigator.pop(detailContext); _showCourseDialog(existing: course); },
+      actions: [AdminDetailAction('Ekspor presensi', Icons.download_outlined, () async {
+        try {
+          final logs = await SupabaseRepository.getAttendanceLogsStrict();
+          final students = await SupabaseRepository.getClassDirectory();
+          final csv = ExportService.exportAttendanceCsv(courseName: course.nama,
+            logs: logs.where((row) => row['course_id']?.toString() == course.id).toList(), students: students);
+          if (!detailContext.mounted) return;
+          ExportService.showExportSheet(detailContext, title: 'Presensi ${course.nama}',
+            fileName: 'presensi_${course.kode}.csv', content: csv, subtitle: 'Rekap mata kuliah');
+        } catch (error) {
+          if (detailContext.mounted) ScaffoldMessenger.of(detailContext).showSnackBar(SnackBar(content: Text('Ekspor gagal: $error')));
+        }
+      })],
+      tabs: [
+        AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Informasi mata kuliah', children: [
+          AdminDetailFields({'Kode mata kuliah': course.kode, 'Nama mata kuliah': course.nama,
+            'Dosen pengampu': course.dosen, 'Beban studi': '${course.sks} SKS', 'Semester': '${course.semester}'}),
+        ])),
+        AdminDetailTab('Jadwal', AdminDetailSection(title: 'Jadwal perkuliahan', children: [
+          AdminDetailFields({'Hari': course.hari, 'Waktu': '${course.jamMulai}–${course.jamSelesai} WITA',
+            'Ruangan': course.ruangan, if (course.linkVirtual?.isNotEmpty == true) 'Tautan daring': course.linkVirtual!}),
+        ])),
+      ],
+    )));
   }
-
   void _showCourseDialog({Course? existing}) {
     final namaCtrl = TextEditingController(text: existing?.nama ?? '');
     final kodeCtrl = TextEditingController(text: existing?.kode ?? '');
@@ -324,7 +186,7 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
         AdminAppBar(
           title: 'Mata Kuliah',
           onBack: widget.onBack,
-          onSearch: () {},
+          showSearch: false,
         ),
         Expanded(
           child: ListView(

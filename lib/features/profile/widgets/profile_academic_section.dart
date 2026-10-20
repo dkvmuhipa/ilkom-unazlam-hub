@@ -48,10 +48,10 @@ class ProfileAcademicSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                        color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.school_rounded, color: Color(0xFF1E40AF), size: 18),
+                      child: const Icon(Icons.school_rounded, color: Color(0xFF6D28D9), size: 18),
                     ),
                     const SizedBox(width: 10),
                     Flexible(
@@ -76,18 +76,18 @@ class ProfileAcademicSection extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.edit_rounded, color: Color(0xFF1E40AF), size: 13),
+                      Icon(Icons.edit_rounded, color: Color(0xFF6D28D9), size: 13),
                       SizedBox(width: 4),
                       Text(
                         'Peminatan',
                         style: TextStyle(
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -124,7 +124,7 @@ class ProfileAcademicSection extends StatelessWidget {
             value: student.peminatan.isNotEmpty ? student.peminatan : 'Ilmu Komunikasi Terapan',
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            highlightColor: const Color(0xFF1E40AF),
+            highlightColor: const Color(0xFF6D28D9),
           ),
           Divider(height: 22, color: dividerColor),
 
@@ -157,10 +157,10 @@ class ProfileAcademicSection extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 18, color: const Color(0xFF1E40AF)),
+          child: Icon(icon, size: 18, color: const Color(0xFF6D28D9)),
         ),
         const SizedBox(width: 12),
         Expanded(

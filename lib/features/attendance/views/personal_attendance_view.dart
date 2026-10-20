@@ -81,14 +81,14 @@ class PersonalAttendanceView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1E40AF), Color(0xFF4338CA)],
+                colors: [Color(0xFF6D28D9), Color(0xFF4338CA)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1E40AF).withValues(alpha: 0.28),
+                  color: const Color(0xFF6D28D9).withValues(alpha: 0.28),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 ),
@@ -426,7 +426,7 @@ class PersonalAttendanceView extends StatelessWidget {
                             size: 15,
                             color: remainingAlpa <= 1
                                 ? const Color(0xFFEF4444)
-                                : const Color(0xFF1E40AF),
+                                : const Color(0xFF6D28D9),
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -509,7 +509,7 @@ class PersonalAttendanceView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                  color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -517,7 +517,7 @@ class PersonalAttendanceView extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                   ),
                 ),
               ),
@@ -617,13 +617,13 @@ class PersonalAttendanceView extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(9),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF)
+                            color: const Color(0xFF6D28D9)
                                 .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.menu_book_rounded,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                             size: 18,
                           ),
                         ),
@@ -793,7 +793,7 @@ class PersonalAttendanceView extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -801,7 +801,7 @@ class PersonalAttendanceView extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                     ),
                   ),
@@ -832,13 +832,13 @@ class PersonalAttendanceView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.1),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.how_to_reg_rounded,
                       size: 32,
-                      color: Color(0xFF1E40AF),
+                      color: Color(0xFF6D28D9),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -910,13 +910,13 @@ class PersonalAttendanceView extends StatelessWidget {
           Icon(
             Icons.qr_code_scanner_rounded,
             size: 14,
-            color: Color(0xFF1E40AF),
+            color: Color(0xFF6D28D9),
           ),
           SizedBox(width: 5),
           Text(
             'Presensi',
             style: TextStyle(
-              color: Color(0xFF1E40AF),
+              color: Color(0xFF6D28D9),
               fontWeight: FontWeight.w900,
               fontSize: 11.5,
             ),
@@ -1152,7 +1152,7 @@ class PersonalAttendanceView extends StatelessWidget {
       statusBg = isDark ? const Color(0xFF78350F) : const Color(0xFFFFFBEB);
     } else if (isSakit) {
       statusColor = const Color(0xFF3B82F6);
-      statusBg = isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF);
+      statusBg = isDark ? const Color(0xFF58138A) : const Color(0xFFF5F3FF);
     }
 
     return Container(

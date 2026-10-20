@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,6 +15,7 @@ import '../widgets/admin_common_widgets.dart';
 class AdminAttendanceMatrixView extends StatefulWidget {
   final List<Course> courses;
   final List<ClassItem> classes;
+  final String academicYear;
   final List<StudentProfile> managedAccounts;
   final VoidCallback onBack;
   final void Function(String message, {bool isError}) onShowMessage;
@@ -28,6 +30,7 @@ class AdminAttendanceMatrixView extends StatefulWidget {
     super.key,
     required this.courses,
     required this.classes,
+    this.academicYear = 'Belum ditetapkan',
     required this.managedAccounts,
     required this.onBack,
     required this.onShowMessage,
@@ -281,7 +284,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
       courseName: _selectedCourse!.nama,
       dosenName: _selectedCourse!.dosen,
       semester: '${_selectedCourse!.semester}',
-      tahunAkademik: '2026/2027',
+      tahunAkademik: widget.academicYear,
       students: _filteredStudents,
       matrixData: _matrixData,
       totalMeetingsHeld: _maxMeetingsHeld,
@@ -327,7 +330,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
     bapText.writeln('Dosen Pengampu  : ${_selectedCourse!.dosen}');
     bapText.writeln('Hari / Waktu    : ${_selectedCourse!.hari}, ${_selectedCourse!.jamMulai} - ${_selectedCourse!.jamSelesai} WITA');
     bapText.writeln('Ruangan         : ${_selectedCourse!.ruangan}');
-    bapText.writeln('Semester / T.A. : Semester ${_selectedCourse!.semester} / 2026-2027');
+    bapText.writeln('Semester / T.A. : Semester ${_selectedCourse!.semester} / ${widget.academicYear}');
     bapText.writeln('Sesi Terlaksana : $_maxMeetingsHeld dari 16 Pertemuan');
     bapText.writeln('Ambang Batas    : Minimal $_thresholdPercent% Kehadiran');
     bapText.writeln('Rekapitulasi    : $eligibleCount Mahasiswa Layak UAS | $blockedCount Mahasiswa Dicekal UAS');
@@ -347,67 +350,25 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
     }
 
     bapText.writeln('\n--------------------------------------------------------------------------------');
-    bapText.writeln('Lamongan, ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}');
+    bapText.writeln('Tanggal ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}');
     bapText.writeln('Dosen Pengampu,                            Ketua Program Studi,\n\n\n');
-    bapText.writeln('(${_selectedCourse!.dosen})             (Dr. H. Ahmad Fauzi, M.I.Kom)');
+    bapText.writeln('(${_selectedCourse!.dosen})             (Ketua Program Studi)');
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.description_rounded, color: AppColors.primary, size: 22),
-            SizedBox(width: 10),
-            Text('Dokumen Resmi Berita Acara (BAP)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-          ],
-        ),
-        content: Container(
-          width: (MediaQuery.sizeOf(context).width - 96).clamp(0.0, 650.0).toDouble(),
-          constraints: const BoxConstraints(maxHeight: 460),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: SingleChildScrollView(
-            child: SelectableText(
-              bapText.toString(),
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 11,
-                color: Color(0xFF0F172A),
-                height: 1.4,
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          OutlinedButton.icon(
-            icon: const Icon(Icons.copy_rounded, size: 14),
-            label: const Text('Salin Teks BAP'),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: bapText.toString()));
-              widget.onShowMessage('Teks Berita Acara (BAP) disalin ke clipboard!');
-            },
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.download_rounded, size: 14),
-            label: const Text('Ekspor CSV Matriks'),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _exportMatrixCsv();
-            },
-          ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
+      pageLabel: 'Berita Acara Perkuliahan', title: _selectedCourse!.nama,
+      subtitle: '${_selectedCourse!.kode} • ${widget.academicYear}', icon: Icons.description_outlined,
+      actions: [
+        AdminDetailAction('Salin dokumen', Icons.copy_outlined, () async {
+          await Clipboard.setData(ClipboardData(text: bapText.toString()));
+          if (detailContext.mounted) ScaffoldMessenger.of(detailContext).showSnackBar(const SnackBar(content: Text('Dokumen disalin.')));
+        }),
+        AdminDetailAction('Ekspor matriks CSV', Icons.download_outlined, () { Navigator.pop(detailContext); _exportMatrixCsv(); }),
+      ],
+      tabs: [AdminDetailTab('Dokumen', AdminDetailSection(title: 'Berita acara', children: [
+        SelectableText(bapText.toString(), style: const TextStyle(fontSize: 14, height: 1.8)),
+      ]))],
+    )));
   }
-
   @override
   Widget build(BuildContext context) {
     final students = _filteredStudents;
@@ -482,12 +443,12 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
                           // Table Header Bar with Actions
                           Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Row(
+                            child: AdminAdaptiveRow(breakpoint: 1200,
                               children: [
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
+                                    Wrap(spacing: 8, runSpacing: 8,
                                       children: [
                                         const Text(
                                           'Tabel Matriks Pertemuan (P1 - P16)',
@@ -607,7 +568,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          AdminAdaptiveRow(breakpoint: 900,
             children: [
               // 1. Pilih Mata Kuliah
               Expanded(
@@ -656,7 +617,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
                     const Text('Filter Kelas:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
                     const SizedBox(height: 4),
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedKelas,
+                      initialValue: _selectedKelas, isExpanded: true,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -685,7 +646,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
                     const Text('Batas UAS:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
                     const SizedBox(height: 4),
                     DropdownButtonFormField<double>(
-                      initialValue: _thresholdPercent,
+                      initialValue: _thresholdPercent, isExpanded: true,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -716,7 +677,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
     required int eligibleCount,
     required int blockedCount,
   }) {
-    return Row(
+    return AdminAdaptiveRow(breakpoint: 900,
       children: [
         _buildMetricTile(
           icon: Icons.people_alt_rounded,
@@ -911,7 +872,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
         letter = 'I';
         break;
       case 'sakit':
-        bg = const Color(0xFFDBEAFE);
+        bg = const Color(0xFFEDE9FE);
         fg = const Color(0xFF2563EB);
         letter = 'S';
         break;

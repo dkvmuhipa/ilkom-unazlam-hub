@@ -25,6 +25,7 @@ class WahaSessionInfo {
   final String? phoneNumber;
   final String? pushName;
   final String? errorMessage;
+  final bool supportsAutoReminder;
 
   const WahaSessionInfo({
     required this.name,
@@ -33,6 +34,7 @@ class WahaSessionInfo {
     this.phoneNumber,
     this.pushName,
     this.errorMessage,
+    this.supportsAutoReminder = false,
   });
 
   bool get isConnected => status == WahaStatus.working;
@@ -75,6 +77,10 @@ class WahaSessionInfo {
       statusRaw: rawStatus,
       phoneNumber: phone,
       pushName: name,
+      // Smart reminders belong to the project's custom gateway, not WAHA Core.
+      supportsAutoReminder: json['engine'] == 'BAILEYS_NATIVE' ||
+          (json['capabilities'] is List &&
+              (json['capabilities'] as List).contains('auto-reminder')),
     );
   }
 }
@@ -167,12 +173,21 @@ class WahaService {
   static const String _prefIsCloudKey = 'waha_is_cloud_mode';
 
   static const String defaultLocalUrl = 'http://localhost:3000';
+  static const String defaultCloudUrl =
+      'https://ilkom-reminders-production.up.railway.app';
   static const String defaultSession = 'default';
 
   /// Mendapatkan konfigurasi URL server yang tersimpan
   static Future<String> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefBaseUrlKey) ?? defaultLocalUrl;
+    final saved = prefs.getString(_prefBaseUrlKey) ?? defaultLocalUrl;
+    // Route the project's existing cloud users through its reminder gateway.
+    if (saved.replaceFirst(RegExp(r'/$'), '') ==
+        'https://waha-production-717b.up.railway.app') {
+      await prefs.setString(_prefBaseUrlKey, defaultCloudUrl);
+      return defaultCloudUrl;
+    }
+    return saved;
   }
 
   /// Mendapatkan API Key WAHA yang tersimpan
@@ -301,7 +316,24 @@ class WahaService {
       final session = await getSessionName();
       final headers = await _getHeaders();
 
-      // Coba endpoint /api/sessions/start atau /api/sessions
+      // WAHA Core may report "already running" when its engine has FAILED.
+      // Stop that engine before starting again, without logging out the account.
+      final current = await getSessionStatus();
+      if (current.isConnected || current.needsScanQr ||
+          current.status == WahaStatus.starting) {
+        return true;
+      }
+      if (current.status == WahaStatus.failed) {
+        final stopped = await http.post(
+          Uri.parse('$baseUrl/api/sessions/$session/stop'),
+          headers: headers,
+        ).timeout(const Duration(seconds: 30));
+        if (stopped.statusCode != 200 && stopped.statusCode != 201 &&
+            stopped.statusCode != 204) {
+          return false;
+        }
+      }
+
       final startUri = Uri.parse('$baseUrl/api/sessions/$session/start');
       var response = await http
           .post(startUri, headers: headers)
@@ -311,7 +343,8 @@ class WahaService {
         return true;
       }
 
-      // Fallback endpoint POST /api/sessions
+      // Create only when the named session does not exist.
+      if (response.statusCode != 404) return false;
       final createUri = Uri.parse('$baseUrl/api/sessions');
       response = await http
           .post(

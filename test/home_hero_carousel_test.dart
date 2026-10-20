@@ -63,4 +63,55 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Hero displays multi-domain Kas and Presensi slides with 1-tap navigation', (tester) async {
+    int? destination;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeBannerCarousel(
+            todayCourses: const [],
+            upcomingCourses: const [],
+            nextAssignment: null,
+            latestAnnouncement: null,
+            hasLoadError: false,
+            isKasLunas: false,
+            kasNominal: 20000,
+            currentPeriodLabel: 'Oktober 2026',
+            attendancePercent: 70,
+            onNavigateTab: (value) => destination = value,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Slide 0: Ringkasan Hari Ini
+    expect(find.text('RINGKASAN HARI INI'), findsOneWidget);
+    // Tap anywhere on slide 0 navigates to Schedule (tab 1)
+    await tester.tap(find.text('Hari Bebas Kuliah ✨'));
+    expect(destination, 1);
+
+    // Swipe to Slide 1: Kas Kelas (Belum Bayar)
+    await tester.drag(find.byType(PageView), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('KAS KELAS'), findsOneWidget);
+    expect(find.text('BELUM BAYAR'), findsOneWidget);
+    expect(find.text('Tagihan Kas Rp 20.000'), findsOneWidget);
+    // Tap card body navigates directly to Kas (tab 8)
+    await tester.tap(find.text('KAS KELAS'));
+    expect(destination, 8);
+
+    // Swipe to Slide 2: Presensi Kuliah (Warning < 75%)
+    await tester.drag(find.byType(PageView), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('KEHADIRAN MAHASISWA'), findsOneWidget);
+    expect(find.text('70%'), findsOneWidget);
+    expect(find.text('Perhatian: Kehadiran 70% ⚠️'), findsOneWidget);
+    // Tap action button navigates to Presensi (tab 5)
+    await tester.tap(find.text('Lihat presensi'));
+    expect(destination, 5);
+    expect(tester.takeException(), isNull);
+  });
 }
+

@@ -130,8 +130,8 @@ class ClassAttendanceModal {
                           children: [
                             CircleAvatar(
                               radius: 16,
-                              backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.1),
-                              child: Text(s.nama.isNotEmpty ? s.nama[0] : 'M', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                              backgroundColor: const Color(0xFF6D28D9).withValues(alpha: 0.1),
+                              child: Text(s.nama.isNotEmpty ? s.nama[0] : 'M', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF6D28D9))),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -179,7 +179,7 @@ class ClassAttendanceModal {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Menyimpan rekap presensi kelas untuk $selectedCourse...'),
-                        backgroundColor: const Color(0xFF1E40AF),
+                        backgroundColor: const Color(0xFF6D28D9),
                         duration: const Duration(seconds: 1),
                       ),
                     );
@@ -208,7 +208,7 @@ class ClassAttendanceModal {
                   icon: const Icon(Icons.check_circle_outline, size: 18),
                   label: const Text('Simpan Rekap Presensi Kelas', style: TextStyle(fontWeight: FontWeight.w700)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E40AF),
+                    backgroundColor: const Color(0xFF6D28D9),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

@@ -83,7 +83,7 @@ class AdminReportsView extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: AdminAdaptiveRow(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),

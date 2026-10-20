@@ -45,12 +45,12 @@ class KtmCardModal {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.qr_code_rounded,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                     size: 20,
                   ),
                 ),
@@ -98,7 +98,7 @@ class KtmCardModal {
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF1E40AF), width: 1.5),
+                      border: Border.all(color: const Color(0xFF6D28D9), width: 1.5),
                     ),
                     child: ClipOval(
                       child: avatarBuilder(currentAvatarUrl ?? student.avatarUrl, initials),
@@ -125,7 +125,7 @@ class KtmCardModal {
                           style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                             fontFamily: 'monospace',
                           ),
                         ),
@@ -161,7 +161,7 @@ class KtmCardModal {
                 icon: const Icon(Icons.close_rounded, size: 18),
                 label: const Text('Tutup Kartu'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E40AF),
+                  backgroundColor: const Color(0xFF6D28D9),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 12),

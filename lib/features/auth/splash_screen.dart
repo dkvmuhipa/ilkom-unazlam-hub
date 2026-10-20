@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_colors.dart';
+
 class SplashScreen extends StatefulWidget {
   final VoidCallback onFinish;
 
@@ -48,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                        color: AppColors.primary.withValues(alpha: 0.12),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
@@ -60,10 +62,10 @@ class _SplashScreenState extends State<SplashScreen> {
                       'assets/images/logo.jpg',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFEFF6FF),
-                        child: const Icon(
+                        color: AppColors.primarySoft,
+                        child: Icon(
                           Icons.school_rounded,
-                          color: Color(0xFF1E40AF),
+                          color: AppColors.primary,
                           size: 64,
                         ),
                       ),
@@ -73,12 +75,12 @@ class _SplashScreenState extends State<SplashScreen> {
                 const SizedBox(height: 20),
 
                 // Branding Text
-                const Text(
+                Text(
                   'ILMU KOMUNIKASI',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E40AF),
+                    color: AppColors.primary,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -156,7 +158,7 @@ class _SplashWavesPainter extends CustomPainter {
     // 2. Royal Purple front curved ribbon
     final purplePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF1E40AF), Color(0xFF755BF7)],
+        colors: [Color(0xFF6D28D9), Color(0xFF755BF7)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))

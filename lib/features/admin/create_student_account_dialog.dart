@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/admin_academic_service.dart';
 import '../../core/services/admin_account_service.dart';
 import '../../core/widgets/saas_components.dart';
 import '../../models/models.dart';
+import 'models/admin_models.dart';
 
 class CreateStudentAccountDialog extends StatefulWidget {
-  const CreateStudentAccountDialog({super.key});
+  final List<ClassItem>? classes;
+
+  const CreateStudentAccountDialog({super.key, this.classes});
 
   @override
   State<CreateStudentAccountDialog> createState() =>
@@ -28,9 +32,50 @@ class _CreateStudentAccountDialogState
   final _noWaController = TextEditingController();
   final _peminatanController = TextEditingController();
   int _semester = 1;
+  String _selectedKelas = 'Ilmu Komunikasi A';
+  List<String> _classOptions = [];
   bool _isSubmitting = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initClasses();
+  }
+
+  void _initClasses() {
+    final list = widget.classes
+            ?.map((c) => c.nama.trim())
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList() ??
+        [];
+    if (list.isNotEmpty) {
+      _classOptions = list;
+      _selectedKelas = list.first;
+    } else {
+      _classOptions = ['Ilmu Komunikasi A', 'Ilmu Komunikasi B'];
+      _selectedKelas = 'Ilmu Komunikasi A';
+      AdminAcademicService.listClasses().then((fetched) {
+        if (mounted && fetched.isNotEmpty) {
+          final names = fetched
+              .map((c) => c['nama']?.toString().trim() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toSet()
+              .toList();
+          if (names.isNotEmpty) {
+            setState(() {
+              _classOptions = names;
+              if (!_classOptions.contains(_selectedKelas)) {
+                _selectedKelas = _classOptions.first;
+              }
+            });
+          }
+        }
+      }).catchError((_) {});
+    }
+  }
 
   @override
   void dispose() {
@@ -57,6 +102,7 @@ class _CreateStudentAccountDialogState
         noWa: _noWaController.text,
         semester: _semester,
         peminatan: _peminatanController.text,
+        kelas: _selectedKelas,
       );
 
       if (!mounted) return;
@@ -69,6 +115,7 @@ class _CreateStudentAccountDialogState
           noWa: _noWaController.text.trim(),
           peminatan: _peminatanController.text.trim(),
           semester: _semester,
+          kelas: _selectedKelas,
           role: 'MAHASISWA',
           jabatan: 'Mahasiswa',
           isAktif: true,
@@ -103,7 +150,7 @@ class _CreateStudentAccountDialogState
             boxShadow: AppColors.softShadow,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
+          child: AdaptiveDialogBody(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Modal Header with Soft Glassmorphism style
@@ -166,12 +213,14 @@ class _CreateStudentAccountDialogState
                             Row(
                               children: [
                                 Expanded(
+                                  flex: 2,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'SEMESTER AKTIF'.toUpperCase(),
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.9,
@@ -180,6 +229,7 @@ class _CreateStudentAccountDialogState
                                       ),
                                       const SizedBox(height: 7),
                                       DropdownButtonFormField<int>(
+                                        isExpanded: true,
                                         initialValue: _semester,
                                         decoration: InputDecoration(
                                           prefixIcon: const Padding(
@@ -192,9 +242,10 @@ class _CreateStudentAccountDialogState
                                             .map((sem) => DropdownMenuItem(
                                                   value: sem,
                                                   child: Text(
-                                                    'Semester $sem',
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 13.5,
+                                                    'Sem. $sem',
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Poppins',
+                                                      fontSize: 13,
                                                       fontWeight: FontWeight.w600,
                                                     ),
                                                   ),
@@ -204,6 +255,58 @@ class _CreateStudentAccountDialogState
                                             ? null
                                             : (v) {
                                                 if (v != null) setState(() => _semester = v);
+                                              },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'KELAS AKADEMIK'.toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.9,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 7),
+                                      DropdownButtonFormField<String>(
+                                        isExpanded: true,
+                                        initialValue: _classOptions.contains(_selectedKelas)
+                                            ? _selectedKelas
+                                            : (_classOptions.isNotEmpty ? _classOptions.first : null),
+                                        decoration: InputDecoration(
+                                          prefixIcon: const Padding(
+                                            padding: EdgeInsets.only(left: 14, right: 10),
+                                            child: Icon(Icons.groups_outlined, size: 20, color: AppColors.primaryLight),
+                                          ),
+                                          prefixIconConstraints: const BoxConstraints(minWidth: 44),
+                                        ),
+                                        items: _classOptions
+                                            .map((cls) => DropdownMenuItem(
+                                                  value: cls,
+                                                  child: Text(
+                                                    cls,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Poppins',
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ))
+                                            .toList(),
+                                        onChanged: _isSubmitting
+                                            ? null
+                                            : (v) {
+                                                if (v != null) setState(() => _selectedKelas = v);
                                               },
                                       ),
                                     ],
@@ -279,7 +382,7 @@ class _CreateStudentAccountDialogState
                                   Expanded(
                                     child: Text(
                                       'Akun akan otomatis diberi hak akses peran Mahasiswa pada sistem.',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: TextStyle(fontFamily: 'Poppins',
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primaryDark,
@@ -368,7 +471,7 @@ class _CreateStudentAccountDialogState
                                   Expanded(
                                     child: Text(
                                       'Sampaikan kata sandi ini kepada mahasiswa secara langsung. Mahasiswa diwajibkan memperbarui kata sandi setelah login pertama kali.',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: TextStyle(fontFamily: 'Poppins',
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.amberText,

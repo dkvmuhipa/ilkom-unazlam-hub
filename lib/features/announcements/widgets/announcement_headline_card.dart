@@ -27,14 +27,14 @@ class AnnouncementHeadlineCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Color(0xFF0F172A), // Slate 900
-            Color(0xFF1E3A8A), // Blue 900
+            Color(0xFF58138A), // Blue 900
             Color(0xFF1E293B), // Slate 800
           ],
           stops: [0.0, 0.65, 1.0],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.25),
+            color: const Color(0xFF58138A).withValues(alpha: 0.25),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

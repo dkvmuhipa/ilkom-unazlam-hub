@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand Colors - Royal Navy Blue (#1E40AF / #2563EB)
-  static const Color primary = Color(0xFF1E40AF); // Royal Navy Blue 800
-  static const Color primaryLight = Color(0xFF2563EB); // Royal Blue 600
-  static const Color primaryDark = Color(0xFF172554); // Navy 950
-  static const Color primaryContainer = Color(0xFFDBEAFE); // Blue 100
-  static const Color primarySoft = Color(0xFFEFF6FF); // Blue 50
-  static const Color primaryBorder = Color(0xFFBFDBFE); // Blue 200
+  // Brand Colors - UNAZLAM Royal Purple (#6D28D9 / #58138A) & Golden Amber (#F59E0B)
+  static const Color primary = Color(0xFF6D28D9); // UNAZLAM Royal Purple
+  static const Color primaryLight = Color(0xFF7C3AED); // Bright Violet
+  static const Color primaryDark = Color(0xFF58138A); // UNAZLAM Deep Violet (Logo Center)
+  static const Color primaryContainer = Color(0xFFEDE9FE); // Purple 100
+  static const Color primarySoft = Color(0xFFF5F3FF); // Purple 50
+  static const Color primaryBorder = Color(0xFFDDD6FE); // Purple 200
 
   // Secondary Accents & Vibrant SaaS Tones
   static const Color secondary = Color(0xFFF59E0B); // Amber 500
@@ -82,7 +82,7 @@ class AppColors {
   static const Color errorSoft = Color(0xFFFFF1F2); // Rose 50
 
   static const Color info = Color(0xFF2563EB);
-  static const Color infoSoft = Color(0xFFEFF6FF);
+  static const Color infoSoft = Color(0xFFF5F3FF);
 
   // Modern Typography (Slate Hierarchy)
   static const Color textMain = Color(0xFF0F172A); // Slate 900
@@ -97,7 +97,7 @@ class AppColors {
 
   // Modern Vibrant Gradients
   static const LinearGradient blueGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+    colors: [Color(0xFF2563EB), Color(0xFF6D28D9)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

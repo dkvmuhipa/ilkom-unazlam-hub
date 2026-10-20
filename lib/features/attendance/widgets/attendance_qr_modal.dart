@@ -213,10 +213,10 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF252538) : const Color(0xFFEFF6FF),
+                      color: isDark ? const Color(0xFF252538) : const Color(0xFFF5F3FF),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFBFDBFE),
+                        color: isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFDDD6FE),
                       ),
                     ),
                     child: Row(
@@ -319,7 +319,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF1E40AF)),
+                    const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF6D28D9)),
                     const SizedBox(width: 6),
                     Text(
                       '${active.attendedNims.length} Mahasiswa Hadir',

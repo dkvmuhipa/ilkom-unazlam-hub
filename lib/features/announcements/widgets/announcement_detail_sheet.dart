@@ -221,7 +221,7 @@ class AnnouncementDetailSheet extends StatelessWidget {
                       IconButton(
                         icon: const Icon(
                           Icons.edit_outlined,
-                          color: Color(0xFF1E3A8A),
+                          color: Color(0xFF58138A),
                           size: 20,
                         ),
                         tooltip: 'Edit Pengumuman',

@@ -91,6 +91,7 @@ Deno.serve(async (request: Request) => {
   const noWa = typeof body.no_wa === 'string' ? body.no_wa.trim() : '';
   const peminatan =
     typeof body.peminatan === 'string' ? body.peminatan.trim() : '';
+  const kelas = readString(body.kelas, 80) ?? 'Ilmu Komunikasi';
   const semester = Number(body.semester);
 
   if (
@@ -143,7 +144,7 @@ Deno.serve(async (request: Request) => {
     peminatan,
     prodi: 'Ilmu Komunikasi',
     semester,
-    kelas: 'Ilmu Komunikasi',
+    kelas,
     role: 'MAHASISWA',
     jabatan: 'Mahasiswa',
     is_aktif: true,

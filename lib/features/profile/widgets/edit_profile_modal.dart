@@ -13,7 +13,7 @@ class EditProfileModal {
     {
       'title': 'Public Relations',
       'icon': Icons.campaign_rounded,
-      'color': Color(0xFF1E40AF),
+      'color': Color(0xFF6D28D9),
       'desc': 'Manajemen reputasi, komunikasi korporat, public speaking, & media relations.',
     },
     {
@@ -87,12 +87,12 @@ class EditProfileModal {
                       Container(
                         padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                          color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.school_rounded,
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                           size: 22,
                         ),
                       ),
@@ -263,12 +263,12 @@ class EditProfileModal {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                          colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                            color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -774,12 +774,12 @@ class EditProfileModal {
                         padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                            colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                           ),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                              color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -839,13 +839,13 @@ class EditProfileModal {
                         value: selectedPeminatan,
                         isExpanded: true,
                         dropdownColor: cardBg,
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1E40AF)),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6D28D9)),
                         items: peminatanOptions.map((opt) {
                           return DropdownMenuItem<String>(
                             value: opt,
                             child: Row(
                               children: [
-                                const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF1E40AF)),
+                                const Icon(Icons.stars_rounded, size: 16, color: Color(0xFF6D28D9)),
                                 const SizedBox(width: 8),
                                 Text(
                                   opt,
@@ -891,7 +891,7 @@ class EditProfileModal {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                        borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
@@ -920,7 +920,7 @@ class EditProfileModal {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                        borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
@@ -950,7 +950,7 @@ class EditProfileModal {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                        borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
@@ -978,7 +978,7 @@ class EditProfileModal {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                        borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
@@ -1006,7 +1006,7 @@ class EditProfileModal {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E40AF), width: 1.8),
+                        borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
@@ -1095,12 +1095,12 @@ class EditProfileModal {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                          colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                            color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

@@ -289,12 +289,12 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                      colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                        color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -389,14 +389,14 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                    colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -478,7 +478,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                           Icon(
                             Icons.camera_alt_outlined,
                             size: 15,
-                            color: _inputMode == 0 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                            color: _inputMode == 0 ? const Color(0xFF6D28D9) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -486,7 +486,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: _inputMode == 0 ? FontWeight.w800 : FontWeight.w600,
-                              color: _inputMode == 0 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                              color: _inputMode == 0 ? const Color(0xFF6D28D9) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -525,7 +525,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                           Icon(
                             Icons.pin_rounded,
                             size: 15,
-                            color: _inputMode == 1 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                            color: _inputMode == 1 ? const Color(0xFF6D28D9) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -533,7 +533,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: _inputMode == 1 ? FontWeight.w800 : FontWeight.w600,
-                              color: _inputMode == 1 ? const Color(0xFF1E40AF) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                              color: _inputMode == 1 ? const Color(0xFF6D28D9) : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -683,7 +683,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E40AF),
+                                  color: const Color(0xFF6D28D9),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text(
@@ -857,7 +857,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isCurrent
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : (digit.isNotEmpty
                                       ? const Color(0xFF3B82F6)
                                       : (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFCBD5E1))),
@@ -866,7 +866,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                             boxShadow: isCurrent
                                 ? [
                                     BoxShadow(
-                                      color: const Color(0xFF1E40AF).withValues(alpha: 0.2),
+                                      color: const Color(0xFF6D28D9).withValues(alpha: 0.2),
                                       blurRadius: 10,
                                       offset: const Offset(0, 3),
                                     ),
@@ -879,7 +879,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
-                              color: isCurrent ? const Color(0xFF1E40AF) : (isDark ? Colors.white : const Color(0xFF111827)),
+                              color: isCurrent ? const Color(0xFF6D28D9) : (isDark ? Colors.white : const Color(0xFF111827)),
                             ),
                           ),
                         );
@@ -931,7 +931,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                         ),
                         TextButton(
                           onPressed: () => setState(() => _useLongToken = true),
-                          child: const Text('Gunakan Token Huruf', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                          child: const Text('Gunakan Token Huruf', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6D28D9))),
                         ),
                       ],
                     ),
@@ -957,7 +957,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () => setState(() => _useLongToken = false),
-                  child: const Text('Kembali ke PIN 4 Digit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF))),
+                  child: const Text('Kembali ke PIN 4 Digit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF6D28D9))),
                 ),
               ),
             ],
@@ -1016,12 +1016,12 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
               padding: const EdgeInsets.symmetric(vertical: 13),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                  colors: [Color(0xFF6D28D9), Color(0xFF2563EB)],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1081,7 +1081,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E40AF),
+                      color: Color(0xFF6D28D9),
                       decoration: TextDecoration.underline,
                     ),
                   ),

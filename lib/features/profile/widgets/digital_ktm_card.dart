@@ -86,8 +86,8 @@ class DigitalKtmCard extends StatelessWidget {
                     Color(0xFF1E1B4B),
                   ]
                 : const [
-                    Color(0xFF1E3A8A),
-                    Color(0xFF1D4ED8),
+                    Color(0xFF58138A),
+                    Color(0xFF6D28D9),
                     Color(0xFF312E81),
                   ],
             begin: Alignment.topLeft,
@@ -100,7 +100,7 @@ class DigitalKtmCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E40AF).withValues(alpha: isDark ? 0.35 : 0.25),
+              color: const Color(0xFF6D28D9).withValues(alpha: isDark ? 0.35 : 0.25),
               blurRadius: 22,
               offset: const Offset(0, 10),
             ),
@@ -311,7 +311,7 @@ class DigitalKtmCard extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1E40AF),
+                                    color: const Color(0xFF6D28D9),
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.white, width: 2),
                                     boxShadow: [
@@ -479,7 +479,7 @@ class DigitalKtmCard extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.qr_code_rounded, size: 18, color: Color(0xFF1E40AF)),
+                          Icon(Icons.qr_code_rounded, size: 18, color: Color(0xFF6D28D9)),
                           SizedBox(width: 8),
                           Flexible(
                             child: Text(
@@ -489,7 +489,7 @@ class DigitalKtmCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                                 letterSpacing: 0.2,
                               ),
                             ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/services/safe_launcher.dart';
+import '../../../core/services/waha_service.dart';
 import '../../../core/widgets/qr_widget.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
@@ -109,22 +110,46 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
     final refCode =
         'INV/KAS/${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}/${studentNim.length >= 4 ? studentNim.substring(studentNim.length - 4) : '2026'}';
 
-    final message = Uri.encodeComponent(
-      'Halo Bendahara Kelas ILKOM UNAZLAM,\n\n'
-      'Saya ingin mengonfirmasi pembayaran Kas Kelas dengan rincian berikut:\n'
-      '• No. Ref: $refCode\n'
-      '• Nama: $studentName\n'
-      '• NIM: $studentNim\n'
-      '• Periode: $_periodText\n'
-      '• Nominal: $nominalStr\n'
-      '• Metode: QRIS / Transfer Mandiri\n\n'
-      'Berikut saya lampirkan bukti transfernya. Mohon untuk diverifikasi statusnya. Terima kasih!',
-    );
+    final rawText =
+        'Halo Bendahara Kelas ILKOM UNAZLAM,\n\n'
+        'Saya ingin mengonfirmasi pembayaran Kas Kelas dengan rincian berikut:\n'
+        '• No. Ref: $refCode\n'
+        '• Nama: $studentName\n'
+        '• NIM: $studentNim\n'
+        '• Periode: $_periodText\n'
+        '• Nominal: $nominalStr\n'
+        '• Metode: QRIS / Transfer Mandiri\n\n'
+        'Mohon untuk diverifikasi statusnya. Terima kasih! 🙏✨';
 
     final rawPhone = _getBendaharaPhone().replaceAll(RegExp(r'\D'), '');
     final phone = rawPhone.startsWith('0')
         ? '62${rawPhone.substring(1)}'
         : rawPhone;
+
+    // 1. Coba kirim via WAHA Gateway otomatis jika aktif
+    try {
+      final wahaStatus = await WahaService.getSessionStatus();
+      if (wahaStatus.isConnected && phone.isNotEmpty) {
+        final res = await WahaService.sendTextMessage(
+          recipient: phone,
+          text: rawText,
+        );
+        if (res.success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Konfirmasi pembayaran berhasil dikirim otomatis ke WhatsApp Bendahara! 📨✨',
+              ),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback membuka aplikasi WhatsApp via wa.me
+    final message = Uri.encodeComponent(rawText);
     final url = phone.isNotEmpty
         ? 'https://wa.me/$phone?text=$message'
         : 'https://wa.me/?text=$message';
@@ -202,7 +227,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
+                      colors: [Color(0xFF6D28D9), Color(0xFF3B82F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -291,7 +316,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                               Icons.qr_code_scanner_rounded,
                               size: 15,
                               color: _activeTab == 0
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
@@ -303,7 +328,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                                     ? FontWeight.w800
                                     : FontWeight.w600,
                                 color: _activeTab == 0
-                                    ? const Color(0xFF1E40AF)
+                                    ? const Color(0xFF6D28D9)
                                     : const Color(0xFF64748B),
                               ),
                             ),
@@ -339,7 +364,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                               Icons.receipt_long_rounded,
                               size: 15,
                               color: _activeTab == 1
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
@@ -351,7 +376,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                                     ? FontWeight.w800
                                     : FontWeight.w600,
                                 color: _activeTab == 1
-                                    ? const Color(0xFF1E40AF)
+                                    ? const Color(0xFF6D28D9)
                                     : const Color(0xFF64748B),
                               ),
                             ),
@@ -451,7 +476,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1E40AF)
+                          color: const Color(0xFF6D28D9)
                               .withValues(alpha: 0.08),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
@@ -551,7 +576,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: const Color(0xFFF5F3FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -972,7 +997,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             fontFamily: 'monospace',
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                         ),
                         Text(
@@ -1051,7 +1076,7 @@ class _TreasuryQrisModalState extends State<TreasuryQrisModal> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF1E40AF),
+                            color: Color(0xFF6D28D9),
                           ),
                         ),
                       ],

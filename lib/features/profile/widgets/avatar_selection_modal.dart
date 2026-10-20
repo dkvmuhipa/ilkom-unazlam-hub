@@ -84,12 +84,12 @@ class AvatarSelectionModal {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
                       Icons.photo_camera_rounded,
-                      color: Color(0xFF1E40AF),
+                      color: Color(0xFF6D28D9),
                       size: 20,
                     ),
                   ),
@@ -133,7 +133,7 @@ class AvatarSelectionModal {
                         height: 58,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF1E40AF), width: 2),
+                          border: Border.all(color: const Color(0xFF6D28D9), width: 2),
                         ),
                         child: ClipOval(
                           child: avatarBuilder(currentAvatarUrl ?? student.avatarUrl, initials),
@@ -156,7 +156,7 @@ class AvatarSelectionModal {
                             'NIM: ${student.nim}',
                             style: const TextStyle(
                               fontSize: 11.5,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                               fontWeight: FontWeight.w600,
                               fontFamily: 'monospace',
                             ),
@@ -187,7 +187,7 @@ class AvatarSelectionModal {
               _buildAvatarActionTile(
                 icon: Icons.camera_alt_rounded,
                 iconColor: const Color(0xFF3B82F6),
-                iconBg: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                iconBg: isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F3FF),
                 title: 'Ambil dari Kamera',
                 subtitle: 'Gunakan kamera perangkat untuk mengambil swafoto',
                 isDark: isDark,
@@ -271,7 +271,7 @@ class AvatarSelectionModal {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected
-                              ? const Color(0xFF1E40AF)
+                              ? const Color(0xFF6D28D9)
                               : (isDark ? const Color(0xFF383850) : const Color(0xFFE5E7EB)),
                           width: isSelected ? 2 : 1,
                         ),
@@ -402,10 +402,10 @@ class AvatarSelectionModal {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                  color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.link_rounded, color: Color(0xFF1E40AF), size: 20),
+                child: const Icon(Icons.link_rounded, color: Color(0xFF6D28D9), size: 20),
               ),
               const SizedBox(width: 10),
               Text(
@@ -453,7 +453,7 @@ class AvatarSelectionModal {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),

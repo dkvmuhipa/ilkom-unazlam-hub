@@ -49,7 +49,7 @@ class ScheduleDaySelector extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? const LinearGradient(
-                          colors: [Color(0xFF1E40AF), Color(0xFF4338CA)],
+                          colors: [Color(0xFF58138A), Color(0xFF7C3AED)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )
@@ -58,7 +58,7 @@ class ScheduleDaySelector extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF1E40AF)
+                        ? const Color(0xFF6D28D9)
                         : (isToday
                             ? const Color(0xFF86EFAC)
                             : const Color(0xFFE2E8F0)),
@@ -67,7 +67,7 @@ class ScheduleDaySelector extends StatelessWidget {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF1E40AF).withValues(alpha: 0.28),
+                            color: const Color(0xFF6D28D9).withValues(alpha: 0.28),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),

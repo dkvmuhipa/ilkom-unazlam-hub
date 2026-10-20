@@ -324,14 +324,14 @@ class _LecturerReminderModalContentState
                 height: 44,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                    colors: [Color(0xFF58138A), Color(0xFF7C3AED)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -369,7 +369,7 @@ class _LecturerReminderModalContentState
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF)
+                            color: const Color(0xFF6D28D9)
                                 .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -378,7 +378,7 @@ class _LecturerReminderModalContentState
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E40AF),
+                              color: Color(0xFF6D28D9),
                             ),
                           ),
                         ),
@@ -463,11 +463,11 @@ class _LecturerReminderModalContentState
                             label: Text(sc.label),
                             selected: isSelected,
                             onSelected: (_) => _onScenarioChanged(sc),
-                            selectedColor: const Color(0xFF1E40AF),
+                            selectedColor: const Color(0xFF6D28D9),
                             backgroundColor: inputFill,
                             side: BorderSide(
                               color: isSelected
-                                  ? const Color(0xFF1E40AF)
+                                  ? const Color(0xFF6D28D9)
                                   : inputBorder,
                             ),
                             labelStyle: TextStyle(
@@ -539,7 +539,7 @@ class _LecturerReminderModalContentState
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                           width: 1.6,
                         ),
                       ),
@@ -616,7 +616,7 @@ class _LecturerReminderModalContentState
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E40AF)
+                            color: const Color(0xFF6D28D9)
                                 .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -626,7 +626,7 @@ class _LecturerReminderModalContentState
                               Icon(
                                 Icons.copy_rounded,
                                 size: 12,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                               ),
                               SizedBox(width: 4),
                               Text(
@@ -634,7 +634,7 @@ class _LecturerReminderModalContentState
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                             ],
@@ -748,7 +748,7 @@ class _LecturerReminderModalContentState
                             children: [
                               const Icon(
                                 Icons.bolt_rounded,
-                                color: Color(0xFF2563EB),
+                                color: Color(0xFF6D28D9),
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
@@ -759,7 +759,7 @@ class _LecturerReminderModalContentState
                                   fontWeight: FontWeight.w700,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1E293B),
+                                      : const Color(0xFF0F172A),
                                 ),
                               ),
                             ],

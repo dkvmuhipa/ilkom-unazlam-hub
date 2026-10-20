@@ -321,7 +321,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF6D28D9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -427,7 +427,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color(0xFFF5F3FF),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -435,7 +435,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                         ),
                       ),
                     ),
@@ -467,7 +467,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                       IconButton(
                         icon: const Icon(
                           Icons.edit_outlined,
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                           size: 20,
                         ),
                         tooltip: 'Edit Mata Kuliah',
@@ -602,9 +602,9 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                           horizontal: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
+                          color: const Color(0xFFF5F3FF),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                          border: Border.all(color: const Color(0xFFDDD6FE)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -612,7 +612,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                             const Icon(
                               Icons.edit_calendar_rounded,
                               size: 17,
-                              color: Color(0xFF1D4ED8),
+                              color: Color(0xFF6D28D9),
                             ),
                             const SizedBox(width: 8),
                             Flexible(
@@ -624,7 +624,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                 style: const TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1D4ED8),
+                                  color: Color(0xFF6D28D9),
                                 ),
                               ),
                             ),
@@ -649,12 +649,12 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
+                                color: const Color(0xFFF5F3FF),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
                                 Icons.access_time_rounded,
-                                color: Color(0xFF1E40AF),
+                                color: Color(0xFF6D28D9),
                                 size: 18,
                               ),
                             ),
@@ -714,7 +714,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isOnlineClass || c.isOnlineOverride
-                                    ? const Color(0xFFEFF6FF)
+                                    ? const Color(0xFFEDE9FE)
                                     : (isHybridClass
                                         ? const Color(0xFFF3E8FF)
                                         : const Color(0xFFECFDF5)),
@@ -727,7 +727,7 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                                         ? Icons.sensors_rounded
                                         : Icons.meeting_room_outlined),
                                 color: isOnlineClass || c.isOnlineOverride
-                                    ? const Color(0xFF2563EB)
+                                    ? const Color(0xFF6D28D9)
                                     : (isHybridClass
                                         ? const Color(0xFF7C3AED)
                                         : const Color(0xFF059669)),
@@ -793,8 +793,8 @@ class _CourseDetailSheetState extends State<CourseDetailSheet> {
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF2563EB),
-                                    Color(0xFF1D4ED8),
+                                    Color(0xFF58138A),
+                                    Color(0xFF7C3AED),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),

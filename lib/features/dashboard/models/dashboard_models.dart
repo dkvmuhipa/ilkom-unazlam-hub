@@ -2,19 +2,27 @@ import 'package:flutter/material.dart';
 
 class ServiceItem {
   final String title;
+  final String? subtitle;
   final IconData icon;
   final Color color;
   final Color bgColor;
   final int tabIndex;
   final bool isMore;
+  final bool showBadge;
+  final List<Color>? gradientColors;
+  final Color? glowColor;
 
   ServiceItem({
     required this.title,
+    this.subtitle,
     required this.icon,
     required this.color,
     required this.bgColor,
     this.tabIndex = 0,
     this.isMore = false,
+    this.showBadge = false,
+    this.gradientColors,
+    this.glowColor,
   });
 }
 

@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/admin_academic_service.dart';
@@ -55,7 +56,7 @@ class _AdminLecturersViewState extends State<AdminLecturersView> {
       children: [
         AdminAppBar(
           title: 'Data Dosen',
-          onSearch: () {},
+          showSearch: false,
           onBack: widget.onBack,
         ),
         Expanded(
@@ -226,156 +227,24 @@ class _AdminLecturersViewState extends State<AdminLecturersView> {
     );
   }
 
-  void _showLecturerDetail(LecturerItem d) {
-    final taughtCourses = widget.courses.where((c) {
-      return c.dosen.toLowerCase().contains(d.nama.toLowerCase()) ||
-          d.mataKuliah.toLowerCase().contains(c.nama.toLowerCase());
-    }).toList();
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Color(0xFFE0F2FE),
-                  child: Icon(Icons.person_rounded, color: Color(0xFF0284C7), size: 26),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        d.nama,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
-                      ),
-                      Text(
-                        d.email.isNotEmpty ? d.email : 'Email belum diatur',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Mata Kuliah Utama Diampu:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
-                  const SizedBox(height: 4),
-                  Text(d.mataKuliah, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
-                ],
-              ),
-            ),
-            if (taughtCourses.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Text('Mata Kuliah Terkait dalam Jadwal:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
-              const SizedBox(height: 6),
-              ...taughtCourses.map((c) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF059669)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text('${c.kode} - ${c.nama} (${c.sks} SKS)', style: const TextStyle(fontSize: 11.5, color: Color(0xFF374151))),
-                    ),
-                  ],
-                ),
-              )),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showLecturerDialog(existing: d);
-                    },
-                    icon: const Icon(Icons.edit_rounded, size: 16),
-                    label: const Text('Edit Profil'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      if (await widget.onConfirmDelete('Hapus data dosen ${d.nama}?')) {
-                        try {
-                          await AdminAcademicService.deleteLecturer(d.id);
-                          widget.onRecordAudit(
-                            action: 'DELETE',
-                            module: 'DOSEN',
-                            description: 'Menghapus dosen ${d.nama}.',
-                            metadata: {'lecturer_id': d.id},
-                          );
-                          await widget.onReload();
-                          widget.onShowMessage('Data dosen berhasil dihapus.');
-                        } catch (error) {
-                          widget.onShowMessage(error.toString(), isError: true);
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    label: const Text('Hapus Dosen'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFDC2626),
-                      side: const BorderSide(color: Color(0xFFDC2626)),
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  void _showLecturerDetail(LecturerItem lecturer) {
+    final courses = widget.courses.where((course) => course.dosen.toLowerCase() == lecturer.nama.toLowerCase() || lecturer.mataKuliah.toLowerCase().contains(course.nama.toLowerCase())).toList();
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
+      pageLabel: 'Detail Dosen', title: lecturer.nama, subtitle: lecturer.email.isEmpty ? 'Kontak belum diisi' : lecturer.email,
+      icon: Icons.person_outline,
+      onEdit: () { Navigator.pop(detailContext); _showLecturerDialog(existing: lecturer); },
+      tabs: [
+        AdminDetailTab('Profil', AdminDetailSection(title: 'Profil dosen', children: [
+          AdminDetailFields({'Nama lengkap': lecturer.nama, 'Email': lecturer.email, 'Bidang / mata kuliah': lecturer.mataKuliah}),
+        ])),
+        AdminDetailTab('Pengajaran', AdminDetailSection(title: 'Mata kuliah yang diampu', children: [
+          if (courses.isEmpty) const Text('Belum ada mata kuliah yang terhubung dengan dosen ini.'),
+          for (final course in courses) ListTile(contentPadding: EdgeInsets.zero,
+            title: Text(course.nama), subtitle: Text('${course.kode} • ${course.sks} SKS\n${course.hari}, ${course.jamMulai}–${course.jamSelesai} WITA')),
+        ])),
+      ],
+    )));
   }
-
   Future<void> _showLecturerDialog({LecturerItem? existing}) async {
     final namaCtrl = TextEditingController(text: existing?.nama ?? '');
     final matkulCtrl = TextEditingController(text: existing?.mataKuliah ?? '');

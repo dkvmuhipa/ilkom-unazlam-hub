@@ -79,6 +79,9 @@ flutter:
     - assets/fonts/
 
   fonts:
+    - family: NotoEmoji
+      fonts:
+        - asset: assets/fonts/NotoEmoji.ttf
     - family: Poppins
       fonts:
         - asset: assets/fonts/Poppins-Light.ttf

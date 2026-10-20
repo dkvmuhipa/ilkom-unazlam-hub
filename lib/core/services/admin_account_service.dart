@@ -64,6 +64,7 @@ class AdminAccountService {
     required int semester,
     required String peminatan,
     String noWa = '',
+    String kelas = 'Ilmu Komunikasi A',
   }) async {
     final client = SupabaseService.client;
     if (client == null) {
@@ -91,6 +92,7 @@ class AdminAccountService {
           'no_wa': noWa.trim(),
           'semester': semester,
           'peminatan': peminatan.trim(),
+          'kelas': kelas.trim(),
         },
       );
 
@@ -114,7 +116,7 @@ class AdminAccountService {
           'semester': semester,
           'peminatan': peminatan.trim(),
           'prodi': 'Ilmu Komunikasi',
-          'kelas': 'Ilmu Komunikasi',
+          'kelas': kelas.trim(),
           'role': 'MAHASISWA',
           'jabatan': 'Mahasiswa',
           'is_aktif': true,

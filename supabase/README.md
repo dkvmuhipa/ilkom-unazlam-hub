@@ -11,6 +11,12 @@ The function is deployed to the `ilkomunazlam` project at:
 
 ## Deploy
 
+Run `supabase_migrations/20261018_enable_admin_realtime.sql` after the admin
+operations and audit migrations to enable change subscriptions for
+`academic_classes`, `lecturers`, `academic_years`, and `audit_logs`.
+This only adds tables to the Realtime publication; existing RLS policies remain
+in force.
+
 The client must never use the legacy permissive policies from older SQL copies.
 The checked-in `supabase_schema.sql` and security migration now require an active
 student profile linked to Supabase Auth, scope attendance and assignment progress

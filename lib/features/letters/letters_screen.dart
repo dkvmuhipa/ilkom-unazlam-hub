@@ -409,7 +409,7 @@ ${widget.studentName}
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: const Color(0xFFF5F3FF),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFDDD6FE)),
             ),
@@ -417,7 +417,7 @@ ${widget.studentName}
               children: [
                 Icon(
                   Icons.description_outlined,
-                  color: Color(0xFF1E40AF),
+                  color: Color(0xFF6D28D9),
                   size: 24,
                 ),
                 SizedBox(width: 12),
@@ -467,7 +467,7 @@ ${widget.studentName}
                     });
                   }
                 },
-                selectedColor: const Color(0xFF1E40AF),
+                selectedColor: const Color(0xFF6D28D9),
                 labelStyle: TextStyle(
                   color: isSel ? Colors.white : const Color(0xFF374151),
                   fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
@@ -593,14 +593,14 @@ ${widget.studentName}
                 icon: const Icon(
                   Icons.verified_rounded,
                   size: 15,
-                  color: Color(0xFF1E40AF),
+                  color: Color(0xFF6D28D9),
                 ),
                 label: const Text(
                   'Format Ber-Kop & QR',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF6D28D9),
                   ),
                 ),
               ),
@@ -651,8 +651,8 @@ ${widget.studentName}
                 icon: const Icon(Icons.copy_rounded, size: 16),
                 label: const Text('Simpan & Salin'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1E40AF),
-                  side: const BorderSide(color: Color(0xFF1E40AF)),
+                  foregroundColor: const Color(0xFF6D28D9),
+                  side: const BorderSide(color: Color(0xFF6D28D9)),
                   minimumSize: const Size.fromHeight(46),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   shape: RoundedRectangleBorder(

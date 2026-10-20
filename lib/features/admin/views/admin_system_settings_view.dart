@@ -1,3 +1,4 @@
+import '../widgets/admin_detail_page.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -88,197 +89,28 @@ class AdminSystemSettingsView extends StatelessWidget {
   }
 
   void _showNotificationSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(
-              Icons.notifications_active_outlined,
-              color: AppColors.primary,
-              size: 22,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Pengaturan Notifikasi',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE9D5FF)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.token_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '$registeredTokensCount token FCM aktif terdaftar dari instalasi mahasiswa.',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Status Layanan:',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              '• Firebase Cloud Messaging (FCM v1) Terintegrasi\n• Supabase Database Webhook & Edge Function Aktif\n• Notifikasi otomatis terkirim saat rilis tugas atau pengumuman baru.',
-              style: TextStyle(
-                fontSize: 11.5,
-                height: 1.4,
-                color: Color(0xFF4B5563),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onBroadcastAnnouncement();
-            },
-            icon: const Icon(Icons.campaign_outlined, size: 16),
-            label: const Text('Kirim Pengumuman'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
+      pageLabel: 'Notifikasi', title: 'Pengaturan Notifikasi', subtitle: 'Perangkat dan pengiriman pengumuman', icon: Icons.notifications_outlined,
+      actions: [AdminDetailAction('Kirim pengumuman', Icons.campaign_outlined, () { Navigator.pop(detailContext); onBroadcastAnnouncement(); })],
+      tabs: [AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Perangkat terdaftar', children: [
+        AdminDetailFields({'Token perangkat': '$registeredTokensCount token terdaftar'}),
+        const Text('Notifikasi memerlukan izin pada perangkat mahasiswa. Token terdaftar belum memastikan pesan sampai ke perangkat.', style: TextStyle(fontSize: 14, height: 1.7)),
+      ]))],
+    )));
   }
-
   void _showAppProfileDialog(BuildContext context) {
-    final activeYear = academicYears
-        .firstWhere(
-          (y) => y.isAktif,
-          orElse: () => AcademicYearItem(tahun: '2026/2027', isAktif: true),
-        )
-        .tahun;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Profil Aplikasi',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'ILKOM UNAZLAM Hub',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
-                color: Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Platform Manajemen Kelas & Akademik Terpadu',
-              style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
-            ),
-            const Divider(height: 20),
-            _buildProfileInfoRow(
-              'Target Pengguna',
-              'Mahasiswa & Pengurus Kelas',
-            ),
-            _buildProfileInfoRow('Tahun Akademik', activeYear),
-            _buildProfileInfoRow('Kelas Terdaftar', '${classes.length} Kelas'),
-            _buildProfileInfoRow('Dosen Pengampu', '${lecturers.length} Dosen'),
-            _buildProfileInfoRow('Mata Kuliah', '${courses.length} MK'),
-            _buildProfileInfoRow(
-              'Basis Data',
-              SupabaseService.client != null
-                  ? 'Supabase Connected 🟢'
-                  : 'Offline / Standalone 🟡',
-            ),
-            _buildProfileInfoRow('Versi Rilis', 'v2.5.0 Production'),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
+    final activeYear = academicYears.where((year) => year.isAktif).firstOrNull?.tahun ?? 'Belum ditetapkan';
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AdminDetailPage(
+      pageLabel: 'Profil Aplikasi', title: 'ILKOM UNAZLAM Hub', subtitle: 'Manajemen kelas dan akademik', icon: Icons.school_outlined,
+      tabs: [AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Data akademik', children: [
+        AdminDetailFields({'Tahun akademik aktif': activeYear, 'Kelas': '${classes.length} kelas', 'Dosen': '${lecturers.length} dosen', 'Mata kuliah': '${courses.length} mata kuliah', 'Koneksi': SupabaseService.client == null ? 'Belum terhubung' : 'Supabase dikonfigurasi'}),
+      ]))],
+    )));
   }
-
-  Widget _buildProfileInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF111827),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showBackupDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog(scrollable: true, insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
@@ -298,8 +130,9 @@ class AdminSystemSettingsView extends StatelessWidget {
             onPressed: () async {
               try {
                 final client = SupabaseService.client;
-                if (client == null)
+                if (client == null) {
                   throw Exception('Supabase belum terhubung.');
+                }
                 final tables = [
                   'students',
                   'courses',
@@ -359,37 +192,14 @@ class AdminSystemSettingsView extends StatelessWidget {
   }
 
   void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Tentang ILKOM Hub',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: const Text(
-          'Aplikasi Pengelolaan Kelas Terpadu Ilmu Komunikasi Universitas Al-Azhar Menggala (UNAZLAM).\n\n"Satu Kelas, Banyak Cerita, Lebih Banyak Karya."',
-          style: TextStyle(
-            fontSize: 12.5,
-            height: 1.4,
-            color: Color(0xFF4B5563),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AdminDetailPage(
+      pageLabel: 'Tentang Aplikasi', title: 'ILKOM UNAZLAM Hub', subtitle: 'Universitas Al-Azhar Menggala', icon: Icons.info_outline,
+      tabs: [AdminDetailTab('Tentang', AdminDetailSection(title: 'Tentang platform', children: [
+        Text('Aplikasi pengelolaan kelas terpadu Ilmu Komunikasi Universitas Al-Azhar Menggala (UNAZLAM).', style: TextStyle(fontSize: 15, height: 1.8)),
+        Text('Satu Kelas, Banyak Cerita, Lebih Banyak Karya.', style: TextStyle(fontSize: 15, height: 1.8)),
+      ]))],
+    )));
   }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -398,7 +208,6 @@ class AdminSystemSettingsView extends StatelessWidget {
           title: 'Pengaturan Sistem',
           showSearch: false,
           onBack: onBack,
-          onSearch: () {},
         ),
         Expanded(
           child: ListView(

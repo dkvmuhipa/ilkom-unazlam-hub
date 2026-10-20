@@ -25,10 +25,10 @@ class ChangePasswordDialog {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.lock_reset_rounded, color: Color(0xFF1E40AF), size: 22),
+                  child: const Icon(Icons.lock_reset_rounded, color: Color(0xFF6D28D9), size: 22),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -134,7 +134,7 @@ class ChangePasswordDialog {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E40AF),
+                  backgroundColor: const Color(0xFF6D28D9),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),

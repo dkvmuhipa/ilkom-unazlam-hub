@@ -498,7 +498,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: const Color(0xFFF5F3FF),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFDDD6FE)),
                   ),
@@ -508,7 +508,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       const Icon(
                         Icons.vpn_key_rounded,
                         size: 16,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF6D28D9),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -516,7 +516,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E40AF),
+                          color: Color(0xFF6D28D9),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -628,7 +628,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E40AF),
+                    backgroundColor: const Color(0xFF6D28D9),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(
@@ -830,7 +830,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           decoration: BoxDecoration(
                             color: _activeTab == 0
                                 ? (isDark
-                                      ? const Color(0xFF1E40AF)
+                                      ? const Color(0xFF6D28D9)
                                       : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
@@ -855,7 +855,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 color: _activeTab == 0
                                     ? (_activeTab == 0 && isDark
                                           ? Colors.white
-                                          : const Color(0xFF1E40AF))
+                                          : const Color(0xFF6D28D9))
                                     : (isDark
                                           ? Colors.white60
                                           : const Color(0xFF64748B)),
@@ -891,7 +891,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           decoration: BoxDecoration(
                             color: _activeTab == 1
                                 ? (isDark
-                                      ? const Color(0xFF1E40AF)
+                                      ? const Color(0xFF6D28D9)
                                       : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
@@ -916,7 +916,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 color: _activeTab == 1
                                     ? (_activeTab == 1 && isDark
                                           ? Colors.white
-                                          : const Color(0xFF1E40AF))
+                                          : const Color(0xFF6D28D9))
                                     : (isDark
                                           ? Colors.white60
                                           : const Color(0xFF64748B)),
@@ -1024,7 +1024,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: CircularProgressIndicator(color: Color(0xFF1E40AF)),
+                  child: CircularProgressIndicator(color: Color(0xFF6D28D9)),
                 ),
               ),
             ] else if (widget.canManageClassAttendance && _activeTab == 1) ...[
@@ -1075,14 +1075,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         gradient: LinearGradient(
           colors: isDark
               ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [const Color(0xFF1E40AF), const Color(0xFF1D4ED8)],
+              : [const Color(0xFF6D28D9), const Color(0xFF6D28D9)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E40AF).withValues(alpha: 0.25),
+            color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1166,7 +1166,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1E40AF),
+                    foregroundColor: const Color(0xFF6D28D9),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
