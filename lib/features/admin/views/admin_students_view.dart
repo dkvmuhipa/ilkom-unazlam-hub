@@ -163,47 +163,25 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                       children: [
                         ...['Semua', 'Aktif', 'Nonaktif'].map((f) {
                           final isSel = _studentFilter == f;
+                          final count = switch (f) {
+                            'Aktif' => sourceStudents.where((s) => s.isAktif).length,
+                            'Nonaktif' => sourceStudents.where((s) => !s.isAktif).length,
+                            _ => sourceStudents.length,
+                          };
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: InkWell(
+                            child: AdminFilterChip(
+                              label: f,
+                              isSelected: isSel,
+                              count: count,
                               onTap: () => setState(() => _studentFilter = f),
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 7,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSel
-                                      ? AppColors.primary
-                                      : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSel
-                                        ? AppColors.primary
-                                        : AppColors.borderMedium,
-                                  ),
-                                ),
-                                child: Text(
-                                  f,
-                                  style: TextStyle(fontFamily: 'Poppins',
-                                    fontSize: 12,
-                                    fontWeight: isSel
-                                        ? FontWeight.w800
-                                        : FontWeight.w600,
-                                    color: isSel
-                                        ? Colors.white
-                                        : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ),
                             ),
                           );
                         }),
                         const Spacer(),
-                        InkWell(
+                        ScaleButton(
                           onTap: _openBulkImport,
-                          borderRadius: BorderRadius.circular(16),
+                          scaleDown: 0.95,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -211,7 +189,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEEF2FF),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: const Color(0xFFC7D2FE),
                               ),
@@ -272,124 +250,132 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 13,
-                            ),
                             decoration: BoxDecoration(
                               color: rowBg,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.border),
-                              boxShadow: AppColors.shadowSm,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: InkWell(
                               onTap: () => widget.onNavigate(
                                 'detail_mahasiswa',
                                 student: s,
                               ),
-                              borderRadius: BorderRadius.circular(20),
-                              child: AdminAdaptiveRow(
-                                children: [
-                                  SaaSAvatar(
-                                    name: s.nama,
-                                    size: 42,
-                                    radius: 12,
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        AdminAdaptiveRow(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                s.nama,
-                                                style:
-                                                    TextStyle(fontFamily: 'Poppins',
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      color: AppColors.textMain,
-                                                    ),
-                                                overflow: TextOverflow.ellipsis,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                child: AdminAdaptiveRow(
+                                  children: [
+                                    SaaSAvatar(
+                                      name: s.nama,
+                                      size: 42,
+                                      radius: 12,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          AdminAdaptiveRow(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  s.nama,
+                                                  style: const TextStyle(
+                                                    fontFamily: 'Poppins',
+                                                    fontSize: 13.5,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF0F172A),
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                            ),
-                                            if (s.jabatan != 'Mahasiswa') ...[
-                                              const SizedBox(width: 8),
-                                              SoftPillBadge.warning(
-                                                label: s.jabatan,
-                                              ),
+                                              if (s.jabatan != 'Mahasiswa') ...[
+                                                const SizedBox(width: 6),
+                                                SoftPillBadge.warning(
+                                                  label: s.jabatan,
+                                                ),
+                                              ],
                                             ],
-                                          ],
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            'NIM ${s.nim} • Sem ${s.semester} • ${s.peminatan.isNotEmpty ? s.peminatan : (s.kelas.isNotEmpty ? s.kelas : "Ilmu Komunikasi")}',
+                                            style: const TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _accountStatusBadge(s.isAktif),
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(
+                                        Icons.more_vert_rounded,
+                                        color: Color(0xFF94A3B8),
+                                        size: 20,
+                                      ),
+                                      onSelected: (val) async {
+                                        if (val == 'detail') {
+                                          widget.onNavigate(
+                                            'detail_mahasiswa',
+                                            student: s,
+                                          );
+                                        } else if (val == 'edit') {
+                                          await widget.onEditAccount(s);
+                                          if (mounted) setState(() {});
+                                        } else if (val == 'toggle') {
+                                          await widget.onSetActive(s, !s.isAktif);
+                                          if (mounted) setState(() {});
+                                        } else if (val == 'delete') {
+                                          await widget.onDeleteAccount(s);
+                                          if (mounted) setState(() {});
+                                        }
+                                      },
+                                      itemBuilder: (ctx) => [
+                                        const PopupMenuItem(
+                                          value: 'detail',
+                                          child: Text('Lihat Detail'),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          'NIM ${s.nim} • Semester ${s.semester} • ${s.peminatan.isNotEmpty ? s.peminatan : "Ilmu Komunikasi"}',
-                                          style: TextStyle(fontFamily: 'Poppins',
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w500,
-                                            color: AppColors.textSub,
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Text('Edit Profil'),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'toggle',
+                                          child: Text(
+                                            s.isAktif
+                                                ? 'Nonaktifkan'
+                                                : 'Aktifkan Akun',
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Text(
+                                            'Hapus Mahasiswa',
+                                            style: TextStyle(
+                                              color: Color(0xFFDC2626),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _accountStatusBadge(s.isAktif),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      Icons.more_vert_rounded,
-                                      color: AppColors.textMuted,
-                                      size: 20,
-                                    ),
-                                    onSelected: (val) async {
-                                      if (val == 'detail') {
-                                        widget.onNavigate(
-                                          'detail_mahasiswa',
-                                          student: s,
-                                        );
-                                      } else if (val == 'edit') {
-                                        await widget.onEditAccount(s);
-                                        if (mounted) setState(() {});
-                                      } else if (val == 'toggle') {
-                                        await widget.onSetActive(s, !s.isAktif);
-                                        if (mounted) setState(() {});
-                                      } else if (val == 'delete') {
-                                        await widget.onDeleteAccount(s);
-                                        if (mounted) setState(() {});
-                                      }
-                                    },
-                                    itemBuilder: (ctx) => [
-                                      const PopupMenuItem(
-                                        value: 'detail',
-                                        child: Text('Lihat Detail'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Text('Edit Profil'),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'toggle',
-                                        child: Text(
-                                          s.isAktif
-                                              ? 'Nonaktifkan'
-                                              : 'Aktifkan Akun',
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text(
-                                          'Hapus Mahasiswa',
-                                          style: TextStyle(
-                                            color: Color(0xFFDC2626),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );

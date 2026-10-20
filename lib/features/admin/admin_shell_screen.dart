@@ -26,6 +26,7 @@ import 'views/admin_students_view.dart';
 import 'views/admin_attendance_matrix_view.dart';
 import 'widgets/admin_bulk_csv_modal.dart';
 import 'widgets/admin_creation_modals.dart';
+import 'widgets/admin_common_widgets.dart';
 import 'models/admin_models.dart';
 
 class AdminShellScreen extends StatefulWidget {
@@ -399,6 +400,35 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                         selectedIndex: _navBarIndex,
                         onDestinationSelected: _handleBottomNav,
                         labelType: NavigationRailLabelType.all,
+                        leading: Padding(
+                          padding: const EdgeInsets.only(top: 14, bottom: 20),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF58138A), Color(0xFF6D28D9)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.admin_panel_settings_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
                         destinations: const [
                           NavigationRailDestination(
                             icon: Icon(Icons.dashboard_outlined),
@@ -781,40 +811,44 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             builder: (context, cardConstraints) {
               final isWide = cardConstraints.maxWidth >= 768;
 
-              final card1 = _buildStatCard(
-                count: '${_classes.length}',
-                label: 'Kelas Aktif',
+              final card1 = AdminMetricCard(
+                value: '${_classes.length}',
+                title: 'Kelas Aktif',
+                subtitle: 'FISIP Ilkom',
                 icon: Icons.meeting_room_outlined,
-                color: AppColors.primary,
-                badgeText: 'FISIP',
-                badgeVariant: SoftPillVariant.blue,
+                iconColor: AppColors.primary,
+                deltaLabel: 'FISIP',
+                isPositiveDelta: true,
                 onTap: () => _navigateTo('kelas'),
               );
-              final card2 = _buildStatCard(
-                count: '$activeStudentsCount',
-                label: 'Mahasiswa',
+              final card2 = AdminMetricCard(
+                value: '$activeStudentsCount',
+                title: 'Mahasiswa',
+                subtitle: 'Aktif 100%',
                 icon: Icons.people_outline_rounded,
-                color: AppColors.cyan,
-                badgeText: 'Aktif 100%',
-                badgeVariant: SoftPillVariant.cyan,
+                iconColor: AppColors.cyan,
+                deltaLabel: 'Aktif',
+                isPositiveDelta: true,
                 onTap: () => _navigateTo('mahasiswa'),
               );
-              final card3 = _buildStatCard(
-                count: '${_lecturers.length}',
-                label: 'Dosen Pengajar',
+              final card3 = AdminMetricCard(
+                value: '${_lecturers.length}',
+                title: 'Dosen Pengajar',
+                subtitle: 'Dosen FISIP',
                 icon: Icons.badge_outlined,
-                color: AppColors.emerald,
-                badgeText: 'Dosen FISIP',
-                badgeVariant: SoftPillVariant.emerald,
+                iconColor: AppColors.emerald,
+                deltaLabel: 'FISIP',
+                isPositiveDelta: true,
                 onTap: () => _navigateTo('dosen'),
               );
-              final card4 = _buildStatCard(
-                count: '${_courses.length}',
-                label: 'Mata Kuliah',
+              final card4 = AdminMetricCard(
+                value: '${_courses.length}',
+                title: 'Mata Kuliah',
+                subtitle: 'Ganjil 26/27',
                 icon: Icons.menu_book_rounded,
-                color: AppColors.amber,
-                badgeText: 'Ganjil 26/27',
-                badgeVariant: SoftPillVariant.amber,
+                iconColor: AppColors.amber,
+                deltaLabel: 'Ganjil 26/27',
+                isPositiveDelta: true,
                 onTap: () => _navigateTo('matakuliah'),
               );
 
@@ -1173,21 +1207,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Banner Info Sistem (Clean Tech Console Card)
-          Container(
+          // Banner Info Sistem (Clean Tech Console Bento Card)
+          AdminBentoCard(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
             child: Row(
               children: [
                 Container(
@@ -1208,7 +1230,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Pusat Kendali Terintegrasi',
                         style: TextStyle(
                           color: Color(0xFF0F172A),
@@ -1217,16 +1239,45 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                           letterSpacing: -0.2,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         _academicYears.any((year) => year.isAktif)
                             ? 'Tahun Akademik ${_academicYears.firstWhere((year) => year.isAktif).tahun} aktif'
                             : 'Tahun akademik aktif belum ditetapkan',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentView = 'audit_logs';
+                      _selectedStudent = null;
+                      _loadAuditLogs();
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Log Audit',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 3),
+                      Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primary),
                     ],
                   ),
                 ),
@@ -1238,119 +1289,6 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
-  Widget _buildStatCard({
-    required String count,
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-    String? badgeText,
-    SoftPillVariant badgeVariant = SoftPillVariant.blue,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.16), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                ColorfulIconBox(
-                  icon: icon,
-                  color: color,
-                  size: 36,
-                  iconSize: 18,
-                  radius: 10,
-                ),
-                if (badgeText != null)
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: SoftPillBadge(
-                        label: badgeText,
-                        variant: badgeVariant,
-                        fontSize: 9.5,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3.5,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Icon(
-                      Icons.arrow_outward_rounded,
-                      color: color,
-                      size: 13,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  count,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildQuickActionButton({
     required IconData icon,
     required String label,
@@ -1358,37 +1296,34 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return ScaleButton(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      scaleDown: 0.96,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.18), width: 1.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.18), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+              color: color.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            ColorfulIconBox(
-              icon: icon,
-              color: color,
-              size: 32,
-              iconSize: 16,
-              radius: 9,
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 18),
             ),
             const SizedBox(height: 10),
             Text(
@@ -1493,19 +1428,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       'Laporan' => AppColors.rose,
       _ => const Color(0xFF64748B),
     };
-    return InkWell(
+    return ScaleButton(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      scaleDown: 0.96,
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
           boxShadow: [
             BoxShadow(
               color: accentColor.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
             BoxShadow(
               color: const Color(0xFF0F172A).withValues(alpha: 0.02),
@@ -1514,31 +1450,36 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ColorfulIconBox(
-              icon: icon,
-              color: accentColor,
-              size: 40,
-              iconSize: 20,
-              radius: 11,
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ColorfulIconBox(
+                  icon: icon,
+                  color: accentColor,
+                  size: 38,
+                  iconSize: 20,
+                  radius: 11,
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                    height: 1.15,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 7),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
-                height: 1.15,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

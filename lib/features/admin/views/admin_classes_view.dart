@@ -879,7 +879,14 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -907,7 +914,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                                     style: const TextStyle(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF111827),
+                                      color: Color(0xFF0F172A),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -916,7 +923,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
-                                      color: Color(0xFF6B7280),
+                                      color: Color(0xFF64748B),
                                     ),
                                   ),
                                 ],
@@ -925,7 +932,7 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                             PopupMenuButton<String>(
                               icon: const Icon(
                                 Icons.more_vert_rounded,
-                                color: Color(0xFF9CA3AF),
+                                color: Color(0xFF94A3B8),
                                 size: 20,
                               ),
                               onSelected: (val) async {

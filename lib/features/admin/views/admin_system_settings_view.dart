@@ -49,39 +49,65 @@ class AdminSystemSettingsView extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    Color color = const Color(0xFF111827),
+    Color color = const Color(0xFF0F172A),
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          onTap: onTap,
-          leading: Icon(
-            icon,
-            color: color == const Color(0xFFEF4444) ? color : AppColors.primary,
-            size: 22,
+    final isDestructive = color == const Color(0xFFEF4444);
+    final iconColor = isDestructive ? const Color(0xFFEF4444) : AppColors.primary;
+    final iconBg = isDestructive ? const Color(0xFFFEE2E2) : const Color(0xFFEEF2FF);
+
+    return ScaleButton(
+      onTap: onTap,
+      scaleDown: 0.98,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDestructive ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
+            width: 1.1,
           ),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              color: color,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
-          ),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: Colors.grey.shade400,
-            size: 20,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.grey.shade400,
+                size: 20,
+              ),
+            ],
           ),
         ),
       ),
