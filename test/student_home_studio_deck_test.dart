@@ -49,22 +49,19 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
         await tester.pump(const Duration(milliseconds: 300));
 
-        // 1. Digital Press Pass & Broadcast Header Verification
-        expect(find.text('PRESS PASS // S1 ILKOM'), findsOneWidget);
-        expect(find.textContaining('Crew • Smt 3'), findsOneWidget);
-        expect(find.textContaining('Danang 🎙️'), findsOneWidget);
+        // 1. Student Header Verification
+        expect(find.textContaining('Danang'), findsOneWidget);
+        expect(find.textContaining('S1 Ilmu Komunikasi • Smt 3'), findsOneWidget);
 
-        // 2. Studio Clearance & Academic Deck Verification
-        expect(find.text('STUDIO CLEARANCE // AKADEMIK'), findsOneWidget);
+        // 2. Academic Summary Verification
+        expect(find.text('Ringkasan Akademik'), findsOneWidget);
         expect(find.text('Presensi'), findsOneWidget);
         expect(find.text('Kas'), findsOneWidget);
         expect(find.text('KHS'), findsOneWidget);
         expect(find.text('Izin'), findsOneWidget);
 
-        // 3. Segmented Studio Control Dock Verification
-        expect(find.text('KONSOL MODUL ILKOM'), findsOneWidget);
-        expect(find.text('CHANNEL A // PRODUKSI & KULIAH'), findsOneWidget);
-        expect(find.text('CHANNEL B // REDAKSI & BIRO KELAS'), findsOneWidget);
+        // 3. Services Grid Verification
+        expect(find.text('Layanan Akademik'), findsOneWidget);
         expect(find.text('Materi'), findsOneWidget);
         expect(find.text('Agenda'), findsOneWidget);
         expect(find.text('Kelompok'), findsOneWidget);

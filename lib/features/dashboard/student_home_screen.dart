@@ -308,46 +308,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // Hero diletakkan tepat di bawah pintasan utama.
+                        // 2. Dynamic Priority Card (Now & Next - Centerpiece Konsep 1)
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 50),
-                          child: _buildHeroBannerCarousel(),
+                          child: _buildDynamicPriorityCard(
+                            context,
+                            student,
+                            isDark,
+                          ),
                         ),
                         const SizedBox(height: 14),
 
-                        // 3. Error Alert jika gagal fetch
-                        if (_loadError != null) ...[
-                          _buildLoadError(isDark),
-                          const SizedBox(height: 14),
-                        ],
-
-                        // 4. Presensi Aktif Banner (1-Tap Scan QR Langsung) & Shortcut Pengurus
-                        if (AttendanceScreen.currentSession != null &&
-                            !AttendanceScreen.currentSession!.isExpired) ...[
-                          FadeSlideEntrance(
-                            delay: const Duration(milliseconds: 100),
-                            child: _buildLiveAttendanceBanner(
-                              context,
-                              student,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                        ] else if (student.canManageAttendance) ...[
-                          FadeSlideEntrance(
-                            delay: const Duration(milliseconds: 100),
-                            child: _buildOfficerAttendancePrompt(
-                              context,
-                              student,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                        ],
-
-                        // 5. Studio Clearance & Academic Deck (Status Presensi & Kas Kelas)
+                        // 3. Ringkasan Akademik & Kas Terpadu
                         FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 150),
+                          delay: const Duration(milliseconds: 100),
                           child: _buildAcademicWalletCard(
                             context,
                             student,
@@ -356,9 +330,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                             isDark,
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 14),
 
-                        // 6. Segmented Studio Control Dock (Konsol Modul Ilkom)
+                        // 4. Hero Banner Carousel
+                        FadeSlideEntrance(
+                          delay: const Duration(milliseconds: 150),
+                          child: _buildHeroBannerCarousel(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 5. Error Alert jika gagal fetch
+                        if (_loadError != null) ...[
+                          _buildLoadError(isDark),
+                          const SizedBox(height: 14),
+                        ],
+
+                        // 6. Grid 8 Layanan Akademik Minimalis
                         FadeSlideEntrance(
                           delay: const Duration(milliseconds: 200),
                           child: _buildServicesGrid(context, student, isDark),
@@ -368,25 +355,25 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         // 7. WIDGET TUGAS MENDESAK & COUNTDOWN DEADLINE (Paket C)
                         if (_pendingAssignments.isNotEmpty) ...[
                           FadeSlideEntrance(
-                            delay: const Duration(milliseconds: 300),
+                            delay: const Duration(milliseconds: 250),
                             child: _buildUrgentAssignmentSpotlightSection(
                               context,
                               isDark,
                             ),
                           ),
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 20),
                         ],
 
                         // 8. Carousel "Aktivitas Hari Ini" (Jadwal Kuliah Real-Time)
                         FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 350),
+                          delay: const Duration(milliseconds: 300),
                           child: _buildTodayActivitiesSection(context, isDark),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 20),
 
                         // 9. Banner Pengumuman Terkini
                         FadeSlideEntrance(
-                          delay: const Duration(milliseconds: 400),
+                          delay: const Duration(milliseconds: 350),
                           child: _buildAnnouncementBanner(context, isDark),
                         ),
                         const SizedBox(height: 24),
@@ -471,7 +458,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$greeting, $firstName 🎙️',
+                  '$greeting, $firstName 👋',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -482,32 +469,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Wrap(
-                  spacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      'PRESS PASS // S1 ILKOM',
-                      style: TextStyle(
-                        fontSize: 9.0,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
-                        color: textSub,
-                      ),
-                    ),
-                    Text(
-                      '•',
-                      style: TextStyle(fontSize: 8.5, color: textSub),
-                    ),
-                    Text(
-                      'Crew • Smt ${student.semester}',
-                      style: const TextStyle(
-                        fontSize: 9.0,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'S1 Ilmu Komunikasi • Smt ${student.semester}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: textSub,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -526,7 +496,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               height: 38,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF262438) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: borderColor),
               ),
               child: const Icon(
@@ -547,7 +517,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               height: 38,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF262438) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: borderColor),
               ),
               child: Stack(
@@ -575,6 +545,519 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         ),
                       ),
                     ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // 2. DYNAMIC PRIORITY CARD (NOW & NEXT - KONSEP 1)
+  // ==========================================
+  Widget _buildDynamicPriorityCard(
+    BuildContext context,
+    StudentProfile student,
+    bool isDark,
+  ) {
+    final session = AttendanceScreen.currentSession;
+    final bool hasLiveSession = session != null && !session.isExpired;
+
+    // KASUS 1: Sesi Presensi Sedang Berlangsung (Prioritas Tertinggi)
+    if (hasLiveSession) {
+      final attended = session.attendedNims.contains(student.nim);
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6D28D9), Color(0xFF4C1D95)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6D28D9)
+                  .withValues(alpha: isDark ? 0.4 : 0.22),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _livePulseAnimation,
+                        builder: (context, child) => Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF34D399),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF34D399).withValues(
+                                  alpha:
+                                      0.4 * _livePulseAnimation.value + 0.3,
+                                ),
+                                blurRadius: 5,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Sesi Sedang Berlangsung',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  'Sisa ${session.remainingSeconds ~/ 60} mnt',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFFDE68A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              session.courseName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Presensi kelas perkuliahan aktif sekarang',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    attended
+                        ? 'Kamu sudah terdata hadir 🎉'
+                        : 'Presensi belum dicatat',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: attended
+                          ? const Color(0xFF6EE7B7)
+                          : const Color(0xFFFDE68A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (!attended)
+                  ScaleButton(
+                    scaleDown: 0.92,
+                    onTap: () {
+                      AttendanceScreen.showStudentScanner(
+                        context,
+                        userNim: student.nim,
+                        onSuccess: _loadDashboard,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFF59E0B)
+                                .withValues(alpha: 0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.qr_code_scanner_rounded,
+                              size: 15, color: Color(0xFF1E1035)),
+                          SizedBox(width: 5),
+                          Text(
+                            'Scan QR',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1E1035),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (student.canManageAttendance) ...[
+                  const SizedBox(width: 6),
+                  ScaleButton(
+                    scaleDown: 0.92,
+                    onTap: () {
+                      AttendanceScreen.showActiveQrModal(
+                        context,
+                        session: session,
+                        onClosed: _loadDashboard,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Kelola QR',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // KASUS 2: Ada Kuliah Hari Ini & Belum Selesai (Now & Next Focus)
+    if (_todayCourses.isNotEmpty && !_todayClassesFinished) {
+      final Course activeCourse = _todayCourses.first;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1B38) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF2E274A)
+                : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6D28D9)
+                  .withValues(alpha: isDark ? 0.15 : 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF281C48)
+                        : const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Kuliah Hari Ini',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFDDD6FE)
+                              : AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${activeCourse.effectiveJamMulai} - ${activeCourse.effectiveJamSelesai}',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? const Color(0xFFFBBF24)
+                        : const Color(0xFFD97706),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              activeCourse.nama,
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                color:
+                    isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${activeCourse.ruangan.isNotEmpty ? activeCourse.ruangan : "Ruang Belum Diatur"} • ${activeCourse.dosen}',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color:
+                    isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ScaleButton(
+                  scaleDown: 0.94,
+                  onTap: () => _openLecturerReminder(activeCourse),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF282540)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.notifications_active_rounded,
+                          size: 13,
+                          color: isDark
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF475569),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ingatkan Dosen',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFFCBD5E1)
+                                : const Color(0xFF475569),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ScaleButton(
+                  scaleDown: 0.94,
+                  onTap: () => widget.onNavigateTab(6), // Tab Agenda
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF2E2452)
+                          : const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Detail Jadwal',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: isDark
+                                ? const Color(0xFFDDD6FE)
+                                : AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 13,
+                          color: isDark
+                              ? const Color(0xFFDDD6FE)
+                              : AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // KASUS 3: Kuliah Hari Ini Selesai atau Hari Libur (Status Tenang)
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B192E) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF2A2744)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                const Color(0xFF6D28D9).withValues(alpha: isDark ? 0.12 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF262040)
+                  : const Color(0xFFF5F3FF),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(
+              Icons.celebration_rounded,
+              size: 21,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _todayClassesFinished
+                      ? 'Semua Kuliah Hari Ini Selesai 🎉'
+                      : 'Tidak Ada Jadwal Kuliah Hari Ini',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? const Color(0xFFF1F5F9)
+                        : const Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _nextActiveDayLabel.isNotEmpty
+                      ? _nextActiveDayLabel
+                      : 'Gunakan waktu untuk persiapan atau istirahat',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          ScaleButton(
+            scaleDown: 0.94,
+            onTap: () => widget.onNavigateTab(6),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF282540)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Jadwal',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? const Color(0xFFDDD6FE)
+                          : AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 12,
+                    color: isDark
+                        ? const Color(0xFFDDD6FE)
+                        : AppColors.primary,
+                  ),
                 ],
               ),
             ),
@@ -635,24 +1118,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               Expanded(
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.tune_rounded,
-                      size: 13,
-                      color: isDark ? const Color(0xFF818CF8) : AppColors.primary,
+                    const Icon(
+                      Icons.school_rounded,
+                      size: 15,
+                      color: AppColors.primary,
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'STUDIO CLEARANCE // AKADEMIK',
+                        'Ringkasan Akademik',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                          color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.w800,
+                          color: textMain,
                         ),
                       ),
                     ),
@@ -948,333 +1428,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     );
   }
 
-  // ==========================================
-  // 4. LIVE ATTENDANCE BANNER (1-TAP SCANNER)
-  // ==========================================
-  Widget _buildLiveAttendanceBanner(
-    BuildContext context,
-    StudentProfile student,
-    bool isDark,
-  ) {
-    final session = AttendanceScreen.currentSession!;
-    final attended = session.attendedNims.contains(student.nim);
 
-    return RepaintBoundary(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0D281E) : const Color(0xFFECFDF5),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? const Color(0xFF166534) : const Color(0xFFA7F3D0),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF10B981)
-                  .withValues(alpha: isDark ? 0.2 : 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            AnimatedBuilder(
-              animation: _livePulseAnimation,
-              builder: (context, child) => Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(
-                    0xFF10B981,
-                  ).withValues(alpha: 0.15 * _livePulseAnimation.value + 0.05),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF10B981)
-                          .withValues(alpha: _livePulseAnimation.value * 0.3),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.radio_button_checked_rounded,
-                  color: Color(0xFF059669),
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Presensi Aktif • ${session.courseName}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                      color: isDark
-                          ? const Color(0xFFE2E8F0)
-                          : const Color(0xFF0F172A),
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    attended
-                        ? 'Kamu sudah terdata hadir 🎉'
-                        : 'Sisa waktu ${session.remainingSeconds ~/ 60} menit',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF059669),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!attended)
-              ScaleButton(
-                scaleDown: 0.92,
-                onTap: () {
-                  AttendanceScreen.showStudentScanner(
-                    context,
-                    userNim: student.nim,
-                    onSuccess: _loadDashboard,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF059669),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF059669).withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Scan QR',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (student.canManageAttendance) ...[
-              const SizedBox(width: 6),
-              ScaleButton(
-                scaleDown: 0.92,
-                onTap: () {
-                  AttendanceScreen.showActiveQrModal(
-                    context,
-                    session: session,
-                    onClosed: _loadDashboard,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.qr_code_2_rounded,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Buka QR',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // 4B. OFFICER ATTENDANCE PROMPT (QUICK START FOR KETUA KELAS / ADMIN)
-  // ==========================================
-  Widget _buildOfficerAttendancePrompt(
-    BuildContext context,
-    StudentProfile student,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF4C1D95), const Color(0xFF58138A)]
-              : [const Color(0xFF58138A), const Color(0xFF7C3AED)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF58138A)
-                .withValues(alpha: isDark ? 0.35 : 0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(11),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.qr_code_2_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  runSpacing: 2,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6.5,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFBBF24),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: const Text(
-                        'KETUA KELAS',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const Text(
-                      'Sesi Presensi',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Aktifkan QR Code & PIN perkuliahan hari ini',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          ScaleButton(
-            scaleDown: 0.92,
-            onTap: () => widget.onNavigateTab(5), // Presensi Tab
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.qr_code_2_rounded,
-                    size: 14,
-                    color: Color(0xFF58138A),
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Buka Sesi',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF58138A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ==========================================
   // 5. SEGMENTED STUDIO CONTROL DOCK (NEWSROOM & BROADCAST)
@@ -1421,20 +1575,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'KONSOL MODUL ILKOM',
+                              'Layanan Akademik',
                               style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
+                                fontSize: 13.0,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
                                 color: textMain,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              'Layanan & modul perkuliahan',
+                              'Akses cepat modul perkuliahan',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 10.5,
                                 color: textSub,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1492,20 +1646,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           ),
           const SizedBox(height: 12),
 
-          // CHANNEL A // PRODUKSI & KULIAH
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(
-              'CHANNEL A // PRODUKSI & KULIAH',
-              style: TextStyle(
-                fontSize: 9.0,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-                color: textSub,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
+          // 8 Layanan dalam Grid Bersih Tanpa Sekat
           Row(
             children: services
                 .take(4)
@@ -1520,28 +1661,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     ))
                 .toList(),
           ),
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: borderColor.withValues(alpha: 0.6),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-          ),
-          const SizedBox(height: 8),
-
-          // CHANNEL B // REDAKSI & BIRO KELAS
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(
-              'CHANNEL B // REDAKSI & BIRO KELAS',
-              style: TextStyle(
-                fontSize: 9.0,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-                color: textSub,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Row(
             children: services
                 .skip(4)
@@ -1732,31 +1852,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       children: [
         // Header Bar: Title, Badge, & Lihat Semua
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Row(
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  Flexible(
-                    child: Text(
-                      isShowingUpcoming
-                          ? 'Jadwal Kuliah Mendatang'
-                          : 'Aktivitas Kuliah Hari Ini',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: textMain,
-                        letterSpacing: -0.3,
-                      ),
+                  Text(
+                    isShowingUpcoming
+                        ? 'Jadwal Mendatang'
+                        : 'Jadwal Kuliah Hari Ini',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: textMain,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 3,
+                      vertical: 2.5,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
@@ -1773,7 +1890,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                     child: Text(
                       currentDayLabel,
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                         color: isDark
                             ? const Color(0xFFA78BFA)
@@ -1795,9 +1912,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Lihat Semua',
+                      'Semua',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primary,
                       ),
@@ -1885,7 +2002,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
 
         // Horizontal Carousel Jadwal Kuliah Real-Time
         SizedBox(
-          height: 142,
+          height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
           child: displayCourses.length == 1
               ? SizedBox(
                   width: double.infinity,
@@ -2415,7 +2532,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
 
     return Container(
       width: 280,
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
@@ -2432,8 +2549,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF2B2144) : const Color(0xFFEDE9FE),
               borderRadius: BorderRadius.circular(14),
@@ -2441,7 +2558,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             child: const Icon(
               Icons.beach_access_rounded,
               color: AppColors.primary,
-              size: 24,
+              size: 22,
             ),
           ),
           const SizedBox(width: 12),
@@ -2449,20 +2566,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Hari Bebas Kuliah',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    fontSize: 13.5,
+                    fontSize: 13.0,
                     color: textMain,
                     letterSpacing: -0.2,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   'Tidak ada jadwal aktif. Waktunya istirahat atau cicil tugas!',
-                  style: TextStyle(fontSize: 11, color: textSub, height: 1.25),
+                  style: TextStyle(fontSize: 10.5, color: textSub, height: 1.2),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
