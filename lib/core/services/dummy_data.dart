@@ -164,6 +164,7 @@ class MasterData {
       role: 'MAHASISWA',
       jabatan: 'Mahasiswa',
       instagram: '@happy.helen',
+      agama: 'Islam',
     ),
     StudentProfile(
       id: 's2',
@@ -174,6 +175,7 @@ class MasterData {
       role: 'MAHASISWA',
       jabatan: 'Mahasiswa',
       instagram: '@stelaglori',
+      agama: 'Kristen Protestan',
     ),
     StudentProfile(
       id: 's3',

@@ -6,12 +6,14 @@ class ProfileAcademicSection extends StatelessWidget {
   final StudentProfile student;
   final bool isDark;
   final VoidCallback onEditPeminatan;
+  final VoidCallback onEditAgama;
 
   const ProfileAcademicSection({
     super.key,
     required this.student,
     required this.isDark,
     required this.onEditPeminatan,
+    required this.onEditAgama,
   });
 
   @override
@@ -125,6 +127,42 @@ class ProfileAcademicSection extends StatelessWidget {
             textPrimary: textPrimary,
             textSecondary: textSecondary,
             highlightColor: const Color(0xFF6D28D9),
+          ),
+          Divider(height: 22, color: dividerColor),
+
+          _buildRow(
+            icon: Icons.auto_stories_rounded,
+            label: 'Agama / Preferensi MK Agama',
+            value: student.effectiveAgama,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            highlightColor: const Color(0xFF059669),
+            trailing: ScaleButton(
+              onTap: onEditAgama,
+              scaleDown: 0.94,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.edit_rounded, color: Color(0xFF059669), size: 13),
+                    SizedBox(width: 4),
+                    Text(
+                      'Ubah',
+                      style: TextStyle(
+                        color: Color(0xFF059669),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
           Divider(height: 22, color: dividerColor),
 

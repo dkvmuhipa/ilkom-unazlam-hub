@@ -408,6 +408,7 @@ class StudentProfile {
   String? linkedin;
   String? avatarUrl;
   String? bio;
+  String? agama;
 
   StudentProfile({
     required this.id,
@@ -426,6 +427,7 @@ class StudentProfile {
     this.linkedin,
     this.avatarUrl,
     this.bio,
+    this.agama,
   });
 
   StudentProfile copyWith({
@@ -445,6 +447,7 @@ class StudentProfile {
     String? linkedin,
     String? avatarUrl,
     String? bio,
+    String? agama,
   }) {
     return StudentProfile(
       id: id ?? this.id,
@@ -463,8 +466,13 @@ class StudentProfile {
       linkedin: linkedin ?? this.linkedin,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,
+      agama: agama ?? this.agama,
     );
   }
+
+  /// Preferensi agama mahasiswa, default ke 'Islam' jika belum ditentukan
+  String get effectiveAgama =>
+      (agama != null && agama!.trim().isNotEmpty) ? agama!.trim() : 'Islam';
 
   // Role Checks
   bool get isAdmin => role.toUpperCase() == 'ADMIN';

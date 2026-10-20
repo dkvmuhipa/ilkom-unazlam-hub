@@ -411,6 +411,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       ), // 0: Beranda
       ScheduleScreen(
         key: ValueKey('schedule_${currentUser.nim}'),
+        student: currentUser,
         canManage: currentUser.isKetuaKelas || currentUser.isAdmin,
         onBack: _goBack,
       ), // 1: Jadwal

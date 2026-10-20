@@ -1010,6 +1010,7 @@ class SupabaseRepository {
                   linkedin: row['linkedin']?.toString(),
                   avatarUrl: row['avatar_url']?.toString(),
                   bio: row['bio']?.toString(),
+                  agama: row['agama']?.toString(),
                 );
               },
             )
@@ -1052,6 +1053,7 @@ class SupabaseRepository {
                     linkedin: row['linkedin']?.toString(),
                     avatarUrl: row['avatar_url']?.toString(),
                     bio: row['bio']?.toString(),
+                    agama: row['agama']?.toString(),
                   );
                 },
               )
@@ -1088,6 +1090,7 @@ class SupabaseRepository {
                       instagram: row['instagram']?.toString(),
                       linkedin: row['linkedin']?.toString(),
                       avatarUrl: row['avatar_url']?.toString(),
+                      agama: row['agama']?.toString(),
                     );
                   },
                 )

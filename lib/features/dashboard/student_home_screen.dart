@@ -82,6 +82,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     NotificationState.revision.addListener(_refreshUnreadBadge);
   }
 
+  @override
+  void didUpdateWidget(covariant StudentHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.student.nim != widget.student.nim ||
+        oldWidget.student.agama != widget.student.agama) {
+      _loadDashboard();
+    }
+  }
+
   void _initRealtimeSubscriptions() {
     _overridesChannel = SupabaseRepository.subscribeToCourseOverrides(() {
       if (mounted) _loadDashboard(silent: true);
@@ -154,7 +163,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       } catch (e) {
         debugPrint('Info: Gagal sinkronisasi sesi presensi aktif: $e');
       }
-      final snapshot = await StudentDashboardService.load(widget.student.nim);
+      final snapshot = await StudentDashboardService.load(
+        widget.student.nim,
+        studentAgama: widget.student.agama,
+      );
       if (!mounted) return;
 
       // Ambil id notifikasi yang sudah dibaca / di-dismiss oleh mahasiswa

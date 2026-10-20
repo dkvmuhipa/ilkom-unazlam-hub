@@ -16,8 +16,14 @@ import 'widgets/schedule_hero_spotlight.dart';
 class ScheduleScreen extends StatefulWidget {
   final bool canManage;
   final VoidCallback? onBack;
+  final StudentProfile? student;
 
-  const ScheduleScreen({super.key, this.canManage = true, this.onBack});
+  const ScheduleScreen({
+    super.key,
+    this.canManage = true,
+    this.onBack,
+    this.student,
+  });
 
   static void showCourseDetail(
     BuildContext context,
@@ -49,6 +55,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     'Semua',
   ];
   List<Course> _courses = [];
+  String _selectedReligionFilter = 'Sesuai Agama';
   bool _isLoading = false;
   String? _loadError;
   bool _isSearching = false;
@@ -739,11 +746,300 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  void _showReligionFilterSheet(String studentAgama) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final options = [
+          {
+            'key': 'Sesuai Agama',
+            'label': 'Sesuai Agama ($studentAgama)',
+            'desc': 'Menampilkan mata kuliah agama sesuai profil Anda (Rekomendasi)',
+            'icon': Icons.verified_user_rounded,
+          },
+          {
+            'key': 'Semua Agama',
+            'label': 'Semua Agama',
+            'desc': 'Menampilkan seluruh opsi mata kuliah agama paralel',
+            'icon': Icons.public_rounded,
+          },
+          {
+            'key': 'Islam',
+            'label': 'Pendidikan Agama Islam',
+            'desc': 'Kode: 3 PK 101A • Ruang A1',
+            'icon': Icons.mosque_rounded,
+          },
+          {
+            'key': 'Kristen',
+            'label': 'Pendidikan Agama Kristen',
+            'desc': 'Kode: 3 PK 101B • Ruang B1',
+            'icon': Icons.church_rounded,
+          },
+          {
+            'key': 'Katolik',
+            'label': 'Pendidikan Agama Katolik',
+            'desc': 'Mata kuliah Pendidikan Agama Katolik',
+            'icon': Icons.church_rounded,
+          },
+          {
+            'key': 'Hindu',
+            'label': 'Pendidikan Agama Hindu',
+            'desc': 'Mata kuliah Pendidikan Agama Hindu',
+            'icon': Icons.temple_hindu_rounded,
+          },
+          {
+            'key': 'Buddha',
+            'label': 'Pendidikan Agama Buddha',
+            'desc': 'Mata kuliah Pendidikan Agama Buddha',
+            'icon': Icons.temple_buddhist_rounded,
+          },
+          {
+            'key': 'Konghucu',
+            'label': 'Pendidikan Agama Konghucu',
+            'desc': 'Mata kuliah Pendidikan Agama Konghucu',
+            'icon': Icons.account_balance_rounded,
+          },
+        ];
+
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.tune_rounded, color: Color(0xFF6D28D9), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Filter Mata Kuliah Agama',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          'Pilih tampilan mata kuliah agama pada jadwal',
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...options.map((opt) {
+                final key = opt['key'] as String;
+                final label = opt['label'] as String;
+                final desc = opt['desc'] as String;
+                final icon = opt['icon'] as IconData;
+                final isSelected = _selectedReligionFilter == key;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedReligionFilter = key);
+                      Navigator.pop(ctx);
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFF6D28D9).withValues(alpha: 0.08)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF6D28D9) : const Color(0xFFE2E8F0),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            icon,
+                            size: 18,
+                            color: isSelected ? const Color(0xFF6D28D9) : const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                    color: isSelected ? const Color(0xFF6D28D9) : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 1.5),
+                                Text(
+                                  desc,
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 18,
+                              color: Color(0xFF6D28D9),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReligionFilterPill(String studentAgama) {
+    final String activeLabel = _selectedReligionFilter == 'Sesuai Agama'
+        ? 'Sesuai Agama ($studentAgama)'
+        : (_selectedReligionFilter == 'Semua Agama'
+            ? 'Semua Pilihan Agama'
+            : 'Agama: $_selectedReligionFilter');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6D28D9).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.auto_stories_rounded,
+              size: 13,
+              color: Color(0xFF6D28D9),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'MATA KULIAH AGAMA',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                Text(
+                  activeLabel,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF6D28D9),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          ScaleButton(
+            onTap: () => _showReligionFilterSheet(studentAgama),
+            scaleDown: 0.94,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.tune_rounded, size: 12, color: Color(0xFF475569)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ubah',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final studentAgama = widget.student?.effectiveAgama ?? 'Islam';
+    final hasReligionCourses = _courses.any(CourseScheduleService.isReligionCourse);
+
+    List<Course> religionFilteredCourses = _courses;
+    if (_selectedReligionFilter == 'Sesuai Agama') {
+      religionFilteredCourses = CourseScheduleService.filterCoursesByReligion(
+        _courses,
+        studentAgama,
+      );
+    } else if (_selectedReligionFilter != 'Semua Agama') {
+      religionFilteredCourses = CourseScheduleService.filterCoursesByReligion(
+        _courses,
+        _selectedReligionFilter,
+      );
+    }
+
     var filteredCourses = _selectedDay == 'Semua'
-        ? _courses
-        : _courses
+        ? religionFilteredCourses
+        : religionFilteredCourses
               .where(
                 (c) =>
                     c.hari.trim().toLowerCase() ==
@@ -928,7 +1224,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     // Spotlight Hero Card (Ongoing Live / Upcoming Countdown)
                     if (_courses.isNotEmpty && _searchQuery.isEmpty) ...[
                       ScheduleHeroSpotlight(
-                        allCourses: _courses,
+                        allCourses: religionFilteredCourses,
                         onCourseTap: _showCourseDetailModal,
                       ),
                       const SizedBox(height: 16),
@@ -938,11 +1234,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ScheduleDaySelector(
                       selectedDay: _selectedDay,
                       days: _days,
-                      allCourses: _courses,
+                      allCourses: religionFilteredCourses,
                       onDaySelected: (day) =>
                           setState(() => _selectedDay = day),
                     ),
                     const SizedBox(height: 14),
+
+                    // Filter Agama Pill (jika terdapat mata kuliah agama)
+                    if (hasReligionCourses && _searchQuery.isEmpty) ...[
+                      _buildReligionFilterPill(studentAgama),
+                      const SizedBox(height: 12),
+                    ],
 
                     // Day Summary Header Bar
                     Container(
@@ -968,7 +1270,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               _searchQuery.isNotEmpty
                                   ? 'Hasil pencarian: ${filteredCourses.length} mata kuliah'
                                   : (_selectedDay == 'Semua'
-                                        ? 'Total ${_courses.length} mata kuliah terdaftar ($totalSks SKS)'
+                                        ? 'Total ${filteredCourses.length} mata kuliah terdaftar ($totalSks SKS)'
                                         : '$_selectedDay • ${filteredCourses.length} mata kuliah ($totalSks SKS)'),
                               style: const TextStyle(
                                 fontSize: 11.5,

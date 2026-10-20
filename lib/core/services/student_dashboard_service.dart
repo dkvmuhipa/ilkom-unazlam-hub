@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/models.dart';
 import 'course_schedule_service.dart';
@@ -44,7 +46,10 @@ class StudentDashboardSnapshot {
 
 /// Loads dashboard data from the signed-in student's Supabase project.
 class StudentDashboardService {
-  static Future<StudentDashboardSnapshot> load(String studentNim) async {
+  static Future<StudentDashboardSnapshot> load(
+    String studentNim, {
+    String? studentAgama,
+  }) async {
     final client = SupabaseService.client;
     if (client == null) {
       throw Exception('Koneksi Supabase belum dikonfigurasi.');
@@ -169,8 +174,27 @@ class StudentDashboardService {
       debugPrint('Error loading courses in StudentDashboardService: $e');
     }
 
-    final todayCourses = CourseScheduleService.getTodayCourses(loadedCourses, now);
-    final nextDayInfo = CourseScheduleService.getNextActiveDayInfo(loadedCourses, now);
+    // Tentukan preferensi agama mahasiswa untuk menyaring mata kuliah agama paralel
+    String? effectiveAgama = studentAgama;
+    if (effectiveAgama == null || effectiveAgama.isEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final savedStr = prefs.getString('custom_profile_$studentNim');
+        if (savedStr != null) {
+          final data = jsonDecode(savedStr);
+          effectiveAgama = data['agama']?.toString();
+        }
+      } catch (_) {}
+    }
+    effectiveAgama ??= 'Islam';
+
+    final filteredCourses = CourseScheduleService.filterCoursesByReligion(
+      loadedCourses,
+      effectiveAgama,
+    );
+
+    final todayCourses = CourseScheduleService.getTodayCourses(filteredCourses, now);
+    final nextDayInfo = CourseScheduleService.getNextActiveDayInfo(filteredCourses, now);
     final hasRemaining = CourseScheduleService.hasRemainingCoursesToday(todayCourses, now);
     final todayHasClasses = todayCourses.isNotEmpty;
     final todayFinished = todayHasClasses && !hasRemaining;
@@ -206,7 +230,7 @@ class StudentDashboardService {
       daysUntilNext: nextDayInfo?.daysAhead ?? 0,
       todayHasClasses: todayHasClasses,
       todayClassesFinished: todayFinished,
-      allCourses: loadedCourses,
+      allCourses: filteredCourses,
       isKasLunas: isKasLunas,
       kasNominal: kasNominal,
       currentPeriodLabel: periodLabel,

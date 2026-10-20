@@ -367,6 +367,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditAgamaModal(BuildContext context, StudentProfile student, bool isDark) {
+    EditProfileModal.showAgamaPicker(
+      context,
+      student: student,
+      isDark: isDark,
+      onSaved: (selectedAgama) {
+        if (mounted) {
+          setState(() {
+            student.agama = selectedAgama;
+          });
+        }
+        widget.onProfileUpdated?.call(student);
+      },
+    );
+  }
+
   void _showEditContactModal(BuildContext context, StudentProfile student, bool isDark) {
     EditProfileModal.showContactEditor(
       context,
@@ -554,6 +570,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 student: student,
                 isDark: isDark,
                 onEditPeminatan: () => _showEditPeminatanModal(context, student, isDark),
+                onEditAgama: () => _showEditAgamaModal(context, student, isDark),
               ),
             ),
             const SizedBox(height: 18),

@@ -126,4 +126,101 @@ class CourseScheduleService {
         return 99;
     }
   }
+
+  /// Daftar nama agama resmi yang didukung sistem akademik
+  static const List<String> supportedReligions = [
+    'Islam',
+    'Kristen Protestan',
+    'Kristen Katolik',
+    'Hindu',
+    'Buddha',
+    'Konghucu',
+  ];
+
+  /// Mengecek apakah suatu mata kuliah adalah mata kuliah peminatan agama
+  static bool isReligionCourse(Course course) {
+    final name = course.nama.toLowerCase();
+    final code = course.kode.toUpperCase();
+    if (name.contains('pendidikan agama') ||
+        name.contains('agama islam') ||
+        name.contains('agama kristen') ||
+        name.contains('agama katolik') ||
+        name.contains('agama hindu') ||
+        name.contains('agama buddha') ||
+        name.contains('agama budha') ||
+        name.contains('agama konghucu') ||
+        name.contains('agama khonghucu')) {
+      return true;
+    }
+    if (code.startsWith('3 PK 101') || code.startsWith('3PK101')) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Mendeteksi kategori agama dari mata kuliah (Islam, Kristen, Katolik, Hindu, Buddha, Konghucu)
+  static String? detectCourseReligion(Course course) {
+    final name = course.nama.toLowerCase();
+    final code = course.kode.toUpperCase();
+
+    if (name.contains('islam') || code.contains('101A')) {
+      return 'Islam';
+    }
+    if (name.contains('kristen') || name.contains('protestan') || code.contains('101B')) {
+      return 'Kristen';
+    }
+    if (name.contains('katolik') || code.contains('101C')) {
+      return 'Katolik';
+    }
+    if (name.contains('hindu') || code.contains('101D')) {
+      return 'Hindu';
+    }
+    if (name.contains('buddha') || name.contains('budha') || code.contains('101E')) {
+      return 'Buddha';
+    }
+    if (name.contains('konghucu') || name.contains('khonghucu') || code.contains('101F')) {
+      return 'Konghucu';
+    }
+    return null;
+  }
+
+  /// Memvalidasi apakah mata kuliah cocok untuk agama mahasiswa.
+  /// Jika mata kuliah bukan mata kuliah agama -> selalu true.
+  /// Jika preferensi agama belum ditentukan -> menggunakan default 'Islam'.
+  static bool matchesStudentReligion(Course course, String? studentReligion) {
+    if (!isReligionCourse(course)) return true;
+    final courseReligion = detectCourseReligion(course);
+    if (courseReligion == null) return true;
+
+    final studentRel = (studentReligion != null && studentReligion.trim().isNotEmpty)
+        ? studentReligion.trim().toLowerCase()
+        : 'islam';
+
+    final cRel = courseReligion.toLowerCase();
+
+    if (cRel == 'islam') {
+      return studentRel.contains('islam');
+    }
+    if (cRel == 'kristen') {
+      return studentRel.contains('kristen') || studentRel.contains('protestan');
+    }
+    if (cRel == 'katolik') {
+      return studentRel.contains('katolik');
+    }
+    if (cRel == 'hindu') {
+      return studentRel.contains('hindu');
+    }
+    if (cRel == 'buddha') {
+      return studentRel.contains('buddh') || studentRel.contains('budh');
+    }
+    if (cRel == 'konghucu') {
+      return studentRel.contains('kong');
+    }
+    return true;
+  }
+
+  /// Memfilter daftar mata kuliah berdasarkan preferensi agama mahasiswa
+  static List<Course> filterCoursesByReligion(List<Course> courses, String? studentReligion) {
+    return courses.where((c) => matchesStudentReligion(c, studentReligion)).toList();
+  }
 }

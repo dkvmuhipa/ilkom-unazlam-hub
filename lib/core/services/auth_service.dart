@@ -584,6 +584,7 @@ class AuthService {
       linkedin: row['linkedin']?.toString(),
       avatarUrl: row['avatar_url']?.toString(),
       bio: row['bio']?.toString(),
+      agama: row['agama']?.toString(),
     );
     if (profile.nim.isEmpty || profile.nama.isEmpty || !profile.isAktif) {
       throw const AuthServiceException(
@@ -619,7 +620,7 @@ class AuthService {
     }
   }
 
-  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email, Bio)
+  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email, Bio, Agama)
   static Future<void> updateProfileDetails({
     required String nim,
     String? noWa,
@@ -628,6 +629,7 @@ class AuthService {
     String? linkedin,
     String? email,
     String? bio,
+    String? agama,
   }) async {
     // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
     try {
@@ -640,6 +642,7 @@ class AuthService {
       if (linkedin != null) data['linkedin'] = linkedin;
       if (email != null) data['email'] = email;
       if (bio != null) data['bio'] = bio;
+      if (agama != null) data['agama'] = agama;
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
@@ -655,20 +658,21 @@ class AuthService {
           if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
         };
 
-        // Coba sertakan bio terlebih dahulu
+        // Coba sertakan bio dan agama
         bool synced = false;
-        if (bio != null) {
+        if (bio != null || agama != null) {
           try {
-            final updatesWithBio = Map<String, dynamic>.from(baseUpdates);
-            updatesWithBio['bio'] = bio.trim();
-            await client.from('students').update(updatesWithBio).eq('nim', nim);
+            final updatesExtended = Map<String, dynamic>.from(baseUpdates);
+            if (bio != null) updatesExtended['bio'] = bio.trim();
+            if (agama != null) updatesExtended['agama'] = agama.trim();
+            await client.from('students').update(updatesExtended).eq('nim', nim);
             synced = true;
           } catch (e) {
-            debugPrint('Info: Sinkronisasi dengan bio belum didukung schema database: $e');
+            debugPrint('Info: Sinkronisasi dengan bio/agama belum didukung schema database: $e');
           }
         }
 
-        // Jika belum tersinkron atau bio null, kirim baseUpdates
+        // Jika belum tersinkron atau bio/agama null, kirim baseUpdates
         if (!synced && baseUpdates.isNotEmpty) {
           await client.from('students').update(baseUpdates).eq('nim', nim);
         }
@@ -693,6 +697,7 @@ class AuthService {
         if (data['linkedin'] != null) profile.linkedin = data['linkedin'].toString();
         if (data['email'] != null) profile.email = data['email'].toString();
         if (data['bio'] != null) profile.bio = data['bio'].toString();
+        if (data['agama'] != null) profile.agama = data['agama'].toString();
       }
     } catch (_) {}
   }

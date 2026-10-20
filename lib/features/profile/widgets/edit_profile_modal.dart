@@ -36,6 +36,45 @@ class EditProfileModal {
     },
   ];
 
+  static const List<Map<String, dynamic>> agamaList = [
+    {
+      'title': 'Islam',
+      'icon': Icons.mosque_rounded,
+      'color': Color(0xFF059669),
+      'desc': 'Pendidikan Agama Islam (Kode: 3 PK 101A • Ruang A1)',
+    },
+    {
+      'title': 'Kristen Protestan',
+      'icon': Icons.church_rounded,
+      'color': Color(0xFF2563EB),
+      'desc': 'Pendidikan Agama Kristen (Kode: 3 PK 101B • Ruang B1)',
+    },
+    {
+      'title': 'Kristen Katolik',
+      'icon': Icons.church_rounded,
+      'color': Color(0xFF7C3AED),
+      'desc': 'Pendidikan Agama Katolik (Kelas paralel sesuai ketentuan prodi)',
+    },
+    {
+      'title': 'Hindu',
+      'icon': Icons.temple_hindu_rounded,
+      'color': Color(0xFFD97706),
+      'desc': 'Pendidikan Agama Hindu (Kelas paralel sesuai ketentuan prodi)',
+    },
+    {
+      'title': 'Buddha',
+      'icon': Icons.temple_buddhist_rounded,
+      'color': Color(0xFFEA580C),
+      'desc': 'Pendidikan Agama Buddha (Kelas paralel sesuai ketentuan prodi)',
+    },
+    {
+      'title': 'Konghucu',
+      'icon': Icons.account_balance_rounded,
+      'color': Color(0xFFDC2626),
+      'desc': 'Pendidikan Agama Konghucu (Kelas paralel sesuai ketentuan prodi)',
+    },
+  ];
+
   /// 1. Modal khusus pemilihan Konsentrasi / Peminatan Studi
   static void showPeminatanPicker(
     BuildContext context, {
@@ -309,6 +348,279 @@ class EditProfileModal {
                           color: textSecondary,
                           fontWeight: FontWeight.w700,
                         ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 1b. Modal khusus pemilihan Agama & preferensi mata kuliah agama
+  static void showAgamaPicker(
+    BuildContext context, {
+    required StudentProfile student,
+    required bool isDark,
+    required void Function(String selectedAgama) onSaved,
+  }) {
+    String currentSelection = student.effectiveAgama;
+    if (!agamaList.any((a) => a['title'] == currentSelection)) {
+      final matched = agamaList.firstWhere(
+        (a) => (a['title'] as String).toLowerCase().contains(currentSelection.toLowerCase()),
+        orElse: () => agamaList.first,
+      );
+      currentSelection = matched['title'] as String;
+    }
+
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+          final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+          final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
+
+          return Container(
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(22, 16, 22, 24 + bottomInset),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF059669).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.auto_stories_rounded,
+                          color: Color(0xFF059669),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pilih Agama & Mata Kuliah',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w800,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Jadwal perkuliahan akan otomatis menyesuaikan',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(modalCtx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  ...agamaList.map((item) {
+                    final title = item['title'] as String;
+                    final desc = item['desc'] as String;
+                    final icon = item['icon'] as IconData;
+                    final color = item['color'] as Color;
+                    final isSelected = currentSelection == title;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: ScaleButton(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setModalState(() => currentSelection = title);
+                        },
+                        scaleDown: 0.98,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? color.withValues(alpha: isDark ? 0.2 : 0.08)
+                                : (isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC)),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected
+                                  ? color
+                                  : (isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0)),
+                              width: isSelected ? 1.8 : 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: isSelected ? 0.2 : 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(icon, color: color, size: 20),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected ? color : textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      desc,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: textSecondary,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Icon(
+                                isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+                                color: isSelected ? color : (isDark ? Colors.white30 : Colors.grey.shade400),
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 16),
+
+                  ScaleButton(
+                    onTap: isSaving
+                        ? null
+                        : () async {
+                            setModalState(() => isSaving = true);
+                            final messenger = ScaffoldMessenger.of(context);
+                            final nav = Navigator.of(modalCtx);
+
+                            try {
+                              await AuthService.updateProfileDetails(
+                                nim: student.nim,
+                                agama: currentSelection,
+                              );
+
+                              onSaved(currentSelection);
+                              HapticFeedback.heavyImpact();
+                              nav.pop();
+
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Agama berhasil diatur ke "$currentSelection"! Jadwal telah diperbarui. ✨',
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: const Color(0xFF10B981),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            } catch (e) {
+                              setModalState(() => isSaving = false);
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal menyimpan preferensi agama: $e'),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                ),
+                              );
+                            }
+                          },
+                    scaleDown: 0.96,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF059669), Color(0xFF0D9488)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF059669).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Simpan Preferensi Agama',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                       ),
                     ),
                   ),
