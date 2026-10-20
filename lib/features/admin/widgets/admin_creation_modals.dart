@@ -216,37 +216,49 @@ class AdminCreationModals {
             const SizedBox(height: 6),
             const Text('Pilih laporan yang ingin diunduh dalam format berkas CSV/Excel:', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
             const SizedBox(height: 16),
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
-              leading: const Icon(Icons.fact_check_rounded, color: Color(0xFF10B981)),
-              title: const Text('Rekapitulasi Presensi Perkuliahan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-              subtitle: const Text('Riwayat kehadiran, izin, sakit per mahasiswa', style: TextStyle(fontSize: 11)),
-              onTap: () {
-                Navigator.pop(ctx);
-                onNavigate('laporan');
-              },
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+                leading: const Icon(Icons.fact_check_rounded, color: Color(0xFF10B981)),
+                title: const Text('Rekapitulasi Presensi Perkuliahan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                subtitle: const Text('Riwayat kehadiran, izin, sakit per mahasiswa', style: TextStyle(fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onNavigate('laporan');
+                },
+              ),
             ),
             const SizedBox(height: 10),
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
-              leading: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
-              title: const Text('Laporan Kas & Keuangan Kelas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-              subtitle: const Text('Seluruh arus kas masuk, pengeluaran & saldo', style: TextStyle(fontSize: 11)),
-              onTap: () {
-                Navigator.pop(ctx);
-                onNavigate('laporan');
-              },
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+                leading: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
+                title: const Text('Laporan Kas & Keuangan Kelas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                subtitle: const Text('Seluruh arus kas masuk, pengeluaran & saldo', style: TextStyle(fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onNavigate('laporan');
+                },
+              ),
             ),
             const SizedBox(height: 10),
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
-              leading: const Icon(Icons.people_alt_rounded, color: Color(0xFF0EA5E9)),
-              title: const Text('Data Seluruh Akun Mahasiswa', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-              subtitle: const Text('NIM, nama lengkap, kontak & status aktif', style: TextStyle(fontSize: 11)),
-              onTap: () {
-                Navigator.pop(ctx);
-                onNavigate('manajemen_akun');
-              },
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE5E7EB))),
+                leading: const Icon(Icons.people_alt_rounded, color: Color(0xFF0EA5E9)),
+                title: const Text('Data Seluruh Akun Mahasiswa', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                subtitle: const Text('NIM, nama lengkap, kontak & status aktif', style: TextStyle(fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onNavigate('manajemen_akun');
+                },
+              ),
             ),
           ],
         ),

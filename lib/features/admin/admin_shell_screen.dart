@@ -376,6 +376,26 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   children: [
                     if (isWide)
                       NavigationRail(
+                        backgroundColor: Colors.white,
+                        indicatorColor: AppColors.primaryContainer,
+                        selectedIconTheme: const IconThemeData(
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                        unselectedIconTheme: const IconThemeData(
+                          color: Color(0xFF64748B),
+                          size: 20,
+                        ),
+                        selectedLabelTextStyle: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        unselectedLabelTextStyle: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                         selectedIndex: _navBarIndex,
                         onDestinationSelected: _handleBottomNav,
                         labelType: NavigationRailLabelType.all,
@@ -420,10 +440,25 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   }
 
   Widget _buildBottomNav() {
-    return NavigationBar(
-      selectedIndex: _navBarIndex,
-      onDestinationSelected: _handleBottomNav,
-      destinations: const [
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: NavigationBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.primaryContainer,
+        selectedIndex: _navBarIndex,
+        onDestinationSelected: _handleBottomNav,
+        destinations: const [
         NavigationDestination(
           icon: Icon(Icons.dashboard_outlined),
           selectedIcon: Icon(Icons.dashboard_rounded),
@@ -450,7 +485,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           label: 'Pengaturan',
         ),
       ],
-    );
+    ),);
   }
 
   Widget _buildCurrentView() {
@@ -655,13 +690,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: 9,
+                      vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppColors.primaryContainer,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: AppColors.primaryBorder),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -683,7 +718,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF334155),
+                              color: AppColors.primaryDark,
                               letterSpacing: 0.6,
                             ),
                           ),
@@ -829,20 +864,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Banner Integrasi FCM Push Notification (Modern Dark Console with Indigo Gradient)
+          // Banner Integrasi FCM Push Notification (UNAZLAM Royal Purple & Amber Glow)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+                colors: [Color(0xFF58138A), Color(0xFF6D28D9)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF312E81)),
+              border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4F46E5).withValues(alpha: 0.18),
+                  color: const Color(0xFF6D28D9).withValues(alpha: 0.22),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
@@ -855,15 +890,15 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF312E81).withValues(alpha: 0.6),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                          color: const Color(0xFFFDE68A).withValues(alpha: 0.5),
                         ),
                       ),
                       child: const Icon(
                         Icons.cell_tower_rounded,
-                        color: Color(0xFFA5B4FC),
+                        color: Color(0xFFFDE68A),
                         size: 19,
                       ),
                     ),
@@ -905,7 +940,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF94A3B8),
+                              color: Color(0xFFDDD6FE),
                               height: 1.3,
                             ),
                           ),

@@ -410,12 +410,12 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
         constraints: BoxConstraints(maxHeight: screenSize.height * (widget.fullPage ? 1 : 0.88)),
         child: Column(
           children: [
-            // 1. Header Konsol Modern (Dark Indigo)
+            // 1. Header Konsol Modern (UNAZLAM Royal Purple & Amber Gold)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
+                  colors: [Color(0xFF58138A), Color(0xFF6D28D9)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -426,15 +426,15 @@ class _AdminBroadcastHubModalState extends State<AdminBroadcastHubModal>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                        color: const Color(0xFFFDE68A).withValues(alpha: 0.5),
                       ),
                     ),
                     child: const Icon(
                       Icons.cell_tower_rounded,
-                      color: Color(0xFFA5B4FC),
+                      color: Color(0xFFFDE68A),
                       size: 22,
                     ),
                   ),

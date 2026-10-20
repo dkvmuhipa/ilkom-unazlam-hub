@@ -63,22 +63,22 @@ class AdminReportsView extends StatelessWidget {
               return ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 children: [
-                  // Banner Matriks Presensi 16 Sesi & BAP (Feature Highlight)
+                  // Banner Matriks Presensi 16 Sesi & BAP (Feature Highlight - UNAZLAM Brand)
                   Container(
                     margin: const EdgeInsets.only(bottom: 14),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        colors: [Color(0xFF58138A), Color(0xFF6D28D9)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFF334155)),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.15),
-                          blurRadius: 10,
+                          color: const Color(0xFF6D28D9).withValues(alpha: 0.2),
+                          blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -88,11 +88,11 @@ class AdminReportsView extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                            border: Border.all(color: const Color(0xFFFDE68A).withValues(alpha: 0.5)),
                           ),
-                          child: const Icon(Icons.table_chart_rounded, color: Color(0xFF34D399), size: 22),
+                          child: const Icon(Icons.table_chart_rounded, color: Color(0xFFFDE68A), size: 22),
                         ),
                         const SizedBox(width: 14),
                         const Expanded(
@@ -113,7 +113,7 @@ class AdminReportsView extends StatelessWidget {
                                 'Pantau kehadiran P1 - P16, kalkulasi batas kelayakan UAS 75%, dan cetak Berita Acara.',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Color(0xFF94A3B8),
+                                  color: Color(0xFFDDD6FE),
                                   height: 1.3,
                                 ),
                               ),
@@ -126,8 +126,8 @@ class AdminReportsView extends StatelessWidget {
                           icon: const Icon(Icons.arrow_forward_rounded, size: 14),
                           label: const Text('Buka Matriks', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFFF59E0B),
+                            foregroundColor: const Color(0xFF1E1B4B),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             minimumSize: Size.zero,
