@@ -565,276 +565,348 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Aurora Executive Command Cockpit
+          // 1. Header: Editorial Document Masthead (Clean White & Slate)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF2E1065), // Royal Purple 950
-                  Color(0xFF1E1B4B), // Midnight Indigo 950
-                  Color(0xFF0F172A), // Slate 900
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
-                width: 1.2,
-              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF58138A).withValues(alpha: 0.28),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.15),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: LayoutBuilder(
-              builder: (context, headerConstraints) {
-                final isNarrow = headerConstraints.maxWidth < 620 * MediaQuery.textScalerOf(context).scale(1);
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LayoutBuilder(
+                  builder: (context, headerConstraints) {
+                    final isNarrow = headerConstraints.maxWidth < 620 * MediaQuery.textScalerOf(context).scale(1);
 
-                final actionTools = Wrap(
-                  alignment: WrapAlignment.end,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    // Tombol Sinkronisasi Data Master
-                    Tooltip(
-                      message: 'Sinkronisasi Seluruh Data',
-                      child: InkWell(
-                        onTap: _isRefreshing ? null : _refreshAllAdminData,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.22),
+                    final actionTools = Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        // Tombol Sinkronisasi Data Master
+                        Tooltip(
+                          message: 'Sinkronisasi Seluruh Data',
+                          child: InkWell(
+                            onTap: _isRefreshing ? null : _refreshAllAdminData,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.all(7.5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: _isRefreshing
+                                  ? const SizedBox(
+                                      width: 17,
+                                      height: 17,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.sync_rounded,
+                                      color: Color(0xFF475569),
+                                      size: 17,
+                                    ),
                             ),
                           ),
-                          child: _isRefreshing
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFFFDE68A),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.sync_rounded,
-                                  color: Colors.white,
-                                  size: 18,
+                        ),
+                        // Mode Mahasiswa Preview Button
+                        InkWell(
+                          onTap: widget.onSwitchToStudentView,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.visibility_outlined,
+                                  size: 14,
+                                  color: Color(0xFF475569),
                                 ),
-                        ),
-                      ),
-                    ),
-                    // Mode Mahasiswa Preview Button
-                    InkWell(
-                      onTap: widget.onSwitchToStudentView,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.22),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Mode Siswa',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: const Row(
+                        // Bell Notification Icon
+                        Tooltip(
+                          message: 'Notifikasi Sistem & Log Aktivitas',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
+                                setState(() {
+                                  _currentView = 'audit_logs';
+                                  _selectedStudent = null;
+                                  _loadAuditLogs();
+                                });
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(7.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    child: const Icon(
+                                      Icons.notifications_none_rounded,
+                                      color: Color(0xFF475569),
+                                      size: 17,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 5,
+                                    top: 5,
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFEF4444),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+
+                    final titleSection = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.visibility_outlined,
-                              size: 14,
-                              color: Color(0xFF38BDF8),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                            SizedBox(width: 5),
+                            const SizedBox(width: 6),
+                            const Flexible(
+                              child: Text(
+                                'PANEL ADMINISTRATOR',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Pusat Kendali Akademik',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Fakultas Ilmu Sosial & Ilmu Politik • UNAZLAM',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Align(alignment: Alignment.centerRight, child: actionTools),
+                          const SizedBox(height: 10),
+                          titleSection,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: titleSection),
+                        const SizedBox(width: 12),
+                        actionTools,
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                const SizedBox(height: 12),
+                // Editorial Meta Strip: TA Aktif + FCM Online + Audit Log Link
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.school_outlined, size: 12, color: Color(0xFF92400E)),
+                            const SizedBox(width: 4),
                             Text(
-                              'Mode Siswa',
-                              style: TextStyle(
-                                fontSize: 11.5,
+                              _academicYears.any((y) => y.isAktif)
+                                  ? 'Tahun Akademik ${_academicYears.firstWhere((y) => y.isAktif).tahun}'
+                                  : 'Tahun Akademik Aktif',
+                              style: const TextStyle(
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: Color(0xFF92400E),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    // Bell Notification Icon
-                    Tooltip(
-                      message: 'Notifikasi Sistem & Log Aktivitas',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () {
-                            setState(() {
-                              _currentView = 'audit_logs';
-                              _selectedStudent = null;
-                              _loadAuditLogs();
-                            });
-                          },
-                          child: Stack(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.22),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.notifications_none_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  width: 7,
-                                  height: 7,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0xFFEF4444),
-                                        blurRadius: 4,
-                                        spreadRadius: 0.5,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-
-                final titleSection = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 3.5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.45),
-                        ),
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF34D399),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0xFF10B981),
-                                  blurRadius: 4,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Flexible(
-                            child: Text(
-                              'KONSOL ADMINISTRATOR • LIVE',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF6EE7B7),
-                                letterSpacing: 0.6,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF059669),
+                                shape: BoxShape.circle,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 5),
+                            Text(
+                              'FCM v1 Terhubung ($_registeredTokensCount Perangkat)',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF065F46),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 7),
-                    const Text(
-                      'Pusat Kendali Eksekutif',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Ilmu Komunikasi • UNAZLAM',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFDDD6FE),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _currentView = 'audit_logs';
+                          _selectedStudent = null;
+                          _loadAuditLogs();
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Log Audit Sistem',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(width: 3),
+                            Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                );
-
-                if (isNarrow) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Align(alignment: Alignment.centerRight, child: actionTools),
-                      const SizedBox(height: 12),
-                      titleSection,
-                    ],
-                  );
-                }
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: titleSection),
-                    const SizedBox(width: 12),
-                    actionTools,
-                  ],
-                );
-              },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
+
+          // 2. Section: Ringkasan Data (Editorial 4-Metric Grid)
+          const Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ringkasan Data',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
 
           // 4 Stat Cards in Responsive Layout (4 cols on wide screens, 2x2 on mobile with uniform heights)
           LayoutBuilder(
@@ -926,120 +998,120 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               );
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
 
-          // Banner Integrasi FCM Push Notification (Electric Cyan & Midnight Slate Telemetry)
+          // 3. Section: Aksi Cepat & Alat Administrasi (Editorial Structured List Card)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            width: double.infinity,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.35)),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(9),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF06B6D4).withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.cell_tower_rounded,
-                    color: Colors.white,
-                    size: 19,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(18, 16, 18, 12),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'Firebase Cloud Messaging (FCM v1)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Aksi Cepat & Alat Administrasi',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: Color(0xFF0F172A),
                                 letterSpacing: -0.2,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$_registeredTokensCount perangkat mahasiswa aktif siap menerima push otomatis.',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF94A3B8),
-                          height: 1.3,
+                            SizedBox(height: 2),
+                            Text(
+                              'Pintasan terstruktur untuk penyiaran informasi dan pengelolaan data',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Text(
-                    'ONLINE',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF34D399),
-                      letterSpacing: 0.5,
-                    ),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                _buildEditorialActionRow(
+                  icon: Icons.campaign_rounded,
+                  iconColor: AppColors.primary,
+                  iconBg: const Color(0xFFF5F3FF),
+                  title: 'Kirim Pengumuman',
+                  subtitle: 'Siarkan pengumuman baru & push notifikasi mahasiswa',
+                  trailingBadge: 'Push FCM',
+                  onTap: _showBroadcastAnnouncementDialog,
+                ),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                _buildEditorialActionRow(
+                  icon: Icons.table_chart_rounded,
+                  iconColor: const Color(0xFF059669),
+                  iconBg: const Color(0xFFECFDF5),
+                  title: 'Matriks BAP Presensi',
+                  subtitle: 'Rekapitulasi 16 pertemuan & status kehadiran',
+                  trailingBadge: '16 Sesi',
+                  onTap: () => _navigateTo('matriks_presensi'),
+                ),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                _buildEditorialActionRow(
+                  icon: Icons.post_add_rounded,
+                  iconColor: const Color(0xFF0284C7),
+                  iconBg: const Color(0xFFF0F9FF),
+                  title: 'Rilis Tugas Baru',
+                  subtitle: 'Buat penugasan baru untuk mata kuliah aktif',
+                  trailingBadge: 'Tugas',
+                  onTap: _showCreateAssignmentDialog,
+                ),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                _buildEditorialActionRow(
+                  icon: Icons.person_add_rounded,
+                  iconColor: const Color(0xFF4F46E5),
+                  iconBg: const Color(0xFFEEF2FF),
+                  title: 'Tambah Mahasiswa',
+                  subtitle: 'Buat akun & kredensial login mahasiswa baru',
+                  trailingBadge: 'Akun Baru',
+                  onTap: _showCreateStudentAccountDialog,
+                ),
+                const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildEditorialToolChip(
+                        icon: Icons.phone_android_rounded,
+                        label: 'WA Gateway',
+                        onTap: _showWahaGatewayDialog,
+                      ),
+                      _buildEditorialToolChip(
+                        icon: Icons.file_upload_outlined,
+                        label: 'Impor CSV',
+                        onTap: () => _showBulkCsvModal(),
+                      ),
+                      _buildEditorialToolChip(
+                        icon: Icons.download_rounded,
+                        label: 'Ekspor Data',
+                        onTap: _showQuickExportModal,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1047,219 +1119,23 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 22),
 
-          // Section "Aksi Cepat Terintegrasi"
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // 4. Section: Direktori Modul
+          const Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 3.5,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+              Expanded(
+                child: Text(
+                  'Direktori Modul',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.2,
                   ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Aksi Cepat Terintegrasi',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  Widget buildToolButton({
-                    required VoidCallback onTap,
-                    required IconData icon,
-                    required String label,
-                    required List<Color> gradientColors,
-                    required Color glowColor,
-                    required Color borderColor,
-                  }) {
-                    return ScaleButton(
-                      onTap: onTap,
-                      scaleDown: 0.96,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gradientColors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: borderColor, width: 1.1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: glowColor.withValues(alpha: 0.22),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(3.5),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(icon, size: 12, color: Colors.white),
-                            ),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final waBtn = buildToolButton(
-                    onTap: _showWahaGatewayDialog,
-                    icon: Icons.phone_android_rounded,
-                    label: 'WA Gateway',
-                    gradientColors: const [Color(0xFF059669), Color(0xFF10B981)],
-                    glowColor: const Color(0xFF10B981),
-                    borderColor: const Color(0xFF34D399).withValues(alpha: 0.45),
-                  );
-
-                  final csvBtn = buildToolButton(
-                    onTap: () => _showBulkCsvModal(),
-                    icon: Icons.file_upload_outlined,
-                    label: 'Import CSV',
-                    gradientColors: const [Color(0xFF4F46E5), Color(0xFF6366F1)],
-                    glowColor: const Color(0xFF6366F1),
-                    borderColor: const Color(0xFF818CF8).withValues(alpha: 0.45),
-                  );
-
-                  final exportBtn = buildToolButton(
-                    onTap: _showQuickExportModal,
-                    icon: Icons.download_rounded,
-                    label: 'Ekspor Data',
-                    gradientColors: const [Color(0xFF0F172A), Color(0xFF334155)],
-                    glowColor: const Color(0xFF0F172A),
-                    borderColor: const Color(0xFF64748B).withValues(alpha: 0.45),
-                  );
-
-                  return Row(
-                    children: [
-                      Expanded(child: waBtn),
-                      const SizedBox(width: 8),
-                      Expanded(child: csvBtn),
-                      const SizedBox(width: 8),
-                      Expanded(child: exportBtn),
-                    ],
-                  );
-                },
+                ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.campaign_rounded,
-                    label: 'Pengumuman',
-                    subtitle: 'Kirim Push',
-                    color: AppColors.primary,
-                    onTap: _showBroadcastAnnouncementDialog,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.table_chart_rounded,
-                    label: 'Matriks BAP',
-                    subtitle: 'Presensi 16 Sesi',
-                    color: const Color(0xFF10B981),
-                    onTap: () => _navigateTo('matriks_presensi'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.post_add_rounded,
-                    label: 'Tugas Baru',
-                    subtitle: 'Rilis & Notif',
-                    color: AppColors.cyan,
-                    onTap: _showCreateAssignmentDialog,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.person_add_rounded,
-                    label: 'Mahasiswa',
-                    subtitle: 'Undang Akun',
-                    color: AppColors.emerald,
-                    onTap: _showCreateStudentAccountDialog,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // Section "Menu Utama" (Clean Tech SaaS Grid)
-          Row(
-            children: [
-              Container(
-                width: 3.5,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Menu Utama Modul',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
 
           // 8 Grid Menu Tiles (Screen 3)
           LayoutBuilder(
@@ -1267,9 +1143,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: constraints.maxWidth < 360 ? 2 : 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              mainAxisExtent: 96,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              mainAxisExtent: 88,
               children: [
                 _buildMenuTile(
                   icon: Icons.meeting_room_outlined,
@@ -1314,195 +1190,131 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Banner Info Sistem (Clean Tech Console Bento Card)
-          AdminBentoCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(9),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, Color(0xFF58138A)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.30),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.verified_user_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pusat Kendali Terintegrasi',
-                        style: TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _academicYears.any((year) => year.isAktif)
-                            ? 'Tahun Akademik ${_academicYears.firstWhere((year) => year.isAktif).tahun} aktif'
-                            : 'Tahun akademik aktif belum ditetapkan',
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.primaryBorder),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        setState(() {
-                          _currentView = 'audit_logs';
-                          _selectedStudent = null;
-                          _loadAuditLogs();
-                        });
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Log Audit',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primaryDark),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionButton({
+  Widget _buildEditorialActionRow({
     required IconData icon,
-    required String label,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
     required String subtitle,
-    required Color color,
+    required String trailingBadge,
     required VoidCallback onTap,
   }) {
-    return ScaleButton(
+    return InkWell(
       onTap: onTap,
-      scaleDown: 0.96,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withValues(alpha: 0.08),
-              Colors.white,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color,
-                    color.withValues(alpha: 0.82),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isVeryNarrow = constraints.maxWidth < 240;
+            return Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 18),
                 ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.35),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isVeryNarrow) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      trailingBadge,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
                   ),
                 ],
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: Color(0xFF94A3B8),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditorialToolChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 13, color: const Color(0xFF475569)),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
               ),
-              child: Icon(icon, color: Colors.white, size: 17),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.2,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1584,29 +1396,14 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     };
     return ScaleButton(
       onTap: onTap,
-      scaleDown: 0.96,
+      scaleDown: 0.97,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              accentColor.withValues(alpha: 0.08),
-              Colors.white,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: accentColor.withValues(alpha: 0.22),
-            width: 1.2,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
           boxShadow: [
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
             BoxShadow(
               color: const Color(0xFF0F172A).withValues(alpha: 0.02),
               blurRadius: 4,
@@ -1622,38 +1419,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        accentColor,
-                        accentColor.withValues(alpha: 0.82),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(11),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    color: accentColor.withValues(alpha: 0.09),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
-                    child: Icon(icon, color: Colors.white, size: 20),
+                    child: Icon(icon, color: accentColor, size: 19),
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 6),
                 Text(
                   title,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   style: const TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
                     height: 1.15,
                     letterSpacing: -0.2,
