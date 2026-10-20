@@ -777,246 +777,227 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     int hadirCount,
     bool isDark,
   ) {
-    final isEligible = attendancePercent != null && attendancePercent >= 75;
-    final cardBg = isDark ? const Color(0xFF141224) : Colors.white;
-    final borderColor = isDark
-        ? const Color(0xFF2C2844)
-        : const Color(0xFFE2E8F0);
-    final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 120) {
+          return const SizedBox.shrink();
+        }
 
-    final now = DateTime.now();
-    const dayNames = [
-      '',
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu',
-    ];
-    final todayName = (now.weekday >= 1 && now.weekday <= 7)
-        ? dayNames[now.weekday]
-        : '';
+        final isEligible = attendancePercent != null && attendancePercent >= 75;
+        final cardBg = isDark ? const Color(0xFF141224) : Colors.white;
+        final borderColor = isDark
+            ? const Color(0xFF2C2844)
+            : const Color(0xFFE2E8F0);
+        final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+        final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-    // Tentukan mode tampilan: Jika hari ini tidak ada kuliah, lewati & langsung tampilkan jadwal mendatang!
-    final bool isShowingUpcoming = _scheduleViewMode == 1 || !_todayHasClasses;
-    final List<Course> displayCourses = isShowingUpcoming
-        ? _upcomingCourses
-        : _todayCourses;
-    final String currentDayLabel = isShowingUpcoming
-        ? (_nextActiveDayLabel.isNotEmpty ? _nextActiveDayLabel : 'Mendatang')
-        : todayName;
+        final now = DateTime.now();
+        const dayNames = [
+          '',
+          'Senin',
+          'Selasa',
+          'Rabu',
+          'Kamis',
+          'Jumat',
+          'Sabtu',
+          'Minggu',
+        ];
+        final todayName = (now.weekday >= 1 && now.weekday <= 7)
+            ? dayNames[now.weekday]
+            : '';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: cardBg,
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF161427), const Color(0xFF110F20)]
-              : [Colors.white, const Color(0xFFF8FAFC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A)
-                .withValues(alpha: isDark ? 0.35 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Strip: Studio Clearance Tag + Micro Status Pill
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.school_rounded,
-                      size: 15,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Ringkasan Akademik',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.w800,
-                          color: textMain,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+        // Tentukan mode tampilan: Jika hari ini tidak ada kuliah, lewati & langsung tampilkan jadwal mendatang!
+        final bool isShowingUpcoming = _scheduleViewMode == 1 || !_todayHasClasses;
+        final List<Course> displayCourses = isShowingUpcoming
+            ? _upcomingCourses
+            : _todayCourses;
+        final String currentDayLabel = isShowingUpcoming
+            ? (_nextActiveDayLabel.isNotEmpty ? _nextActiveDayLabel : 'Mendatang')
+            : todayName;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cardBg,
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF161427), const Color(0xFF110F20)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A)
+                    .withValues(alpha: isDark ? 0.35 : 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
               ),
-              const SizedBox(width: 6),
-              attendancePercent == null
-                  ? SoftPillBadge.neutral(
-                      label: 'Presensi Baru',
-                      fontSize: 9.0,
-                    )
-                  : (isEligible
-                      ? SoftPillBadge.success(
-                          label: 'UAS Aman $attendancePercent%',
-                          fontSize: 9.0,
-                          showDot: true,
-                        )
-                      : SoftPillBadge.warning(
-                          label: 'Pantau Presensi $attendancePercent%',
-                          fontSize: 9.0,
-                          showDot: true,
-                        )),
             ],
           ),
-          const SizedBox(height: 8),
-
-          // Divider Tipis Elegan
-          Container(
-            height: 1,
-            color: borderColor.withValues(alpha: 0.6),
-          ),
-          const SizedBox(height: 8),
-
-          // Body Row: Status Kehadiran/Kas (Kiri) & 4 Studio Controls (Kanan)
-          Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sisi Kiri: Status Kehadiran & Status Iuran Kas Kelas
-              Expanded(
-                flex: 5,
-                child: ScaleButton(
-                  scaleDown: 0.97,
-                  onTap: () => widget.onNavigateTab(5), // Presensi
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              // Header Terpadu: Judul 'Ringkasan Akademik', Label Hari, Badge UAS, & Tombol Semua Jadwal
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Persentase & Status Sesi
-                        Row(
-                          children: [
-                            Text(
-                              attendancePercent == null
-                                  ? '0%'
-                                  : '$attendancePercent%',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: textMain,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                attendancePercent == null
-                                    ? 'Belum Ada Sesi'
-                                    : '$hadirCount Sesi Hadir',
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: textSub,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        const Icon(
+                          Icons.school_rounded,
+                          size: 15,
+                          color: AppColors.primary,
                         ),
-                        const SizedBox(height: 4),
-
-                        // Progress Bar Presensi UAS
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: attendancePercent == null
-                                ? 0.0
-                                : (attendancePercent / 100).clamp(0.0, 1.0),
-                            minHeight: 4.5,
-                            backgroundColor: isDark
-                                ? const Color(0xFF26223D)
-                                : const Color(0xFFE2E8F0),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              (attendancePercent ?? 0) >= 75
-                                  ? const Color(0xFF10B981)
-                                  : ((attendancePercent ?? 0) >= 60
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFFEF4444)),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Ringkasan Akademik',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w800,
+                              color: textMain,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
-
-                        // Status Iuran Kas Kelas (Real Data)
-                        ScaleButton(
-                          scaleDown: 0.95,
-                          onTap: () => widget.onNavigateTab(8), // Buka Kas
+                        const SizedBox(width: 6),
+                        Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
-                              vertical: 2.5,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF1E1A34)
+                                  ? const Color(0xFF26223D)
                                   : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isDark
-                                    ? const Color(0xFF2E274A)
+                                    ? const Color(0xFF3B3358)
                                     : const Color(0xFFE2E8F0),
                                 width: 0.6,
                               ),
                             ),
-                            child: Row(
+                            child: Text(
+                              currentDayLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark
+                                    ? const Color(0xFFA78BFA)
+                                    : AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: attendancePercent == null
+                        ? SoftPillBadge.neutral(
+                            label: 'Presensi Baru',
+                            fontSize: 9.0,
+                          )
+                        : (isEligible
+                            ? SoftPillBadge.success(
+                                label: 'UAS Aman $attendancePercent%',
+                                fontSize: 9.0,
+                                showDot: true,
+                              )
+                            : SoftPillBadge.warning(
+                                label: 'Pantau Presensi $attendancePercent%',
+                                fontSize: 9.0,
+                                showDot: true,
+                              )),
+                  ),
+                  const SizedBox(width: 6),
+                  ScaleButton(
+                    scaleDown: 0.92,
+                    onTap: () => widget.onNavigateTab(1), // Buka Tab Jadwal
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Semua',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 12,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Divider Tipis Elegan
+              Container(
+                height: 1,
+                color: borderColor.withValues(alpha: 0.6),
+              ),
+              const SizedBox(height: 8),
+
+              // Body Row: Status Kehadiran/Kas (Kiri) & 4 Studio Controls (Kanan)
+              Row(
+                children: [
+                  // Sisi Kiri: Status Kehadiran & Status Iuran Kas Kelas
+                  Expanded(
+                    flex: 5,
+                    child: ScaleButton(
+                      scaleDown: 0.97,
+                      onTap: () => widget.onNavigateTab(5), // Presensi
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Persentase & Status Sesi
+                            Row(
                               children: [
-                                Icon(
-                                  _isKasLunas == true
-                                      ? Icons.verified_rounded
-                                      : (_isKasLunas == false
-                                          ? Icons.error_rounded
-                                          : Icons.account_balance_wallet_rounded),
-                                  size: 11.5,
-                                  color: _isKasLunas == true
-                                      ? const Color(0xFF10B981)
-                                      : (_isKasLunas == false
-                                          ? const Color(0xFFEF4444)
-                                          : const Color(0xFF0D9488)),
+                                Text(
+                                  attendancePercent == null
+                                      ? '0%'
+                                      : '$attendancePercent%',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: textMain,
+                                    letterSpacing: -0.5,
+                                  ),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 5),
                                 Expanded(
                                   child: Text(
-                                    _isKasLunas == true
-                                        ? 'Kas: Lunas ✨'
-                                        : (_isKasLunas == false
-                                            ? 'Kas: ${_formatCurrency(_kasNominal)}'
-                                            : (_currentPeriodLabel.isNotEmpty
-                                                ? 'Iuran: $_currentPeriodLabel'
-                                                : 'Cek status kas')),
+                                    attendancePercent == null
+                                        ? 'Belum Ada Sesi'
+                                        : '$hadirCount Sesi Hadir',
                                     style: TextStyle(
-                                      fontSize: 9.5,
-                                      color: _isKasLunas == true
-                                          ? (isDark
-                                              ? const Color(0xFF4ADE80)
-                                              : const Color(0xFF059669))
-                                          : (_isKasLunas == false
-                                              ? const Color(0xFFEF4444)
-                                              : textSub),
+                                      fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
+                                      color: textSub,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1024,275 +1005,276 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 4),
+
+                            // Progress Bar Presensi UAS
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(3),
+                              child: LinearProgressIndicator(
+                                value: attendancePercent == null
+                                    ? 0.0
+                                    : (attendancePercent / 100).clamp(0.0, 1.0),
+                                minHeight: 4.5,
+                                backgroundColor: isDark
+                                    ? const Color(0xFF26223D)
+                                    : const Color(0xFFE2E8F0),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  (attendancePercent ?? 0) >= 75
+                                      ? const Color(0xFF10B981)
+                                      : ((attendancePercent ?? 0) >= 60
+                                          ? const Color(0xFFF59E0B)
+                                          : const Color(0xFFEF4444)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+
+                            // Status Iuran Kas Kelas (Real Data)
+                            ScaleButton(
+                              scaleDown: 0.95,
+                              onTap: () => widget.onNavigateTab(8), // Buka Kas
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E1A34)
+                                      : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? const Color(0xFF2E274A)
+                                        : const Color(0xFFE2E8F0),
+                                    width: 0.6,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _isKasLunas == true
+                                          ? Icons.verified_rounded
+                                          : (_isKasLunas == false
+                                              ? Icons.error_rounded
+                                              : Icons.account_balance_wallet_rounded),
+                                      size: 11.5,
+                                      color: _isKasLunas == true
+                                          ? const Color(0xFF10B981)
+                                          : (_isKasLunas == false
+                                              ? const Color(0xFFEF4444)
+                                              : const Color(0xFF0D9488)),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        _isKasLunas == true
+                                            ? 'Kas: Lunas ✨'
+                                            : (_isKasLunas == false
+                                                ? 'Kas: ${_formatCurrency(_kasNominal)}'
+                                                : (_currentPeriodLabel.isNotEmpty
+                                                    ? 'Iuran: $_currentPeriodLabel'
+                                                    : 'Cek status kas')),
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: _isKasLunas == true
+                                              ? (isDark
+                                                  ? const Color(0xFF4ADE80)
+                                                  : const Color(0xFF059669))
+                                              : (_isKasLunas == false
+                                                  ? const Color(0xFFEF4444)
+                                                  : textSub),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Divider Vertikal Elegan
+                  Container(
+                    height: 54,
+                    width: 1,
+                    color: borderColor,
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                  ),
+
+                  // Sisi Kanan: 4 Aksi Cepat Studio Deck (Presensi, Kas, KHS, Izin)
+                  Expanded(
+                    flex: 7,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: _buildGojekActionItem(
+                            icon: Icons.qr_code_scanner_rounded,
+                            label: 'Presensi',
+                            color: AppColors.cyan,
+                            textColor: textMain,
+                            onTap: () {
+                              if (AttendanceScreen.currentSession != null &&
+                                  !AttendanceScreen.currentSession!.isExpired &&
+                                  !student.canManageAttendance) {
+                                AttendanceScreen.showStudentScanner(
+                                  context,
+                                  userNim: student.nim,
+                                  onSuccess: _loadDashboard,
+                                );
+                              } else {
+                                widget.onNavigateTab(5); // Presensi
+                              }
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildGojekActionItem(
+                            icon: Icons.account_balance_wallet_rounded,
+                            label: 'Kas',
+                            color: AppColors.teal,
+                            textColor: textMain,
+                            onTap: () => widget.onNavigateTab(8), // Kas Kelas
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildGojekActionItem(
+                            icon: Icons.analytics_rounded,
+                            label: 'KHS',
+                            color: AppColors.primary,
+                            textColor: textMain,
+                            onTap: () => widget.onNavigateTab(
+                              15,
+                            ), // KHS & Transkrip Nilai (Tab 15)
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildGojekActionItem(
+                            icon: Icons.assignment_turned_in_rounded,
+                            label: 'Izin',
+                            color: AppColors.rose,
+                            textColor: textMain,
+                            onTap: () => widget.onNavigateTab(
+                              13,
+                            ), // Surat Izin & Dispensasi (Tab 13)
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
+                ],
               ),
 
-              // Divider Vertikal Elegan
+              // Divider Pemisah Elegan antara Ringkasan dan Jadwal
+              const SizedBox(height: 10),
               Container(
-                height: 54,
-                width: 1,
-                color: borderColor,
-                margin: const EdgeInsets.symmetric(horizontal: 6),
+                height: 1,
+                color: borderColor.withValues(alpha: 0.6),
               ),
+              const SizedBox(height: 8),
 
-              // Sisi Kanan: 4 Aksi Cepat Studio Deck (Presensi, Kas, KHS, Izin)
-              Expanded(
-                flex: 7,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: _buildGojekActionItem(
-                        icon: Icons.qr_code_scanner_rounded,
-                        label: 'Presensi',
-                        color: AppColors.cyan,
-                        textColor: textMain,
-                        onTap: () {
-                          if (AttendanceScreen.currentSession != null &&
-                              !AttendanceScreen.currentSession!.isExpired &&
-                              !student.canManageAttendance) {
-                            AttendanceScreen.showStudentScanner(
-                              context,
-                              userNim: student.nim,
-                              onSuccess: _loadDashboard,
-                            );
-                          } else {
-                            widget.onNavigateTab(5); // Presensi
-                          }
-                        },
-                      ),
+              // Subtitle / Smart Day-Skip Notification / Tab Switcher
+              if (!_todayHasClasses) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                      width: 0.8,
                     ),
-                    Expanded(
-                      child: _buildGojekActionItem(
-                        icon: Icons.account_balance_wallet_rounded,
-                        label: 'Kas',
-                        color: AppColors.teal,
-                        textColor: textMain,
-                        onTap: () => widget.onNavigateTab(8), // Kas Kelas
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildGojekActionItem(
-                        icon: Icons.analytics_rounded,
-                        label: 'KHS',
-                        color: AppColors.primary,
-                        textColor: textMain,
-                        onTap: () => widget.onNavigateTab(
-                          15,
-                        ), // KHS & Transkrip Nilai (Tab 15)
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildGojekActionItem(
-                        icon: Icons.assignment_turned_in_rounded,
-                        label: 'Izin',
-                        color: AppColors.rose,
-                        textColor: textMain,
-                        onTap: () => widget.onNavigateTab(
-                          13,
-                        ), // Surat Izin & Dispensasi (Tab 13)
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Divider Pemisah Elegan antara Ringkasan dan Jadwal
-          const SizedBox(height: 12),
-          Container(
-            height: 1,
-            color: borderColor.withValues(alpha: 0.6),
-          ),
-          const SizedBox(height: 10),
-
-          // Subheader Jadwal Kuliah & Tombol Semua
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 13,
-                      color: isDark ? const Color(0xFFA78BFA) : AppColors.primary,
-                    ),
-                    Text(
-                      isShowingUpcoming
-                          ? 'Jadwal Mendatang'
-                          : 'Jadwal Kuliah Hari Ini',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: textMain,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF26223D)
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF3B3358)
-                              : const Color(0xFFE2E8F0),
-                          width: 0.7,
-                        ),
-                      ),
-                      child: Text(
-                        currentDayLabel,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? const Color(0xFFA78BFA)
-                              : AppColors.primary,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              ScaleButton(
-                scaleDown: 0.92,
-                onTap: () => widget.onNavigateTab(1), // Jadwal
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Semua',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      SizedBox(width: 2),
-                      Icon(
-                        Icons.arrow_forward_rounded,
+                      const Icon(
+                        Icons.fast_forward_rounded,
                         size: 13,
                         color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: textSub,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+              ] else if (_upcomingCourses.isNotEmpty) ...[
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  child: Row(
+                    children: [
+                      _buildSchedulePillButton(
+                        title: 'Hari Ini (${_todayCourses.length})',
+                        isSelected: _scheduleViewMode == 0,
+                        isDark: isDark,
+                        onTap: () => setState(() => _scheduleViewMode = 0),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSchedulePillButton(
+                        title:
+                            'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
+                        isSelected: _scheduleViewMode == 1,
+                        isDark: isDark,
+                        onTap: () => setState(() => _scheduleViewMode = 1),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // Course Horizontal Carousel / Single Card / Free Day Card
+              SizedBox(
+                height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
+                child: displayCourses.isEmpty
+                    ? _buildFreeDayHorizontalCard(isDark, isFullWidth: true)
+                    : (displayCourses.length == 1
+                        ? _buildCourseHorizontalCard(
+                            displayCourses.single,
+                            isDark,
+                            isUpcomingDay: isShowingUpcoming,
+                            isFullWidth: true,
+                          )
+                        : ListView(
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            children: displayCourses.map(
+                              (c) => Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: _buildCourseHorizontalCard(
+                                  c,
+                                  isDark,
+                                  isUpcomingDay: isShowingUpcoming,
+                                  isFullWidth: false,
+                                ),
+                              ),
+                            ).toList(),
+                          )),
               ),
             ],
           ),
-
-          // Subtitle / Smart Day-Skip Notification / Tab Switcher
-          if (!_todayHasClasses) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.fast_forward_rounded,
-                    size: 13,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'Hari ini libur • Jadwal kosong dilewati, menampilkan $_nextActiveDayLabel',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: textSub,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else if (_upcomingCourses.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              child: Row(
-                children: [
-                  _buildSchedulePillButton(
-                    title: 'Hari Ini (${_todayCourses.length})',
-                    isSelected: _scheduleViewMode == 0,
-                    isDark: isDark,
-                    onTap: () => setState(() => _scheduleViewMode = 0),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildSchedulePillButton(
-                    title:
-                        'Mendatang • $_nextActiveDayName (${_upcomingCourses.length})',
-                    isSelected: _scheduleViewMode == 1,
-                    isDark: isDark,
-                    onTap: () => setState(() => _scheduleViewMode = 1),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-
-          // Course Horizontal Carousel / Single Card / Free Day Card
-          SizedBox(
-            height: (142 * MediaQuery.textScalerOf(context).scale(1.0)).clamp(142.0, 185.0),
-            child: displayCourses.isEmpty
-                ? _buildFreeDayHorizontalCard(isDark, isFullWidth: true)
-                : (displayCourses.length == 1
-                    ? _buildCourseHorizontalCard(
-                        displayCourses.single,
-                        isDark,
-                        isUpcomingDay: isShowingUpcoming,
-                        isFullWidth: true,
-                      )
-                    : ListView(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        children: displayCourses.map(
-                          (c) => Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: _buildCourseHorizontalCard(
-                              c,
-                              isDark,
-                              isUpcomingDay: isShowingUpcoming,
-                              isFullWidth: false,
-                            ),
-                          ),
-                        ).toList(),
-                      )),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1317,21 +1299,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
               ColorfulIconBox(
                 icon: icon,
                 color: color,
-                size: 36,
-                iconSize: 18,
-                radius: 11,
+                size: 34,
+                iconSize: 17,
+                radius: 10,
               ),
               const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                  letterSpacing: -0.15,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    letterSpacing: -0.15,
+                  ),
+                  maxLines: 1,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -1340,11 +1324,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     );
   }
 
-
-
-  // ==========================================
-  // 5. SEGMENTED STUDIO CONTROL DOCK (NEWSROOM & BROADCAST)
-  // ==========================================
   Widget _buildServicesGrid(
     BuildContext context,
     StudentProfile student,
@@ -1695,6 +1674,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         : (hadir * 100 / _attendance.length).round();
 
     return HomeBannerCarousel(
+      includeScheduleSlide: false,
       todayCourses: _todayCourses,
       upcomingCourses: _upcomingCourses,
       upcomingDayLabel: _nextActiveDayLabel,

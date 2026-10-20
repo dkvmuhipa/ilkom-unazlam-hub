@@ -16,6 +16,7 @@ class HomeBannerCarousel extends StatefulWidget {
   final int kasNominal;
   final String? currentPeriodLabel;
   final int? attendancePercent;
+  final bool includeScheduleSlide;
 
   const HomeBannerCarousel({
     super.key,
@@ -30,6 +31,7 @@ class HomeBannerCarousel extends StatefulWidget {
     this.kasNominal = 0,
     this.currentPeriodLabel,
     this.attendancePercent,
+    this.includeScheduleSlide = true,
   });
 
   @override
@@ -101,78 +103,80 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     final now = DateTime.now();
     final slides = <_HeroSlide>[];
 
-    // 1. SLIDE 0: RINGKASAN HARI INI / SPOTLIGHT JADWAL (Satu slide fokus, tidak menduplikasi jadwal)
-    final activeClass = _activeOrNextClass(now);
-    if (widget.hasLoadError) {
-      slides.add(
-        const _HeroSlide(
-          label: 'DATA TERAKHIR',
-          badge: 'OFFLINE',
-          title: 'Pembaruan data belum tersedia',
-          detail: 'Periksa koneksi. Informasi akademik mungkin belum diperbarui.',
-          action: 'Lihat jadwal',
-          icon: Icons.cloud_off_rounded,
-          destination: 1,
-          accentColor: Color(0xFF64748B),
-          buttonTextColor: Color(0xFF334155),
-          lightGradientColors: [Color(0xFF334155), Color(0xFF475569)],
-          darkGradientColors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-        ),
-      );
-    } else if (activeClass != null) {
-      final (course, status, upcoming) = activeClass;
-      final location = course.isOnlineOverride
-          ? 'Kelas daring'
-          : (course.effectiveRuangan.isEmpty
-              ? 'Ruangan TBA'
-              : course.effectiveRuangan);
-      final isNow = status == 'KELAS BERLANGSUNG';
-      slides.add(
-        _HeroSlide(
-          label: 'RINGKASAN HARI INI',
-          badge: status,
-          title: course.nama,
-          detail:
-              '${upcoming ? '${widget.upcomingDayLabel ?? course.hari} · ' : ''}${course.effectiveJamMulai}–${course.effectiveJamSelesai} · $location',
-          action: 'Lihat jadwal',
-          icon: isNow ? Icons.timelapse_rounded : Icons.calendar_month_rounded,
-          destination: 1,
-          accentColor: isNow
-              ? const Color(0xFF10B981)
-              : const Color(0xFF8B5CF6),
-          buttonTextColor: isNow
-              ? const Color(0xFF065F46)
-              : const Color(0xFF58138A),
-          lightGradientColors: isNow
-              ? const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)]
-              : const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
-          darkGradientColors: isNow
-              ? const [Color(0xFF0A2E20), Color(0xFF104431), Color(0xFF14563E)]
-              : const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
-        ),
-      );
-    } else {
-      slides.add(
-        _HeroSlide(
-          label: 'RINGKASAN HARI INI',
-          badge: widget.todayCourses.isEmpty ? 'BEBAS KULIAH' : 'JADWAL',
-          title: widget.todayCourses.isEmpty
-              ? 'Hari Bebas Kuliah ✨'
-              : '${widget.todayCourses.length} Kuliah Hari Ini',
-          detail: widget.todayCourses.isEmpty
-              ? (widget.upcomingCourses.isNotEmpty
-                  ? 'Kuliah berikutnya: ${widget.upcomingCourses.first.nama} (${widget.upcomingDayLabel ?? widget.upcomingCourses.first.hari})'
-                  : 'Tidak ada jadwal perkuliahan aktif untuk hari ini.')
-              : '${widget.todayCourses.length} mata kuliah terjadwal. Ketuk untuk detail jam & ruangan.',
-          action: 'Lihat jadwal',
-          icon: Icons.school_rounded,
-          destination: 1,
-          accentColor: const Color(0xFFF59E0B),
-          buttonTextColor: const Color(0xFF58138A),
-          lightGradientColors: const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
-          darkGradientColors: const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
-        ),
-      );
+    // 1. SLIDE 0: RINGKASAN HARI INI / SPOTLIGHT JADWAL (Hanya jika includeScheduleSlide aktif)
+    if (widget.includeScheduleSlide) {
+      final activeClass = _activeOrNextClass(now);
+      if (widget.hasLoadError) {
+        slides.add(
+          const _HeroSlide(
+            label: 'DATA TERAKHIR',
+            badge: 'OFFLINE',
+            title: 'Pembaruan data belum tersedia',
+            detail: 'Periksa koneksi. Informasi akademik mungkin belum diperbarui.',
+            action: 'Lihat jadwal',
+            icon: Icons.cloud_off_rounded,
+            destination: 1,
+            accentColor: Color(0xFF64748B),
+            buttonTextColor: Color(0xFF334155),
+            lightGradientColors: [Color(0xFF334155), Color(0xFF475569)],
+            darkGradientColors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          ),
+        );
+      } else if (activeClass != null) {
+        final (course, status, upcoming) = activeClass;
+        final location = course.isOnlineOverride
+            ? 'Kelas daring'
+            : (course.effectiveRuangan.isEmpty
+                ? 'Ruangan TBA'
+                : course.effectiveRuangan);
+        final isNow = status == 'KELAS BERLANGSUNG';
+        slides.add(
+          _HeroSlide(
+            label: 'RINGKASAN HARI INI',
+            badge: status,
+            title: course.nama,
+            detail:
+                '${upcoming ? '${widget.upcomingDayLabel ?? course.hari} · ' : ''}${course.effectiveJamMulai}–${course.effectiveJamSelesai} · $location',
+            action: 'Lihat jadwal',
+            icon: isNow ? Icons.timelapse_rounded : Icons.calendar_month_rounded,
+            destination: 1,
+            accentColor: isNow
+                ? const Color(0xFF10B981)
+                : const Color(0xFF8B5CF6),
+            buttonTextColor: isNow
+                ? const Color(0xFF065F46)
+                : const Color(0xFF58138A),
+            lightGradientColors: isNow
+                ? const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)]
+                : const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+            darkGradientColors: isNow
+                ? const [Color(0xFF0A2E20), Color(0xFF104431), Color(0xFF14563E)]
+                : const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+          ),
+        );
+      } else {
+        slides.add(
+          _HeroSlide(
+            label: 'RINGKASAN HARI INI',
+            badge: widget.todayCourses.isEmpty ? 'BEBAS KULIAH' : 'JADWAL',
+            title: widget.todayCourses.isEmpty
+                ? 'Hari Bebas Kuliah ✨'
+                : '${widget.todayCourses.length} Kuliah Hari Ini',
+            detail: widget.todayCourses.isEmpty
+                ? (widget.upcomingCourses.isNotEmpty
+                    ? 'Kuliah berikutnya: ${widget.upcomingCourses.first.nama} (${widget.upcomingDayLabel ?? widget.upcomingCourses.first.hari})'
+                    : 'Tidak ada jadwal perkuliahan aktif untuk hari ini.')
+                : '${widget.todayCourses.length} mata kuliah terjadwal. Ketuk untuk detail jam & ruangan.',
+            action: 'Lihat jadwal',
+            icon: Icons.school_rounded,
+            destination: 1,
+            accentColor: const Color(0xFFF59E0B),
+            buttonTextColor: const Color(0xFF58138A),
+            lightGradientColors: const [Color(0xFF58138A), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+            darkGradientColors: const [Color(0xFF4C1D95), Color(0xFF6D28D9), Color(0xFF7C3AED)],
+          ),
+        );
+      }
     }
 
     // 2. SLIDE TUGAS TERDEKAT
@@ -308,6 +312,25 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           buttonTextColor: const Color(0xFF5B21B6),
           lightGradientColors: const [Color(0xFF5B21B6), Color(0xFF6D28D9), Color(0xFF7C3AED)],
           darkGradientColors: const [Color(0xFF26103D), Color(0xFF361556), Color(0xFF481B74)],
+        ),
+      );
+    }
+
+    if (slides.isEmpty) {
+      slides.add(
+        const _HeroSlide(
+          label: 'UNAZLAM HUB',
+          badge: 'PORTAL',
+          title: 'Ruang Kolaborasi Mahasiswa',
+          detail:
+              'Akses materi kuliah, agenda kelas, dan layanan akademik dalam satu aplikasi terpadu.',
+          action: 'Jelajahi',
+          icon: Icons.auto_awesome_rounded,
+          destination: 0,
+          accentColor: Color(0xFF6366F1),
+          buttonTextColor: Color(0xFF3730A3),
+          lightGradientColors: [Color(0xFF3730A3), Color(0xFF4F46E5), Color(0xFF6366F1)],
+          darkGradientColors: [Color(0xFF1E1B4B), Color(0xFF2E2A72), Color(0xFF3730A3)],
         ),
       );
     }
