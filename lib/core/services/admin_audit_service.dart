@@ -12,8 +12,22 @@ class AdminAuditService {
     String? userName,
     Map<String, dynamic> metadata = const {},
   }) async {
-    final effectiveUid = userIdentifier ?? 'admin';
-    final effectiveName = userName ?? 'Administrator';
+    final client = SupabaseService.client;
+    final authUser = client?.auth.currentUser;
+
+    String effectiveUid = userIdentifier ?? '';
+    String effectiveName = userName ?? '';
+
+    if (effectiveUid.isEmpty && authUser != null) {
+      effectiveUid = authUser.userMetadata?['nim']?.toString() ??
+          authUser.email ??
+          '16110376';
+      effectiveName = authUser.userMetadata?['nama']?.toString() ??
+          authUser.userMetadata?['name']?.toString() ??
+          'Admin Program Studi';
+    }
+    if (effectiveUid.isEmpty) effectiveUid = '16110376';
+    if (effectiveName.isEmpty) effectiveName = 'Admin Program Studi';
 
     _localAuditLogs.insert(0, {
       'id': 'audit_${DateTime.now().millisecondsSinceEpoch}',
@@ -27,17 +41,9 @@ class AdminAuditService {
     });
 
     try {
-      final client = SupabaseService.client;
       if (client == null) return;
+      // Utamakan insert langsung dengan data identitas real pengguna
       try {
-        await client.rpc('log_admin_activity', params: {
-          'p_action_type': action,
-          'p_target_module': module,
-          'p_description': description,
-          'p_metadata': metadata,
-        });
-      } catch (_) {
-        // Fallback langsung ke tabel audit_logs jika RPC belum ada
         await client.from('audit_logs').insert({
           'user_identifier': effectiveUid,
           'user_name': effectiveName,
@@ -45,6 +51,14 @@ class AdminAuditService {
           'target_module': module.toUpperCase(),
           'description': description,
           'metadata': metadata,
+        });
+      } catch (_) {
+        // Fallback jika direct insert terhalang
+        await client.rpc('log_admin_activity', params: {
+          'p_action_type': action,
+          'p_target_module': module,
+          'p_description': description,
+          'p_metadata': metadata,
         });
       }
     } catch (error) {

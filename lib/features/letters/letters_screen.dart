@@ -750,11 +750,15 @@ ${widget.studentName}
                 ),
               ],
             ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               leading: CircleAvatar(
                 backgroundColor: AppColors.primarySoft,
                 child: const Icon(
@@ -836,6 +840,7 @@ ${widget.studentName}
                 ],
               ),
               onTap: () => _showLetterDetail(letter),
+              ),
             ),
           );
         },

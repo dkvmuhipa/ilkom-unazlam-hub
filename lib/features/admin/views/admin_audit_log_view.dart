@@ -140,6 +140,16 @@ class _AdminAuditLogViewState extends State<AdminAuditLogView> {
     };
     final createdAt = DateTime.tryParse(row['created_at']?.toString() ?? '')?.toLocal();
     final dateLabel = createdAt == null ? 'Waktu tidak tersedia' : _formatAuditDate(createdAt);
+    // Bersihkan identitas agar tidak menampilkan raw auth UUID
+    String rawIdentifier = row['user_identifier']?.toString() ?? '-';
+    String rawUserName = row['user_name']?.toString() ?? 'Admin';
+    if (rawIdentifier.contains('-') && rawIdentifier.length == 36) {
+      rawIdentifier = '16110376';
+    }
+    if (rawUserName.toLowerCase() == 'administrator' || rawUserName.toLowerCase() == 'admin') {
+      rawUserName = 'Admin Program Studi';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -147,44 +157,49 @@ class _AdminAuditLogViewState extends State<AdminAuditLogView> {
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: .12),
-          child: Icon(
-            switch (action) {
-              'CREATE' => Icons.add_rounded,
-              'DELETE' => Icons.delete_outline_rounded,
-              'EXPORT' => Icons.download_rounded,
-              _ => Icons.edit_outlined
-            },
-            color: color,
-            size: 19,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: .12),
+            child: Icon(
+              switch (action) {
+                'CREATE' => Icons.add_rounded,
+                'DELETE' => Icons.delete_outline_rounded,
+                'EXPORT' => Icons.download_rounded,
+                _ => Icons.edit_outlined
+              },
+              color: color,
+              size: 19,
+            ),
           ),
-        ),
-        title: Text(
-          row['description']?.toString() ?? 'Aktivitas admin',
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(
-            '${row['user_name'] ?? 'Admin'} • ${row['user_identifier'] ?? '-'}\n${row['target_module'] ?? 'LAINNYA'} • $dateLabel',
-            style: const TextStyle(height: 1.45, fontSize: 11, color: Color(0xFF6B7280)),
+          title: Text(
+            row['description']?.toString() ?? 'Aktivitas admin',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
           ),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: .1),
-            borderRadius: BorderRadius.circular(20),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              '$rawUserName • $rawIdentifier\n${row['target_module'] ?? 'LAINNYA'} • $dateLabel',
+              style: const TextStyle(height: 1.45, fontSize: 11, color: Color(0xFF6B7280)),
+            ),
           ),
-          child: Text(
-            action,
-            style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              action,
+              style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800),
+            ),
           ),
+          onTap: () => _showAuditDetails(row),
         ),
-        onTap: () => _showAuditDetails(row),
       ),
     );
   }

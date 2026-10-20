@@ -31,11 +31,15 @@ import 'models/admin_models.dart';
 class AdminShellScreen extends StatefulWidget {
   final VoidCallback onLogout;
   final VoidCallback onSwitchToStudentView;
+  final String currentNim;
+  final String currentName;
 
   const AdminShellScreen({
     super.key,
     required this.onLogout,
     required this.onSwitchToStudentView,
+    this.currentNim = '16110376',
+    this.currentName = 'Admin Program Studi',
   });
 
   @override
@@ -1600,6 +1604,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         action: action,
         module: module,
         description: description,
+        userIdentifier: widget.currentNim.isNotEmpty ? widget.currentNim : '16110376',
+        userName: widget.currentName.isNotEmpty ? widget.currentName : 'Admin Program Studi',
         metadata: metadata,
       );
       if (_currentView == 'audit_logs' && mounted) {

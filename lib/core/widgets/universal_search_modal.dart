@@ -449,9 +449,13 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isDark ? const Color(0xFF382F57) : const Color(0xFFE5E7EB)),
       ),
-      child: ListTile(
-        dense: true,
-        onTap: onTap,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          dense: true,
+          onTap: onTap,
         title: Text(
           title,
           maxLines: 1,
@@ -482,6 +486,7 @@ class _UniversalSearchModalState extends State<UniversalSearchModal> {
             badge,
             style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: badgeColor),
           ),
+        ),
         ),
       ),
     );

@@ -271,6 +271,8 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
                     : (_isAdminMode
                           ? AdminShellScreen(
                               onLogout: _onLogout,
+                              currentNim: _userNim,
+                              currentName: _userName,
                               onSwitchToStudentView: () =>
                                    setState(() => _isAdminMode = false),
                             )
