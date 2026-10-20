@@ -565,244 +565,274 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Clean Tech Console Bar + Right Action Tools (Responsive)
-          LayoutBuilder(
-            builder: (context, headerConstraints) {
-              final isNarrow = headerConstraints.maxWidth < 760 * MediaQuery.textScalerOf(context).scale(1);
+          // Header: Aurora Executive Command Cockpit
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF2E1065), // Royal Purple 950
+                  Color(0xFF1E1B4B), // Midnight Indigo 950
+                  Color(0xFF0F172A), // Slate 900
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF58138A).withValues(alpha: 0.28),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, headerConstraints) {
+                final isNarrow = headerConstraints.maxWidth < 620 * MediaQuery.textScalerOf(context).scale(1);
 
-              final actionTools = Wrap(
-                alignment: WrapAlignment.end,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  // Tombol Sinkronisasi Data Master
-                  Tooltip(
-                    message: 'Sinkronisasi Seluruh Data',
-                    child: InkWell(
-                      onTap: _isRefreshing ? null : _refreshAllAdminData,
+                final actionTools = Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    // Tombol Sinkronisasi Data Master
+                    Tooltip(
+                      message: 'Sinkronisasi Seluruh Data',
+                      child: InkWell(
+                        onTap: _isRefreshing ? null : _refreshAllAdminData,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: _isRefreshing
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFFDE68A),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.sync_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                        ),
+                      ),
+                    ),
+                    // Mode Mahasiswa Preview Button
+                    InkWell(
+                      onTap: widget.onSwitchToStudentView,
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A)
-                                  .withValues(alpha: 0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.22),
+                          ),
                         ),
-                        child: _isRefreshing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primary,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.sync_rounded,
-                                color: Color(0xFF334155),
-                                size: 18,
-                              ),
-                      ),
-                    ),
-                  ),
-                  // Mode Mahasiswa Preview Button
-                  InkWell(
-                    onTap: widget.onSwitchToStudentView,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0F172A)
-                                .withValues(alpha: 0.03),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.visibility_outlined,
-                            size: 14,
-                            color: AppColors.primary,
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Mode Siswa',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Bell Notification Icon
-                  Tooltip(
-                    message: 'Notifikasi Sistem & Log Aktivitas',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          setState(() {
-                            _currentView = 'audit_logs';
-                            _selectedStudent = null;
-                            _loadAuditLogs();
-                          });
-                        },
-                        child: Stack(
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF0F172A)
-                                        .withValues(alpha: 0.03),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.notifications_none_rounded,
-                                color: Color(0xFF334155),
-                                size: 18,
-                              ),
+                            Icon(
+                              Icons.visibility_outlined,
+                              size: 14,
+                              color: Color(0xFF38BDF8),
                             ),
-                            Positioned(
-                              right: 7,
-                              top: 7,
-                              child: Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFEF4444),
-                                  shape: BoxShape.circle,
-                                ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Mode Siswa',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-
-              final titleSection = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 3.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.primaryBorder),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
+                    // Bell Notification Icon
+                    Tooltip(
+                      message: 'Notifikasi Sistem & Log Aktivitas',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            setState(() {
+                              _currentView = 'audit_logs';
+                              _selectedStudent = null;
+                              _loadAuditLogs();
+                            });
+                          },
+                          child: Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.22),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              Positioned(
+                                right: 6,
+                                top: 6,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEF4444),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0xFFEF4444),
+                                        blurRadius: 4,
+                                        spreadRadius: 0.5,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        const Flexible(
-                          child: Text(
-                            'KONSOL ADMINISTRATOR',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryDark,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Pusat Kendali Akademik',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Ilmu Komunikasi • UNAZLAM',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              );
-
-              if (isNarrow) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(alignment: Alignment.centerRight, child: actionTools),
-                    const SizedBox(height: 10),
-                    titleSection,
                   ],
                 );
-              }
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(child: titleSection),
-                  const SizedBox(width: 12),
-                  actionTools,
-                ],
-              );
-            },
+                final titleSection = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF34D399),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0xFF10B981),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Flexible(
+                            child: Text(
+                              'KONSOL ADMINISTRATOR • LIVE',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF6EE7B7),
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    const Text(
+                      'Pusat Kendali Eksekutif',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Ilmu Komunikasi • UNAZLAM',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFFDDD6FE),
+                      ),
+                    ),
+                  ],
+                );
+
+                if (isNarrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(alignment: Alignment.centerRight, child: actionTools),
+                      const SizedBox(height: 12),
+                      titleSection,
+                    ],
+                  );
+                }
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: titleSection),
+                    const SizedBox(width: 12),
+                    actionTools,
+                  ],
+                );
+              },
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -898,94 +928,121 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Banner Integrasi FCM Push Notification (UNAZLAM Royal Purple & Amber Glow)
+          // Banner Integrasi FCM Push Notification (Electric Cyan & Midnight Slate Telemetry)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF58138A), Color(0xFF6D28D9)],
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
+              border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.35)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6D28D9).withValues(alpha: 0.22),
+                  color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
               ],
             ),
-            child: LayoutBuilder(
-              builder: (_, _) {
-                final fcmInfo = Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFFDE68A).withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.cell_tower_rounded,
-                        color: Color(0xFFFDE68A),
-                        size: 19,
-                      ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF06B6D4).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.cell_tower_rounded,
+                    color: Colors.white,
+                    size: 19,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF10B981),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Expanded(
-                                child: Text(
-                                  'Firebase Cloud Messaging (FCM v1)',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$_registeredTokensCount perangkat mahasiswa siap menerima push otomatis.',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFFDDD6FE),
-                              height: 1.3,
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            child: Text(
+                              'Firebase Cloud Messaging (FCM v1)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: -0.2,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_registeredTokensCount perangkat mahasiswa aktif siap menerima push otomatis.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
                     ),
-                  ],
-                );
-
-                return fcmInfo;
-              },
+                  ),
+                  child: const Text(
+                    'ONLINE',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF34D399),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 22),
@@ -994,14 +1051,31 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Aksi Cepat Terintegrasi',
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.3,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 3.5,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Aksi Cepat Terintegrasi',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               LayoutBuilder(
@@ -1010,38 +1084,56 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     required VoidCallback onTap,
                     required IconData icon,
                     required String label,
-                    required Color color,
-                    required Color bg,
-                    required Color border,
+                    required List<Color> gradientColors,
+                    required Color glowColor,
+                    required Color borderColor,
                   }) {
-                    return InkWell(
+                    return ScaleButton(
                       onTap: onTap,
-                      borderRadius: BorderRadius.circular(10),
+                      scaleDown: 0.96,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 7,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: bg,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: border),
+                          gradient: LinearGradient(
+                            colors: gradientColors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: borderColor, width: 1.1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: glowColor.withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(icon, size: 13, color: color),
-                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.all(3.5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(icon, size: 12, color: Colors.white),
+                            ),
+                            const SizedBox(width: 5),
                             Flexible(
                               child: Text(
                                 label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
-                                  color: color,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -1055,27 +1147,27 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     onTap: _showWahaGatewayDialog,
                     icon: Icons.phone_android_rounded,
                     label: 'WA Gateway',
-                    color: const Color(0xFF059669),
-                    bg: const Color(0xFFECFDF5),
-                    border: const Color(0xFFA7F3D0),
+                    gradientColors: const [Color(0xFF059669), Color(0xFF10B981)],
+                    glowColor: const Color(0xFF10B981),
+                    borderColor: const Color(0xFF34D399).withValues(alpha: 0.45),
                   );
 
                   final csvBtn = buildToolButton(
                     onTap: () => _showBulkCsvModal(),
                     icon: Icons.file_upload_outlined,
                     label: 'Import CSV',
-                    color: AppColors.primary,
-                    bg: const Color(0xFFEEF2FF),
-                    border: const Color(0xFFC7D2FE),
+                    gradientColors: const [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                    glowColor: const Color(0xFF6366F1),
+                    borderColor: const Color(0xFF818CF8).withValues(alpha: 0.45),
                   );
 
                   final exportBtn = buildToolButton(
                     onTap: _showQuickExportModal,
                     icon: Icons.download_rounded,
                     label: 'Ekspor Data',
-                    color: const Color(0xFF0F172A),
-                    bg: Colors.white,
-                    border: const Color(0xFFE2E8F0),
+                    gradientColors: const [Color(0xFF0F172A), Color(0xFF334155)],
+                    glowColor: const Color(0xFF0F172A),
+                    borderColor: const Color(0xFF64748B).withValues(alpha: 0.45),
                   );
 
                   return Row(
@@ -1141,14 +1233,31 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           const SizedBox(height: 22),
 
           // Section "Menu Utama" (Clean Tech SaaS Grid)
-          const Text(
-            'Menu Utama Modul',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-              letterSpacing: -0.3,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 3.5,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Menu Utama Modul',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
 
@@ -1215,13 +1324,23 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, Color(0xFF58138A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.30),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.verified_user_rounded,
-                    color: AppColors.primary,
+                    color: Colors.white,
                     size: 20,
                   ),
                 ),
@@ -1252,33 +1371,42 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _currentView = 'audit_logs';
-                      _selectedStudent = null;
-                      _loadAuditLogs();
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.primaryBorder),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Log Audit',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        setState(() {
+                          _currentView = 'audit_logs';
+                          _selectedStudent = null;
+                          _loadAuditLogs();
+                        });
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Log Audit',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primaryDark),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 3),
-                      Icon(Icons.arrow_forward_rounded, size: 13, color: AppColors.primary),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -1302,14 +1430,26 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.08),
+              Colors.white,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.18), width: 1.2),
+          border: Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: color.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -1320,10 +1460,24 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                gradient: LinearGradient(
+                  colors: [
+                    color,
+                    color.withValues(alpha: 0.82),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.35),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: Icon(icon, color: Colors.white, size: 17),
             ),
             const SizedBox(height: 10),
             Text(
@@ -1434,12 +1588,22 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            colors: [
+              accentColor.withValues(alpha: 0.08),
+              Colors.white,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
+          border: Border.all(
+            color: accentColor.withValues(alpha: 0.22),
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: accentColor.withValues(alpha: 0.06),
+              color: accentColor.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -1457,12 +1621,30 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ColorfulIconBox(
-                  icon: icon,
-                  color: accentColor,
-                  size: 38,
-                  iconSize: 20,
-                  radius: 11,
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        accentColor,
+                        accentColor.withValues(alpha: 0.82),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(11),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: Colors.white, size: 20),
+                  ),
                 ),
                 const SizedBox(height: 7),
                 Text(

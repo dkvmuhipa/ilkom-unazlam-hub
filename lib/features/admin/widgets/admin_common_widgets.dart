@@ -421,14 +421,29 @@ class AdminMetricCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            colors: [
+              effectiveAccent.withValues(alpha: 0.08),
+              Colors.white,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+          border: Border.all(
+            color: effectiveAccent.withValues(alpha: 0.22),
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: effectiveAccent.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -442,20 +457,35 @@ class AdminMetricCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: effectiveAccent.withValues(alpha: 0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        effectiveAccent,
+                        effectiveAccent.withValues(alpha: 0.82),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: effectiveAccent.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  child: Icon(icon, color: effectiveAccent, size: 20),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
                 if (deltaLabel != null && deltaLabel!.isNotEmpty)
                   Flexible(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: (isPositiveDelta ?? true)
-                            ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                            : const Color(0xFF64748B).withValues(alpha: 0.1),
+                        color: effectiveAccent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: effectiveAccent.withValues(alpha: 0.25),
+                        ),
                       ),
                       child: Text(
                         deltaLabel!,
@@ -464,9 +494,7 @@ class AdminMetricCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: (isPositiveDelta ?? true)
-                              ? const Color(0xFF059669)
-                              : const Color(0xFF475569),
+                          color: effectiveAccent,
                         ),
                       ),
                     ),
@@ -494,7 +522,7 @@ class AdminMetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF475569),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -503,10 +531,10 @@ class AdminMetricCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w600,
+                      color: effectiveAccent.withValues(alpha: 0.85),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
