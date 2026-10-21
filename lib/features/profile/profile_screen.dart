@@ -403,6 +403,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditGreetingNameModal(BuildContext context, StudentProfile student, bool isDark) {
+    EditProfileModal.showGreetingNamePicker(
+      context,
+      student: student,
+      isDark: isDark,
+      onSaved: (newGreetingName) {
+        if (mounted) {
+          setState(() {
+            student.namaPanggilan = newGreetingName;
+          });
+        }
+        widget.onProfileUpdated?.call(student);
+      },
+    );
+  }
+
   void _showQrKtmModal(BuildContext context, StudentProfile student, bool isDark) {
     KtmCardModal.show(
       context,
@@ -599,6 +615,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
+                  _buildMenuItem(
+                    icon: Icons.face_rounded,
+                    iconColor: const Color(0xFF8B5CF6),
+                    iconBg: isDark ? const Color(0xFF281C40) : const Color(0xFFF3E8FF),
+                    title: 'Nama Panggilan & Sapaan',
+                    subtitle: 'Sapaan beranda: "${student.greetingName}"',
+                    onTap: () => _showEditGreetingNameModal(context, student, isDark),
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                  ),
+                  Divider(height: 1, color: borderColor),
                   _buildMenuItem(
                     icon: Icons.lock_reset_rounded,
                     iconColor: const Color(0xFF6D28D9),

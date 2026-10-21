@@ -21,6 +21,7 @@ import 'models/dashboard_models.dart';
 import 'widgets/home_banner_carousel.dart';
 import 'widgets/more_services_modal.dart';
 import 'widgets/urgent_assignment_spotlight.dart';
+import '../profile/widgets/edit_profile_modal.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final StudentProfile student;
@@ -411,7 +412,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         : const Color(0xFFE2E8F0);
     final textMain = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final firstName = student.nama.trim().split(' ').first;
+    final displayName = student.greetingName;
     final timeCtx = _getTimeContext();
     final greeting = timeCtx['greeting'] ?? 'Halo';
 
@@ -462,35 +463,65 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           ),
           const SizedBox(width: 10),
 
-          // Identitas Mahasiswa & Salam
+          // Identitas Mahasiswa & Salam (Ketuk untuk sesuaikan nama sapaan)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$greeting, $firstName 👋',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: textMain,
-                    letterSpacing: -0.3,
+            child: ScaleButton(
+              scaleDown: 0.98,
+              onTap: () {
+                EditProfileModal.showGreetingNamePicker(
+                  context,
+                  student: student,
+                  isDark: isDark,
+                  onSaved: (newName) {
+                    if (mounted) {
+                      setState(() {
+                        student.namaPanggilan = newName;
+                      });
+                    }
+                  },
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '$greeting, $displayName 👋',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: textMain,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 13,
+                        color: textSub.withValues(alpha: 0.65),
+                      ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'S1 Ilmu Komunikasi • Smt ${student.semester}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: textSub,
+                  const SizedBox(height: 2),
+                  Text(
+                    'S1 Ilmu Komunikasi • Smt ${student.semester}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: textSub,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 8),

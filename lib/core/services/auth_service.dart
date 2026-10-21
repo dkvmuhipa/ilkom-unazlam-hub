@@ -630,6 +630,7 @@ class AuthService {
     String? email,
     String? bio,
     String? agama,
+    String? namaPanggilan,
   }) async {
     // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
     try {
@@ -643,6 +644,7 @@ class AuthService {
       if (email != null) data['email'] = email;
       if (bio != null) data['bio'] = bio;
       if (agama != null) data['agama'] = agama;
+      if (namaPanggilan != null) data['nama_panggilan'] = namaPanggilan.trim();
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
@@ -658,17 +660,18 @@ class AuthService {
           if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
         };
 
-        // Coba sertakan bio dan agama
+        // Coba sertakan bio, agama, dan nama_panggilan
         bool synced = false;
-        if (bio != null || agama != null) {
+        if (bio != null || agama != null || namaPanggilan != null) {
           try {
             final updatesExtended = Map<String, dynamic>.from(baseUpdates);
             if (bio != null) updatesExtended['bio'] = bio.trim();
             if (agama != null) updatesExtended['agama'] = agama.trim();
+            if (namaPanggilan != null) updatesExtended['nama_panggilan'] = namaPanggilan.trim();
             await client.from('students').update(updatesExtended).eq('nim', nim);
             synced = true;
           } catch (e) {
-            debugPrint('Info: Sinkronisasi dengan bio/agama belum didukung schema database: $e');
+            debugPrint('Info: Sinkronisasi dengan bio/agama/nama_panggilan belum didukung schema database: $e');
           }
         }
 
@@ -698,6 +701,7 @@ class AuthService {
         if (data['email'] != null) profile.email = data['email'].toString();
         if (data['bio'] != null) profile.bio = data['bio'].toString();
         if (data['agama'] != null) profile.agama = data['agama'].toString();
+        if (data['nama_panggilan'] != null) profile.namaPanggilan = data['nama_panggilan'].toString();
       }
     } catch (_) {}
   }

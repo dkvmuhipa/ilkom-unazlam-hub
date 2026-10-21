@@ -409,6 +409,7 @@ class StudentProfile {
   String? avatarUrl;
   String? bio;
   String? agama;
+  String? namaPanggilan;
 
   StudentProfile({
     required this.id,
@@ -428,6 +429,7 @@ class StudentProfile {
     this.avatarUrl,
     this.bio,
     this.agama,
+    this.namaPanggilan,
   });
 
   StudentProfile copyWith({
@@ -448,6 +450,7 @@ class StudentProfile {
     String? avatarUrl,
     String? bio,
     String? agama,
+    String? namaPanggilan,
   }) {
     return StudentProfile(
       id: id ?? this.id,
@@ -467,7 +470,17 @@ class StudentProfile {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,
       agama: agama ?? this.agama,
+      namaPanggilan: namaPanggilan ?? this.namaPanggilan,
     );
+  }
+
+  /// Nama panggilan untuk sapaan beranda (default: kata pertama dari nama lengkap)
+  String get greetingName {
+    if (namaPanggilan != null && namaPanggilan!.trim().isNotEmpty) {
+      return namaPanggilan!.trim();
+    }
+    final parts = nama.trim().split(RegExp(r'\s+'));
+    return parts.isNotEmpty ? parts.first : nama;
   }
 
   /// Preferensi agama mahasiswa, default ke 'Islam' jika belum ditentukan

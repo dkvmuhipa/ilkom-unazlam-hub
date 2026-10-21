@@ -633,6 +633,476 @@ class EditProfileModal {
     );
   }
 
+  /// 1c. Modal khusus pengaturan Nama Sapaan & Panggilan (Greeting Name)
+  static void showGreetingNamePicker(
+    BuildContext context, {
+    required StudentProfile student,
+    required bool isDark,
+    required void Function(String newGreetingName) onSaved,
+  }) {
+    final parts = student.nama.trim().split(RegExp(r'\s+'));
+    final firstName = parts.isNotEmpty ? parts.first : student.nama;
+    final lastName = parts.length > 1 ? parts.last : parts.first;
+
+    // Tentukan mode awal: 'first', 'last', atau 'custom'
+    final initialName = student.greetingName;
+    String mode;
+    if (initialName.toLowerCase() == firstName.toLowerCase()) {
+      mode = 'first';
+    } else if (parts.length > 1 && initialName.toLowerCase() == lastName.toLowerCase()) {
+      mode = 'last';
+    } else {
+      mode = 'custom';
+    }
+
+    final customController = TextEditingController(
+      text: mode == 'custom' ? initialName : '',
+    );
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final cardBg = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+          final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+          final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
+
+          final previewName = mode == 'first'
+              ? firstName
+              : (mode == 'last'
+                  ? lastName
+                  : (customController.text.trim().isNotEmpty
+                      ? customController.text.trim()
+                      : firstName));
+
+          final hour = DateTime.now().hour;
+          final greetingText = (hour >= 4 && hour < 11)
+              ? 'Selamat Pagi'
+              : (hour >= 11 && hour < 15)
+                  ? 'Selamat Siang'
+                  : (hour >= 15 && hour < 18)
+                      ? 'Selamat Sore'
+                      : 'Selamat Malam';
+
+          return Container(
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(22, 16, 22, 24 + bottomInset),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.face_rounded,
+                          color: Color(0xFF6D28D9),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sesuaikan Nama Sapaan',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w800,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Pilih nama yang Anda inginkan saat disapa di aplikasi',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: () => Navigator.pop(modalCtx),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // LIVE PREVIEW CARD
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF2C1E4A), const Color(0xFF1E2640)]
+                            : [const Color(0xFFF3E8FF), const Color(0xFFEFF6FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF6D28D9).withValues(alpha: isDark ? 0.35 : 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6D28D9).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.waving_hand_rounded,
+                              color: Color(0xFF8B5CF6),
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Pratinjau Sapaan Beranda:',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: textSecondary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '$greetingText, $previewName 👋',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.3,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // OPTION 1: NAMA DEPAN
+                  _buildGreetingOptionTile(
+                    title: 'Gunakan Nama Depan',
+                    subtitle: firstName,
+                    isSelected: mode == 'first',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setModalState(() => mode = 'first');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  // OPTION 2: NAMA BELAKANG (jika nama memiliki lebih dari 1 kata)
+                  if (parts.length > 1) ...[
+                    _buildGreetingOptionTile(
+                      title: 'Gunakan Nama Belakang / Keluarga',
+                      subtitle: lastName,
+                      isSelected: mode == 'last',
+                      isDark: isDark,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setModalState(() => mode = 'last');
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // OPTION 3: KUSTOM / NICKNAME
+                  _buildGreetingOptionTile(
+                    title: 'Nama Panggilan Khusus (Kustom)',
+                    subtitle: mode == 'custom'
+                        ? 'Ketik nama panggilan Anda di bawah ini'
+                        : 'Atur nama panggilan lain yang Anda sukai',
+                    isSelected: mode == 'custom',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setModalState(() => mode = 'custom');
+                    },
+                  ),
+
+                  // INPUT FIELD JIKA MODE KUSTOM AKTIF
+                  if (mode == 'custom') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: customController,
+                      autofocus: true,
+                      onChanged: (_) => setModalState(() {}),
+                      maxLength: 24,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Contoh: Irfan / Faras / Aca',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC),
+                        prefixIcon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF6D28D9)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: isDark ? const Color(0xFF38384E) : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF6D28D9),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 18),
+
+                  // TOMBOL SIMPAN
+                  ScaleButton(
+                    onTap: isSaving
+                        ? null
+                        : () async {
+                            final chosenName = mode == 'first'
+                                ? firstName
+                                : (mode == 'last'
+                                    ? lastName
+                                    : (customController.text.trim().isNotEmpty
+                                        ? customController.text.trim()
+                                        : firstName));
+
+                            setModalState(() => isSaving = true);
+                            final messenger = ScaffoldMessenger.of(context);
+                            final nav = Navigator.of(modalCtx);
+
+                            try {
+                              await AuthService.updateProfileDetails(
+                                nim: student.nim,
+                                namaPanggilan: chosenName,
+                              );
+
+                              onSaved(chosenName);
+                              HapticFeedback.heavyImpact();
+                              nav.pop();
+
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Nama sapaan berhasil disetel ke "$chosenName"! 👋',
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: const Color(0xFF10B981),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            } catch (e) {
+                              setModalState(() => isSaving = false);
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal menyimpan nama sapaan: $e'),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                ),
+                              );
+                            }
+                          },
+                    scaleDown: 0.96,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6D28D9), Color(0xFF4C1D95)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Terapkan Nama Sapaan',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(modalCtx),
+                      child: Text(
+                        'Batal',
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static Widget _buildGreetingOptionTile({
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required bool isDark,
+    required Color textPrimary,
+    required Color textSecondary,
+    required VoidCallback onTap,
+  }) {
+    const activeColor = Color(0xFF6D28D9);
+
+    return ScaleButton(
+      onTap: onTap,
+      scaleDown: 0.98,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? activeColor.withValues(alpha: isDark ? 0.2 : 0.08)
+              : (isDark ? const Color(0xFF28283E) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? activeColor
+                : (isDark ? const Color(0xFF38384E) : const Color(0xFFE2E8F0)),
+            width: isSelected ? 1.8 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? activeColor : textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isSelected ? activeColor.withValues(alpha: 0.8) : textSecondary,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+              color: isSelected ? activeColor : (isDark ? Colors.white30 : Colors.grey.shade400),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 2. Modal khusus pembaruan Kontak Mahasiswa & Sosial Media
   static void showContactEditor(
     BuildContext context, {
