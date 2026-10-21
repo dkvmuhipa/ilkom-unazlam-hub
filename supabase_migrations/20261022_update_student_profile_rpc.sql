@@ -1,21 +1,20 @@
 -- ====================================================================
 -- MIGRATION: 20261022_update_student_profile_rpc.sql
 -- DESCRIPTION:
--- RPC function public.update_student_profile untuk menyimpan foto profil (avatar_url),
--- email pribadi aktif, kontak, peminatan, agama, dan bio mahasiswa ke tabel public.students.
---
--- Masalah yang diselesaikan:
--- Sebelumnya mutasi langsung (UPDATE students) ditolak RLS / hak akses tabel (Error 42501)
--- bagi pengguna dengan status sesi fallback atau akun tanpa JWT auth_user_id terhubung.
--- Akibatnya, pembaruan hanya tersimpan di SharedPreferences perangkat lokal dan hilang
--- saat login dari perangkat lain.
---
--- Dengan fungsi SECURITY DEFINER ini, profil dan foto mahasiswa tersimpan permanen
--- ke basis data Supabase cloud dan tersinkronisasi lintas perangkat (cross-device).
+-- Menambahkan kolom pendukung (bio, agama, avatar_url) jika belum ada,
+-- dan membuat RPC function public.update_student_profile untuk menyimpan
+-- foto profil (avatar_url), email pribadi aktif, kontak, peminatan,
+-- agama, dan bio mahasiswa ke tabel public.students di Supabase cloud.
 -- ====================================================================
 
 BEGIN;
 
+-- 1. Pastikan kolom pendukung tersedia di tabel students
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS bio TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS agama TEXT;
+
+-- 2. Fungsi RPC update_student_profile dengan hak akses SECURITY DEFINER
 CREATE OR REPLACE FUNCTION public.update_student_profile(
   p_nim text,
   p_email text DEFAULT NULL,
