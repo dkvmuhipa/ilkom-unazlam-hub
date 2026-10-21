@@ -212,51 +212,95 @@ class AdminAcademicYearView extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          existing == null ? 'Tambah Tahun Akademik' : 'Edit Tahun Akademik',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        content: AdminFormField(
-          controller: ctrl,
-          hintText: 'Contoh: 2027/2028',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AdminSpaciousModal(
+          title: existing == null ? 'Tambah Tahun Akademik' : 'Edit Tahun Akademik',
+          subtitle: existing == null
+              ? 'Tentukan format tahun ajaran aktif untuk semester berjalan.'
+              : 'Perbarui periode tahun akademik ${existing.tahun}',
+          icon: Icons.calendar_month_rounded,
+          iconColor: const Color(0xFF6D28D9),
+          maxWidth: 540,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'PERIODE TAHUN AJARAN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const AdminFormLabel('Tahun Akademik (Format: YYYY/YYYY) *'),
+              AdminFormField(
+                controller: ctrl,
+                hintText: 'Contoh: 2027/2028',
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Pilihan Cepat:',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  '2025/2026',
+                  '2026/2027',
+                  '2027/2028',
+                  '2028/2029',
+                ].map((yr) {
+                  return ActionChip(
+                    label: Text(yr),
+                    onPressed: () {
+                      ctrl.text = yr;
+                      setDialogState(() {});
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final year = ctrl.text.trim();
-              if (!RegExp(r'^\d{4}/\d{4}$').hasMatch(year)) {
-                onShowMessage('Format tahun harus seperti 2026/2027.', isError: true);
-                return;
-              }
-              try {
-                await AdminAcademicService.saveAcademicYear(id: existing?.id, year: year);
-                onRecordAudit(
-                  action: existing == null ? 'CREATE' : 'UPDATE',
-                  module: 'TAHUN_AKADEMIK',
-                  description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} tahun akademik $year.',
-                );
-                if (!ctx.mounted) return;
-                Navigator.pop(ctx);
-                await onReload();
-                onShowMessage('Tahun akademik tersimpan.');
-              } catch (error) {
-                onShowMessage(error.toString(), isError: true);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
             ),
-            child: const Text('Simpan'),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: () async {
+                final year = ctrl.text.trim();
+                if (!RegExp(r'^\d{4}/\d{4}$').hasMatch(year)) {
+                  onShowMessage('Format tahun harus seperti 2026/2027.', isError: true);
+                  return;
+                }
+                try {
+                  await AdminAcademicService.saveAcademicYear(id: existing?.id, year: year);
+                  onRecordAudit(
+                    action: existing == null ? 'CREATE' : 'UPDATE',
+                    module: 'TAHUN_AKADEMIK',
+                    description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} tahun akademik $year.',
+                  );
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  await onReload();
+                  onShowMessage('Tahun akademik tersimpan.');
+                } catch (error) {
+                  onShowMessage(error.toString(), isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Tahun Akademik'),
+            ),
+          ],
+        ),
       ),
     );
   }

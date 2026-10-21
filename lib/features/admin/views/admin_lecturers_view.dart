@@ -256,71 +256,108 @@ class _AdminLecturersViewState extends State<AdminLecturersView> {
     final namaCtrl = TextEditingController(text: existing?.nama ?? '');
     final matkulCtrl = TextEditingController(text: existing?.mataKuliah ?? '');
     final emailCtrl = TextEditingController(text: existing?.email ?? '');
+    bool isSaving = false;
 
-    final saved = await showDialog<bool>(
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          existing == null ? 'Tambah Dosen Pengampu' : 'Edit Dosen Pengampu',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdminFormField(
-              controller: namaCtrl,
-              hintText: 'Nama Lengkap & Gelar',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AdminSpaciousModal(
+          title: existing == null ? 'Tambah Dosen Pengampu' : 'Edit Dosen Pengampu',
+          subtitle: existing == null
+              ? 'Lengkapi profil dosen pengampu dan mata kuliah yang diampu.'
+              : 'Perbarui informasi akademik untuk ${existing.nama}',
+          icon: Icons.person_pin_rounded,
+          iconColor: const Color(0xFF6D28D9),
+          maxWidth: 580,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'INFORMASI DOSEN & MATA KULIAH',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const AdminFormLabel('Nama Lengkap & Gelar *'),
+              AdminFormField(
+                controller: namaCtrl,
+                hintText: 'Contoh: Dr. Sarah Wijaya, M.I.Kom',
+              ),
+              const SizedBox(height: 14),
+              const AdminFormLabel('Mata Kuliah yang Diampu *'),
+              AdminFormField(
+                controller: matkulCtrl,
+                hintText: 'Contoh: Komunikasi Massa / Teori Media',
+              ),
+              const SizedBox(height: 14),
+              const AdminFormLabel('Email Resmi Dosen (Opsional)'),
+              AdminFormField(
+                controller: emailCtrl,
+                hintText: 'Contoh: dosen@stiencas.ac.id',
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
             ),
-            const SizedBox(height: 10),
-            AdminFormField(
-              controller: matkulCtrl,
-              hintText: 'Mata Kuliah Diampu',
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final nama = namaCtrl.text.trim();
+                      final matkul = matkulCtrl.text.trim();
+                      if (nama.isEmpty || matkul.isEmpty) {
+                        widget.onShowMessage('Nama dan mata kuliah wajib diisi.', isError: true);
+                        return;
+                      }
+                      setDialogState(() => isSaving = true);
+                      try {
+                        await AdminAcademicService.saveLecturer(
+                          id: existing?.id,
+                          nama: nama,
+                          email: emailCtrl.text.trim(),
+                          course: matkul,
+                        );
+                        widget.onRecordAudit(
+                          action: existing == null ? 'CREATE' : 'UPDATE',
+                          module: 'DOSEN',
+                          description:
+                              '${existing == null ? 'Menambahkan' : 'Memperbarui'} data dosen $nama.',
+                          metadata: {'mata_kuliah': matkul},
+                        );
+                        if (!mounted) return;
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        await widget.onReload();
+                        widget.onShowMessage('Data dosen berhasil disimpan.');
+                      } catch (error) {
+                        if (ctx.mounted) setDialogState(() => isSaving = false);
+                        widget.onShowMessage(error.toString(), isError: true);
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Simpan Data Dosen'),
             ),
-            const SizedBox(height: 10),
-            AdminFormField(controller: emailCtrl, hintText: 'Email dosen (opsional)'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
-    if (saved == true) {
-      if (namaCtrl.text.trim().isEmpty || matkulCtrl.text.trim().isEmpty) {
-        widget.onShowMessage('Nama dan mata kuliah wajib diisi.', isError: true);
-        return;
-      }
-      try {
-        await AdminAcademicService.saveLecturer(
-          id: existing?.id,
-          nama: namaCtrl.text.trim(),
-          email: emailCtrl.text.trim(),
-          course: matkulCtrl.text.trim(),
-        );
-        widget.onRecordAudit(
-          action: existing == null ? 'CREATE' : 'UPDATE',
-          module: 'DOSEN',
-          description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} data dosen ${namaCtrl.text.trim()}.',
-          metadata: {'mata_kuliah': matkulCtrl.text.trim()},
-        );
-        await widget.onReload();
-        widget.onShowMessage('Data dosen tersimpan.');
-      } catch (error) {
-        widget.onShowMessage(error.toString(), isError: true);
-      }
-    }
   }
 }

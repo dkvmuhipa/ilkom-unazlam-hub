@@ -130,50 +130,119 @@ class _AdminClassesViewState extends State<AdminClassesView> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialog) => AlertDialog(
-          title: Text(existing == null ? 'Tambah kelas' : 'Edit kelas'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama kelas')),
-                DropdownButtonFormField<String>(
-                  initialValue: prodi,
-                  decoration: const InputDecoration(labelText: 'Program studi'),
-                  items: prodis.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                  onChanged: (v) {
-                    if (v != null) setDialog(() => prodi = v);
-                  },
+        builder: (ctx, setDialog) => AdminSpaciousModal(
+          title: existing == null ? 'Tambah Kelas Baru' : 'Edit Kelas',
+          subtitle: existing == null
+              ? 'Atur rombongan belajar, program studi, dan kuota mahasiswa.'
+              : 'Perbarui rincian rombel ${existing.nama}',
+          icon: Icons.groups_rounded,
+          iconColor: const Color(0xFF6D28D9),
+          maxWidth: 600,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'INFORMASI KELAS & KUOTA',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
                 ),
-                DropdownButtonFormField<int>(
-                  initialValue: semester,
-                  decoration: const InputDecoration(labelText: 'Semester'),
-                  items: List.generate(8, (i) => i + 1)
-                      .map((v) => DropdownMenuItem(value: v, child: Text('Semester $v')))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) setDialog(() => semester = v);
-                  },
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: year,
-                  decoration: const InputDecoration(labelText: 'Tahun akademik'),
-                  items: years.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                  onChanged: (v) {
-                    if (v != null) setDialog(() => year = v);
-                  },
-                ),
-                TextField(
-                  controller: capacity,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Kapasitas mahasiswa'),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              const AdminFormLabel('Nama Kelas / Rombel *'),
+              AdminFormField(
+                controller: name,
+                hintText: 'Contoh: Ilmu Komunikasi A (Reguler)',
+              ),
+              const SizedBox(height: 14),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Program Studi'),
+                        AdminDropdownField<String>(
+                          value: prodis.contains(prodi) ? prodi : prodis.first,
+                          items: prodis,
+                          onChanged: (v) {
+                            if (v != null) setDialog(() => prodi = v);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Semester'),
+                        AdminDropdownField<int>(
+                          value: semester,
+                          items: List.generate(8, (i) => i + 1),
+                          onChanged: (v) {
+                            if (v != null) setDialog(() => semester = v);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Tahun Akademik'),
+                        AdminDropdownField<String>(
+                          value: years.contains(year) ? year : years.first,
+                          items: years,
+                          onChanged: (v) {
+                            if (v != null) setDialog(() => year = v);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Kapasitas Mahasiswa *'),
+                        AdminFormField(
+                          controller: capacity,
+                          hintText: 'Contoh: 35',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Simpan')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Kelas'),
+            ),
           ],
         ),
       ),

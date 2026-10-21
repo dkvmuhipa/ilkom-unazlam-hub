@@ -62,73 +62,134 @@ class AdminCreationModals {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
+        builder: (ctx, setDialogState) => AdminSpaciousModal(
+          title: 'Rilis Tugas Baru',
+          subtitle: 'Publikasikan tugas baru ke portal mahasiswa beserta instruksi dan tenggat.',
+          icon: Icons.post_add_rounded,
+          iconColor: const Color(0xFF0EA5E9),
+          maxWidth: 660,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.post_add_rounded, color: Color(0xFF0EA5E9), size: 24),
-              SizedBox(width: 10),
-              Text('Rilis Tugas Baru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AdminFormLabel('Judul Tugas'),
-                AdminFormField(controller: titleCtrl, hintText: 'Contoh: Analisis Kasus Komunikasi Massa'),
-                const SizedBox(height: 12),
-                const AdminFormLabel('Mata Kuliah'),
-                if (courses.isNotEmpty)
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedCourseId.isNotEmpty ? selectedCourseId : courses.first.id,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
-                    items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nama, maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setDialogState(() {
-                          selectedCourseId = val;
-                          selectedCourseName = courses.firstWhere((c) => c.id == val, orElse: () => courses.first).nama;
-                        });
-                      }
-                    },
-                  )
-                else
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text('Belum ada mata kuliah terdaftar', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                  ),
-                const SizedBox(height: 12),
-                const AdminFormLabel('Deskripsi & Petunjuk'),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 3,
+              const Text(
+                'INFORMASI TUGAS & KELAS',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const AdminFormLabel('Judul Tugas *'),
+              AdminFormField(
+                controller: titleCtrl,
+                hintText: 'Contoh: Analisis Kasus Komunikasi Massa',
+              ),
+              const SizedBox(height: 14),
+              const AdminFormLabel('Mata Kuliah Terkait *'),
+              if (courses.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCourseId.isNotEmpty ? selectedCourseId : courses.first.id,
                   decoration: InputDecoration(
-                    hintText: 'Rincian tugas, format pengumpulan, bobot penilaian...',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  items: courses
+                      .map((c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(
+                              '${c.nama} (${c.kode})',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() {
+                        selectedCourseId = val;
+                        selectedCourseName =
+                            courses.firstWhere((c) => c.id == val, orElse: () => courses.first).nama;
+                      });
+                    }
+                  },
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Belum ada mata kuliah terdaftar',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const AdminFormLabel('Link / Tautan Pengumpulan (Opsional)'),
-                AdminFormField(controller: linkCtrl, hintText: 'https://forms.gle/... atau Classroom'),
-                const SizedBox(height: 12),
-                Row(
+              const SizedBox(height: 14),
+              const AdminFormLabel('Kategori Tugas'),
+              Wrap(
+                spacing: 8,
+                children: ['Individu', 'Kelompok', 'Praktikum', 'UTS', 'UAS'].map((cat) {
+                  final isSel = category == cat;
+                  return ChoiceChip(
+                    label: Text(cat),
+                    selected: isSel,
+                    selectedColor: const Color(0xFFE0F2FE),
+                    onSelected: (_) => setDialogState(() => category = cat),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+              const AdminFormLabel('Deskripsi & Petunjuk Pengumpulan'),
+              TextField(
+                controller: descCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Rincian tugas, format pengumpulan dokumen (PDF/Word), bobot penilaian...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AdminFormLabel('Link / Tautan Pengumpulan (Opsional)'),
+              AdminFormField(
+                controller: linkCtrl,
+                hintText: 'https://forms.gle/... atau Classroom',
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tenggat Waktu:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    TextButton.icon(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Tenggat Waktu Pengumpulan',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(
+                          '${deadline.day}/${deadline.month}/${deadline.year} pukul 23:59 WITA',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
                       icon: const Icon(Icons.calendar_today_rounded, size: 14),
-                      label: Text('${deadline.day}/${deadline.month}/${deadline.year} 23:59'),
+                      label: const Text('Atur Tanggal'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF0F172A),
+                        elevation: 0,
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: ctx,
@@ -145,15 +206,22 @@ class AdminCreationModals {
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
             FilledButton.icon(
               icon: const Icon(Icons.publish_rounded, size: 16),
               label: const Text('Rilis Tugas & Notif'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0EA5E9)),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0EA5E9),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () async {
                 if (titleCtrl.text.trim().isEmpty) {
                   onShowMessage('Judul tugas harus diisi.', isError: true);

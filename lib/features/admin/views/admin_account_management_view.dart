@@ -122,11 +122,17 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(isActive ? 'Aktifkan akun kembali?' : 'Nonaktifkan akun?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(
+          isActive ? 'Aktifkan akun kembali?' : 'Nonaktifkan akun?',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: Text(
           isActive
               ? 'Akun ${account.nama} dapat masuk kembali setelah diaktifkan.'
               : 'Akun ${account.nama} tidak dapat masuk setelah dinonaktifkan. Profil dan riwayatnya tetap disimpan.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
@@ -140,6 +146,8 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
                   ? const Color(0xFF059669)
                   : const Color(0xFFDC2626),
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text(isActive ? 'Aktifkan' : 'Nonaktifkan'),
           ),

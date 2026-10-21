@@ -134,85 +134,183 @@ class AdminSystemSettingsView extends StatelessWidget {
     )));
   }
   void _showBackupDialog(BuildContext context) {
+    final tables = [
+      {'name': 'Akun Mahasiswa', 'id': 'students', 'icon': Icons.people_outline},
+      {'name': 'Mata Kuliah & Jadwal', 'id': 'courses', 'icon': Icons.menu_book_outlined},
+      {'name': 'Tugas & Modul', 'id': 'assignments', 'icon': Icons.assignment_outlined},
+      {'name': 'Pengumuman Siaran', 'id': 'announcements', 'icon': Icons.campaign_outlined},
+      {'name': 'Kas & Keuangan', 'id': 'treasury_transactions', 'icon': Icons.account_balance_wallet_outlined},
+      {'name': 'Kelas & Rombel', 'id': 'academic_classes', 'icon': Icons.groups_outlined},
+      {'name': 'Dosen Pengampu', 'id': 'lecturers', 'icon': Icons.person_pin_outlined},
+      {'name': 'Tahun Akademik', 'id': 'academic_years', 'icon': Icons.calendar_month_outlined},
+    ];
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(scrollable: true, insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Backup & Arsip Data',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: const Text(
-          'Unduh salinan data yang tersimpan di Supabase: akun mahasiswa, mata kuliah, tugas, pengumuman, transaksi kas, kelas, dosen, dan tahun akademik.',
-          style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          scrollable: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.cloud_download_rounded, color: Color(0xFF6D28D9), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Backup & Ekspor Database',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Cadangan data lengkap Supabase format JSON.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.normal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              try {
-                final client = SupabaseService.client;
-                if (client == null) {
-                  throw Exception('Supabase belum terhubung.');
-                }
-                final tables = [
-                  'students',
-                  'courses',
-                  'assignments',
-                  'announcements',
-                  'treasury_transactions',
-                  'academic_classes',
-                  'lecturers',
-                  'academic_years',
-                ];
-                final backup = <String, dynamic>{
-                  'exported_at': DateTime.now().toUtc().toIso8601String(),
-                  'format_version': 1,
-                };
-                for (final table in tables) {
-                  backup[table] = await client.from(table).select();
-                }
-                final payload = const JsonEncoder.withIndent('  ')
-                    .convert(backup);
-                final exportResult = await ExportService.exportFile(
-                  'ilkom_hub_backup_${DateTime.now().toIso8601String().substring(0, 10)}.json',
-                  payload,
-                );
-                if (exportResult == FileExportResult.dismissed) return;
-                if (exportResult == FileExportResult.unavailable) {
-                  await Clipboard.setData(ClipboardData(text: payload));
-                }
-                onRecordAudit(
-                  action: 'EXPORT',
-                  module: 'BACKUP',
-                  description: 'Mengekspor backup JSON data aplikasi.',
-                  metadata: {'tabel': tables},
-                );
-                if (!ctx.mounted) return;
-                Navigator.pop(ctx);
-                onShowMessage(switch (exportResult) {
-                  FileExportResult.downloaded =>
-                    'Backup JSON berhasil diunduh.',
-                  FileExportResult.shared => 'Pilih lokasi penyimpanan pada menu berbagi untuk menyimpan backup JSON.',
-                  FileExportResult.dismissed => '',
-                  FileExportResult.unavailable => 'Ekspor file tidak tersedia. Data backup JSON disalin ke clipboard.',
-                });
-              } catch (error) {
-                onShowMessage('Backup gagal: $error', isError: true);
-              }
-            },
-            icon: const Icon(Icons.download, size: 16),
-            label: const Text('Ekspor JSON'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TABEL DATABASE YANG AKAN DICADANGKAN',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF64748B),
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < tables.length; i++) ...[
+                        if (i > 0) const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(tables[i]['icon'] as IconData, size: 16, color: const Color(0xFF6D28D9)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tables[i]['name'] as String,
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                    ),
+                                    Text(
+                                      tables[i]['id'] as String,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                        color: Color(0xFF6D28D9),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Catatan: File JSON yang diekspor dapat digunakan untuk arsip fisik atau restore darurat.',
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                ),
+              ],
             ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  final client = SupabaseService.client;
+                  if (client == null) {
+                    throw Exception('Supabase belum terhubung.');
+                  }
+                  final tableNames = tables.map((t) => t['id'] as String).toList();
+                  final backup = <String, dynamic>{
+                    'exported_at': DateTime.now().toUtc().toIso8601String(),
+                    'format_version': 1,
+                  };
+                  for (final table in tableNames) {
+                    backup[table] = await client.from(table).select();
+                  }
+                  final payload = const JsonEncoder.withIndent('  ').convert(backup);
+                  final exportResult = await ExportService.exportFile(
+                    'ilkom_hub_backup_${DateTime.now().toIso8601String().substring(0, 10)}.json',
+                    payload,
+                  );
+                  if (exportResult == FileExportResult.dismissed) return;
+                  if (exportResult == FileExportResult.unavailable) {
+                    await Clipboard.setData(ClipboardData(text: payload));
+                  }
+                  onRecordAudit(
+                    action: 'EXPORT',
+                    module: 'BACKUP',
+                    description: 'Mengekspor backup JSON data aplikasi.',
+                    metadata: {'tabel': tableNames},
+                  );
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  onShowMessage(switch (exportResult) {
+                    FileExportResult.downloaded => 'Backup JSON berhasil diunduh.',
+                    FileExportResult.shared =>
+                      'Pilih lokasi penyimpanan pada menu berbagi untuk menyimpan backup JSON.',
+                    FileExportResult.dismissed => '',
+                    FileExportResult.unavailable =>
+                      'Ekspor file tidak tersedia. Data backup JSON disalin ke clipboard.',
+                  });
+                } catch (error) {
+                  onShowMessage('Backup gagal: $error', isError: true);
+                }
+              },
+              icon: const Icon(Icons.download_rounded, size: 16),
+              label: const Text('Ekspor JSON'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

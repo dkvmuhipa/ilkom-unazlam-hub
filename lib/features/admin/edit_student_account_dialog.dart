@@ -79,7 +79,7 @@ class _EditStudentAccountDialogState extends State<EditStudentAccountDialog> {
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: const BoxConstraints(maxWidth: 640),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

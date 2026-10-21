@@ -100,75 +100,323 @@ class _AdminCoursesViewState extends State<AdminCoursesView> {
   void _showCourseDialog({Course? existing}) {
     final namaCtrl = TextEditingController(text: existing?.nama ?? '');
     final kodeCtrl = TextEditingController(text: existing?.kode ?? '');
+    final dosenCtrl = TextEditingController(text: existing?.dosen ?? '');
+    final dosenWaCtrl = TextEditingController(text: existing?.dosenWa ?? '');
+    final ruanganCtrl = TextEditingController(text: existing?.ruangan ?? '');
+    final linkVirtualCtrl = TextEditingController(text: existing?.linkVirtual ?? '');
+    final jamMulaiCtrl = TextEditingController(text: existing?.jamMulai ?? '08:00');
+    final jamSelesaiCtrl = TextEditingController(text: existing?.jamSelesai ?? '09:40');
+
+    int sks = existing?.sks ?? 2;
+    int semester = existing?.semester ?? 1;
+    String hari = existing?.hari ?? 'Senin';
+    const hariOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          existing == null ? 'Tambah Mata Kuliah' : 'Edit Mata Kuliah',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdminFormField(controller: namaCtrl, hintText: 'Nama Mata Kuliah'),
-            const SizedBox(height: 10),
-            AdminFormField(
-              controller: kodeCtrl,
-              hintText: 'Kode Matkul (Contoh: IK-107)',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AdminSpaciousModal(
+          title: existing == null ? 'Tambah Mata Kuliah Baru' : 'Edit Mata Kuliah',
+          subtitle: existing == null
+              ? 'Lengkapi rincian kurikulum, jadwal, dan dosen pengampu.'
+              : 'Perbarui informasi mata kuliah ${existing.kode}',
+          icon: Icons.menu_book_rounded,
+          iconColor: const Color(0xFF0EA5E9),
+          maxWidth: 680,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Identitas Mata Kuliah
+              const Text(
+                'IDENTITAS MATA KULIAH',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Nama Mata Kuliah *'),
+                        AdminFormField(
+                          controller: namaCtrl,
+                          hintText: 'Contoh: Teori Komunikasi Massa',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Kode Matkul *'),
+                        AdminFormField(
+                          controller: kodeCtrl,
+                          hintText: 'Contoh: IK-101',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // SKS & Semester
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Bobot SKS'),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [1, 2, 3, 4, 6].map((s) {
+                            final isSel = sks == s;
+                            return ChoiceChip(
+                              label: Text('$s SKS'),
+                              selected: isSel,
+                              selectedColor: const Color(0xFFE0F2FE),
+                              onSelected: (_) => setDialogState(() => sks = s),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Semester Ditawarkan'),
+                        AdminDropdownField<int>(
+                          value: semester,
+                          items: List.generate(8, (i) => i + 1),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => semester = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // 2. Dosen Pengampu
+              const Text(
+                'DOSEN PENGAMPU & KONTAK',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Nama Dosen Pengampu'),
+                        AdminFormField(
+                          controller: dosenCtrl,
+                          hintText: 'Contoh: Dr. Sarah Wijaya, M.Si',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('WhatsApp Dosen (Opsional)'),
+                        AdminFormField(
+                          controller: dosenWaCtrl,
+                          hintText: 'Contoh: 081234567890',
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Jadwal & Ruangan
+              const Text(
+                'JADWAL & LOKASI PERKULIAHAN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Hari Kuliah'),
+                        AdminDropdownField<String>(
+                          value: hariOptions.contains(hari) ? hari : hariOptions.first,
+                          items: hariOptions,
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => hari = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Jam Mulai'),
+                        AdminFormField(
+                          controller: jamMulaiCtrl,
+                          hintText: '08:00',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Jam Selesai'),
+                        AdminFormField(
+                          controller: jamSelesaiCtrl,
+                          hintText: '09:40',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              AdminAdaptiveRow(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Ruangan Kuliah / Lab'),
+                        AdminFormField(
+                          controller: ruanganCtrl,
+                          hintText: 'Contoh: Ruang 302 / Lab Multimedia',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AdminFormLabel('Tautan Kelas Virtual (Opsional)'),
+                        AdminFormField(
+                          controller: linkVirtualCtrl,
+                          hintText: 'https://meet.google.com/...',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final nama = namaCtrl.text.trim();
+                      final kode = kodeCtrl.text.trim();
+                      if (nama.isEmpty || kode.isEmpty) {
+                        widget.onShowMessage('Nama mata kuliah dan kode wajib diisi.', isError: true);
+                        return;
+                      }
+                      setDialogState(() => isSaving = true);
+                      final course = Course(
+                        id: existing?.id ?? '',
+                        nama: nama,
+                        kode: kode,
+                        dosen: dosenCtrl.text.trim().isNotEmpty ? dosenCtrl.text.trim() : 'Belum ditentukan',
+                        dosenWa: dosenWaCtrl.text.trim().isNotEmpty ? dosenWaCtrl.text.trim() : null,
+                        sks: sks,
+                        semester: semester,
+                        hari: hari,
+                        jamMulai: jamMulaiCtrl.text.trim().isNotEmpty ? jamMulaiCtrl.text.trim() : '08:00',
+                        jamSelesai: jamSelesaiCtrl.text.trim().isNotEmpty ? jamSelesaiCtrl.text.trim() : '09:40',
+                        ruangan: ruanganCtrl.text.trim().isNotEmpty ? ruanganCtrl.text.trim() : 'Belum ditentukan',
+                        linkVirtual: linkVirtualCtrl.text.trim().isNotEmpty ? linkVirtualCtrl.text.trim() : null,
+                      );
+                      final ok = existing == null
+                          ? await SupabaseRepository.createCourse(course)
+                          : await SupabaseRepository.updateCourse(course);
+                      if (!mounted) return;
+                      setDialogState(() => isSaving = false);
+                      if (ok) {
+                        widget.onRecordAudit(
+                          action: existing == null ? 'CREATE' : 'UPDATE',
+                          module: 'MATA_KULIAH',
+                          description:
+                              '${existing == null ? 'Menambahkan' : 'Memperbarui'} mata kuliah ${course.nama} (${course.kode}).',
+                          metadata: {'course_id': course.id},
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        await widget.onReload();
+                        widget.onShowMessage('Mata kuliah berhasil disimpan.');
+                      } else {
+                        widget.onShowMessage(
+                          'Gagal menyimpan. Pastikan sesi admin aktif dan migrasi Supabase sudah diterapkan.',
+                          isError: true,
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Simpan Mata Kuliah'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (namaCtrl.text.trim().isEmpty || kodeCtrl.text.trim().isEmpty) return;
-              final course = Course(
-                id: existing?.id ?? '',
-                nama: namaCtrl.text.trim(),
-                kode: kodeCtrl.text.trim(),
-                dosen: existing?.dosen ?? 'Belum ditentukan',
-                sks: existing?.sks ?? 2,
-                semester: existing?.semester ?? 1,
-                hari: existing?.hari ?? 'Senin',
-                jamMulai: existing?.jamMulai ?? '08:00',
-                jamSelesai: existing?.jamSelesai ?? '09:40',
-                ruangan: existing?.ruangan ?? 'Belum ditentukan',
-              );
-              final ok = existing == null
-                  ? await SupabaseRepository.createCourse(course)
-                  : await SupabaseRepository.updateCourse(course);
-              if (!mounted) return;
-              if (ok) {
-                widget.onRecordAudit(
-                  action: existing == null ? 'CREATE' : 'UPDATE',
-                  module: 'MATA_KULIAH',
-                  description: '${existing == null ? 'Menambahkan' : 'Memperbarui'} mata kuliah ${course.nama} (${course.kode}).',
-                  metadata: {'course_id': course.id},
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
-                await widget.onReload();
-                widget.onShowMessage('Mata kuliah berhasil disimpan.');
-              } else {
-                widget.onShowMessage(
-                  'Gagal menyimpan. Pastikan sesi admin aktif dan migrasi Supabase sudah diterapkan.',
-                  isError: true,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }

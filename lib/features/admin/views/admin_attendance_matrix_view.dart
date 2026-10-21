@@ -124,78 +124,90 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
+        builder: (ctx, setDialogState) => AdminSpaciousModal(
+          title: 'Presensi Pertemuan Ke-$pertemuanKe',
+          subtitle: '${student.nama} • NIM ${student.nim}',
+          icon: Icons.edit_calendar_rounded,
+          iconColor: AppColors.primary,
+          maxWidth: 520,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: BorderRadius.circular(10),
+              const Text(
+                'STATUS KEHADIRAN MAHASISWA',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
                 ),
-                child: const Icon(Icons.edit_calendar_rounded, color: AppColors.primary, size: 20),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Presensi P$pertemuanKe',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      '${student.nama} (${student.nim})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                    ),
-                  ],
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildStatusChoiceChip('hadir', 'Hadir', const Color(0xFF10B981), selectedStatus, (val) {
+                    setDialogState(() => selectedStatus = val);
+                  }),
+                  _buildStatusChoiceChip('izin', 'Izin', const Color(0xFFF59E0B), selectedStatus, (val) {
+                    setDialogState(() => selectedStatus = val);
+                  }),
+                  _buildStatusChoiceChip('sakit', 'Sakit', const Color(0xFF2563EB), selectedStatus, (val) {
+                    setDialogState(() => selectedStatus = val);
+                  }),
+                  _buildStatusChoiceChip('alpa', 'Alfa', const Color(0xFFEF4444), selectedStatus, (val) {
+                    setDialogState(() => selectedStatus = val);
+                  }),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'CATATAN / ALASAN / BUKTI SURAT',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.8,
                 ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: noteCtrl,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Contoh: Izin kegiatan lomba fakultas / surat sakit terlampir',
+                  hintStyle: const TextStyle(fontSize: 12),
+                  contentPadding: const EdgeInsets.all(12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Pilihan Cepat Catatan:',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  'Hadir tepat waktu',
+                  'Surat dokter diserahkan',
+                  'Izin kegiatan kampus',
+                  'Dispensasi akademik',
+                  'Tanpa keterangan',
+                ].map((preset) {
+                  return ActionChip(
+                    label: Text(preset, style: const TextStyle(fontSize: 10.5)),
+                    onPressed: () {
+                      noteCtrl.text = preset;
+                      setDialogState(() {});
+                    },
+                  );
+                }).toList(),
               ),
             ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Status Kehadiran Mahasiswa:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildStatusChoiceChip('hadir', 'Hadir', const Color(0xFF10B981), selectedStatus, (val) {
-                      setDialogState(() => selectedStatus = val);
-                    }),
-                    _buildStatusChoiceChip('izin', 'Izin', const Color(0xFFF59E0B), selectedStatus, (val) {
-                      setDialogState(() => selectedStatus = val);
-                    }),
-                    _buildStatusChoiceChip('sakit', 'Sakit', const Color(0xFF2563EB), selectedStatus, (val) {
-                      setDialogState(() => selectedStatus = val);
-                    }),
-                    _buildStatusChoiceChip('alpa', 'Alfa', const Color(0xFFEF4444), selectedStatus, (val) {
-                      setDialogState(() => selectedStatus = val);
-                    }),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Text('Catatan / Alasan / Bukti Surat (Opsional):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: noteCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Contoh: Izin kegiatan lomba fakultas / surat sakit terlampir',
-                    hintStyle: const TextStyle(fontSize: 11),
-                    contentPadding: const EdgeInsets.all(10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ],
-            ),
           ),
           actions: [
             if (currentStatus.isNotEmpty)
@@ -220,8 +232,13 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
                 child: const Text('Hapus Catatan', style: TextStyle(color: Color(0xFFEF4444))),
               ),
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () async {
                 Navigator.pop(ctx);
                 final ok = await SupabaseRepository.upsertAttendanceLog(

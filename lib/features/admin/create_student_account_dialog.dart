@@ -141,7 +141,7 @@ class _CreateStudentAccountDialogState
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 580),
+        constraints: const BoxConstraints(maxWidth: 680),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

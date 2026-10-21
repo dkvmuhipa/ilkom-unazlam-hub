@@ -2107,8 +2107,22 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Konfirmasi hapus'),
-          content: Text(message),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
+              SizedBox(width: 10),
+              Text(
+                'Konfirmasi Hapus',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -2118,6 +2132,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFB91C1C),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: const Text('Hapus'),
             ),
@@ -2357,11 +2373,17 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(isActive ? 'Aktifkan akun kembali?' : 'Nonaktifkan akun?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(
+          isActive ? 'Aktifkan akun kembali?' : 'Nonaktifkan akun?',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: Text(
           isActive
               ? 'Akun ${account.nama} dapat masuk kembali setelah diaktifkan.'
               : 'Akun ${account.nama} tidak dapat masuk setelah dinonaktifkan. Profil dan riwayatnya tetap disimpan.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
@@ -2375,6 +2397,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                   ? const Color(0xFF059669)
                   : const Color(0xFFDC2626),
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text(isActive ? 'Aktifkan' : 'Nonaktifkan'),
           ),
