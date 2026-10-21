@@ -90,6 +90,46 @@ void main() {
       expect(find.textContaining('Mode Layar Lebar Proyektor Kelas'), findsOneWidget);
       expect(find.text('PIN 4 DIGIT KELAS'), findsOneWidget);
       expect(find.text('KODE TOKEN'), findsOneWidget);
+
+      // Verifikasi tema terang aktif secara default (Scaffold background bukan 0xFF0F172A)
+      final scaffold = tester.widget<Scaffold>(find.descendant(
+        of: find.byType(AttendanceProjectorView),
+        matching: find.byType(Scaffold),
+      ));
+      expect(scaffold.backgroundColor, const Color(0xFFF8FAFC));
+
+      // Verifikasi tombol toggle tema gelap / terang
+      final themeBtn = find.byTooltip('Beralih ke Tampilan Gelap');
+      expect(themeBtn, findsOneWidget);
+      await tester.tap(themeBtn);
+      await tester.pump();
+
+      final scaffoldDark = tester.widget<Scaffold>(find.descendant(
+        of: find.byType(AttendanceProjectorView),
+        matching: find.byType(Scaffold),
+      ));
+      expect(scaffoldDark.backgroundColor, const Color(0xFF0F172A));
+    });
+
+    testWidgets('AttendanceProjectorView renders cleanly on narrow screen (345px) with zero overflow',
+        (tester) async {
+      tester.view.physicalSize = const Size(345, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AttendanceProjectorView(
+            active: session,
+            initialDynamicMode: true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('PROTEKSI ANTI-JOKI AKTIF'), findsOneWidget);
+      expect(find.text('PIN 4 DIGIT KELAS'), findsOneWidget);
     });
 
     testWidgets('AttendanceScannerModal validates dynamic 4-digit PIN and shows verified badge',
