@@ -6,6 +6,7 @@ import '../../../core/services/supabase_repository.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 import '../attendance_screen.dart';
+import '../services/dynamic_attendance_service.dart';
 
 /// Ultra-modern, scannable QR & 4-digit PIN attendance verification modal
 /// with animated laser viewfinder, discrete OTP boxes, torch toggle, and tactile feedback.
@@ -134,17 +135,16 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
 
     final activeNim = widget.userNim;
 
-    // 2. Validasi Token atau PIN jika diberikan (trim & case-insensitive)
-    final cleanInput = tokenToVerify.trim().toUpperCase();
-    final cleanSessionToken = targetSession.token.trim().toUpperCase();
-    final cleanPin = targetSession.pinCode.trim().toUpperCase();
-    final bool isValidCode = cleanInput.isNotEmpty &&
-        (cleanInput == cleanSessionToken || cleanInput == cleanPin);
+    // 2. Validasi Token atau PIN menggunakan DynamicAttendanceService (Anti-Kecurangan TOTP + Fallback Statis)
+    final verificationResult = DynamicAttendanceService.verify(
+      input: tokenToVerify,
+      session: targetSession,
+    );
 
-    if (!isValidCode) {
+    if (!verificationResult.isValid) {
       setState(() {
         _isProcessing = false;
-        _errorMessage = 'Kode PIN/Token salah. Periksa kembali PIN 4 digit yang dibagikan.';
+        _errorMessage = verificationResult.message;
       });
       HapticFeedback.vibrate();
       return;
@@ -169,12 +169,16 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
 
     // Simpan ke sesi aktif & Supabase
     targetSession.attendedNims.add(activeNim);
+    final String logNote = verificationResult.isDynamic
+        ? 'Presensi QR Dinamis (Anti-Kecurangan)'
+        : (tokenToVerify.isNotEmpty ? 'Presensi Token: $tokenToVerify' : 'Presensi Scanner QR');
+
     SupabaseRepository.logAttendance(
       courseId: targetSession.courseName,
       studentNim: activeNim,
       pertemuanKe: targetSession.pertemuanKe,
       status: 'Hadir',
-      catatan: tokenToVerify.isNotEmpty ? 'Presensi Token: $tokenToVerify' : 'Presensi Scanner QR',
+      catatan: logNote,
     ).then((_) {
       widget.onSuccess?.call();
     });
@@ -182,16 +186,23 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
     Navigator.pop(context);
 
     // Show rich success bottom sheet
-    _showSuccessVerificationDialog(context, targetSession, activeNim);
+    _showSuccessVerificationDialog(
+      context,
+      targetSession,
+      activeNim,
+      isDynamic: verificationResult.isDynamic,
+    );
   }
 
   void _showSuccessVerificationDialog(
     BuildContext context,
     ActiveAttendanceSession session,
-    String studentNim,
-  ) {
+    String studentNim, {
+    bool isDynamic = false,
+  }) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final theme = Theme.of(ctx);
@@ -203,9 +214,10 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 width: 36,
                 height: 4,
@@ -254,6 +266,34 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (isDynamic) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 15),
+                      SizedBox(width: 6),
+                      Text(
+                        'Proteksi Dinamis Anti-Kecurangan Terverifikasi',
+                        style: TextStyle(
+                          color: Color(0xFF059669),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
 
               // Summary Info Container
@@ -275,7 +315,12 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                     const SizedBox(height: 8),
                     _buildReceiptRow('NIM Mahasiswa', studentNim, isDark),
                     const SizedBox(height: 8),
-                    _buildReceiptRow('Status Kehadiran', 'HADIR (Verifikasi QR/PIN)', isDark, color: const Color(0xFF10B981)),
+                    _buildReceiptRow(
+                      'Status Kehadiran',
+                      isDynamic ? 'HADIR (Verifikasi QR Dinamis)' : 'HADIR (Verifikasi QR/PIN)',
+                      isDark,
+                      color: const Color(0xFF10B981),
+                    ),
                   ],
                 ),
               ),
@@ -312,6 +357,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
                 ),
               ),
             ],
+          ),
           ),
         );
       },
@@ -365,10 +411,11 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(22, 14, 22, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Drag handle
           Center(
             child: Container(
@@ -1056,8 +1103,9 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
 
           // Absence footer link
           Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
                   'Berhalangan hadir kuliah? ',
@@ -1090,6 +1138,7 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
             ),
           ),
         ],
+      ),
       ),
     );
   }

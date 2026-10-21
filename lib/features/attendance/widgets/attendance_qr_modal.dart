@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 import '../../../core/widgets/qr_widget.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../models/attendance_models.dart';
+import '../services/dynamic_attendance_service.dart';
+import 'attendance_projector_view.dart';
 
 /// Ultra-modern modal presenting the active attendance session's QR code,
-/// quick-copy Token & PIN, live countdown timer, and attended roster count.
+/// dynamic rolling token & PIN, anti-cheat rotation timer, live countdown,
+/// projector mode toggle, and attended roster count.
 class AttendanceQrModal {
   static void show(
     BuildContext context, {
@@ -42,6 +45,7 @@ class _AttendanceQrModalContent extends StatefulWidget {
 
 class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
   Timer? _ticker;
+  bool _isDynamicMode = true;
 
   @override
   void initState() {
@@ -85,6 +89,18 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
     );
   }
 
+  void _openProjectorMode(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AttendanceProjectorView(
+          active: widget.active,
+          initialDynamicMode: _isDynamicMode,
+          onClosed: widget.onClosed,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final active = widget.active;
@@ -97,27 +113,44 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
     final durationSanitized = totalDuration > 0 ? totalDuration : 900;
     final progress = (secsLeft / durationSanitized).clamp(0.0, 1.0);
 
+    // Hitung dynamic rolling data jika mode anti-kecurangan aktif
+    final dynamicInfo = _isDynamicMode
+        ? DynamicAttendanceService.generate(active)
+        : null;
+
+    final effectiveQrData = _isDynamicMode ? dynamicInfo!.qrPayload : active.token;
+    final effectivePin = _isDynamicMode ? dynamicInfo!.dynamicPin : active.pinCode;
+    final effectiveToken = _isDynamicMode ? dynamicInfo!.dynamicToken : active.token;
+
+    final windowSecs = dynamicInfo?.secondsRemaining ?? 30;
+    final windowProgress = dynamicInfo?.progress ?? 1.0;
+
+    final Color timerColor = windowSecs > 10
+        ? const Color(0xFF10B981)
+        : (windowSecs > 4 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(22, 16, 22, 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white24 : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
 
           // Header
           Row(
@@ -167,6 +200,37 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                   ],
                 ),
               ),
+              // Tombol Mode Layar Lebar Proyektor
+              ScaleButton(
+                scaleDown: 0.92,
+                onTap: () => _openProjectorMode(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6D28D9).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFF6D28D9).withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.cast_connected_rounded, size: 14, color: Color(0xFF6D28D9)),
+                      SizedBox(width: 5),
+                      Text(
+                        'Layar Lebar',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6D28D9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.pop(context),
@@ -175,40 +239,152 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
-          // QR Box with clean white background
+          // Anti-Fraud Mode Switch Banner
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: _isDynamicMode
+                  ? const Color(0xFF10B981).withValues(alpha: isDark ? 0.15 : 0.08)
+                  : (isDark ? const Color(0xFF252538) : const Color(0xFFF1F5F9)),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0),
-                width: 1.5,
+                color: _isDynamicMode
+                    ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                    : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isDynamicMode ? Icons.verified_user_rounded : Icons.lock_outline_rounded,
+                  size: 18,
+                  color: _isDynamicMode ? const Color(0xFF059669) : Colors.grey.shade600,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isDynamicMode ? 'Mode Anti-Kecurangan Aktif' : 'Mode Statis (Standar)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: _isDynamicMode
+                              ? const Color(0xFF059669)
+                              : (isDark ? Colors.white : Colors.grey.shade800),
+                        ),
+                      ),
+                      Text(
+                        _isDynamicMode
+                            ? 'QR & PIN berputar tiap 30s (Anti-Screenshot)'
+                            : 'QR & PIN tetap sama selama sesi 15 menit',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _isDynamicMode,
+                  onChanged: (val) {
+                    setState(() => _isDynamicMode = val);
+                  },
+                  activeThumbColor: const Color(0xFF10B981),
+                  activeTrackColor: const Color(0xFF10B981).withValues(alpha: 0.5),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ],
             ),
-            child: QrCodeWidget(
-              data: active.token,
-              size: 210,
-            ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+
+          // QR Box with Dynamic Rotation Ring indicator
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: _isDynamicMode
+                        ? timerColor.withValues(alpha: 0.6)
+                        : (isDark ? const Color(0xFF3E3E4E) : const Color(0xFFE2E8F0)),
+                    width: _isDynamicMode ? 2.0 : 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                    if (_isDynamicMode)
+                      BoxShadow(
+                        color: timerColor.withValues(alpha: 0.2),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                  ],
+                ),
+                child: QrCodeWidget(
+                  data: effectiveQrData,
+                  size: 200,
+                ),
+              ),
+            ],
+          ),
+
+          // Dynamic 30s Countdown Bar
+          if (_isDynamicMode) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: timerColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      value: windowProgress,
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(timerColor),
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Penyegaran kode dalam $windowSecs detik',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: timerColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 14),
 
           // Token & PIN Copyable Chips
           Row(
             children: [
               Expanded(
                 child: ScaleButton(
-                  onTap: () => _copy('Token', active.token),
+                  onTap: () => _copy('Token', effectiveToken),
                   scaleDown: 0.95,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -228,7 +404,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'TOKEN',
+                              _isDynamicMode ? 'TOKEN DINAMIS' : 'TOKEN',
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
@@ -236,7 +412,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                               ),
                             ),
                             Text(
-                              active.token,
+                              effectiveToken,
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
@@ -256,7 +432,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
               const SizedBox(width: 8),
               Expanded(
                 child: ScaleButton(
-                  onTap: () => _copy('PIN', active.pinCode),
+                  onTap: () => _copy('PIN', effectivePin),
                   scaleDown: 0.95,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -276,7 +452,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'PIN CEPAT',
+                              _isDynamicMode ? 'PIN DINAMIS' : 'PIN CEPAT',
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
@@ -284,7 +460,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                               ),
                             ),
                             Text(
-                              active.pinCode,
+                              effectivePin,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
@@ -347,7 +523,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Sisa: ${secsLeft ~/ 60}:${(secsLeft % 60).toString().padLeft(2, '0')}',
+                      'Sisa Sesi: ${secsLeft ~/ 60}:${(secsLeft % 60).toString().padLeft(2, '0')}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
@@ -363,7 +539,9 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
           const SizedBox(height: 14),
 
           Text(
-            'Sorotkan ke layar proyektor ruang kelas atau bagikan PIN 4 digit kepada rekan mahasiswa untuk presensi instan.',
+            _isDynamicMode
+                ? 'QR Code & PIN berputar otomatis tiap 30 detik. Mencegah mahasiswa memfoto untuk rekan yang titip absen.'
+                : 'Sorotkan ke layar proyektor kelas atau bagikan PIN 4 digit kepada rekan mahasiswa.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
@@ -372,6 +550,7 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
