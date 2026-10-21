@@ -350,6 +350,11 @@ class AdminDropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeItems = items.toSet().toList();
+    final safeValue = safeItems.contains(value)
+        ? value
+        : (safeItems.isNotEmpty ? safeItems.first : null);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -366,7 +371,7 @@ class AdminDropdownField<T> extends StatelessWidget {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
-          value: value,
+          value: safeValue,
           isExpanded: true,
           style: const TextStyle(
             fontFamily: 'Poppins',
@@ -374,7 +379,7 @@ class AdminDropdownField<T> extends StatelessWidget {
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w600,
           ),
-          items: items
+          items: safeItems
               .map(
                 (item) => DropdownMenuItem(value: item, child: Text('$item')),
               )

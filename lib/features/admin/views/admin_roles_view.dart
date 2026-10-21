@@ -42,16 +42,24 @@ class _AdminRolesViewState extends State<AdminRolesView> {
   Widget build(BuildContext context) {
     final sourceStudents = widget.managedAccounts.where((s) => !s.isAdmin).toList();
 
+    const standardRoles = ['Ketua Kelas', 'Wakil Ketua', 'Bendahara', 'Sekretaris', 'Mahasiswa'];
+    final dynamicRoles = sourceStudents
+        .map((s) => s.jabatan.trim())
+        .where((j) => j.isNotEmpty && !standardRoles.contains(j))
+        .toSet()
+        .toList()
+      ..sort();
+    final roleFilters = ['Semua', ...standardRoles, ...dynamicRoles];
+    final activeFilter = roleFilters.contains(_roleFilter) ? _roleFilter : 'Semua';
+
     final filtered = sourceStudents.where((s) {
-      if (_roleFilter != 'Semua' && s.jabatan != _roleFilter) return false;
+      if (activeFilter != 'Semua' && s.jabatan.trim() != activeFilter) return false;
       if (_roleSearchQuery.isNotEmpty) {
         final q = _roleSearchQuery.toLowerCase();
         return s.nama.toLowerCase().contains(q) || s.nim.contains(q);
       }
       return true;
     }).toList();
-
-    final roleFilters = ['Semua', 'Ketua Kelas', 'Wakil Ketua', 'Bendahara', 'Sekretaris', 'Mahasiswa'];
 
     return Column(
       children: [
@@ -106,7 +114,7 @@ class _AdminRolesViewState extends State<AdminRolesView> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: roleFilters.map((f) {
-                    final isSel = _roleFilter == f;
+                    final isSel = activeFilter == f;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
@@ -133,6 +141,16 @@ class _AdminRolesViewState extends State<AdminRolesView> {
                 )
               else
                 ...filtered.map((s) {
+                  final trimmedJabatan = s.jabatan.trim();
+                  final availableRoles = {
+                    ...standardRoles,
+                    if (trimmedJabatan.isNotEmpty) trimmedJabatan,
+                  }.toList();
+
+                  final currentJabatan = availableRoles.contains(trimmedJabatan)
+                      ? trimmedJabatan
+                      : 'Mahasiswa';
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(
@@ -190,7 +208,7 @@ class _AdminRolesViewState extends State<AdminRolesView> {
                             border: Border.all(color: const Color(0xFFE5E7EB)),
                           ),
                           child: DropdownButton<String>(
-                            value: s.jabatan,
+                            value: currentJabatan,
                             underline: const SizedBox(),
                             isDense: true,
                             style: const TextStyle(
@@ -198,28 +216,12 @@ class _AdminRolesViewState extends State<AdminRolesView> {
                               fontWeight: FontWeight.w700,
                               color: AppColors.primary,
                             ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Ketua Kelas',
-                                child: Text('Ketua Kelas'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Wakil Ketua',
-                                child: Text('Wakil Ketua'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Bendahara',
-                                child: Text('Bendahara'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Sekretaris',
-                                child: Text('Sekretaris'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Mahasiswa',
-                                child: Text('Mahasiswa'),
-                              ),
-                            ],
+                            items: availableRoles.map((role) {
+                              return DropdownMenuItem<String>(
+                                value: role,
+                                child: Text(role),
+                              );
+                            }).toList(),
                             onChanged: (val) async {
                               if (val != null && val != s.jabatan) {
                                 final previous = s.jabatan;
