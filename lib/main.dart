@@ -151,6 +151,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   bool _isLoggedIn = false;
   String _userNim = '';
   String _userName = '';
+  StudentProfile? _userProfile;
   bool _isAdminMode = false;
   bool _isActualAdmin = false;
   late bool _isAuthSetupFlow;
@@ -192,6 +193,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isLoggedIn = true;
       _userNim = profile.nim;
       _userName = profile.nama;
+      _userProfile = profile;
       _isAdminMode = profile.isAdmin;
       _isActualAdmin = profile.isAdmin;
     });
@@ -205,6 +207,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
         _isLoggedIn = true;
         _userNim = profile.nim;
         _userName = profile.nama;
+        _userProfile = profile;
         _isAdminMode = profile.isAdmin;
         _isActualAdmin = profile.isAdmin;
       });
@@ -224,6 +227,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
     setState(() {
       _userNim = profile.nim;
       _userName = profile.nama;
+      _userProfile = profile;
       _isLoggedIn = true;
       _isAdminMode = profile.isAdmin;
       _isActualAdmin = profile.isAdmin;
@@ -236,6 +240,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isLoggedIn = false;
       _userNim = '';
       _userName = '';
+      _userProfile = null;
       _isAdminMode = false;
       _isActualAdmin = false;
     });
@@ -280,6 +285,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
                               userNim: _userNim,
                               userName: _userName,
                               isAdminUser: _isActualAdmin,
+                              initialProfile: _userProfile,
                               onSwitchToAdminView: () =>
                                   setState(() => _isAdminMode = true),
                               onLogout: _onLogout,
@@ -294,6 +300,7 @@ class MainResponsiveShell extends StatefulWidget {
   final String? userNim;
   final String? userName;
   final bool isAdminUser;
+  final StudentProfile? initialProfile;
   final VoidCallback? onSwitchToAdminView;
   final VoidCallback? onLogout;
 
@@ -302,6 +309,7 @@ class MainResponsiveShell extends StatefulWidget {
     this.userNim,
     this.userName,
     this.isAdminUser = false,
+    this.initialProfile,
     this.onSwitchToAdminView,
     this.onLogout,
   });
@@ -322,6 +330,7 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   void initState() {
     super.initState();
     _activeNim = widget.userNim ?? '';
+    _profile = widget.initialProfile;
     _loadUserProfile();
     SupabaseRepository.syncAllFromCloud().then((_) {
       if (mounted) setState(() {});
@@ -376,10 +385,11 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
       id: effectiveNim,
       nim: effectiveNim,
       nama: widget.userName ?? 'Mahasiswa ILKOM',
-      email: '',
-      noWa: '',
+      email: widget.initialProfile?.email ?? '',
+      noWa: widget.initialProfile?.noWa ?? '',
       role: widget.isAdminUser ? 'ADMIN' : 'MAHASISWA',
       jabatan: widget.isAdminUser ? 'Administrator' : 'Mahasiswa',
+      avatarUrl: widget.initialProfile?.avatarUrl,
     );
   }
 

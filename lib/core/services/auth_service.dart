@@ -609,14 +609,35 @@ class AuthService {
       }
     } catch (_) {}
 
-    // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    // 2. Sinkronkan ke tabel 'students' di Supabase cloud via RPC aman (SECURITY DEFINER)
+    // agar tersimpan permanen di basis data dan tersinkronisasi lintas perangkat
+    bool syncedViaRpc = false;
     try {
-      await _client
-          .from('students')
-          .update({'avatar_url': avatarUrl})
-          .eq('nim', nim);
-    } catch (e) {
-      debugPrint('Info: Sinkronisasi avatar_url ke Supabase: $e');
+      final res = await _client.rpc(
+        'update_student_profile',
+        params: {
+          'p_nim': nim.trim(),
+          'p_avatar_url': avatarUrl,
+        },
+      );
+      if (res is Map && res['success'] == true) {
+        syncedViaRpc = true;
+        debugPrint('Foto profil berhasil disinkronkan ke Supabase cloud via RPC.');
+      }
+    } catch (rpcErr) {
+      debugPrint('Info RPC update_student_profile avatar: $rpcErr');
+    }
+
+    // Fallback: Jika RPC belum terpasang atau gagal, coba direct update
+    if (!syncedViaRpc) {
+      try {
+        await _client
+            .from('students')
+            .update({'avatar_url': avatarUrl})
+            .eq('nim', nim);
+      } catch (e) {
+        debugPrint('Info: Sinkronisasi avatar_url ke Supabase: $e');
+      }
     }
   }
 
@@ -648,40 +669,67 @@ class AuthService {
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
-    // 2. Sinkronkan ke tabel 'students' di Supabase jika terhubung
+    // 2. Sinkronkan ke tabel 'students' di Supabase cloud via RPC aman (SECURITY DEFINER)
+    // agar data kontak & email tersimpan permanen dan tersinkronisasi lintas perangkat
+    bool syncedViaRpc = false;
     try {
-      final client = SupabaseService.client;
-      if (client != null) {
-        final baseUpdates = <String, dynamic>{
-          if (noWa != null) 'no_wa': noWa.trim(),
-          if (peminatan != null) 'peminatan': peminatan.trim(),
-          if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
-          if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
-          if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
-        };
+      final res = await _client.rpc(
+        'update_student_profile',
+        params: {
+          'p_nim': nim.trim(),
+          'p_email': (email?.trim().isNotEmpty ?? false) ? email!.trim() : null,
+          'p_no_wa': (noWa?.trim().isNotEmpty ?? false) ? noWa!.trim() : null,
+          'p_peminatan': (peminatan?.trim().isNotEmpty ?? false) ? peminatan!.trim() : null,
+          'p_instagram': (instagram?.trim().isNotEmpty ?? false) ? instagram!.trim() : null,
+          'p_linkedin': (linkedin?.trim().isNotEmpty ?? false) ? linkedin!.trim() : null,
+          'p_bio': bio?.trim(),
+          'p_agama': (agama?.trim().isNotEmpty ?? false) ? agama!.trim() : null,
+        },
+      );
+      if (res is Map && res['success'] == true) {
+        syncedViaRpc = true;
+        debugPrint('Rincian profil berhasil disinkronkan ke Supabase cloud via RPC.');
+      }
+    } catch (rpcErr) {
+      debugPrint('Info RPC update_student_profile: $rpcErr');
+    }
 
-        // Coba sertakan bio, agama, dan nama_panggilan
-        bool synced = false;
-        if (bio != null || agama != null || namaPanggilan != null) {
-          try {
-            final updatesExtended = Map<String, dynamic>.from(baseUpdates);
-            if (bio != null) updatesExtended['bio'] = bio.trim();
-            if (agama != null) updatesExtended['agama'] = agama.trim();
-            if (namaPanggilan != null) updatesExtended['nama_panggilan'] = namaPanggilan.trim();
-            await client.from('students').update(updatesExtended).eq('nim', nim);
-            synced = true;
-          } catch (e) {
-            debugPrint('Info: Sinkronisasi dengan bio/agama/nama_panggilan belum didukung schema database: $e');
+    // Fallback: Jika RPC belum tersedia, coba direct update
+    if (!syncedViaRpc) {
+      try {
+        final client = SupabaseService.client;
+        if (client != null) {
+          final baseUpdates = <String, dynamic>{
+            if (noWa != null) 'no_wa': noWa.trim(),
+            if (peminatan != null) 'peminatan': peminatan.trim(),
+            if (instagram != null) 'instagram': instagram.trim().isEmpty ? null : instagram.trim(),
+            if (linkedin != null) 'linkedin': linkedin.trim().isEmpty ? null : linkedin.trim(),
+            if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
+          };
+
+          // Coba sertakan bio, agama, dan nama_panggilan
+          bool synced = false;
+          if (bio != null || agama != null || namaPanggilan != null) {
+            try {
+              final updatesExtended = Map<String, dynamic>.from(baseUpdates);
+              if (bio != null) updatesExtended['bio'] = bio.trim();
+              if (agama != null) updatesExtended['agama'] = agama.trim();
+              if (namaPanggilan != null) updatesExtended['nama_panggilan'] = namaPanggilan.trim();
+              await client.from('students').update(updatesExtended).eq('nim', nim);
+              synced = true;
+            } catch (e) {
+              debugPrint('Info: Sinkronisasi dengan bio/agama/nama_panggilan belum didukung schema database: $e');
+            }
+          }
+
+          // Jika belum tersinkron atau bio/agama null, kirim baseUpdates
+          if (!synced && baseUpdates.isNotEmpty) {
+            await client.from('students').update(baseUpdates).eq('nim', nim);
           }
         }
-
-        // Jika belum tersinkron atau bio/agama null, kirim baseUpdates
-        if (!synced && baseUpdates.isNotEmpty) {
-          await client.from('students').update(baseUpdates).eq('nim', nim);
-        }
+      } catch (e) {
+        debugPrint('Info: Sinkronisasi update profil ke Supabase: $e');
       }
-    } catch (e) {
-      debugPrint('Info: Sinkronisasi update profil ke Supabase: $e');
     }
   }
 

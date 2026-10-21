@@ -168,9 +168,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final picker = ImagePicker();
           final picked = await picker.pickImage(
             source: source,
-            maxWidth: 512,
-            maxHeight: 512,
-            imageQuality: 85,
+            maxWidth: 320,
+            maxHeight: 320,
+            imageQuality: 75,
           );
           if (picked != null) {
             bytes = await picked.readAsBytes();
@@ -183,9 +183,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final picker = ImagePicker();
         final picked = await picker.pickImage(
           source: source,
-          maxWidth: 512,
-          maxHeight: 512,
-          imageQuality: 85,
+          maxWidth: 320,
+          maxHeight: 320,
+          imageQuality: 75,
         );
         if (picked != null) {
           bytes = await picked.readAsBytes();
