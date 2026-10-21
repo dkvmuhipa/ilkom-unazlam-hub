@@ -113,8 +113,8 @@ BEGIN
           updated_at = now()
       WHERE id = v_student.auth_user_id;
     EXCEPTION WHEN OTHERS THEN
-      -- Abaikan jika skema auth.users memiliki batasan trigger eksternal
-    END IF;
+      NULL;
+    END;
   END IF;
 
   RETURN jsonb_build_object(
