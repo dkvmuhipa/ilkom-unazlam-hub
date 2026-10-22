@@ -16,6 +16,25 @@ void main() {
     SharedPreferences.setMockInitialValues({'waha_base_url': 'https://custom.example'});
     expect(await WahaService.getBaseUrl(), 'https://custom.example');
   });
+
+  test('WahaService saves settings locally and preserves them across reloads', () async {
+    SharedPreferences.setMockInitialValues({});
+    await WahaService.saveSettings(
+      baseUrl: 'https://gateway.example.com/',
+      apiKey: 'secret-key-123',
+      sessionName: 'kampus',
+      defaultGroupId: '123456@g.us',
+      isCloudMode: true,
+      syncToCloud: false,
+    );
+
+    expect(await WahaService.getBaseUrl(), 'https://gateway.example.com');
+    expect(await WahaService.getApiKey(), 'secret-key-123');
+    expect(await WahaService.getSessionName(), 'kampus');
+    expect(await WahaService.getDefaultGroupId(), '123456@g.us');
+    expect(await WahaService.isCloudMode(), isTrue);
+  });
+
   for (final stopStatus in [200, 500]) {
     test('Failed session recovery stops engine first (stop HTTP $stopStatus)', () async {
       SharedPreferences.setMockInitialValues({});
@@ -38,6 +57,7 @@ void main() {
       client.close();
     });
   }
+
   test('Only gateways advertising reminder support enable reminder controls', () {
     expect(WahaSessionInfo.fromJson({
       'status': 'WORKING', 'engine': {'engine': 'WEBJS'},

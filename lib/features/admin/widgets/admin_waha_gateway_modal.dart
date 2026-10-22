@@ -106,6 +106,8 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
   bool _isTestingAutoReminder = false;
 
   bool _isCloudMode = false;
+  bool _showApiKey = false;
+  String _savedCloudUrl = '';
   bool _isLoadingStatus = true;
   bool _isSavingConfig = false;
   bool _isSendingTest = false;
@@ -164,6 +166,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
 
   Future<void> _loadCurrentConfig() async {
     setState(() => _isLoadingStatus = true);
+    await WahaService.syncFromCloudIfAvailable();
     final url = await WahaService.getBaseUrl();
     final key = await WahaService.getApiKey();
     final sess = await WahaService.getSessionName();
@@ -177,7 +180,9 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
         _sessionCtrl.text = sess;
         _defaultGroupCtrl.text = group ?? '';
         _isCloudMode = isCloud;
-
+        if (isCloud || url != WahaService.defaultLocalUrl) {
+          _savedCloudUrl = url;
+        }
       });
       await _checkStatus();
     }
@@ -255,7 +260,7 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
       isCloudMode: _isCloudMode,
     );
 
-    _showMessage('Konfigurasi WAHA berhasil disimpan!');
+    _showMessage('Konfigurasi WAHA berhasil disimpan & tersinkronisasi ke Cloud!');
     setState(() => _isSavingConfig = false);
     await _checkStatus();
   }
@@ -1163,6 +1168,10 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                       onTap: () {
                         setState(() {
                           _isCloudMode = false;
+                          if (_urlCtrl.text.trim().isNotEmpty &&
+                              _urlCtrl.text.trim() != WahaService.defaultLocalUrl) {
+                            _savedCloudUrl = _urlCtrl.text.trim();
+                          }
                           _urlCtrl.text = WahaService.defaultLocalUrl;
                         });
                       },
@@ -1208,6 +1217,12 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                       onTap: () {
                         setState(() {
                           _isCloudMode = true;
+                          if (_urlCtrl.text.trim() == WahaService.defaultLocalUrl ||
+                              _urlCtrl.text.trim().isEmpty) {
+                            _urlCtrl.text = _savedCloudUrl.isNotEmpty
+                                ? _savedCloudUrl
+                                : WahaService.defaultCloudUrl;
+                          }
                         });
                       },
                       borderRadius: BorderRadius.circular(10),
@@ -1308,12 +1323,21 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
           const SizedBox(height: 6),
           TextField(
             controller: _apiKeyCtrl,
-            obscureText: true,
+            obscureText: !_showApiKey,
             style: TextStyle(color: tokens.textMain, fontSize: 13, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               hintText: 'Biarkan kosong jika server WAHA lokal tidak memakai API key',
               hintStyle: TextStyle(fontSize: 12, color: tokens.textSub.withValues(alpha: 0.6)),
               prefixIcon: Icon(Icons.key_rounded, size: 18, color: tokens.textSub),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _showApiKey ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  size: 18,
+                  color: tokens.textSub,
+                ),
+                tooltip: _showApiKey ? 'Sembunyikan API Key' : 'Tampilkan API Key',
+                onPressed: () => setState(() => _showApiKey = !_showApiKey),
+              ),
               filled: true,
               fillColor: tokens.inputBg,
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1386,6 +1410,21 @@ class _AdminWahaGatewayModalState extends State<AdminWahaGatewayModal>
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_done_rounded, size: 14, color: Color(0xFF059669)),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Tersimpan aman & tersinkronisasi otomatis antar perangkat via Cloud',
+                  style: TextStyle(fontSize: 11, color: tokens.textSub),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),

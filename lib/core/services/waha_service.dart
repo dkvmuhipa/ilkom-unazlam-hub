@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/models.dart';
+import 'supabase_service.dart';
 
 /// Status sesi WAHA (WhatsApp HTTP API)
 enum WahaStatus {
@@ -173,27 +174,48 @@ class WahaService {
   static const String _prefIsCloudKey = 'waha_is_cloud_mode';
 
   static const String defaultLocalUrl = 'http://localhost:3000';
-  static const String defaultCloudUrl =
-      'https://ilkom-reminders-production.up.railway.app';
+  static const String defaultCloudUrl = String.fromEnvironment(
+    'WAHA_BASE_URL',
+    defaultValue: 'https://ilkom-reminders-production.up.railway.app',
+  );
+  static const String defaultApiKey = String.fromEnvironment(
+    'WAHA_API_KEY',
+    defaultValue: '',
+  );
   static const String defaultSession = 'default';
 
   /// Mendapatkan konfigurasi URL server yang tersimpan
   static Future<String> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_prefBaseUrlKey) ?? defaultLocalUrl;
-    // Route the project's existing cloud users through its reminder gateway.
-    if (saved.replaceFirst(RegExp(r'/$'), '') ==
-        'https://waha-production-717b.up.railway.app') {
-      await prefs.setString(_prefBaseUrlKey, defaultCloudUrl);
+    final saved = prefs.getString(_prefBaseUrlKey);
+    if (saved != null && saved.trim().isNotEmpty) {
+      // Route the project's existing cloud users through its reminder gateway.
+      if (saved.replaceFirst(RegExp(r'/$'), '') ==
+          'https://waha-production-717b.up.railway.app') {
+        await prefs.setString(_prefBaseUrlKey, defaultCloudUrl);
+        return defaultCloudUrl;
+      }
+      return saved;
+    }
+
+    // Pada perangkat mobile (Android/iOS), localhost:3000 tidak bisa diakses, gunakan defaultCloudUrl
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
       return defaultCloudUrl;
     }
-    return saved;
+
+    return defaultLocalUrl;
   }
 
   /// Mendapatkan API Key WAHA yang tersimpan
   static Future<String> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefApiKeyKey) ?? '';
+    final saved = prefs.getString(_prefApiKeyKey);
+    if (saved != null && saved.trim().isNotEmpty) {
+      return saved;
+    }
+    return defaultApiKey;
   }
 
   /// Mendapatkan nama sesi yang tersimpan
@@ -214,13 +236,14 @@ class WahaService {
     return prefs.getBool(_prefIsCloudKey) ?? false;
   }
 
-  /// Menyimpan preferensi konfigurasi WAHA
+  /// Menyimpan preferensi konfigurasi WAHA (baik lokal maupun cloud database Supabase)
   static Future<void> saveSettings({
     required String baseUrl,
     String? apiKey,
     String? sessionName,
     String? defaultGroupId,
     bool? isCloudMode,
+    bool syncToCloud = true,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     var cleanUrl = baseUrl.trim();
@@ -238,6 +261,69 @@ class WahaService {
     }
     if (isCloudMode != null) {
       await prefs.setBool(_prefIsCloudKey, isCloudMode);
+    }
+
+    // Sinkronisasi permanen ke Supabase Cloud agar tidak hilang antar perangkat
+    if (syncToCloud && SupabaseService.client != null) {
+      try {
+        final client = SupabaseService.client!;
+        final nowIso = DateTime.now().toIso8601String();
+        final rows = [
+          {'key': _prefBaseUrlKey, 'value': cleanUrl, 'updated_at': nowIso},
+          {'key': _prefApiKeyKey, 'value': (apiKey ?? '').trim(), 'updated_at': nowIso},
+          {'key': _prefSessionNameKey, 'value': (sessionName ?? defaultSession).trim(), 'updated_at': nowIso},
+          if (defaultGroupId != null)
+            {'key': _prefDefaultGroupKey, 'value': defaultGroupId.trim(), 'updated_at': nowIso},
+          if (isCloudMode != null)
+            {'key': _prefIsCloudKey, 'value': isCloudMode.toString(), 'updated_at': nowIso},
+        ];
+        await client.from('app_settings').upsert(rows, onConflict: 'key');
+      } catch (e) {
+        debugPrint('Catatan: Sinkronisasi setting WAHA ke Supabase: $e');
+      }
+    }
+  }
+
+  /// Sinkronisasi konfigurasi WAHA dari Supabase Cloud (jika tabel app_settings tersedia)
+  static Future<bool> syncFromCloudIfAvailable() async {
+    final client = SupabaseService.client;
+    if (client == null) return false;
+
+    try {
+      final rows = await client
+          .from('app_settings')
+          .select('key, value')
+          .inFilter('key', [
+            _prefBaseUrlKey,
+            _prefApiKeyKey,
+            _prefSessionNameKey,
+            _prefDefaultGroupKey,
+            _prefIsCloudKey,
+          ]);
+
+      final list = List<Map<String, dynamic>>.from(rows as List);
+      if (list.isEmpty) return false;
+
+      final prefs = await SharedPreferences.getInstance();
+      for (final row in list) {
+        final k = row['key']?.toString();
+        final v = row['value']?.toString() ?? '';
+        if (k == _prefBaseUrlKey && v.isNotEmpty) {
+          await prefs.setString(_prefBaseUrlKey, v);
+        } else if (k == _prefApiKeyKey) {
+          await prefs.setString(_prefApiKeyKey, v);
+        } else if (k == _prefSessionNameKey && v.isNotEmpty) {
+          await prefs.setString(_prefSessionNameKey, v);
+        } else if (k == _prefDefaultGroupKey && v.isNotEmpty) {
+          await prefs.setString(_prefDefaultGroupKey, v);
+        } else if (k == _prefIsCloudKey) {
+          await prefs.setBool(_prefIsCloudKey, v == 'true');
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Info: Gagal sinkronisasi setting WAHA dari Supabase: $e');
+      return false;
     }
   }
 
