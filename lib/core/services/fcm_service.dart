@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'sound_service.dart';
 import 'supabase_service.dart';
 
 @pragma('vm:entry-point')
@@ -64,6 +65,8 @@ class FcmService {
         'high_importance_channel',
         'Notifikasi Perkuliahan & Kelas',
         description: 'Channel untuk pengumuman, tugas, presensi, dan iuran kas kelas.',
+        playSound: true,
+        enableVibration: true,
         importance: Importance.high,
       );
 
@@ -76,6 +79,10 @@ class FcmService {
         debugPrint('FCM Foreground message received: ${message.notification?.title}');
         final notification = message.notification;
         final android = message.notification?.android;
+
+        if (notification != null) {
+          SoundService.playNotificationSound();
+        }
 
         if (notification != null && android != null) {
           _localNotifications.show(
@@ -90,6 +97,8 @@ class FcmService {
                 icon: '@mipmap/ic_launcher',
                 importance: Importance.high,
                 priority: Priority.high,
+                playSound: true,
+                enableVibration: true,
               ),
             ),
             payload: message.data.toString(),

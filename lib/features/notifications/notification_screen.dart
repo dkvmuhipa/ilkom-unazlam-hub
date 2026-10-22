@@ -7,6 +7,7 @@ import '../../core/services/supabase_repository.dart';
 import '../../models/models.dart';
 import '../../core/services/course_schedule_service.dart';
 import '../../core/services/notification_state.dart';
+import '../../core/services/sound_service.dart';
 
 class ClassNotificationItem {
   final String id;
@@ -71,6 +72,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final Set<String> _dismissedIds = {};
   bool _isLoading = true;
   String? _loadError;
+  bool _isSoundEnabled = true;
 
   String get _storageKeyPrefix => 'notif_${widget.studentNim}_';
 
@@ -87,6 +89,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final storedDismissed = prefs.getStringList('${_storageKeyPrefix}dismissed_ids') ?? [];
       _readIds.addAll(storedRead);
       _dismissedIds.addAll(storedDismissed);
+      final soundOn = await SoundService.isSoundEnabled();
+      if (mounted) {
+        setState(() {
+          _isSoundEnabled = soundOn;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading notif prefs: $e');
     }
@@ -301,6 +309,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              _isSoundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+              color: _isSoundEnabled ? const Color(0xFF6D28D9) : const Color(0xFF9CA3AF),
+              size: 22,
+            ),
+            tooltip: _isSoundEnabled
+                ? 'Suara notifikasi aktif (Ketuk untuk matikan)'
+                : 'Suara notifikasi mati (Ketuk untuk aktifkan)',
+            onPressed: () async {
+              final next = !_isSoundEnabled;
+              final messenger = ScaffoldMessenger.of(context);
+              await SoundService.setSoundEnabled(next);
+              if (mounted) {
+                setState(() {
+                  _isSoundEnabled = next;
+                });
+              }
+              if (next) {
+                await SoundService.playNotificationSound(force: true);
+              }
+              if (!mounted) return;
+              messenger.clearSnackBars();
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    next ? 'Suara notifikasi diaktifkan 🔔' : 'Suara notifikasi dimatikan 🔕',
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
           if (unreadCount > 0)
             TextButton(
               onPressed: () {

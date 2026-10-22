@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/safe_launcher.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/sound_service.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -108,6 +109,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     });
     _announcementsChannel = SupabaseRepository.subscribeToAnnouncements(() {
       if (mounted) {
+        SoundService.playNotificationSound();
         debugPrint(
           '⚡ [StudentHome] Pengumuman baru terdeteksi, memuat ulang dashboard...',
         );
@@ -115,7 +117,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       }
     });
     _assignmentsChannel = SupabaseRepository.subscribeToAssignments(() {
-      if (mounted) _loadDashboard(silent: true);
+      if (mounted) {
+        SoundService.playNotificationSound();
+        _loadDashboard(silent: true);
+      }
     });
     _studentAssignmentsChannel =
         SupabaseRepository.subscribeToStudentAssignments(() {

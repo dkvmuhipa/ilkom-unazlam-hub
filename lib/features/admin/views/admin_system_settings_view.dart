@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/sound_service.dart';
 import '../../../core/services/export_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/supabase_repository.dart';
@@ -119,6 +120,12 @@ class AdminSystemSettingsView extends StatelessWidget {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
       pageLabel: 'Notifikasi', title: 'Pengaturan Notifikasi', subtitle: 'Perangkat dan pengiriman pengumuman', icon: Icons.notifications_outlined,
       actions: [
+        AdminDetailAction('Uji Suara Notifikasi', Icons.volume_up_outlined, () async {
+          await SoundService.playNotificationSound(force: true);
+          if (detailContext.mounted) {
+            onShowMessage('Memutar nada notifikasi 🔔');
+          }
+        }),
         AdminDetailAction('Kirim pengumuman', Icons.campaign_outlined, () { Navigator.pop(detailContext); onBroadcastAnnouncement(); }),
         AdminDetailAction('Bersihkan Duplikat Token', Icons.cleaning_services_outlined, () async {
           final deleted = await SupabaseRepository.cleanStalePushTokens();
