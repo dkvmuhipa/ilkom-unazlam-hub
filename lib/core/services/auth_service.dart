@@ -733,31 +733,74 @@ class AuthService {
     }
   }
 
-  static void applyCustomProfileOverrides(StudentProfile profile, SharedPreferences prefs) {
+  /// Mengambil profil mahasiswa terbaru langsung dari Supabase cloud
+  static Future<StudentProfile?> fetchStudentByNim(String nim) async {
+    final client = SupabaseService.client;
+    if (client == null || nim.trim().isEmpty) return null;
     try {
-      final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
-      if (customAvatar != null && customAvatar.isNotEmpty) {
-        profile.avatarUrl = customAvatar;
+      const selectCols =
+          'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio,agama';
+      final row = await client
+          .from('students')
+          .select(selectCols)
+          .eq('nim', nim.trim())
+          .maybeSingle();
+      if (row != null) {
+        final profile = _profileFromRow(row);
+        final prefs = await SharedPreferences.getInstance();
+        applyCustomProfileOverrides(profile, prefs, fromCloud: true);
+        return profile;
+      }
+    } catch (e) {
+      debugPrint('Error fetchStudentByNim: $e');
+    }
+    return null;
+  }
+
+  static void applyCustomProfileOverrides(
+    StudentProfile profile,
+    SharedPreferences prefs, {
+    bool fromCloud = false,
+  }) {
+    try {
+      if (fromCloud) {
+        if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+          prefs.setString('custom_avatar_${profile.nim}', profile.avatarUrl!);
+        } else {
+          prefs.remove('custom_avatar_${profile.nim}');
+        }
+      } else {
+        final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
+        // Jika di cloud (profile.avatarUrl) sudah ada, simpan/perbarui cache lokal.
+        // Hanya jika di cloud kosong, gunakan avatar dari cache lokal.
+        if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+          prefs.setString('custom_avatar_${profile.nim}', profile.avatarUrl!);
+        } else if (customAvatar != null && customAvatar.isNotEmpty) {
+          profile.avatarUrl = customAvatar;
+        }
       }
       final customDataStr = prefs.getString('custom_profile_${profile.nim}');
       if (customDataStr != null && customDataStr.isNotEmpty) {
         final Map<String, dynamic> data = jsonDecode(customDataStr);
-        if (data['no_wa'] != null) profile.noWa = data['no_wa'].toString();
-        if (data['peminatan'] != null) profile.peminatan = data['peminatan'].toString();
-        if (data['instagram'] != null) profile.instagram = data['instagram'].toString();
-        if (data['linkedin'] != null) profile.linkedin = data['linkedin'].toString();
-        if (data['email'] != null) profile.email = data['email'].toString();
-        if (data['bio'] != null) profile.bio = data['bio'].toString();
-        if (data['agama'] != null) profile.agama = data['agama'].toString();
+        if (profile.noWa.isEmpty && data['no_wa'] != null) profile.noWa = data['no_wa'].toString();
+        if (profile.peminatan.isEmpty && data['peminatan'] != null) profile.peminatan = data['peminatan'].toString();
+        if (profile.instagram == null && data['instagram'] != null) profile.instagram = data['instagram'].toString();
+        if (profile.linkedin == null && data['linkedin'] != null) profile.linkedin = data['linkedin'].toString();
+        if (profile.email.isEmpty && data['email'] != null) profile.email = data['email'].toString();
+        if (profile.bio == null && data['bio'] != null) profile.bio = data['bio'].toString();
+        if (profile.agama == null && data['agama'] != null) profile.agama = data['agama'].toString();
         if (data['nama_panggilan'] != null) profile.namaPanggilan = data['nama_panggilan'].toString();
       }
     } catch (_) {}
   }
 
-  static Future<void> applyCustomProfileOverridesAsync(StudentProfile profile) async {
+  static Future<void> applyCustomProfileOverridesAsync(
+    StudentProfile profile, {
+    bool fromCloud = false,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      applyCustomProfileOverrides(profile, prefs);
+      applyCustomProfileOverrides(profile, prefs, fromCloud: fromCloud);
     } catch (_) {}
   }
 

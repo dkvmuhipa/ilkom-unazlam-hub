@@ -753,6 +753,47 @@ class SupabaseRepository {
     }
   }
 
+  /// Membersihkan token duplikat FCM per NIM, menyisakan token terbaru
+  static Future<int> cleanStalePushTokens() async {
+    final client = SupabaseService.client;
+    if (client == null) return 0;
+    try {
+      final rows = await client.from('user_push_tokens').select('id, nim, updated_at');
+      if (rows.isEmpty) return 0;
+
+      final grouped = <String, List<Map<String, dynamic>>>{};
+      for (final r in rows) {
+        final nim = r['nim']?.toString() ?? '';
+        if (nim.isNotEmpty) {
+          grouped.putIfAbsent(nim, () => []).add(Map<String, dynamic>.from(r));
+        }
+      }
+
+      int deletedCount = 0;
+      for (final entry in grouped.entries) {
+        final list = entry.value;
+        if (list.length > 1) {
+          list.sort((a, b) {
+            final aTime = DateTime.tryParse(a['updated_at']?.toString() ?? '') ?? DateTime(1970);
+            final bTime = DateTime.tryParse(b['updated_at']?.toString() ?? '') ?? DateTime(1970);
+            return bTime.compareTo(aTime);
+          });
+          for (var i = 1; i < list.length; i++) {
+            final id = list[i]['id'];
+            if (id != null) {
+              await client.from('user_push_tokens').delete().eq('id', id);
+              deletedCount++;
+            }
+          }
+        }
+      }
+      return deletedCount;
+    } catch (e) {
+      debugPrint('Error cleanStalePushTokens: $e');
+      return 0;
+    }
+  }
+
   // ====================================================================
   // 3. TUGAS KELAS (ASSIGNMENTS)
   // ====================================================================

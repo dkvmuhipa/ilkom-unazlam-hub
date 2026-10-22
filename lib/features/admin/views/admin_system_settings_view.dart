@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/export_service.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/supabase_repository.dart';
 import '../../../models/models.dart';
 import '../models/admin_models.dart';
 import '../widgets/admin_common_widgets.dart';
@@ -117,9 +118,18 @@ class AdminSystemSettingsView extends StatelessWidget {
   void _showNotificationSettingsDialog(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (detailContext) => AdminDetailPage(
       pageLabel: 'Notifikasi', title: 'Pengaturan Notifikasi', subtitle: 'Perangkat dan pengiriman pengumuman', icon: Icons.notifications_outlined,
-      actions: [AdminDetailAction('Kirim pengumuman', Icons.campaign_outlined, () { Navigator.pop(detailContext); onBroadcastAnnouncement(); })],
+      actions: [
+        AdminDetailAction('Kirim pengumuman', Icons.campaign_outlined, () { Navigator.pop(detailContext); onBroadcastAnnouncement(); }),
+        AdminDetailAction('Bersihkan Duplikat Token', Icons.cleaning_services_outlined, () async {
+          final deleted = await SupabaseRepository.cleanStalePushTokens();
+          if (detailContext.mounted) {
+            onShowMessage('Berhasil merapikan token FCM ($deleted duplikat dihapus).');
+            Navigator.pop(detailContext);
+          }
+        }),
+      ],
       tabs: [AdminDetailTab('Ringkasan', AdminDetailSection(title: 'Perangkat terdaftar', children: [
-        AdminDetailFields({'Token perangkat': '$registeredTokensCount token terdaftar'}),
+        AdminDetailFields({'Mahasiswa terhubung': '$registeredTokensCount akun unik'}),
         const Text('Notifikasi memerlukan izin pada perangkat mahasiswa. Token terdaftar belum memastikan pesan sampai ke perangkat.', style: TextStyle(fontSize: 14, height: 1.7)),
       ]))],
     )));

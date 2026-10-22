@@ -138,7 +138,7 @@ Kepada Yth.
 Bapak/Ibu Dosen Pengampu: ${_dosenController.text.trim()}
 Mata Kuliah: ${_courseController.text.trim()}
 Program Studi S1 Ilmu Komunikasi
-Universitas Nahdlatul Ulama Al Ghazali (UNAZLAM)
+Universitas Abdul Azis Lamadjido (UNAZLAM)
 
 Assalamu'alaikum Wr. Wb.
 
@@ -159,7 +159,7 @@ Demikian surat permohonan izin ini saya sampaikan dengan sebenar-benarnya. Atas 
 
 Wassalamu'alaikum Wr. Wb.
 
-Cilacap, ${_tanggalController.text.trim()}
+Palu, ${_tanggalController.text.trim()}
 Hormat saya,
 
 

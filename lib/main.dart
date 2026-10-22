@@ -157,6 +157,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   late bool _isAuthSetupFlow;
   late String? _authSetupFlowType;
   StreamSubscription<AuthState>? _authStateSubscription;
+  RealtimeChannel? _studentRealtimeChannel;
 
   @override
   void initState() {
@@ -182,7 +183,29 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
   @override
   void dispose() {
     _authStateSubscription?.cancel();
+    SupabaseRepository.unsubscribeChannel(_studentRealtimeChannel);
     super.dispose();
+  }
+
+  void _initStudentRealtimeSync(String nim) {
+    if (nim.isEmpty) return;
+    SupabaseRepository.unsubscribeChannel(_studentRealtimeChannel);
+    _studentRealtimeChannel = SupabaseRepository.subscribeToTable(
+      table: 'students',
+      onDataChanged: () async {
+        if (!mounted || _userNim.isEmpty) return;
+        try {
+          final refreshed = await AuthService.fetchStudentByNim(_userNim);
+          if (refreshed != null && mounted) {
+            setState(() {
+              _userProfile = refreshed;
+              _userName = refreshed.nama;
+            });
+            debugPrint('Sinkronisasi profil realtime berhasil untuk NIM $_userNim');
+          }
+        } catch (_) {}
+      },
+    );
   }
 
   void _onAuthSetupComplete(StudentProfile profile) {
@@ -197,6 +220,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isAdminMode = profile.isAdmin;
       _isActualAdmin = profile.isAdmin;
     });
+    _initStudentRealtimeSync(profile.nim);
   }
 
   Future<void> _restoreAuthSession() async {
@@ -211,6 +235,7 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
         _isAdminMode = profile.isAdmin;
         _isActualAdmin = profile.isAdmin;
       });
+      _initStudentRealtimeSync(profile.nim);
       unawaited(FcmService.syncDeviceToken(profile.nim));
     }
   }
@@ -232,10 +257,12 @@ class _ClassManagerAppState extends State<ClassManagerApp> {
       _isAdminMode = profile.isAdmin;
       _isActualAdmin = profile.isAdmin;
     });
+    _initStudentRealtimeSync(profile.nim);
     unawaited(FcmService.syncDeviceToken(profile.nim));
   }
 
   Future<void> _onLogout() async {
+    SupabaseRepository.unsubscribeChannel(_studentRealtimeChannel);
     setState(() {
       _isLoggedIn = false;
       _userNim = '';
@@ -337,13 +364,34 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant MainResponsiveShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.userNim != oldWidget.userNim) {
+      _activeNim = widget.userNim ?? '';
+      _loadUserProfile();
+    }
+    if (widget.initialProfile != oldWidget.initialProfile && widget.initialProfile != null) {
+      setState(() {
+        _profile = widget.initialProfile;
+      });
+    }
+  }
+
   Future<void> _loadUserProfile() async {
     if (_activeNim.isEmpty) return;
     try {
+      final fetched = await AuthService.fetchStudentByNim(_activeNim);
+      if (fetched != null && mounted) {
+        setState(() {
+          _profile = fetched;
+        });
+        return;
+      }
       final students = await SupabaseRepository.getClassDirectory();
       final matched = students.where((s) => s.nim == _activeNim).firstOrNull;
       if (matched != null && mounted) {
-        await AuthService.applyCustomProfileOverridesAsync(matched);
+        await AuthService.applyCustomProfileOverridesAsync(matched, fromCloud: true);
         setState(() {
           _profile = matched;
         });

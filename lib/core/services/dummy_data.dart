@@ -2,7 +2,7 @@
 /// MASTER DATA RESMI FISIP UNAZLAM
 /// ====================================================================
 /// File ini menyimpan Data Real Mahasiswa dan Jadwal Kuliah resmi
-/// Program Studi Ilmu Komunikasi Universitas Nahdlatul Ulama.
+/// Program Studi Ilmu Komunikasi Universitas Abdul Azis Lamadjido (UNAZLAM).
 /// Bukan data dummy / testing.
 /// ====================================================================
 library;

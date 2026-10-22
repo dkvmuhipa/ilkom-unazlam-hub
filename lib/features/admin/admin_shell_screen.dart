@@ -91,8 +91,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   RealtimeChannel? _coursesChannel;
   RealtimeChannel? _studentsChannel;
   RealtimeChannel? _auditLogsChannel;
+  RealtimeChannel? _attendanceSessionsChannel;
 
   int _registeredTokensCount = 0;
+  int _attendanceSessionsCount = 0;
+  bool _hasActiveAttendanceSession = false;
   bool _isRefreshing = false;
 
   @override
@@ -106,6 +109,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     unawaited(_loadAcademicData());
     unawaited(_loadManagedAccounts());
     unawaited(_loadPushTokensCount());
+    unawaited(_loadAttendanceSessionsStatus());
     _initAdminRealtime();
   }
 
@@ -135,6 +139,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _loadAuditLogs();
       }
     });
+    _attendanceSessionsChannel = SupabaseRepository.subscribeToTable(
+      table: 'attendance_sessions',
+      onDataChanged: () {
+        if (mounted) unawaited(_loadAttendanceSessionsStatus());
+      },
+    );
   }
 
   @override
@@ -145,6 +155,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     SupabaseRepository.unsubscribeChannel(_coursesChannel);
     SupabaseRepository.unsubscribeChannel(_studentsChannel);
     SupabaseRepository.unsubscribeChannel(_auditLogsChannel);
+    SupabaseRepository.unsubscribeChannel(_attendanceSessionsChannel);
     super.dispose();
   }
 
@@ -152,14 +163,57 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     try {
       final client = SupabaseService.client;
       if (client != null) {
-        final res = await client.from('user_push_tokens').select('id');
+        final res = await client.from('user_push_tokens').select('nim');
         if (mounted) {
+          final uniqueNims = (res as List)
+              .map((r) => r['nim']?.toString().trim() ?? '')
+              .where((nim) => nim.isNotEmpty)
+              .toSet();
           setState(() {
-            _registeredTokensCount = (res as List).length;
+            _registeredTokensCount =
+                uniqueNims.isNotEmpty ? uniqueNims.length : (res as List).length;
           });
         }
       }
     } catch (_) {}
+  }
+
+  Future<void> _loadAttendanceSessionsStatus() async {
+    try {
+      final client = SupabaseService.client;
+      if (client != null) {
+        final res = await client
+            .from('attendance_sessions')
+            .select('id, is_active, expires_at');
+        if (mounted) {
+          final list = res as List;
+          final now = DateTime.now();
+          final hasActive = list.any((s) {
+            final isActive = s['is_active'] == true;
+            final expiresAtStr = s['expires_at']?.toString();
+            final notExpired = expiresAtStr != null &&
+                (DateTime.tryParse(expiresAtStr)?.isAfter(now) ?? false);
+            return isActive && notExpired;
+          });
+          setState(() {
+            _attendanceSessionsCount = list.length;
+            _hasActiveAttendanceSession = hasActive;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  String get _telemetryStatusText {
+    final fcmLabel = _registeredTokensCount > 0
+        ? 'FCM Terhubung ($_registeredTokensCount Mahasiswa)'
+        : 'FCM Siap';
+    final presensiLabel = _hasActiveAttendanceSession
+        ? 'Sesi Presensi Aktif'
+        : (_attendanceSessionsCount > 0
+            ? '$_attendanceSessionsCount Sesi Presensi Tercatat'
+            : 'Presensi Digital Siap');
+    return '$fcmLabel • $presensiLabel';
   }
 
   Future<void> _refreshAllAdminData() async {
@@ -173,6 +227,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         _loadAcademicData(),
         _loadManagedAccounts(),
         _loadPushTokensCount(),
+        _loadAttendanceSessionsStatus(),
       ]);
       if (_academicLoadError != null || _accountLoadError != null) {
         throw StateError(_academicLoadError ?? _accountLoadError!);
@@ -1053,15 +1108,19 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.sensors_rounded,
+                Icon(
+                  _hasActiveAttendanceSession
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.sensors_rounded,
                   size: 13,
-                  color: Color(0xFF10B981),
+                  color: _hasActiveAttendanceSession
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFF10B981),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'FCM Terhubung ($_registeredTokensCount Perangkat) • BAP Presensi 16 Sesi',
+                    _telemetryStatusText,
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,

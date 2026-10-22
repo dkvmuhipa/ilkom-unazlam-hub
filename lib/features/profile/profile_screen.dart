@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
@@ -51,18 +52,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadSavedProfileDetails();
   }
 
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl) {
+      setState(() {
+        _currentAvatarUrl = widget.student?.avatarUrl;
+      });
+    }
+  }
+
   Future<void> _loadSavedProfileDetails() async {
     final student = widget.student;
     if (student == null) return;
     try {
+      // 1. Coba ambil data ter-update dari Supabase cloud terlebih dahulu
+      final freshProfile = await AuthService.fetchStudentByNim(student.nim);
+      if (freshProfile != null && mounted) {
+        setState(() {
+          student.avatarUrl = freshProfile.avatarUrl;
+          student.email = freshProfile.email;
+          student.noWa = freshProfile.noWa;
+          student.peminatan = freshProfile.peminatan;
+          student.bio = freshProfile.bio;
+          student.agama = freshProfile.agama;
+          student.instagram = freshProfile.instagram;
+          student.linkedin = freshProfile.linkedin;
+          student.namaPanggilan = freshProfile.namaPanggilan;
+          _currentAvatarUrl = freshProfile.avatarUrl;
+        });
+        widget.onProfileUpdated?.call(student);
+        return;
+      }
+
       final prefs = await SharedPreferences.getInstance();
       AuthService.applyCustomProfileOverrides(student, prefs);
       final savedAvatar = prefs.getString('custom_avatar_${student.nim}');
-      if (savedAvatar != null && savedAvatar.isNotEmpty) {
+      if (student.avatarUrl != null && student.avatarUrl!.isNotEmpty) {
+        _currentAvatarUrl = student.avatarUrl;
+      } else if (savedAvatar != null && savedAvatar.isNotEmpty) {
         _currentAvatarUrl = savedAvatar;
         student.avatarUrl = savedAvatar;
-      } else if (student.avatarUrl != null && student.avatarUrl!.isNotEmpty) {
-        _currentAvatarUrl = student.avatarUrl;
       }
       if (mounted) setState(() {});
     } catch (_) {}
@@ -193,33 +223,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       if (bytes != null) {
-        final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        // Kompresi dan sesuaikan resolusi avatar agar hemat penyimpanan & cepat disinkronkan lintas perangkat
+        try {
+          final decoded = img.decodeImage(bytes);
+          if (decoded != null) {
+            const int maxDim = 320;
+            img.Image processed;
+            if (decoded.width > maxDim || decoded.height > maxDim) {
+              if (decoded.width >= decoded.height) {
+                processed = img.copyResize(decoded, width: maxDim);
+              } else {
+                processed = img.copyResize(decoded, height: maxDim);
+              }
+            } else {
+              processed = decoded;
+            }
+            bytes = Uint8List.fromList(img.encodeJpg(processed, quality: 78));
+          }
+        } catch (e) {
+          debugPrint('Info: Image compression skipped: $e');
+        }
 
-        await AuthService.updateAvatar(
-          nim: student.nim,
-          avatarUrl: base64String,
-        );
+        final uploadBytes = bytes;
+        if (uploadBytes != null) {
+          final base64String = 'data:image/jpeg;base64,${base64Encode(uploadBytes)}';
 
-        if (mounted) {
-          setState(() {
-            _currentAvatarUrl = base64String;
-            student.avatarUrl = base64String;
-          });
-          widget.onProfileUpdated?.call(student);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Text('Foto profil berhasil diperbarui! 🎉'),
-                ],
-              ),
-              backgroundColor: const Color(0xFF10B981),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
+          await AuthService.updateAvatar(
+            nim: student.nim,
+            avatarUrl: base64String,
           );
+
+          if (mounted) {
+            setState(() {
+              _currentAvatarUrl = base64String;
+              student.avatarUrl = base64String;
+            });
+            widget.onProfileUpdated?.call(student);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text('Foto profil berhasil diperbarui! 🎉'),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF10B981),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
         }
       }
     } catch (e) {

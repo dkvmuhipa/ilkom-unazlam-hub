@@ -340,7 +340,7 @@ class _AdminAttendanceMatrixViewState extends State<AdminAttendanceMatrixView> {
 
     final bapText = StringBuffer();
     bapText.writeln('BERITA ACARA PERKULIAHAN & REKAP KELAYAKAN UJIAN AKHIR SEMESTER');
-    bapText.writeln('UNIVERSITAS AZZAM LAMONGAN (UNAZLAM)');
+    bapText.writeln('UNIVERSITAS ABDUL AZIS LAMADJIDO (UNAZLAM)');
     bapText.writeln('Fakultas Ilmu Sosial dan Ilmu Politik • Program Studi Ilmu Komunikasi');
     bapText.writeln('--------------------------------------------------------------------------------');
     bapText.writeln('Mata Kuliah     : ${_selectedCourse!.nama} (${_selectedCourse!.kode}) - ${_selectedCourse!.sks} SKS');

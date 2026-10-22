@@ -141,10 +141,10 @@ class OfficialLetterSheet extends StatelessWidget {
 </head>
 <body>
   <div class="header">
-    <h2>UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI (UNAZLAM)</h2>
-    <h3>FAKULTAS SOSIAL DAN ILMU HUMANIORA</h3>
+    <h2>UNIVERSITAS ABDUL AZIS LAMADJIDO (UNAZLAM)</h2>
+    <h3>FAKULTAS ILMU SOSIAL DAN ILMU POLITIK (FISIP)</h3>
     <h4>PROGRAM STUDI S1 ILMU KOMUNIKASI</h4>
-    <p>Jl. Kemerdekaan Barat No. 17 Kesugihan, Cilacap, Jawa Tengah 53274 | info@unazlam.ac.id</p>
+    <p>Jl. Dr. Soeharso No. 36A, Besusu Barat, Palu Timur, Kota Palu, Sulawesi Tengah 94118 | info@unazlam.ac.id</p>
   </div>
 
   <table class="meta-table">
@@ -152,7 +152,7 @@ class OfficialLetterSheet extends StatelessWidget {
       <td width="15%">Nomor</td>
       <td width="2%">:</td>
       <td width="48%">$_letterNumber</td>
-      <td width="35%" align="right">Cilacap, ${_escapeHtml(DateFormat('dd MMMM yyyy', 'id_ID').format(letter.createdAt))}</td>
+      <td width="35%" align="right">Palu, ${_escapeHtml(DateFormat('dd MMMM yyyy', 'id_ID').format(letter.createdAt))}</td>
     </tr>
     <tr>
       <td>Lampiran</td>
@@ -173,7 +173,7 @@ class OfficialLetterSheet extends StatelessWidget {
     <strong>Bapak/Ibu Dosen Pengampu: $lecturerName</strong><br>
     Mata Kuliah: $courseName<br>
     Program Studi S1 Ilmu Komunikasi<br>
-    Universitas Nahdlatul Ulama Al Ghazali<br>
+    Universitas Abdul Azis Lamadjido<br>
     di Tempat</p>
 
     <p><em>Assalamu'alaikum Wr. Wb.</em></p>
@@ -394,7 +394,7 @@ class OfficialLetterSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI',
+                            'UNIVERSITAS ABDUL AZIS LAMADJIDO',
                             style: TextStyle(
                               fontFamily: 'serif',
                               fontSize: 12.5,
@@ -405,7 +405,7 @@ class OfficialLetterSheet extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                           const Text(
-                            'FAKULTAS SOSIAL DAN ILMU HUMANIORA',
+                            'FAKULTAS ILMU SOSIAL DAN ILMU POLITIK (FISIP)',
                             style: TextStyle(
                               fontFamily: 'serif',
                               fontSize: 11,
@@ -426,7 +426,7 @@ class OfficialLetterSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           const Text(
-                            'Jl. Kemerdekaan Barat No. 17 Kesugihan, Cilacap, Jawa Tengah 53274',
+                            'Jl. Dr. Soeharso No. 36A, Besusu Barat, Palu Timur, Kota Palu, Sulawesi Tengah 94118',
                             style: TextStyle(
                               fontFamily: 'serif',
                               fontSize: 9,
@@ -484,7 +484,7 @@ class OfficialLetterSheet extends StatelessWidget {
                           ],
                         ),
                         Text(
-                          'Cilacap, ${DateFormat('dd MMM yyyy', 'id_ID').format(letter.createdAt)}',
+                          'Palu, ${DateFormat('dd MMM yyyy', 'id_ID').format(letter.createdAt)}',
                           style: const TextStyle(
                             fontSize: 10.5,
                             color: Color(0xFF475569),

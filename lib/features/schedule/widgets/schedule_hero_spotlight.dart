@@ -220,41 +220,49 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _pulseAnimation,
-                        builder: (context, child) => Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF86EFAC),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0xFF86EFAC),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ],
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pulseAnimation,
+                          builder: (context, child) => Transform.scale(
+                            scale: _pulseAnimation.value,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF86EFAC),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFF86EFAC),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'SEDANG BERLANGSUNG SEKARANG',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
+                        const SizedBox(width: 8),
+                        const Flexible(
+                          child: Text(
+                            'SEDANG BERLANGSUNG',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.8,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
@@ -327,10 +335,14 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
               const SizedBox(height: 14),
 
               // Room / Link & Action Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 8,
+                runSpacing: 10,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -363,19 +375,27 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        c.dosen,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
+                      if (c.dosen.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 130),
+                          child: Text(
+                            c.dosen,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (c.linkVirtual != null && c.linkVirtual!.trim().isNotEmpty)
@@ -497,39 +517,46 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFFBBF24).withValues(alpha: 0.45),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFFBBF24).withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.upcoming_rounded,
+                            size: 13,
+                            color: Color(0xFFFDE68A),
+                          ),
+                          SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              'KULIAH BERIKUTNYA',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.upcoming_rounded,
-                          size: 13,
-                          color: Color(0xFFFDE68A),
-                        ),
-                        SizedBox(width: 5),
-                        Text(
-                          'KULIAH BERIKUTNYA HARI INI',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
@@ -588,10 +615,14 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
               const SizedBox(height: 14),
 
               // Mode badge & Dosen
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 8,
+                runSpacing: 10,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -628,19 +659,27 @@ class _ScheduleHeroSpotlightState extends State<ScheduleHeroSpotlight>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        c.dosen,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
+                      if (c.dosen.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 130),
+                          child: Text(
+                            c.dosen,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (c.linkVirtual != null && c.linkVirtual!.trim().isNotEmpty)

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/safe_launcher.dart';
+import '../../core/services/auth_service.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -89,6 +90,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
     if (oldWidget.student.nim != widget.student.nim ||
         oldWidget.student.agama != widget.student.agama) {
       _loadDashboard();
+    } else if (oldWidget.student.avatarUrl != widget.student.avatarUrl ||
+        oldWidget.student.nama != widget.student.nama) {
+      setState(() {});
     }
   }
 
@@ -159,6 +163,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       });
     }
     try {
+      try {
+        final freshStudent = await AuthService.fetchStudentByNim(widget.student.nim);
+        if (freshStudent != null && mounted) {
+          widget.student.avatarUrl = freshStudent.avatarUrl;
+          widget.student.nama = freshStudent.nama;
+          widget.student.email = freshStudent.email;
+          widget.student.noWa = freshStudent.noWa;
+        }
+      } catch (e) {
+        debugPrint('Info: Gagal refresh profil mahasiswa di beranda: $e');
+      }
       try {
         await AttendanceScreen.syncActiveSessionFromCloud();
       } catch (e) {
@@ -481,46 +496,108 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   },
                 );
               },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          '$greeting, $displayName 👋',
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCompact = constraints.maxWidth < 210;
+                  if (isCompact) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$greeting 👋',
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: textMain,
-                            letterSpacing: -0.3,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: textSub,
+                            letterSpacing: -0.1,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 1.5),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: textMain,
+                                  letterSpacing: -0.3,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 13,
+                              color: textSub.withValues(alpha: 0.65),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 1.5),
+                        Text(
+                          'S1 Ilmu Komunikasi • Smt ${student.semester}',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w500,
+                            color: textSub,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    );
+                  }
+
+                  // Tampilan luas (tablet / desktop)
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '$greeting, $displayName 👋',
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
+                                color: textMain,
+                                letterSpacing: -0.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 13,
+                            color: textSub.withValues(alpha: 0.65),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 13,
-                        color: textSub.withValues(alpha: 0.65),
+                      const SizedBox(height: 2),
+                      Text(
+                        'S1 Ilmu Komunikasi • Smt ${student.semester}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: textSub,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'S1 Ilmu Komunikasi • Smt ${student.semester}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: textSub,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

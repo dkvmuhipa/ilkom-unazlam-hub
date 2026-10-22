@@ -135,7 +135,7 @@ class ExportService {
   }) {
     final buffer = StringBuffer();
     buffer.writeln('BERITA ACARA & MATRIKS PRESENSI PERKULIAHAN (BAP)');
-    buffer.writeln('UNIVERSITAS AZZAM LAMONGAN (UNAZLAM)');
+    buffer.writeln('UNIVERSITAS ABDUL AZIS LAMADJIDO (UNAZLAM)');
     buffer.writeln('Program Studi,"Ilmu Komunikasi"');
     buffer.writeln('Mata Kuliah,"$courseName"');
     buffer.writeln('Dosen Pengampu,"$dosenName"');
@@ -254,7 +254,7 @@ class ExportService {
     final buffer = StringBuffer();
     buffer.writeln('KARTU HASIL STUDI (KHS) / TRANSKRIP AKADEMIK');
     buffer.writeln(
-      'PORTAL ILKOM UNAZLAM - UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI',
+      'PORTAL ILKOM UNAZLAM - UNIVERSITAS ABDUL AZIS LAMADJIDO',
     );
     buffer.writeln('NIM,"${student.nim}"');
     buffer.writeln('Nama Mahasiswa,"${student.nama}"');
@@ -440,7 +440,7 @@ class ExportService {
   static String exportScheduleWhatsappText({required List<Course> courses}) {
     final buffer = StringBuffer();
     buffer.writeln('*📅 JADWAL KULIAH PRODI ILMU KOMUNIKASI*');
-    buffer.writeln('*UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI (UNAZLAM)*');
+    buffer.writeln('*UNIVERSITAS ABDUL AZIS LAMADJIDO (UNAZLAM)*');
     buffer.writeln('────────────────────────────');
 
     final dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
