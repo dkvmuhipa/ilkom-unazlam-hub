@@ -468,6 +468,9 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
         student: currentUser,
         onNavigateTab: _navigateToIndex,
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        onProfileUpdated: (updated) {
+          if (mounted) setState(() => _profile = updated);
+        },
       ), // 0: Beranda
       ScheduleScreen(
         key: ValueKey('schedule_${currentUser.nim}'),

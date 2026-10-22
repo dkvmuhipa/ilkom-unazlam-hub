@@ -1034,6 +1034,8 @@ class SupabaseRepository {
               (row) {
                 final rawEmail = row['email']?.toString().trim() ?? '';
                 final cleanEmail = rawEmail;
+                final parsedBio = AuthService.parseBioAndNickname(row['bio']?.toString());
+                final rawNick = row['nama_panggilan']?.toString() ?? parsedBio.nickname;
                 return StudentProfile(
                   id: row['id']?.toString() ?? '',
                   nim: row['nim']?.toString() ?? '',
@@ -1050,7 +1052,8 @@ class SupabaseRepository {
                   instagram: row['instagram']?.toString(),
                   linkedin: row['linkedin']?.toString(),
                   avatarUrl: row['avatar_url']?.toString(),
-                  bio: row['bio']?.toString(),
+                  bio: parsedBio.cleanBio,
+                  namaPanggilan: rawNick,
                   agama: row['agama']?.toString(),
                 );
               },
@@ -1077,6 +1080,8 @@ class SupabaseRepository {
                 (row) {
                   final rawEmail = row['email']?.toString().trim() ?? '';
                   final cleanEmail = rawEmail;
+                final parsedBio = AuthService.parseBioAndNickname(row['bio']?.toString());
+                final rawNick = row['nama_panggilan']?.toString() ?? parsedBio.nickname;
                   return StudentProfile(
                     id: row['id']?.toString() ?? '',
                     nim: row['nim']?.toString() ?? '',
@@ -1093,7 +1098,8 @@ class SupabaseRepository {
                     instagram: row['instagram']?.toString(),
                     linkedin: row['linkedin']?.toString(),
                     avatarUrl: row['avatar_url']?.toString(),
-                    bio: row['bio']?.toString(),
+                    bio: parsedBio.cleanBio,
+                  namaPanggilan: rawNick,
                     agama: row['agama']?.toString(),
                   );
                 },
@@ -1115,6 +1121,8 @@ class SupabaseRepository {
                   (row) {
                     final rawEmail = row['email']?.toString().trim() ?? '';
                     final cleanEmail = rawEmail;
+                final parsedBio = AuthService.parseBioAndNickname(row['bio']?.toString());
+                final rawNick = row['nama_panggilan']?.toString() ?? parsedBio.nickname;
                     return StudentProfile(
                       id: row['id']?.toString() ?? '',
                       nim: row['nim']?.toString() ?? '',
@@ -1132,6 +1140,7 @@ class SupabaseRepository {
                       linkedin: row['linkedin']?.toString(),
                       avatarUrl: row['avatar_url']?.toString(),
                       agama: row['agama']?.toString(),
+                      namaPanggilan: rawNick,
                     );
                   },
                 )

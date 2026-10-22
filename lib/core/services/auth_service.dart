@@ -566,7 +566,37 @@ class AuthService {
     return null;
   }
 
+  static String? encodeBioWithNickname(String? rawBio, String? nickname) {
+    final cleanNick = nickname?.trim();
+    final cleanBio = rawBio != null ? rawBio.replaceAll(RegExp(r'\s*\[nick:[^\]]+\]'), '').trim() : '';
+    if (cleanNick != null && cleanNick.isNotEmpty) {
+      if (cleanBio.isNotEmpty) {
+        return '$cleanBio [nick:$cleanNick]';
+      } else {
+        return '[nick:$cleanNick]';
+      }
+    }
+    return cleanBio.isNotEmpty ? cleanBio : null;
+  }
+
+  static ({String? cleanBio, String? nickname}) parseBioAndNickname(String? bioWithNick) {
+    if (bioWithNick == null || bioWithNick.trim().isEmpty) {
+      return (cleanBio: null, nickname: null);
+    }
+    final match = RegExp(r'\[nick:([^\]]+)\]').firstMatch(bioWithNick);
+    final nickname = match?.group(1)?.trim();
+    final cleanBio = bioWithNick.replaceAll(RegExp(r'\s*\[nick:[^\]]+\]'), '').trim();
+    return (
+      cleanBio: cleanBio.isNotEmpty ? cleanBio : null,
+      nickname: (nickname != null && nickname.isNotEmpty) ? nickname : null,
+    );
+  }
+
   static StudentProfile _profileFromRow(Map<String, dynamic> row) {
+    final rawBio = row['bio']?.toString();
+    final parsedBio = parseBioAndNickname(rawBio);
+    final rawNick = row['nama_panggilan']?.toString() ?? parsedBio.nickname;
+
     final profile = StudentProfile(
       id: row['id']?.toString() ?? '',
       nim: row['nim']?.toString() ?? '',
@@ -583,8 +613,9 @@ class AuthService {
       instagram: row['instagram']?.toString(),
       linkedin: row['linkedin']?.toString(),
       avatarUrl: row['avatar_url']?.toString(),
-      bio: row['bio']?.toString(),
+      bio: parsedBio.cleanBio,
       agama: row['agama']?.toString(),
+      namaPanggilan: rawNick,
     );
     if (profile.nim.isEmpty || profile.nama.isEmpty || !profile.isAktif) {
       throw const AuthServiceException(
@@ -641,7 +672,7 @@ class AuthService {
     }
   }
 
-  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email, Bio, Agama)
+  /// Memperbarui rincian profil mahasiswa (WhatsApp, Peminatan, Instagram, LinkedIn, Email, Bio, Agama, Nama Panggilan)
   static Future<void> updateProfileDetails({
     required String nim,
     String? noWa,
@@ -654,10 +685,14 @@ class AuthService {
     String? namaPanggilan,
   }) async {
     // 1. Simpan ke SharedPreferences lokal (offline-first & instan)
+    String? existingNick;
+    String? existingBio;
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedStr = prefs.getString('custom_profile_$nim');
       final Map<String, dynamic> data = savedStr != null ? jsonDecode(savedStr) : {};
+      existingNick = data['nama_panggilan']?.toString();
+      existingBio = data['bio']?.toString();
       if (noWa != null) data['no_wa'] = noWa;
       if (peminatan != null) data['peminatan'] = peminatan;
       if (instagram != null) data['instagram'] = instagram;
@@ -669,29 +704,64 @@ class AuthService {
       await prefs.setString('custom_profile_$nim', jsonEncode(data));
     } catch (_) {}
 
+    // Hitung nama panggilan dan bio efektif
+    final effectiveNick = (namaPanggilan?.trim().isNotEmpty ?? false)
+        ? namaPanggilan!.trim()
+        : existingNick;
+    final rawEffectiveBio = bio?.trim() ?? existingBio;
+    final encodedBio = encodeBioWithNickname(rawEffectiveBio, effectiveNick);
+
     // 2. Sinkronkan ke tabel 'students' di Supabase cloud via RPC aman (SECURITY DEFINER)
-    // agar data kontak & email tersimpan permanen dan tersinkronisasi lintas perangkat
+    // agar data kontak, email, bio, dan nama panggilan tersimpan permanen dan tersinkronisasi lintas perangkat
     bool syncedViaRpc = false;
-    try {
-      final res = await _client.rpc(
-        'update_student_profile',
-        params: {
-          'p_nim': nim.trim(),
-          'p_email': (email?.trim().isNotEmpty ?? false) ? email!.trim() : null,
-          'p_no_wa': (noWa?.trim().isNotEmpty ?? false) ? noWa!.trim() : null,
-          'p_peminatan': (peminatan?.trim().isNotEmpty ?? false) ? peminatan!.trim() : null,
-          'p_instagram': (instagram?.trim().isNotEmpty ?? false) ? instagram!.trim() : null,
-          'p_linkedin': (linkedin?.trim().isNotEmpty ?? false) ? linkedin!.trim() : null,
-          'p_bio': bio?.trim(),
-          'p_agama': (agama?.trim().isNotEmpty ?? false) ? agama!.trim() : null,
-        },
-      );
-      if (res is Map && res['success'] == true) {
-        syncedViaRpc = true;
-        debugPrint('Rincian profil berhasil disinkronkan ke Supabase cloud via RPC.');
+
+    // A. Coba panggil RPC jika sudah mendukung parameter p_nama_panggilan
+    if (effectiveNick != null && effectiveNick.isNotEmpty) {
+      try {
+        final res = await _client.rpc(
+          'update_student_profile',
+          params: {
+            'p_nim': nim.trim(),
+            'p_email': (email?.trim().isNotEmpty ?? false) ? email!.trim() : null,
+            'p_no_wa': (noWa?.trim().isNotEmpty ?? false) ? noWa!.trim() : null,
+            'p_peminatan': (peminatan?.trim().isNotEmpty ?? false) ? peminatan!.trim() : null,
+            'p_instagram': (instagram?.trim().isNotEmpty ?? false) ? instagram!.trim() : null,
+            'p_linkedin': (linkedin?.trim().isNotEmpty ?? false) ? linkedin!.trim() : null,
+            'p_bio': encodedBio,
+            'p_agama': (agama?.trim().isNotEmpty ?? false) ? agama!.trim() : null,
+            'p_nama_panggilan': effectiveNick,
+          },
+        );
+        if (res is Map && res['success'] == true) {
+          syncedViaRpc = true;
+          debugPrint('Rincian profil & nama panggilan berhasil disinkronkan ke cloud via RPC extended.');
+        }
+      } catch (_) {}
+    }
+
+    // B. Panggil RPC standar (mengirimkan encodedBio ke p_bio sehingga nama_panggilan selalu tersimpan di Supabase)
+    if (!syncedViaRpc) {
+      try {
+        final res = await _client.rpc(
+          'update_student_profile',
+          params: {
+            'p_nim': nim.trim(),
+            'p_email': (email?.trim().isNotEmpty ?? false) ? email!.trim() : null,
+            'p_no_wa': (noWa?.trim().isNotEmpty ?? false) ? noWa!.trim() : null,
+            'p_peminatan': (peminatan?.trim().isNotEmpty ?? false) ? peminatan!.trim() : null,
+            'p_instagram': (instagram?.trim().isNotEmpty ?? false) ? instagram!.trim() : null,
+            'p_linkedin': (linkedin?.trim().isNotEmpty ?? false) ? linkedin!.trim() : null,
+            'p_bio': encodedBio,
+            'p_agama': (agama?.trim().isNotEmpty ?? false) ? agama!.trim() : null,
+          },
+        );
+        if (res is Map && res['success'] == true) {
+          syncedViaRpc = true;
+          debugPrint('Rincian profil & nama panggilan berhasil disinkronkan ke Supabase cloud via RPC.');
+        }
+      } catch (rpcErr) {
+        debugPrint('Info RPC update_student_profile: $rpcErr');
       }
-    } catch (rpcErr) {
-      debugPrint('Info RPC update_student_profile: $rpcErr');
     }
 
     // Fallback: Jika RPC belum tersedia, coba direct update
@@ -707,14 +777,13 @@ class AuthService {
             if (email != null) 'email': email.trim().isEmpty ? null : email.trim(),
           };
 
-          // Coba sertakan bio, agama, dan nama_panggilan
           bool synced = false;
-          if (bio != null || agama != null || namaPanggilan != null) {
+          if (encodedBio != null || agama != null || effectiveNick != null) {
             try {
               final updatesExtended = Map<String, dynamic>.from(baseUpdates);
-              if (bio != null) updatesExtended['bio'] = bio.trim();
+              if (encodedBio != null) updatesExtended['bio'] = encodedBio;
               if (agama != null) updatesExtended['agama'] = agama.trim();
-              if (namaPanggilan != null) updatesExtended['nama_panggilan'] = namaPanggilan.trim();
+              if (effectiveNick != null) updatesExtended['nama_panggilan'] = effectiveNick;
               await client.from('students').update(updatesExtended).eq('nim', nim);
               synced = true;
             } catch (e) {
@@ -722,7 +791,6 @@ class AuthService {
             }
           }
 
-          // Jika belum tersinkron atau bio/agama null, kirim baseUpdates
           if (!synced && baseUpdates.isNotEmpty) {
             await client.from('students').update(baseUpdates).eq('nim', nim);
           }
@@ -769,6 +837,15 @@ class AuthService {
         } else {
           prefs.remove('custom_avatar_${profile.nim}');
         }
+        final customDataStr = prefs.getString('custom_profile_${profile.nim}');
+        final Map<String, dynamic> data = customDataStr != null ? jsonDecode(customDataStr) : {};
+        if (profile.namaPanggilan != null && profile.namaPanggilan!.isNotEmpty) {
+          data['nama_panggilan'] = profile.namaPanggilan;
+        }
+        if (profile.bio != null) {
+          data['bio'] = profile.bio;
+        }
+        prefs.setString('custom_profile_${profile.nim}', jsonEncode(data));
       } else {
         final customAvatar = prefs.getString('custom_avatar_${profile.nim}');
         // Jika di cloud (profile.avatarUrl) sudah ada, simpan/perbarui cache lokal.
@@ -789,7 +866,9 @@ class AuthService {
         if (profile.email.isEmpty && data['email'] != null) profile.email = data['email'].toString();
         if (profile.bio == null && data['bio'] != null) profile.bio = data['bio'].toString();
         if (profile.agama == null && data['agama'] != null) profile.agama = data['agama'].toString();
-        if (data['nama_panggilan'] != null) profile.namaPanggilan = data['nama_panggilan'].toString();
+        if (profile.namaPanggilan == null && data['nama_panggilan'] != null) {
+          profile.namaPanggilan = data['nama_panggilan'].toString();
+        }
       }
     } catch (_) {}
   }

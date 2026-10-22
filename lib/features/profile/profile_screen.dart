@@ -55,7 +55,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void didUpdateWidget(ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl) {
+    if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl ||
+        widget.student?.namaPanggilan != oldWidget.student?.namaPanggilan ||
+        widget.student?.nama != oldWidget.student?.nama) {
       setState(() {
         _currentAvatarUrl = widget.student?.avatarUrl;
       });

@@ -28,12 +28,14 @@ class StudentHomeScreen extends StatefulWidget {
   final StudentProfile student;
   final ValueChanged<int> onNavigateTab;
   final VoidCallback? onOpenDrawer;
+  final ValueChanged<StudentProfile>? onProfileUpdated;
 
   const StudentHomeScreen({
     super.key,
     required this.student,
     required this.onNavigateTab,
     this.onOpenDrawer,
+    this.onProfileUpdated,
   });
 
   @override
@@ -91,7 +93,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         oldWidget.student.agama != widget.student.agama) {
       _loadDashboard();
     } else if (oldWidget.student.avatarUrl != widget.student.avatarUrl ||
-        oldWidget.student.nama != widget.student.nama) {
+        oldWidget.student.nama != widget.student.nama ||
+        oldWidget.student.namaPanggilan != widget.student.namaPanggilan) {
       setState(() {});
     }
   }
@@ -170,6 +173,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
           widget.student.nama = freshStudent.nama;
           widget.student.email = freshStudent.email;
           widget.student.noWa = freshStudent.noWa;
+          widget.student.bio = freshStudent.bio;
+          widget.student.namaPanggilan = freshStudent.namaPanggilan;
         }
       } catch (e) {
         debugPrint('Info: Gagal refresh profil mahasiswa di beranda: $e');
@@ -493,6 +498,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         student.namaPanggilan = newName;
                       });
                     }
+                    widget.onProfileUpdated?.call(student);
                   },
                 );
               },
