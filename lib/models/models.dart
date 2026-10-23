@@ -503,6 +503,7 @@ class StudentProfile {
   bool get canManageAgenda => isAdmin || isKetuaKelas || isSekretaris;
   bool get canManageTreasury => isAdmin || isBendahara;
   bool get canManageAssignments => isAdmin || isKetuaKelas;
+  bool get canViewAuditLog => isAdmin || isKetuaKelas;
   bool get canManageSystemData => isAdmin;
 }
 

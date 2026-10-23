@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/services/export_service.dart';
 import '../../core/services/safe_launcher.dart';
 import '../../core/services/supabase_repository.dart';
+import '../../core/widgets/saas_components.dart';
 import '../../models/models.dart';
 
 class DirectoryScreen extends StatefulWidget {
@@ -75,6 +78,78 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     }
   }
 
+  Future<void> _openSocialLink(String rawValue, {required bool isInstagram}) async {
+    final trimmed = rawValue.trim();
+    if (trimmed.isEmpty) return;
+    String url;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      url = trimmed;
+    } else {
+      final cleanHandle = trimmed.replaceAll(RegExp(r'^@+'), '');
+      url = isInstagram
+          ? 'https://instagram.com/$cleanHandle'
+          : 'https://linkedin.com/in/$cleanHandle';
+    }
+    await safeLaunchUrl(url);
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    VoidCallback? onTap,
+    Widget? customTrailing,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: iconColor),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 82,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: customTrailing ??
+                (onTap != null
+                    ? InkWell(
+                        onTap: onTap,
+                        borderRadius: BorderRadius.circular(6),
+                        child: Text(
+                          value,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      )
+                    : SelectableText(
+                        value,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      )),
+          ),
+        ),
+      ],
+    );
+  }
+
   bool _isOfficer(String jabatan) {
     final j = jabatan.toLowerCase();
     return j.contains('ketua') ||
@@ -129,16 +204,29 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   Widget build(BuildContext context) {
     final nonAdminStudents = _students.where((s) => s.role != 'ADMIN').toList();
 
+    final peminatanCounts = <String, int>{};
+    for (final s in nonAdminStudents) {
+      final p = s.peminatan.trim();
+      if (p.isNotEmpty && p != '-') {
+        peminatanCounts[p] = (peminatanCounts[p] ?? 0) + 1;
+      }
+    }
+
     final filtered = nonAdminStudents.where((s) {
+      final q = _searchQuery.toLowerCase();
       final matchesSearch =
-          s.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          s.nim.contains(_searchQuery);
+          s.nama.toLowerCase().contains(q) ||
+          s.nim.contains(_searchQuery) ||
+          s.peminatan.toLowerCase().contains(q) ||
+          (s.namaPanggilan?.toLowerCase().contains(q) ?? false);
       if (!matchesSearch) return false;
 
       if (_selectedFilter == 'Pengurus') {
         return _isOfficer(s.jabatan);
       } else if (_selectedFilter == 'Mahasiswa') {
         return !_isOfficer(s.jabatan);
+      } else if (_selectedFilter != 'Semua') {
+        return s.peminatan.trim() == _selectedFilter;
       }
       return true;
     }).toList();
@@ -174,6 +262,15 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.ios_share_rounded,
+              size: 20,
+              color: Color(0xFF0F172A),
+            ),
+            tooltip: 'Ekspor & Bagikan Direktori Kelas',
+            onPressed: () => _showExportDirectorySheet(nonAdminStudents),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -254,15 +351,22 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Filter Chips
-                Row(
-                  children: [
-                    _buildFilterChip('Semua', nonAdminStudents.length),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Pengurus', officerCount),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Mahasiswa', regularCount),
-                  ],
+                // Filter Chips (Semua, Pengurus, Mahasiswa + Peminatan Dinamis)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Semua', nonAdminStudents.length),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Pengurus', officerCount),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Mahasiswa', regularCount),
+                      for (final entry in peminatanCounts.entries) ...[
+                        const SizedBox(width: 8),
+                        _buildFilterChip(entry.key, entry.value),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -368,31 +472,25 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  // Avatar Inisial
+                                  // Avatar Mahasiswa (Foto Profil / Inisial Otomatis)
                                   Container(
-                                    width: 44,
-                                    height: 44,
                                     decoration: BoxDecoration(
-                                      color: avatarBg,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: isOfficer
                                             ? avatarTextColor.withValues(
-                                                alpha: 0.4,
+                                                alpha: 0.45,
                                               )
                                             : Colors.transparent,
                                         width: 1.5,
                                       ),
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        initials,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w800,
-                                          color: avatarTextColor,
-                                        ),
-                                      ),
+                                    child: SaaSAvatar(
+                                      name: s.nama,
+                                      avatarUrl: s.avatarUrl,
+                                      size: 44,
+                                      fontSize: 14,
+                                      radius: 22,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -414,18 +512,22 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 3),
-                                        // Subtitle: Jika pengurus -> Badge Chip Pengurus; Jika mahasiswa biasa -> Satu warna seragam netral
+                                        // Subtitle: Jika pengurus -> Badge Chip Pengurus; Jika mahasiswa biasa -> Peminatan / Kelas
                                         if (isOfficer)
                                           _buildOfficerBadge(s.jabatan)
                                         else
-                                          const Text(
-                                            'Mahasiswa ILKOM 2026',
-                                            style: TextStyle(
+                                          Text(
+                                            s.peminatan.isNotEmpty && s.peminatan != '-'
+                                                ? '${s.peminatan} • Sem. ${s.semester}'
+                                                : '${s.kelas} • Sem. ${s.semester}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w600,
                                               color: Color(
                                                 0xFF64748B,
-                                              ), // SERAGAM SATU WARNA
+                                              ),
                                             ),
                                           ),
                                       ],
@@ -592,36 +694,32 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               ),
             ),
 
-            // Avatar Besar
+            // Avatar Besar (Foto Profil / Inisial Otomatis)
             Container(
-              width: 68,
-              height: 68,
               decoration: BoxDecoration(
-                color: avatarBg,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isOfficer
                       ? avatarTextColor.withValues(alpha: 0.5)
                       : const Color(0xFFE2E8F0),
-                  width: 2,
+                  width: 2.5,
                 ),
               ),
-              child: Center(
-                child: Text(
-                  initials,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: avatarTextColor,
-                  ),
-                ),
+              child: SaaSAvatar(
+                name: s.nama,
+                avatarUrl: s.avatarUrl,
+                size: 72,
+                fontSize: 24,
+                radius: 36,
               ),
             ),
             const SizedBox(height: 12),
 
-            // Nama Mahasiswa
+            // Nama Mahasiswa & Panggilan
             Text(
-              s.nama,
+              (s.namaPanggilan != null && s.namaPanggilan!.trim().isNotEmpty)
+                  ? '${s.nama} (${s.namaPanggilan})'
+                  : s.nama,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 17,
@@ -635,17 +733,37 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             if (isOfficer)
               _buildOfficerBadge(s.jabatan)
             else
-              const Text(
-                'Mahasiswa ILKOM 2026',
-                style: TextStyle(
+              Text(
+                '${s.kelas} • Semester ${s.semester}',
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF64748B),
                 ),
               ),
-            const SizedBox(height: 18),
+            if (s.bio != null && s.bio!.trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '"${s.bio!.trim()}"',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4C1D95),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
 
-            // Detail Cards (NIM & Kontak)
+            // Detail Cards (NIM, Peminatan, Email, Kontak, Jejaring)
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -655,61 +773,96 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               ),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.badge_outlined,
-                        size: 18,
-                        color: Color(0xFF5B3DE8),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'NIM',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      SelectableText(
-                        s.nim,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
+                  _buildDetailRow(
+                    icon: Icons.badge_outlined,
+                    iconColor: const Color(0xFF5B3DE8),
+                    label: 'NIM',
+                    value: s.nim,
                   ),
+                  if (s.peminatan.isNotEmpty && s.peminatan != '-') ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _buildDetailRow(
+                      icon: Icons.school_outlined,
+                      iconColor: const Color(0xFF0284C7),
+                      label: 'Peminatan',
+                      value: s.peminatan,
+                    ),
+                  ],
+                  if (s.email.isNotEmpty) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _buildDetailRow(
+                      icon: Icons.email_outlined,
+                      iconColor: const Color(0xFFD97706),
+                      label: 'Email',
+                      value: s.email,
+                    ),
+                  ],
                   if (s.noWa.isNotEmpty) ...[
-                    const Divider(height: 20, color: Color(0xFFE2E8F0)),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.phone_outlined,
-                          size: 18,
-                          color: Color(0xFF10B981),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'WhatsApp',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const Spacer(),
-                        SelectableText(
-                          s.noWa,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _buildDetailRow(
+                      icon: Icons.phone_outlined,
+                      iconColor: const Color(0xFF10B981),
+                      label: 'WhatsApp',
+                      value: s.noWa,
+                    ),
+                  ],
+                  if ((s.instagram != null && s.instagram!.trim().isNotEmpty) ||
+                      (s.linkedin != null && s.linkedin!.trim().isNotEmpty)) ...[
+                    const Divider(height: 18, color: Color(0xFFE2E8F0)),
+                    _buildDetailRow(
+                      icon: Icons.public_rounded,
+                      iconColor: const Color(0xFFEC4899),
+                      label: 'Jejaring',
+                      value: '',
+                      customTrailing: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          if (s.instagram != null && s.instagram!.trim().isNotEmpty)
+                            InkWell(
+                              onTap: () => _openSocialLink(s.instagram!, isInstagram: true),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDF2F8),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFFBCFE8)),
+                                ),
+                                child: Text(
+                                  'IG: @${s.instagram!.trim().replaceAll(RegExp(r'^@+'), '')}',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFBE185D),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (s.linkedin != null && s.linkedin!.trim().isNotEmpty)
+                            InkWell(
+                              onTap: () => _openSocialLink(s.linkedin!, isInstagram: false),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                                ),
+                                child: Text(
+                                  'IN: ${s.linkedin!.trim()}',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ],
@@ -717,31 +870,87 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Tombol Hubungi via WhatsApp
-            if (s.noWa.isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _openWhatsApp(s.noWa, s.nama);
-                  },
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text(
-                    'Chat via WhatsApp',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            // Tombol Hubungi via WhatsApp & Salin Kontak
+            Row(
+              children: [
+                if (s.noWa.isNotEmpty) ...[
+                  Expanded(
+                    flex: 3,
+                    child: SizedBox(
+                      height: 46,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _openWhatsApp(s.noWa, s.nama);
+                        },
+                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                        label: const Text(
+                          'Chat via WhatsApp',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  flex: s.noWa.isNotEmpty ? 2 : 1,
+                  child: SizedBox(
+                    height: 46,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final cardText = StringBuffer()
+                          ..writeln('📇 *BIODATA MAHASISWA ILKOM*')
+                          ..writeln('• Nama: ${s.nama}')
+                          ..writeln('• NIM: ${s.nim}')
+                          ..writeln('• Jabatan: ${s.jabatan}');
+                        if (s.peminatan.isNotEmpty && s.peminatan != '-') {
+                          cardText.writeln('• Peminatan: ${s.peminatan}');
+                        }
+                        if (s.noWa.isNotEmpty) {
+                          cardText.writeln('• WhatsApp: ${s.noWa}');
+                        }
+                        if (s.email.isNotEmpty) {
+                          cardText.writeln('• Email: ${s.email}');
+                        }
+                        if (s.instagram != null && s.instagram!.trim().isNotEmpty) {
+                          cardText.writeln('• Instagram: @${s.instagram!.trim().replaceAll(RegExp(r'^@+'), '')}');
+                        }
+                        Clipboard.setData(ClipboardData(text: cardText.toString().trim()));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Biodata ${s.nama.split(' ').first} disalin ke clipboard!'),
+                            backgroundColor: const Color(0xFF5B3DE8),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_all_rounded, size: 17),
+                      label: const Text(
+                        'Salin Info',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF334155),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
+            ),
 
             // Tombol Kelola Anggota (Bagi yang berwenang)
             if (widget.canManage) ...[
@@ -893,6 +1102,124 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 ),
               ),
               child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExportDirectorySheet(List<StudentProfile> students) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const Text(
+              'Ekspor & Bagikan Direktori Kelas',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Total ${students.length} mahasiswa terdaftar di kelas ini',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.table_view_rounded, color: Color(0xFF059669), size: 20),
+              ),
+              title: const Text(
+                'Unduh Spreadsheet (.csv / Excel)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Lengkap NIM, Nama, Jabatan, Peminatan, WhatsApp, Email, & Sosmed',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+              onTap: () {
+                Navigator.pop(ctx);
+                final csv = ExportService.exportDirectoryCsv(students: students);
+                ExportService.showExportSheet(
+                  context,
+                  title: 'Ekspor Direktori Mahasiswa',
+                  fileName: 'Direktori_Mahasiswa_ILKOM.csv',
+                  content: csv,
+                  subtitle: 'Daftar anggota kelas lengkap untuk Excel / Google Sheets',
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.chat_rounded, color: Color(0xFF5B3DE8), size: 20),
+              ),
+              title: const Text(
+                'Salin Daftar Anggota Format WhatsApp',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Rekap rapi pengurus & daftar NIM anggota siap kirim ke grup WA',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              trailing: const Icon(Icons.copy_all_rounded, size: 16),
+              onTap: () {
+                Navigator.pop(ctx);
+                final waText = ExportService.exportDirectoryWhatsappText(students: students);
+                Clipboard.setData(ClipboardData(text: waText));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Daftar mahasiswa kelas berhasil disalin! Siap dipaste ke WhatsApp.'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
             ),
           ],
         ),

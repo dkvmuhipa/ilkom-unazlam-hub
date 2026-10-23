@@ -1418,6 +1418,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             child: CourseTimelineCard(
                               course: c,
                               isLast: index == filteredCourses.length - 1,
+                              canManage: widget.canManage,
+                              onCourseUpdated: () => _fetchCourses(silent: true),
                               onTap: () => _showCourseDetailModal(c),
                             ),
                           );

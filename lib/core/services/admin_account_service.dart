@@ -26,7 +26,7 @@ class AdminAccountService {
       final rows = await client
           .from('students')
           .select(
-            'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin',
+            'id,nim,nama,nama_panggilan,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,avatar_url,bio,agama,instagram,linkedin',
           )
           .order('nama');
       return (rows as List).map((row) {
@@ -36,6 +36,7 @@ class AdminAccountService {
           id: row['id']?.toString() ?? '',
           nim: row['nim']?.toString() ?? '',
           nama: row['nama']?.toString() ?? '',
+          namaPanggilan: row['nama_panggilan']?.toString(),
           email: cleanEmail,
           noWa: row['no_wa']?.toString() ?? '',
           peminatan: row['peminatan']?.toString() ?? '',
@@ -45,6 +46,9 @@ class AdminAccountService {
           role: row['role']?.toString() ?? 'MAHASISWA',
           jabatan: row['jabatan']?.toString() ?? 'Mahasiswa',
           isAktif: row['is_aktif'] as bool? ?? false,
+          avatarUrl: row['avatar_url']?.toString(),
+          bio: row['bio']?.toString(),
+          agama: row['agama']?.toString(),
           instagram: row['instagram']?.toString(),
           linkedin: row['linkedin']?.toString(),
         );

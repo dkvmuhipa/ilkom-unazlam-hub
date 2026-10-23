@@ -83,9 +83,18 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
     final student = widget.selectedStudent ?? widget.managedAccounts.firstOrNull;
     if (student == null) return const Center(child: Text('Pilih mahasiswa untuk melihat detail.'));
     return AdminDetailPage(
-      pageLabel: 'Detail Mahasiswa', title: student.nama,
+      pageLabel: 'Detail Mahasiswa',
+      title: student.nama,
       subtitle: 'NIM ${student.nim} • ${student.isAktif ? 'Aktif' : 'Nonaktif'}',
-      icon: Icons.school_outlined, onBack: widget.onBack,
+      icon: Icons.school_outlined,
+      leadingAvatar: SaaSAvatar(
+        name: student.nama,
+        avatarUrl: student.avatarUrl,
+        size: 56,
+        fontSize: 18,
+        radius: 16,
+      ),
+      onBack: widget.onBack,
       onEdit: () async { await widget.onEditAccount(student); if (mounted) setState(() {}); },
       actions: [
         AdminDetailAction(student.isAktif ? 'Nonaktifkan akun' : 'Aktifkan akun', Icons.manage_accounts_outlined,
@@ -94,8 +103,19 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
       ],
       tabs: [
         AdminDetailTab('Profil', AdminDetailSection(title: 'Identitas dan kontak', children: [
-          AdminDetailFields({'Nama lengkap': student.nama, 'NIM': student.nim, 'Email': student.email,
-            'WhatsApp': student.noWa, 'Jabatan': student.jabatan, 'Peminatan': student.peminatan}),
+          AdminDetailFields({
+            'Nama lengkap': student.nama,
+            'Nama panggilan': student.namaPanggilan ?? '',
+            'NIM': student.nim,
+            'Agama': student.agama ?? '',
+            'Email': student.email,
+            'WhatsApp': student.noWa,
+            'Jabatan': student.jabatan,
+            'Peminatan': student.peminatan,
+            'Bio singkat': student.bio ?? '',
+            'Instagram': student.instagram ?? '',
+            'LinkedIn': student.linkedin ?? '',
+          }),
         ])),
         AdminDetailTab('Akademik', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           AdminDetailSection(title: 'Informasi akademik', children: [
@@ -277,6 +297,7 @@ class _AdminStudentsViewState extends State<AdminStudentsView> {
                                   children: [
                                     SaaSAvatar(
                                       name: s.nama,
+                                      avatarUrl: s.avatarUrl,
                                       size: 42,
                                       radius: 12,
                                     ),

@@ -111,13 +111,14 @@ class _MoreServicesSheetContentState extends State<_MoreServicesSheetContent> {
         bgColor: isDark ? const Color(0xFF332A1B) : const Color(0xFFFFFBEB),
         tabIndex: 13,
       ),
-      _ServiceModalData(
-        icon: Icons.history_rounded,
-        label: 'Audit Log',
-        color: const Color(0xFF6366F1),
-        bgColor: isDark ? const Color(0xFF232244) : const Color(0xFFEEF2FF),
-        tabIndex: 14,
-      ),
+      if (widget.student.canViewAuditLog)
+        _ServiceModalData(
+          icon: Icons.history_rounded,
+          label: 'Audit Log',
+          color: const Color(0xFF6366F1),
+          bgColor: isDark ? const Color(0xFF232244) : const Color(0xFFEEF2FF),
+          tabIndex: 14,
+        ),
       _ServiceModalData(
         icon: Icons.person_outline_rounded,
         label: 'Profil Saya',

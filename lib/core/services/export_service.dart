@@ -466,6 +466,62 @@ class ExportService {
     return buffer.toString();
   }
 
+  /// Export Direktori Mahasiswa to CSV Format
+  static String exportDirectoryCsv({required List<StudentProfile> students}) {
+    final buffer = StringBuffer();
+    buffer.writeln(
+      'No,NIM,Nama Lengkap,Nama Panggilan,Jabatan,Kelas,Semester,Peminatan,WhatsApp,Email,Instagram,LinkedIn',
+    );
+    final nonAdmin = students.where((s) => s.role != 'ADMIN').toList();
+    for (int i = 0; i < nonAdmin.length; i++) {
+      final s = nonAdmin[i];
+      buffer.writeln(
+        '${i + 1},"${s.nim}","${s.nama}","${s.namaPanggilan ?? '-'}","${s.jabatan}","${s.kelas}",${s.semester},"${s.peminatan.isEmpty ? '-' : s.peminatan}","${s.noWa.isEmpty ? '-' : s.noWa}","${s.email.isEmpty ? '-' : s.email}","${s.instagram ?? '-'}","${s.linkedin ?? '-'}"',
+      );
+    }
+    return buffer.toString();
+  }
+
+  /// Export Direktori Mahasiswa as WhatsApp share text
+  static String exportDirectoryWhatsappText({
+    required List<StudentProfile> students,
+  }) {
+    final nonAdmin = students.where((s) => s.role != 'ADMIN').toList();
+    final buffer = StringBuffer();
+    buffer.writeln('*👥 DIREKTORI MAHASISWA ILMU KOMUNIKASI*');
+    buffer.writeln('*UNIVERSITAS ABDUL AZIS LAMADJIDO (UNAZLAM)*');
+    buffer.writeln('Total Terdaftar: *${nonAdmin.length} Mahasiswa*');
+    buffer.writeln('────────────────────────────');
+
+    final officers = nonAdmin.where((s) {
+      final j = s.jabatan.toLowerCase();
+      return j.contains('ketua') ||
+          j.contains('bendahara') ||
+          j.contains('sekretaris');
+    }).toList();
+
+    if (officers.isNotEmpty) {
+      buffer.writeln('\n*⭐ PENGURUS KELAS*');
+      for (final o in officers) {
+        final waInfo = o.noWa.isNotEmpty ? ' • WA: ${o.noWa}' : '';
+        buffer.writeln('• *${o.nama}* (${o.jabatan})$waInfo');
+      }
+    }
+
+    buffer.writeln('\n*📋 DAFTAR ANGGOTA KELAS*');
+    for (int i = 0; i < nonAdmin.length; i++) {
+      final s = nonAdmin[i];
+      final peminatan = (s.peminatan.isNotEmpty && s.peminatan != '-')
+          ? ' [${s.peminatan}]'
+          : '';
+      buffer.writeln('${i + 1}. *${s.nama}* (${s.nim})$peminatan');
+    }
+
+    buffer.writeln('\n────────────────────────────');
+    buffer.writeln('_Diekspor otomatis via ILKOM UNAZLAM Hub_');
+    return buffer.toString();
+  }
+
   /// Show Export & Download Sheet
   static void showExportSheet(
     BuildContext context, {

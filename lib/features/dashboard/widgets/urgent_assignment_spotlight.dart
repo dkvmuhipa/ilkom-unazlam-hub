@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/supabase_repository.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
 import '../../assignments/assignments_screen.dart';
@@ -356,6 +358,60 @@ class _UrgentAssignmentSpotlightState extends State<UrgentAssignmentSpotlight>
                         ),
                       ),
                       const SizedBox(width: 8),
+                      ScaleButton(
+                        scaleDown: 0.92,
+                        onTap: () async {
+                          final nim = widget.student.nim;
+                          if (nim.isEmpty) return;
+                          final saved = await SupabaseRepository.updateAssignmentStatus(
+                            widget.assignment.id,
+                            'selesai',
+                            studentNim: nim,
+                          );
+                          if (saved) {
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setString(
+                                'assignment_status_${nim}_${widget.assignment.id}',
+                                'selesai',
+                              );
+                            } catch (_) {}
+                            widget.onRefresh();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Tugas "${widget.assignment.judul}" ditandai selesai! 🎉'),
+                                  backgroundColor: const Color(0xFF10B981),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_outline_rounded, size: 13, color: Color(0xFF059669)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Selesai',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       ScaleButton(
                         scaleDown: 0.92,
                         onTap: () {

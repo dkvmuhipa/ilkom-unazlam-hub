@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/supabase_repository.dart';
+import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
 import '../widgets/admin_common_widgets.dart';
 
@@ -30,13 +31,6 @@ class AdminRolesView extends StatefulWidget {
 class _AdminRolesViewState extends State<AdminRolesView> {
   String _roleFilter = 'Semua';
   String _roleSearchQuery = '';
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return 'M';
-    if (parts.length == 1) return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,17 +158,12 @@ class _AdminRolesViewState extends State<AdminRolesView> {
                     ),
                     child: AdminAdaptiveRow(
                       children: [
-                        CircleAvatar(
+                        SaaSAvatar(
+                          name: s.nama,
+                          avatarUrl: s.avatarUrl,
+                          size: 36,
+                          fontSize: 11,
                           radius: 18,
-                          backgroundColor: AppColors.primarySoft,
-                          child: Text(
-                            _getInitials(s.nama),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

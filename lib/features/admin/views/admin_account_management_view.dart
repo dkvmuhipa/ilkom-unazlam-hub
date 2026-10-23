@@ -46,14 +46,6 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
   String _accountFilter = 'Admin';
   String? _updatingAccountNim;
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : 'M';
-  }
-
   Future<void> _showCreateStudentAccountDialog() async {
     final profile = await showGlassModal<StudentProfile>(
       context: context,
@@ -220,7 +212,6 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
 
   Widget _buildManagedAccountTile(StudentProfile account) {
     final isAdmin = account.isAdmin;
-    final accent = isAdmin ? AppColors.primary : const Color(0xFF0284C7);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -231,17 +222,12 @@ class _AdminAccountManagementViewState extends State<AdminAccountManagementView>
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          SaaSAvatar(
+            name: account.nama,
+            avatarUrl: account.avatarUrl,
+            size: 40,
+            fontSize: 12,
             radius: 20,
-            backgroundColor: accent.withValues(alpha: 0.1),
-            child: Text(
-              _getInitials(account.nama),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: accent,
-              ),
-            ),
           ),
           const SizedBox(width: 12),
           Expanded(

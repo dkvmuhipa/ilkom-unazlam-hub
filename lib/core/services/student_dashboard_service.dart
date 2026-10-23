@@ -120,9 +120,15 @@ class StudentDashboardService {
         row['assignment_id'].toString(): row['status']?.toString() ?? 'belum',
     };
 
+    final deletedAssignmentIds =
+        await SupabaseRepository.getDeletedAssignmentIds();
     final rawAssignments = (results[1] as List?) ?? [];
     final assignments =
         List<Map<String, dynamic>>.from(rawAssignments)
+            .where(
+              (row) =>
+                  !deletedAssignmentIds.contains(row['id']?.toString() ?? ''),
+            )
             .map(
               (row) => Assignment(
                 id: row['id']?.toString() ?? '',

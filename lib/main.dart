@@ -400,6 +400,15 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
   }
 
   void _navigateToIndex(int index) {
+    if (index == 14 && !_currentUser.canViewAuditLog) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Audit Log hanya dapat diakses oleh Ketua Kelas dan Administrator.'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      );
+      return;
+    }
     if (_currentIndex == index) return;
     setState(() {
       _loadedTabs.add(index);
@@ -961,12 +970,13 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                   13,
                   const Color(0xFF5B3DE8),
                 ),
-                _sidebarTile(
-                  Icons.history_rounded,
-                  'Aktivitas kelas',
-                  14,
-                  const Color(0xFF3989D8),
-                ),
+                if (student.canViewAuditLog)
+                  _sidebarTile(
+                    Icons.history_rounded,
+                    'Aktivitas kelas',
+                    14,
+                    const Color(0xFF3989D8),
+                  ),
               ],
             ),
           ),
@@ -1284,11 +1294,12 @@ class _MainResponsiveShellState extends State<MainResponsiveShell> {
                     'Surat & Dispensasi',
                     13,
                   ),
-                  _buildDrawerTile(
-                    Icons.history_toggle_off_rounded,
-                    'Audit Log Kelas',
-                    14,
-                  ),
+                  if (_currentUser.canViewAuditLog)
+                    _buildDrawerTile(
+                      Icons.history_toggle_off_rounded,
+                      'Audit Log Kelas',
+                      14,
+                    ),
                 ],
               ),
             ),

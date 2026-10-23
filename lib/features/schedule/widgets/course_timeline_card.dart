@@ -3,18 +3,23 @@ import 'package:flutter/material.dart';
 import '../../../core/services/course_schedule_service.dart';
 import '../../../core/widgets/scale_button.dart';
 import '../../../models/models.dart';
+import 'course_reschedule_modal.dart';
 import 'lecturer_reminder_modal.dart';
 
 class CourseTimelineCard extends StatelessWidget {
   final Course course;
   final bool isLast;
   final VoidCallback? onTap;
+  final bool canManage;
+  final VoidCallback? onCourseUpdated;
 
   const CourseTimelineCard({
     super.key,
     required this.course,
     this.isLast = false,
     this.onTap,
+    this.canManage = false,
+    this.onCourseUpdated,
   });
 
   Color _getCourseAccentColor(String courseName) {
@@ -588,6 +593,50 @@ class CourseTimelineCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                            if (canManage) ...[
+                              const SizedBox(width: 6),
+                              ScaleButton(
+                                onTap: () {
+                                  CourseRescheduleModal.show(
+                                    context,
+                                    c,
+                                    onSaved: onCourseUpdated,
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5F3FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFFDDD6FE),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.sensors_rounded,
+                                        size: 11,
+                                        color: Color(0xFF6D28D9),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Status',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF6D28D9),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],

@@ -1717,16 +1717,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         bgColor: isDark ? const Color(0xFF2B2010) : const Color(0xFFFEF3C7),
         tabIndex: 13, // Surat Izin & Dispensasi
       ),
-      _ServiceItem(
-        title: 'Audit Log',
-        subtitle: 'Rekam Jejak',
-        icon: Icons.history_rounded,
-        color: const Color(0xFF6366F1), // Indigo
-        gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
-        glowColor: const Color(0xFF6366F1),
-        bgColor: isDark ? const Color(0xFF181838) : const Color(0xFFE0E7FF),
-        tabIndex: 14, // Audit Log Aktivitas
-      ),
+      if (student.canViewAuditLog)
+        _ServiceItem(
+          title: 'Audit Log',
+          subtitle: 'Rekam Jejak',
+          icon: Icons.history_rounded,
+          color: const Color(0xFF6366F1), // Indigo
+          gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
+          glowColor: const Color(0xFF6366F1),
+          bgColor: isDark ? const Color(0xFF181838) : const Color(0xFFE0E7FF),
+          tabIndex: 14, // Audit Log Aktivitas
+        )
+      else
+        _ServiceItem(
+          title: 'KHS Nilai',
+          subtitle: 'Transkrip IPK',
+          icon: Icons.school_rounded,
+          color: const Color(0xFF6366F1), // Indigo
+          gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
+          glowColor: const Color(0xFF6366F1),
+          bgColor: isDark ? const Color(0xFF181838) : const Color(0xFFE0E7FF),
+          tabIndex: 15, // Transkrip Nilai & IPK
+        ),
       _ServiceItem(
         title: 'Lainnya',
         subtitle: 'Katalog 12+',

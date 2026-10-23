@@ -53,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadSavedProfileDetails();
   }
 
+  @override
   void didUpdateWidget(ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl ||

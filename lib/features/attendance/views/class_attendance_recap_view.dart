@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
 
 class ClassAttendanceRecapView extends StatelessWidget {
@@ -240,18 +241,12 @@ class ClassAttendanceRecapView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  SaaSAvatar(
+                    name: s.nama,
+                    avatarUrl: s.avatarUrl,
+                    size: 36,
+                    fontSize: 13,
                     radius: 18,
-                    backgroundColor: const Color(0xFF6D28D9)
-                        .withValues(alpha: 0.1),
-                    child: Text(
-                      s.nama.isNotEmpty ? s.nama[0] : 'M',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6D28D9),
-                      ),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

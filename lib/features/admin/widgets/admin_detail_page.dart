@@ -19,6 +19,7 @@ class AdminDetailPage extends StatelessWidget {
   final String subtitle;
   final String pageLabel;
   final IconData icon;
+  final Widget? leadingAvatar;
   final List<AdminDetailTab> tabs;
   final List<AdminDetailAction> actions;
   final VoidCallback? onBack;
@@ -30,6 +31,7 @@ class AdminDetailPage extends StatelessWidget {
     required this.subtitle,
     required this.pageLabel,
     required this.icon,
+    this.leadingAvatar,
     required this.tabs,
     this.actions = const [],
     this.onBack,
@@ -89,18 +91,19 @@ class AdminDetailPage extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDE9FE),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          icon,
-                          color: const Color(0xFF6D28D9),
-                          size: 26,
-                        ),
-                      ),
+                      leadingAvatar ??
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDE9FE),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              icon,
+                              color: const Color(0xFF6D28D9),
+                              size: 26,
+                            ),
+                          ),
                       const SizedBox(width: 18),
                       Expanded(
                         child: Column(

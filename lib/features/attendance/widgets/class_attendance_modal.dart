@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/supabase_repository.dart';
+import '../../../core/widgets/saas_components.dart';
 import '../../../models/models.dart';
 
 class ClassAttendanceModal {
@@ -128,10 +129,12 @@ class ClassAttendanceModal {
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(
+                            SaaSAvatar(
+                              name: s.nama,
+                              avatarUrl: s.avatarUrl,
+                              size: 32,
+                              fontSize: 11,
                               radius: 16,
-                              backgroundColor: const Color(0xFF6D28D9).withValues(alpha: 0.1),
-                              child: Text(s.nama.isNotEmpty ? s.nama[0] : 'M', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF6D28D9))),
                             ),
                             const SizedBox(width: 10),
                             Expanded(

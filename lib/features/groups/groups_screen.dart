@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/supabase_repository.dart';
 import '../../core/widgets/empty_state_widget.dart';
+import '../../core/widgets/saas_components.dart';
 import '../../models/models.dart';
 import '../../core/services/safe_launcher.dart';
 
@@ -72,9 +74,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
       final results = await Future.wait([
         SupabaseRepository.getStudentGroups(),
         SupabaseRepository.getCourses(),
-        if (widget.canManage) SupabaseRepository.getClassDirectory(),
+        SupabaseRepository.getClassDirectory(),
       ]);
       if (!mounted) return;
+      final directoryStudents = results[2] as List<StudentProfile>;
+      final studentByNim = {
+        for (final s in directoryStudents) s.nim: s,
+      };
       final groups = (results[0] as List<Map<String, dynamic>>).map((row) {
         final memberRows = (row['members'] as List? ?? const []).cast<Map>();
         final taskRows = (row['tasks'] as List? ?? const []).cast<Map>();
@@ -84,13 +90,24 @@ class _GroupsScreenState extends State<GroupsScreen> {
           courseName: row['course_name']?.toString() ?? '',
           assignmentTitle: row['assignment_title']?.toString() ?? '',
           linkGDrive: row['drive_url']?.toString(),
-          members: memberRows.map((m) => StudentProfile(id: m['nim']?.toString() ?? '', nim: m['nim']?.toString() ?? '', nama: m['nama']?.toString() ?? m['nim']?.toString() ?? 'Mahasiswa', email: '', noWa: '')).toList(),
+          members: memberRows.map((m) {
+            final nim = m['nim']?.toString() ?? '';
+            final matched = studentByNim[nim];
+            if (matched != null) return matched;
+            return StudentProfile(
+              id: nim,
+              nim: nim,
+              nama: m['nama']?.toString() ?? (nim.isNotEmpty ? nim : 'Mahasiswa'),
+              email: '',
+              noWa: '',
+            );
+          }).toList(),
           tasks: taskRows.map((t) => GroupTaskProgress(title: t['title']?.toString() ?? '', isCompleted: t['is_completed'] == true)).toList(),
         );
       }).toList();
       final crs = results[1] as List<Course>;
       final stds = widget.canManage
-          ? (results[2] as List<StudentProfile>).where((s) => s.role != 'ADMIN' && s.kelas == widget.userClass).toList()
+          ? directoryStudents.where((s) => s.role != 'ADMIN' && s.kelas == widget.userClass).toList()
           : <StudentProfile>[];
       setState(() {
         _students = stds;
@@ -280,6 +297,332 @@ class _GroupsScreenState extends State<GroupsScreen> {
     );
   }
 
+  void _shareAllGroupsToWhatsApp() {
+    if (_groups.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Belum ada kelompok untuk dibagikan.')),
+      );
+      return;
+    }
+    final buffer = StringBuffer();
+    buffer.writeln('*🤝 DAFTAR PEMBAGIAN KELOMPOK TUGAS*');
+    buffer.writeln('*PRODI ILMU KOMUNIKASI UNAZLAM*');
+    buffer.writeln('────────────────────────────');
+    for (int i = 0; i < _groups.length; i++) {
+      final g = _groups[i];
+      final pct = (g.progress * 100).toInt();
+      buffer.writeln('\n*${i + 1}. ${g.namaKelompok}* ($pct% Selesai)');
+      buffer.writeln('📚 MK: ${g.courseName}');
+      buffer.writeln('📝 Tugas: ${g.assignmentTitle}');
+      if (g.members.isNotEmpty) {
+        buffer.writeln('👥 Anggota:');
+        for (final m in g.members) {
+          final pem = (m.peminatan.isNotEmpty && m.peminatan != '-')
+              ? ' [${m.peminatan}]'
+              : '';
+          buffer.writeln('   • ${m.nama}$pem');
+        }
+      }
+      if (g.linkGDrive != null && g.linkGDrive!.trim().isNotEmpty) {
+        buffer.writeln('🔗 Folder: ${g.linkGDrive}');
+      }
+    }
+    buffer.writeln('\n────────────────────────────');
+    buffer.writeln('_Dibagikan dari ILKOM UNAZLAM Hub_');
+
+    final text = buffer.toString();
+    Clipboard.setData(ClipboardData(text: text));
+    final encoded = Uri.encodeComponent(text);
+    safeLaunchUrl('https://wa.me/?text=$encoded');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Rekap kelompok disalin & membuka WhatsApp!'),
+        backgroundColor: Color(0xFF10B981),
+      ),
+    );
+  }
+
+  void _showSmartGroupGeneratorDialog() {
+    if (_students.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data mahasiswa kelas belum tersedia.')),
+      );
+      return;
+    }
+    final assignmentCtrl = TextEditingController(text: 'Tugas Kelompok Terpadu');
+    String selectedCourse = _courses.isNotEmpty
+        ? _courses.first.nama
+        : 'Dasar-Dasar Ilmu Komunikasi';
+    int groupCount = (_students.length / 4).ceil().clamp(2, 10);
+    String mode = 'balanced'; // 'balanced' | 'random'
+    bool isGenerating = false;
+
+    List<List<StudentProfile>> buildPreviewGroups() {
+      final pool = List<StudentProfile>.from(_students);
+      if (mode == 'random') {
+        pool.shuffle();
+      } else {
+        // Urutkan berdasarkan peminatan agar terdistribusi merata (round-robin)
+        pool.sort((a, b) => a.peminatan.compareTo(b.peminatan));
+      }
+      final buckets = List.generate(groupCount, (_) => <StudentProfile>[]);
+      for (int i = 0; i < pool.length; i++) {
+        buckets[i % groupCount].add(pool[i]);
+      }
+      return buckets;
+    }
+
+    List<List<StudentProfile>> previewBuckets = buildPreviewGroups();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: const Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, color: Color(0xFF6D28D9), size: 22),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Smart Group Generator',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: (MediaQuery.sizeOf(context).width - 80).clamp(0.0, 440.0).toDouble(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Bagi seluruh mahasiswa kelas secara otomatis & adil hanya dalam 1 klik.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCourse,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Mata Kuliah',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: _courses
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.nama,
+                            child: Text(
+                              c.nama,
+                              style: const TextStyle(fontSize: 12.5),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => selectedCourse = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: assignmentCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Proyek / Tugas Kelompok',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: groupCount,
+                          decoration: InputDecoration(
+                            labelText: 'Jumlah Tim',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          items: List.generate(9, (idx) => idx + 2)
+                              .map(
+                                (n) => DropdownMenuItem(
+                                  value: n,
+                                  child: Text('$n Kelompok'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setDialogState(() {
+                                groupCount = val;
+                                previewBuckets = buildPreviewGroups();
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: mode,
+                          decoration: InputDecoration(
+                            labelText: 'Metode Bagi',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'balanced',
+                              child: Text('Seimbang Peminatan', style: TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'random',
+                              child: Text('Acak Murni', style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setDialogState(() {
+                                mode = val;
+                                previewBuckets = buildPreviewGroups();
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Pratinjau ($groupCount Tim • ${_students.length} Mahasiswa):',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          setDialogState(() {
+                            previewBuckets = buildPreviewGroups();
+                          });
+                        },
+                        icon: const Icon(Icons.casino_rounded, size: 15),
+                        label: const Text('Kocok Ulang', style: TextStyle(fontSize: 11.5)),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    height: 180,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: ListView.builder(
+                      itemCount: previewBuckets.length,
+                      itemBuilder: (context, idx) {
+                        final members = previewBuckets[idx];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Kelompok ${idx + 1} (${members.length} orang)',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF6D28D9),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                members.map((m) => m.nama).join(', '),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isGenerating ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: isGenerating
+                  ? null
+                  : () async {
+                      final title = assignmentCtrl.text.trim().isEmpty
+                          ? 'Tugas Kelompok'
+                          : assignmentCtrl.text.trim();
+                      setDialogState(() => isGenerating = true);
+                      try {
+                        for (int i = 0; i < previewBuckets.length; i++) {
+                          final bucket = previewBuckets[i];
+                          if (bucket.isEmpty) continue;
+                          await SupabaseRepository.createStudentGroup(
+                            name: 'Kelompok ${i + 1}',
+                            courseName: selectedCourse,
+                            assignmentTitle: title,
+                            driveUrl: null,
+                            memberNims: bucket.map((s) => s.nim).toList(),
+                          );
+                        }
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        await _loadData();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('$groupCount kelompok berhasil dibuat otomatis!'),
+                            backgroundColor: const Color(0xFF10B981),
+                          ),
+                        );
+                      } catch (e) {
+                        setDialogState(() => isGenerating = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal membuat kelompok otomatis: $e')),
+                          );
+                        }
+                      }
+                    },
+              icon: isGenerating
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.bolt_rounded, size: 18),
+              label: Text(isGenerating ? 'Menyimpan...' : 'Simpan Semua Tim'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6D28D9),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -303,6 +646,21 @@ class _GroupsScreenState extends State<GroupsScreen> {
             fontWeight: FontWeight.w800,
           ),
         ),
+        actions: [
+          if (_groups.isNotEmpty)
+            IconButton(
+              onPressed: _shareAllGroupsToWhatsApp,
+              icon: const Icon(Icons.share_rounded, color: Color(0xFF10B981), size: 20),
+              tooltip: 'Bagikan Daftar Kelompok ke WhatsApp',
+            ),
+          if (widget.canManage)
+            IconButton(
+              onPressed: _showSmartGroupGeneratorDialog,
+              icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF6D28D9), size: 21),
+              tooltip: 'Smart Group Generator (Bagi Kelompok Otomatis)',
+            ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -331,17 +689,32 @@ class _GroupsScreenState extends State<GroupsScreen> {
           if (i == _groups.length) {
             return Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 24),
-              child: Center(
-                child: FilledButton.icon(
-                  onPressed: _showCreateGroupDialog,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Tambah Kelompok'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF6D28D9),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _showCreateGroupDialog,
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Tambah Manual'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF6D28D9),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
                   ),
-                ),
+                  OutlinedButton.icon(
+                    onPressed: _showSmartGroupGeneratorDialog,
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: const Text('Bagi Kelompok Otomatis'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF6D28D9),
+                      side: const BorderSide(color: Color(0xFF6D28D9)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -534,13 +907,15 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFFE5E7EB)),
                       ),
-                      child: Row(
+                        child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircleAvatar(
+                          SaaSAvatar(
+                            name: m.nama,
+                            avatarUrl: m.avatarUrl,
+                            size: 20,
+                            fontSize: 9,
                             radius: 10,
-                            backgroundColor: const Color(0xFF6D28D9).withValues(alpha: 0.12),
-                            child: Text(m.nama[0], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF6D28D9))),
                           ),
                           const SizedBox(width: 6),
                           Text(m.nama.split(' ').first, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF374151))),

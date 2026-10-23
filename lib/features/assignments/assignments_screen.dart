@@ -53,6 +53,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   String? _loadError;
   RealtimeChannel? _assignmentsChannel;
   RealtimeChannel? _studentAssignmentsChannel;
+  RealtimeChannel? _settingsChannel;
 
   @override
   void initState() {
@@ -73,12 +74,21 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             _loadPersonalAssignmentStatuses(silent: true);
           }
         });
+    _settingsChannel = SupabaseRepository.subscribeToTable(
+      table: 'app_settings',
+      onDataChanged: () {
+        if (mounted) {
+          _loadPersonalAssignmentStatuses(silent: true);
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     SupabaseRepository.unsubscribeChannel(_assignmentsChannel);
     SupabaseRepository.unsubscribeChannel(_studentAssignmentsChannel);
+    SupabaseRepository.unsubscribeChannel(_settingsChannel);
     super.dispose();
   }
 

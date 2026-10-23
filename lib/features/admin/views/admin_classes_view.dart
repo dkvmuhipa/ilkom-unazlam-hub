@@ -340,12 +340,12 @@ class _AdminClassesViewState extends State<AdminClassesView> {
           for (final student in students)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
-                child: Text(
-                  student.nama.isNotEmpty ? student.nama[0].toUpperCase() : 'M',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
+              leading: SaaSAvatar(
+                name: student.nama,
+                avatarUrl: student.avatarUrl,
+                size: 38,
+                fontSize: 13,
+                radius: 19,
               ),
               title: Text(student.nama, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
               subtitle: Text('NIM ${student.nim} • Semester ${student.semester}'),
@@ -605,6 +605,13 @@ class _AdminClassesViewState extends State<AdminClassesView> {
                               return CheckboxListTile(
                                 value: isChecked,
                                 enabled: !isSaving,
+                                secondary: SaaSAvatar(
+                                  name: s.nama,
+                                  avatarUrl: s.avatarUrl,
+                                  size: 36,
+                                  fontSize: 12,
+                                  radius: 18,
+                                ),
                                 onChanged: (val) {
                                   setModalState(() {
                                     if (val == true) {

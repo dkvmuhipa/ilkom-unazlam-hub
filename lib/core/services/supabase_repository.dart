@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -797,17 +798,106 @@ class SupabaseRepository {
   // ====================================================================
   // 3. TUGAS KELAS (ASSIGNMENTS)
   // ====================================================================
+  static const String _deletedAssignmentsSettingKey = 'deleted_assignment_ids';
+
+  /// Mengambil daftar ID tugas yang telah dihapus (tombstone) baik dari cloud (app_settings)
+  /// maupun cache lokal (SharedPreferences) agar tugas yang dihapus saat RLS belum dimigrasi
+  /// tetap hilang secara permanen lintas perangkat.
+  static Future<Set<String>> getDeletedAssignmentIds() async {
+    final ids = <String>{};
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localList = prefs.getStringList(_deletedAssignmentsSettingKey);
+      if (localList != null) {
+        ids.addAll(localList.where((e) => e.trim().isNotEmpty));
+      }
+    } catch (_) {}
+
+    final client = SupabaseService.client;
+    if (client != null) {
+      try {
+        final row = await client
+            .from('app_settings')
+            .select('value')
+            .eq('key', _deletedAssignmentsSettingKey)
+            .maybeSingle();
+        if (row != null && row['value'] != null) {
+          final rawVal = row['value'].toString().trim();
+          if (rawVal.isNotEmpty) {
+            final decoded = jsonDecode(rawVal);
+            if (decoded is List) {
+              final cloudIds = decoded
+                  .map((e) => e.toString().trim())
+                  .where((e) => e.isNotEmpty);
+              ids.addAll(cloudIds);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+    return ids;
+  }
+
+  static Future<bool> _markAssignmentDeletedFallback(String id) async {
+    final cleanId = id.trim();
+    if (cleanId.isEmpty) return false;
+
+    final currentIds = await getDeletedAssignmentIds();
+    currentIds.add(cleanId);
+    final updatedList = currentIds.toList();
+
+    bool savedLocally = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_deletedAssignmentsSettingKey, updatedList);
+      savedLocally = true;
+    } catch (_) {}
+
+    bool savedCloud = false;
+    final client = SupabaseService.client;
+    if (client != null) {
+      final jsonStr = jsonEncode(updatedList);
+      try {
+        await client.rpc(
+          'save_app_setting',
+          params: {
+            'p_key': _deletedAssignmentsSettingKey,
+            'p_value': jsonStr,
+            'p_description': 'Daftar ID tugas yang telah dihapus (Tombstone)',
+          },
+        );
+        savedCloud = true;
+      } catch (_) {
+        try {
+          await client.from('app_settings').upsert({
+            'key': _deletedAssignmentsSettingKey,
+            'value': jsonStr,
+            'description': 'Daftar ID tugas yang telah dihapus (Tombstone)',
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }, onConflict: 'key');
+          savedCloud = true;
+        } catch (_) {}
+      }
+    }
+
+    return savedCloud || savedLocally;
+  }
+
   static Future<List<Assignment>> getAssignments() async {
     final client = SupabaseService.client;
     if (client == null) return [];
 
     try {
-      final response = await client
-          .from('assignments')
-          .select('*, courses(nama_mk)')
-          .order('deadline');
+      final results = await Future.wait<dynamic>([
+        client.from('assignments').select('*, courses(nama_mk)').order('deadline'),
+        getDeletedAssignmentIds(),
+      ]);
+      final response = results[0] as List;
+      final deletedIds = results[1] as Set<String>;
 
-      final list = (response as List).map((row) {
+      final list = response
+          .where((row) => !deletedIds.contains(row['id']?.toString() ?? ''))
+          .map((row) {
         String cName = row['course_name']?.toString() ?? '';
         final cId = row['course_id']?.toString() ?? '';
         if (cName.isEmpty && row['courses'] != null && row['courses'] is Map) {
@@ -845,11 +935,16 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) throw StateError('Supabase belum dikonfigurasi.');
 
-    final response = await client
-        .from('assignments')
-        .select('*, courses(nama_mk)')
-        .order('deadline');
-    return (response as List).map((row) {
+    final results = await Future.wait<dynamic>([
+      client.from('assignments').select('*, courses(nama_mk)').order('deadline'),
+      getDeletedAssignmentIds(),
+    ]);
+    final response = results[0] as List;
+    final deletedIds = results[1] as Set<String>;
+
+    return response
+        .where((row) => !deletedIds.contains(row['id']?.toString() ?? ''))
+        .map((row) {
       String cName = row['course_name']?.toString() ?? '';
       final cId = row['course_id']?.toString() ?? '';
       if (cName.isEmpty && row['courses'] != null && row['courses'] is Map) {
@@ -890,6 +985,25 @@ class SupabaseRepository {
         resolvedCourseId = courseId;
       }
 
+      // 1. Coba RPC create_assignment_safe jika tersedia
+      try {
+        final rpcRes = await client.rpc(
+          'create_assignment_safe',
+          params: {
+            'p_course_id': resolvedCourseId,
+            'p_course_name': courseName,
+            'p_judul': judul,
+            'p_deskripsi': deskripsi,
+            'p_kategori': kategori,
+            'p_deadline': deadline.toIso8601String(),
+            'p_link_pengumpulan': linkPengumpulan,
+          },
+        );
+        if (rpcRes is Map && rpcRes['success'] == true) {
+          return true;
+        }
+      } catch (_) {}
+
       final payload = <String, dynamic>{
         'course_name': courseName,
         'judul': judul,
@@ -929,6 +1043,26 @@ class SupabaseRepository {
       if (assignment.courseId.isNotEmpty && assignment.courseId.length == 36) {
         resolvedCourseId = assignment.courseId;
       }
+
+      // 1. Coba RPC update_assignment_safe jika tersedia
+      try {
+        final rpcRes = await client.rpc(
+          'update_assignment_safe',
+          params: {
+            'p_assignment_id': assignment.id,
+            'p_course_id': resolvedCourseId,
+            'p_course_name': assignment.courseName,
+            'p_judul': assignment.judul,
+            'p_deskripsi': assignment.deskripsi,
+            'p_kategori': assignment.kategori,
+            'p_deadline': assignment.deadline.toIso8601String(),
+            'p_link_pengumpulan': assignment.linkPengumpulan,
+          },
+        );
+        if (rpcRes is Map && rpcRes['success'] == true) {
+          return true;
+        }
+      } catch (_) {}
 
       final payload = <String, dynamic>{
         'judul': assignment.judul,
@@ -1301,8 +1435,22 @@ class SupabaseRepository {
     final client = SupabaseService.client;
     if (client == null) return false;
 
+    // 1. Coba panggil RPC SECURITY DEFINER (delete_assignment_safe) terlebih dahulu
     try {
-      // 1. Hapus catatan student_assignments terkait terlebih dahulu agar tidak terkunci foreign key
+      final rpcRes = await client.rpc(
+        'delete_assignment_safe',
+        params: {'p_assignment_id': id},
+      );
+      if (rpcRes is Map && rpcRes['success'] == true) {
+        await _markAssignmentDeletedFallback(id);
+        return true;
+      }
+    } catch (rpcErr) {
+      debugPrint('Info RPC delete_assignment_safe: $rpcErr');
+    }
+
+    // 2. Coba penghapusan langsung pada tabel student_assignments & assignments
+    try {
       try {
         await client
             .from('student_assignments')
@@ -1312,17 +1460,24 @@ class SupabaseRepository {
         debugPrint('Catatan student_assignments delete info: $saErr');
       }
 
-      // 2. Hapus dari tabel assignments
-      await client
+      final deletedRows = await client
           .from('assignments')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .select('id');
 
-      return true;
+      if ((deletedRows as List).isNotEmpty) {
+        await _markAssignmentDeletedFallback(id);
+        return true;
+      }
     } catch (e) {
-      debugPrint('Error delete assignment dari Supabase: $e');
-      return false;
+      debugPrint('Info direct delete assignment dari Supabase: $e');
     }
+
+    // 3. Fallback Cloud Tombstone (app_settings via save_app_setting RPC + SharedPreferences)
+    // Menjamin tugas langsung hilang di seluruh perangkat meski migrasi RLS belum dijalankan
+    final fallbackSaved = await _markAssignmentDeletedFallback(id);
+    return fallbackSaved;
   }
 
   // ====================================================================
