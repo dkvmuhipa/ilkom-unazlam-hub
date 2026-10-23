@@ -1055,6 +1055,7 @@ class SupabaseRepository {
                   bio: parsedBio.cleanBio,
                   namaPanggilan: rawNick,
                   agama: row['agama']?.toString(),
+                  namaPanggilan: row['nama_panggilan']?.toString(),
                 );
               },
             )
@@ -1070,7 +1071,7 @@ class SupabaseRepository {
         final rows = await client
             .from('students')
             .select(
-              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio',
+              'id,nim,nama,email,no_wa,peminatan,prodi,semester,kelas,role,jabatan,is_aktif,instagram,linkedin,avatar_url,bio,agama,nama_panggilan',
             )
             .eq('is_aktif', true)
             .order('nama');
@@ -1101,6 +1102,7 @@ class SupabaseRepository {
                     bio: parsedBio.cleanBio,
                   namaPanggilan: rawNick,
                     agama: row['agama']?.toString(),
+                    namaPanggilan: row['nama_panggilan']?.toString(),
                   );
                 },
               )
@@ -1651,11 +1653,18 @@ class SupabaseRepository {
 
       // Ambil daftar NIM mahasiswa yang sudah hadir pada sesi ini dari attendance_logs
       try {
-        final logs = await client
+        var logsQuery = client
             .from('attendance_logs')
             .select('student_nim')
             .eq('pertemuan_ke', sessionData['pertemuan_ke'])
             .eq('status', 'hadir');
+
+        final sessionCourseId = sessionData['course_id']?.toString() ?? '';
+        if (sessionCourseId.isNotEmpty) {
+          logsQuery = logsQuery.eq('course_id', sessionCourseId);
+        }
+
+        final logs = await logsQuery;
 
         final attendedNims = (logs as List)
             .map((row) => row['student_nim']?.toString() ?? '')

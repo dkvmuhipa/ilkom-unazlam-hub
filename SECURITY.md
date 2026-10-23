@@ -1,7 +1,7 @@
 # Security Policy & Audit Report (OWASP Standards)
 
 **Application**: ILKOM UNAZLAM Hub (Platform Manajemen Akademik & Kelas Terpadu)  
-**Latest Audit Date**: 2026-10-20 (Audit Keamanan Menyeluruh: Persistent Reminder Gateway, Student Groups RLS Hardening, Religion-Based Course Filtering, & Real Admin Identity Audit Trail)  
+**Latest Audit Date**: 2026-10-23 (Audit Keamanan & Kode Menyeluruh: Anti-IDOR Profile Sync RPC, Dynamic TOTP Attendance Anti-Cheat, & Cross-Course Attendance Isolation)  
 **Audit Scope**: Codebase Flutter (`lib/`), Gateway WhatsApp (`waha_gateway/`), Persistent Reminder Service (`reminder_service/`), Supabase Migrations (`supabase_migrations/`), Supabase Edge Functions (`supabase/functions/`), dan Dependensi Pihak Ketiga (`pubspec.yaml`, `package.json`).  
 **Audit Standards**: OWASP Top 10 (2021) & Mobile/API Security Best Practices  
 
@@ -92,13 +92,23 @@ Audit keamanan komprehensif (*Paranoid Mode*) telah dilaksanakan kembali pada **
 - Fitur pemfilteran jadwal berbasis agama (`agama`) divalidasi di tingkat model dan sanitasi input sebelum disinkronkan ke basis data Supabase (`students.agama`).
 - Tidak ada kueri raw SQL dinamis yang digunakan; seluruh seleksi menggunakan query builder PostgREST terparameterisasi.
 
+### 5. Proteksi Anti-IDOR & Payload Guard pada RPC Sinkronisasi Profil (`update_student_profile`)
+- Fungsi `public.update_student_profile` (`20261022_update_student_profile_rpc.sql`) menerapkan pertahanan berlapis:
+  - **Anti-Account Takeover (IDOR Guard)**: Memverifikasi identitas pemanggil (`auth.uid() = v_student.auth_user_id` atau peran `ADMIN`) sebelum mengizinkan pembaruan profil akun terautentikasi maupun sinkronisasi `auth.users.email`.
+  - **Proteksi Akun Administrator**: Menolak setiap upaya modifikasi baris berstatus `role = 'ADMIN'` dari pemanggil tanpa sesi autentikasi Administrator yang sah.
+  - **Batas Ukuran Payload (DoS Guard)**: Membatasi ukuran `p_avatar_url` maksimal 350.000 karakter (~250 KB Base64) dan `p_bio` maksimal 1.000 karakter.
+
+### 6. Sistem Presensi Anti-Kecurangan (TOTP Rolling QR & Isolasi Lintas Mata Kuliah)
+- `DynamicAttendanceService` menggunakan algoritma HMAC-SHA256 berbasis jendela waktu 30 detik (dengan toleransi 1 langkah waktu untuk kompensasi *clock skew*) guna mencegah pembagian tangkapan layar QR statis.
+- `SupabaseRepository.getActiveAttendanceSession()` mengisolasi daftar hadir (`attended_nims`) berdasarkan `course_id` dan `pertemuan_ke` secara ketat untuk mencegah benturan status kehadiran antar mata kuliah.
+
 ---
 
 ## 4. Hasil Verifikasi Otomatis (Automated Test Suite)
 
 | Kategori Pengujian | Cakupan | Hasil |
 | :--- | :--- | :---: |
-| **Flutter Widget & Unit Tests** | Seluruh modul (`test/`), smoke test, responsivitas, dan form validation | 🟢 **110 / 110 Lulus (100%)** |
+| **Flutter Widget & Unit Tests** | Seluruh modul (`test/`), termasuk Dynamic Attendance Anti-Cheat & Projector Responsive Overflow Tests | 🟢 **131 / 131 Lulus (100%)** |
 | **Reminder Gateway Unit Tests** | Otentikasi gateway, normalisasi nomor, reply code uniqueness, restart persistence, dan simulasi aman | 🟢 **11 / 11 Lulus (100%)** |
 | **NPM Audit (WAHA Gateway)** | Dependensi Node.js Baileys dan web server | 🟢 **0 Kerentanan Ditemukan** |
 

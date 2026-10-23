@@ -20,6 +20,7 @@ import '../attendance/attendance_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../schedule/widgets/lecturer_reminder_modal.dart';
 import 'models/dashboard_models.dart';
+import 'widgets/daily_briefing_broadcast_modal.dart';
 import 'widgets/home_banner_carousel.dart';
 import 'widgets/more_services_modal.dart';
 import 'widgets/urgent_assignment_spotlight.dart';
@@ -1474,10 +1475,125 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                   ],
                 ),
               ],
+              const SizedBox(height: 10),
+              _buildAcademicUrgencyRadarFooter(
+                context,
+                student,
+                displayCourses,
+                isShowingUpcoming,
+                isDark,
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAcademicUrgencyRadarFooter(
+    BuildContext context,
+    StudentProfile student,
+    List<Course> displayCourses,
+    bool isShowingUpcoming,
+    bool isDark,
+  ) {
+    final overrideCount = displayCourses.where((c) => c.hasActiveOverride).length;
+    final now = DateTime.now();
+    final urgentTaskCount = _pendingAssignments
+        .where((a) => a.deadline.difference(now).inHours <= 72 && a.deadline.isAfter(now.subtract(const Duration(hours: 2))))
+        .length;
+
+    final bool hasUrgency = overrideCount > 0 || urgentTaskCount > 0;
+    final List<String> alerts = [];
+    if (overrideCount > 0) {
+      alerts.add('$overrideCount Perubahan Ruang/Jam');
+    }
+    if (urgentTaskCount > 0) {
+      alerts.add('$urgentTaskCount Tugas ≤ H-3');
+    }
+
+    final String radarLabel = alerts.isNotEmpty
+        ? alerts.join(' • ')
+        : 'Rangkuman jadwal & tugas siap dibagikan ke kelas';
+
+    final Color accentColor = overrideCount > 0
+        ? const Color(0xFFF59E0B)
+        : (urgentTaskCount > 0 ? const Color(0xFF10B981) : AppColors.primary);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1930) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasUrgency
+              ? accentColor.withValues(alpha: 0.35)
+              : (isDark ? const Color(0xFF2E294A) : const Color(0xFFE2E8F0)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasUrgency ? Icons.radar_rounded : Icons.campaign_rounded,
+            size: 15,
+            color: accentColor,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              radarLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white70 : const Color(0xFF334155),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ScaleButton(
+            scaleDown: 0.94,
+            onTap: () {
+              DailyBriefingBroadcastModal.show(
+                context,
+                student: student,
+                todayCourses: _todayCourses,
+                upcomingCourses: _upcomingCourses,
+                nextActiveDayName: _nextActiveDayName,
+                nextActiveDayLabel: _nextActiveDayLabel,
+                pendingAssignments: _pendingAssignments,
+                latestAnnouncement: _announcement,
+                initialMode: isShowingUpcoming ? 1 : 0,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF059669), Color(0xFF10B981)],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.send_rounded, size: 11, color: Colors.white),
+                  SizedBox(width: 4),
+                  Text(
+                    'Share Info',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

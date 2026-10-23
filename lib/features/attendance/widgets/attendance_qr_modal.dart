@@ -400,29 +400,37 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                       children: [
                         const Icon(Icons.vpn_key_rounded, size: 15, color: Color(0xFF2563EB)),
                         const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isDynamicMode ? 'TOKEN DINAMIS' : 'TOKEN',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _isDynamicMode ? 'TOKEN DINAMIS' : 'TOKEN',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                ),
                               ),
-                            ),
-                            Text(
-                              effectiveToken,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF2563EB),
-                                letterSpacing: 0.5,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  effectiveToken,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF2563EB),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 4),
                         Icon(Icons.copy_rounded, size: 14, color: isDark ? Colors.white54 : Colors.grey.shade500),
                       ],
                     ),
@@ -448,29 +456,37 @@ class _AttendanceQrModalContentState extends State<_AttendanceQrModalContent> {
                       children: [
                         const Icon(Icons.pin_rounded, size: 15, color: Color(0xFF7C3AED)),
                         const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isDynamicMode ? 'PIN DINAMIS' : 'PIN CEPAT',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _isDynamicMode ? 'PIN DINAMIS' : 'PIN CEPAT',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                ),
                               ),
-                            ),
-                            Text(
-                              effectivePin,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF7C3AED),
-                                letterSpacing: 1.2,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  effectivePin,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF7C3AED),
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 4),
                         Icon(Icons.copy_rounded, size: 14, color: isDark ? Colors.white54 : Colors.grey.shade500),
                       ],
                     ),

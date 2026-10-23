@@ -45,6 +45,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _currentAvatarUrl;
   bool _isUpdatingAvatar = false;
+  bool _isSyncingCloud = false;
 
   @override
   void initState() {
@@ -64,11 +65,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _loadSavedProfileDetails() async {
+  Future<void> _loadSavedProfileDetails({bool syncFromCloud = false}) async {
     final student = widget.student;
     if (student == null) return;
+    if (syncFromCloud && mounted) {
+      setState(() => _isSyncingCloud = true);
+    }
     try {
-      // 1. Coba ambil data ter-update dari Supabase cloud terlebih dahulu
       final freshProfile = await AuthService.fetchStudentByNim(student.nim);
       if (freshProfile != null && mounted) {
         setState(() {
@@ -86,6 +89,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         widget.onProfileUpdated?.call(student);
         return;
       }
+    final student = widget.student;
+    if (student == null) return;
+    if (syncFromCloud && mounted) {
+      setState(() => _isSyncingCloud = true);
+    }
+    try {
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl ||
+        widget.student?.namaPanggilan != oldWidget.student?.namaPanggilan ||
+        widget.student?.nama != oldWidget.student?.nama) {
+      setState(() {
+        _currentAvatarUrl = widget.student?.avatarUrl;
+      });
+    }
+  }
+
+  Future<void> _loadSavedProfileDetails({bool syncFromCloud = false}) async {
+    final student = widget.student;
+    if (student == null) return;
+    if (syncFromCloud && mounted) {
+      setState(() => _isSyncingCloud = true);
+    }
+    try {
+      final freshProfile = await AuthService.fetchStudentByNim(student.nim);
+      if (freshProfile != null && mounted) {
+        setState(() {
+          student.avatarUrl = freshProfile.avatarUrl;
+          student.email = freshProfile.email;
+          student.noWa = freshProfile.noWa;
+          student.peminatan = freshProfile.peminatan;
+          student.bio = freshProfile.bio;
+          student.agama = freshProfile.agama;
+          student.instagram = freshProfile.instagram;
+          student.linkedin = freshProfile.linkedin;
+          student.namaPanggilan = freshProfile.namaPanggilan;
+          _currentAvatarUrl = freshProfile.avatarUrl;
+        });
+        widget.onProfileUpdated?.call(student);
+        return;
+      }
+      }
 
       final prefs = await SharedPreferences.getInstance();
       AuthService.applyCustomProfileOverrides(student, prefs);
@@ -96,8 +142,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _currentAvatarUrl = savedAvatar;
         student.avatarUrl = savedAvatar;
       }
-      if (mounted) setState(() {});
-    } catch (_) {}
+      if (mounted) {
+        setState(() {});
+        if (syncFromCloud) {
+          widget.onProfileUpdated?.call(student);
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (syncFromCloud && mounted) {
+        setState(() => _isSyncingCloud = false);
+      }
+    }
   }
 
   Widget _buildAvatarImage(String? avatarUrl, String initials) {
@@ -591,17 +647,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.16 : 0.1),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isSyncingCloud ? Icons.cloud_sync_rounded : Icons.cloud_done_rounded,
+                  size: 13,
+                  color: const Color(0xFF059669),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  _isSyncingCloud ? 'Sinkronisasi...' : 'Cloud Aktif',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
-            icon: Icon(Icons.refresh_rounded, color: textPrimary, size: 20),
-            tooltip: 'Segarkan Profil',
-            onPressed: () => _loadSavedProfileDetails(),
+            icon: _isSyncingCloud
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(textPrimary),
+                    ),
+                  )
+                : Icon(Icons.refresh_rounded, color: textPrimary, size: 20),
+            tooltip: 'Segarkan Profil dari Cloud',
+            onPressed: _isSyncingCloud ? null : () => _loadSavedProfileDetails(syncFromCloud: true),
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await _loadSavedProfileDetails();
+          await _loadSavedProfileDetails(syncFromCloud: true);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -685,7 +781,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuItem(
                     icon: Icons.lock_reset_rounded,
                     iconColor: const Color(0xFF6D28D9),
-                    iconBg: const Color(0xFFF5F3FF),
+                    iconBg: isDark ? const Color(0xFF281C40) : const Color(0xFFF5F3FF),
                     title: 'Ubah Kata Sandi Akun',
                     subtitle: 'Ganti kata sandi login akun Anda',
                     onTap: _changePassword,

@@ -74,6 +74,15 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
         ? session.courseName
         : (widget.courses.isNotEmpty ? widget.courses.first.nama : 'Mata Kuliah');
 
+    // Sinkronkan sesi aktif dari Supabase Cloud saat scanner dibuka
+    AttendanceScreen.syncActiveSessionFromCloud().then((synced) {
+      if (mounted && synced != null && !synced.isExpired) {
+        setState(() {
+          _selectedCourse = synced.courseName;
+        });
+      }
+    });
+
     if (!kIsWeb) {
       _scannerController = MobileScannerController(
         detectionSpeed: DetectionSpeed.noDuplicates,
@@ -101,14 +110,18 @@ class _AttendanceScannerSheetContentState extends State<_AttendanceScannerSheetC
     super.dispose();
   }
 
-  void _executeVerification(String tokenToVerify) {
+  Future<void> _executeVerification(String tokenToVerify) async {
     if (_isProcessing) return;
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
     });
 
-    final targetSession = AttendanceScannerModal.currentSession;
+    var targetSession = AttendanceScannerModal.currentSession;
+    if (targetSession == null || targetSession.isExpired) {
+      targetSession = await AttendanceScreen.syncActiveSessionFromCloud();
+      if (!mounted) return;
+    }
 
     // 1. Validasi sesi aktif
     if (targetSession == null || targetSession.isExpired) {
