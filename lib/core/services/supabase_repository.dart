@@ -1055,7 +1055,6 @@ class SupabaseRepository {
                   bio: parsedBio.cleanBio,
                   namaPanggilan: rawNick,
                   agama: row['agama']?.toString(),
-                  namaPanggilan: row['nama_panggilan']?.toString(),
                 );
               },
             )
@@ -1102,7 +1101,6 @@ class SupabaseRepository {
                     bio: parsedBio.cleanBio,
                   namaPanggilan: rawNick,
                     agama: row['agama']?.toString(),
-                    namaPanggilan: row['nama_panggilan']?.toString(),
                   );
                 },
               )

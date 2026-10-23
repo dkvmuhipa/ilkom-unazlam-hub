@@ -53,7 +53,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadSavedProfileDetails();
   }
 
-  @override
   void didUpdateWidget(ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl ||
@@ -89,50 +88,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         widget.onProfileUpdated?.call(student);
         return;
       }
-    final student = widget.student;
-    if (student == null) return;
-    if (syncFromCloud && mounted) {
-      setState(() => _isSyncingCloud = true);
-    }
-    try {
-  @override
-  void didUpdateWidget(ProfileScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.student?.avatarUrl != oldWidget.student?.avatarUrl ||
-        widget.student?.namaPanggilan != oldWidget.student?.namaPanggilan ||
-        widget.student?.nama != oldWidget.student?.nama) {
-      setState(() {
-        _currentAvatarUrl = widget.student?.avatarUrl;
-      });
-    }
-  }
-
-  Future<void> _loadSavedProfileDetails({bool syncFromCloud = false}) async {
-    final student = widget.student;
-    if (student == null) return;
-    if (syncFromCloud && mounted) {
-      setState(() => _isSyncingCloud = true);
-    }
-    try {
-      final freshProfile = await AuthService.fetchStudentByNim(student.nim);
-      if (freshProfile != null && mounted) {
-        setState(() {
-          student.avatarUrl = freshProfile.avatarUrl;
-          student.email = freshProfile.email;
-          student.noWa = freshProfile.noWa;
-          student.peminatan = freshProfile.peminatan;
-          student.bio = freshProfile.bio;
-          student.agama = freshProfile.agama;
-          student.instagram = freshProfile.instagram;
-          student.linkedin = freshProfile.linkedin;
-          student.namaPanggilan = freshProfile.namaPanggilan;
-          _currentAvatarUrl = freshProfile.avatarUrl;
-        });
-        widget.onProfileUpdated?.call(student);
-        return;
-      }
-      }
-
       final prefs = await SharedPreferences.getInstance();
       AuthService.applyCustomProfileOverrides(student, prefs);
       final savedAvatar = prefs.getString('custom_avatar_${student.nim}');
