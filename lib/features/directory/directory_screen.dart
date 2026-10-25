@@ -877,23 +877,37 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   Expanded(
                     flex: 3,
                     child: SizedBox(
-                      height: 46,
-                      child: ElevatedButton.icon(
+                      height: 48,
+                      child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _openWhatsApp(s.noWa, s.nama);
                         },
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                        label: const Text(
-                          'Chat via WhatsApp',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: Colors.white,
                           elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Chat via WhatsApp',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -904,8 +918,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                 Expanded(
                   flex: s.noWa.isNotEmpty ? 2 : 1,
                   child: SizedBox(
-                    height: 46,
-                    child: OutlinedButton.icon(
+                    height: 48,
+                    child: OutlinedButton(
                       onPressed: () {
                         final cardText = StringBuffer()
                           ..writeln('📇 *BIODATA MAHASISWA ILKOM*')
@@ -933,17 +947,31 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.copy_all_rounded, size: 17),
-                      label: const Text(
-                        'Salin Info',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF334155),
                         side: const BorderSide(color: Color(0xFFCBD5E1)),
                         elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.copy_all_rounded, size: 17),
+                            SizedBox(width: 6),
+                            Text(
+                              'Salin Info',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
